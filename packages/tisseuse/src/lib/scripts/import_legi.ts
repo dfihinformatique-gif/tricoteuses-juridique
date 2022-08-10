@@ -6,41 +6,16 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
+import type {
+  Article,
+  EliId,
+  EliVersions,
+  Section,
+  Struct,
+  Version,
+} from "$lib/data"
 import { db } from "$lib/server/database"
 import { walkDir } from "$lib/server/file_systems"
-
-interface Article {
-  META: {
-    META_COMMUN: MetaCommun
-  }
-  BLOC_TEXTUEL: {
-    CONTENU: string // HTML
-  }
-}
-
-type EliId = string
-
-interface EliVersions {}
-
-interface MetaCommun {
-  ID: string
-}
-
-interface Section {
-  ID: string
-}
-
-interface Struct {
-  META: {
-    META_COMMUN: MetaCommun
-  }
-}
-
-interface Version {
-  META: {
-    META_COMMUN: MetaCommun
-  }
-}
 
 interface XmlHeader {
   "@encoding": "UTF-8"

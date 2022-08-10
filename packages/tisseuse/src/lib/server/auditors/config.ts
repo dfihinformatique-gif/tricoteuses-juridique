@@ -32,6 +32,15 @@ export function auditConfig(
     auditDb,
     auditRequire,
   )
+  audit.attribute(
+    data,
+    "title",
+    true,
+    errors,
+    remainingKeys,
+    auditTrimString,
+    auditRequire,
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

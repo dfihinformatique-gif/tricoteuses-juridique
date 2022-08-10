@@ -10,6 +10,7 @@ export interface Config {
     user: string
     password: string
   }
+  title: string
 }
 
 const config = {
@@ -20,6 +21,7 @@ const config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
   },
+  title: process.env.TITLE,
 }
 
 const [validConfig, error] = validateConfig(config) as [Config, unknown]

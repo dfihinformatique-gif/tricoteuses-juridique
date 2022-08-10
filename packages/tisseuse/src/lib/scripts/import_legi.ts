@@ -12,7 +12,7 @@ import type {
   EliVersions,
   Section,
   Struct,
-  Version,
+  TexteVersion,
 } from "$lib/data"
 import { db } from "$lib/server/database"
 import { walkDir } from "$lib/server/file_systems"
@@ -25,7 +25,16 @@ interface XmlHeader {
 const xmlParser = new XMLParser({
   attributeNamePrefix: "@",
   ignoreAttributes: false,
-  stopNodes: ["ARTICLE.BLOC_TEXTUEL.CONTENU", "TEXTE_VERSION.CONTENU"],
+  stopNodes: [
+    "ARTICLE.BLOC_TEXTUEL.CONTENU",
+    "TEXTE_VERSION.ABRO.CONTENU",
+    "TEXTE_VERSION.CONTENU",
+    "TEXTE_VERSION.NOTA.CONTENU",
+    "TEXTE_VERSION.RECT.CONTENU",
+    "TEXTE_VERSION.SIGNATAIRES.CONTENU",
+    "TEXTE_VERSION.TP.CONTENU",
+    "TEXTE_VERSION.VISAS.CONTENU",
+  ],
   tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
 })
 
@@ -73,11 +82,11 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
       `
     ).map(({ id }) => id),
   )
-  const versionsRemainingIds = new Set(
+  const textesRemainingIds = new Set(
     (
       await db<{ id: string }[]>`
         SELECT id
-        FROM versions
+        FROM textes_versions
       `
     ).map(({ id }) => id),
   )
@@ -106,7 +115,15 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
     const xmlData = xmlParser.parse(xmlString)
     for (const [key, element] of Object.entries(xmlData) as [
       string,
-      Article | EliId | EliVersions | Section | Struct | Version | XmlHeader,
+      (
+        | Article
+        | EliId
+        | EliVersions
+        | Section
+        | Struct
+        | TexteVersion
+        | XmlHeader
+      ),
     ][]) {
       switch (key) {
         case "?xml":
@@ -186,9 +203,10 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
           break
         }
         case "TEXTE_VERSION": {
-          const version = element as Version
+          const version = element as TexteVersion
+          console.log("TEXTE_VERSION:", version.META.META_COMMUN.ID)
           await db`
-            INSERT INTO versions (
+            INSERT INTO textes_versions (
               id,
               data
             ) VALUES (
@@ -199,7 +217,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
             DO UPDATE SET
               data = ${db.json(version as unknown as JSONValue)}
           `
-          versionsRemainingIds.delete(version.META.META_COMMUN.ID)
+          textesRemainingIds.delete(version.META.META_COMMUN.ID)
           break
         }
         case "VERSIONS": {
@@ -270,10 +288,10 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
         WHERE id = ${id}
       `
     }
-    for (const id of versionsRemainingIds) {
-      console.log(`Deleting version ${id}…`)
+    for (const id of textesRemainingIds) {
+      console.log(`Deleting texte version ${id}…`)
       await db`
-        DELETE FROM versions
+        DELETE FROM textes_versions
         WHERE id = ${id}
       `
     }

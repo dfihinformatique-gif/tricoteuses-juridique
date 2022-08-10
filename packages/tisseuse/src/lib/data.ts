@@ -45,15 +45,15 @@ export type LegiObject =
   | EliVersions
   | Section
   | Struct
-  | Version
+  | TexteVersion
 
 export type LegiObjectType =
   | "article"
   | "eli_id"
   | "eli_versions"
-  | "sections"
+  | "section"
   | "struct"
-  | "version"
+  | "texte"
 
 export interface MetaCommun {
   ID: string
@@ -69,14 +69,14 @@ export interface Struct {
   }
 }
 
-export interface TitreTexte {
-  "#text": string
-}
-
-export interface Version {
+export interface TexteVersion {
   META: {
     META_COMMUN: MetaCommun
   }
+}
+
+export interface TitreTexte {
+  "#text": string
 }
 
 export function assertNeverLegiObjectType(type: never): never {
@@ -94,12 +94,12 @@ export function pathnameFromLegiObject(
       return `/eli/ids/TODO`
     case "eli_versions":
       return `/eli/ids/TODO`
-    case "sections":
+    case "section":
       return `/sections/${(object as Section).ID}`
     case "struct":
       return `/structs/${(object as Struct).META.META_COMMUN.ID}`
-    case "version":
-      return `/versions/${(object as Version).META.META_COMMUN.ID}`
+    case "texte":
+      return `/textes/${(object as TexteVersion).META.META_COMMUN.ID}`
     default:
       assertNeverLegiObjectType(type)
   }
@@ -116,12 +116,12 @@ export function pathnameFromLegiObjectId(
       return `/eli/ids/TODO`
     case "eli_versions":
       return `/eli/ids/TODO`
-    case "sections":
+    case "section":
       return `/sections/${id}`
     case "struct":
       return `/structs/${id}`
-    case "version":
-      return `/versions/${id}`
+    case "texte":
+      return `/textes/${id}`
     default:
       assertNeverLegiObjectType(type)
   }

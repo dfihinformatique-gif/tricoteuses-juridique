@@ -9,7 +9,7 @@ import {
   pathnameFromLegiObjectId,
   type Section,
   type Struct,
-  type Version,
+  type TexteVersion,
 } from "$lib/data"
 
 export const summarizeArticleProperties: Summarizer = (access, value) => {
@@ -38,14 +38,14 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
         items: [
           `Article ${lienArt["@num"]} en vigueur`,
           ...(lienArt["@fin"] === "2999-01-01"
-            ? [
+            ? ([
                 " depuis le ",
                 {
                   value: lienArt["@debut"],
                   type: "date",
                 },
-              ]
-            : [
+              ] as Summary[])
+            : ([
                 " du ",
                 {
                   value: lienArt["@debut"],
@@ -56,7 +56,7 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
                   value: lienArt["@fin"],
                   type: "date",
                 },
-              ]),
+              ] as Summary[])),
         ],
         type: "concatenation",
       },
@@ -87,14 +87,14 @@ export function summarizeLegiObject(
         items: [
           `Article ${metaArticle.TYPE} ${metaArticle.ETAT} n° ${metaArticle.NUM}, en vigueur`,
           ...(metaArticle.DATE_FIN === "2999-01-01"
-            ? [
+            ? ([
                 " depuis le ",
                 {
                   value: metaArticle.DATE_DEBUT,
                   type: "date",
                 },
-              ]
-            : [
+              ] as Summary[])
+            : ([
                 " du ",
                 {
                   value: metaArticle.DATE_DEBUT,
@@ -105,7 +105,7 @@ export function summarizeLegiObject(
                   value: metaArticle.DATE_FIN,
                   type: "date",
                 },
-              ]),
+              ] as Summary[])),
           " (",
           titreTexte,
           ")",
@@ -117,7 +117,7 @@ export function summarizeLegiObject(
       return `/eli/ids/TODO`
     case "eli_versions":
       return `/eli/ids/TODO`
-    case "sections": {
+    case "section": {
       const section = value as Section | undefined
       return section?.ID
     }
@@ -125,9 +125,9 @@ export function summarizeLegiObject(
       const struct = value as Struct | undefined
       return struct?.META.META_COMMUN.ID
     }
-    case "version": {
-      const version = value as Version | undefined
-      return version?.META.META_COMMUN.ID
+    case "texte": {
+      const texte = value as TexteVersion | undefined
+      return texte?.META.META_COMMUN.ID
     }
     default:
       assertNeverLegiObjectType(type)
@@ -147,4 +147,37 @@ export function summarizeLegiObjectToLink(
         href: pathnameFromLegiObject(type, value as LegiObject),
         type: "link",
       }
+}
+
+export const summarizeSectionProperties: Summarizer = (access, value) => {
+  if (access?.key === "section") {
+    return summarizeLegiObject(access, "section", value)
+  }
+  if (access?.access?.key === "sections") {
+    return summarizeLegiObjectToLink(access, "section", value)
+  }
+
+  return undefined
+}
+
+export const summarizeStructProperties: Summarizer = (access, value) => {
+  if (access?.key === "struct") {
+    return summarizeLegiObject(access, "struct", value)
+  }
+  if (access?.access?.key === "structs") {
+    return summarizeLegiObjectToLink(access, "struct", value)
+  }
+
+  return undefined
+}
+
+export const summarizeTexteProperties: Summarizer = (access, value) => {
+  if (access?.key === "texte") {
+    return summarizeLegiObject(access, "texte", value)
+  }
+  if (access?.access?.key === "textes") {
+    return summarizeLegiObjectToLink(access, "texte", value)
+  }
+
+  return undefined
 }

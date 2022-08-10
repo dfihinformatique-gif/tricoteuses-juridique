@@ -33,8 +33,8 @@
         { href: "/eli/ids", label: "ELI ID" },
         { href: "/eli/versions", label: "ELI versions" },
         { href: "/sections", label: "Sections" },
-        { href: "/structs", label: "Structs" },
-        { href: "/versions", label: "Versions" },
+        { href: "/structs", label: "Structures" },
+        { href: "/textes", label: "Textes" },
       ],
     },
   ]

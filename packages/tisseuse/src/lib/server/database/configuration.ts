@@ -90,7 +90,7 @@ export async function configureDatabase() {
 
   // Table: versions
   await db`
-    CREATE TABLE IF NOT EXISTS versions (
+    CREATE TABLE IF NOT EXISTS textes_versions (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL
     )

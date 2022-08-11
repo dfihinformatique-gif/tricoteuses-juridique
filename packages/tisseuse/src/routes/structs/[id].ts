@@ -13,7 +13,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
   ).map(({ data }) => data)[0]
 
   if (struct === undefined) {
-    return { status: 404 }
+    return { headers: { "Access-Control-Allow-Origin": "*" }, status: 404 }
   }
-  return { body: { struct: struct as unknown as JSONObject } }
+  return {
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: { struct: struct as unknown as JSONObject },
+  }
 }

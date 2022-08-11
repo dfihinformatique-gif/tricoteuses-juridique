@@ -48,6 +48,7 @@ export const GET: RequestHandler = async ({ url }) => {
     )
     return {
       // status: 400,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: {
         error: {
           query: queryError as unknown as JSONObject,
@@ -64,5 +65,8 @@ export const GET: RequestHandler = async ({ url }) => {
     LIMIT ${limit}
   `
   ).map(({ data }) => data)
-  return { body: { structs: structs as unknown as JSONObject[] } }
+  return {
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: { structs: structs as unknown as JSONObject[] },
+  }
 }

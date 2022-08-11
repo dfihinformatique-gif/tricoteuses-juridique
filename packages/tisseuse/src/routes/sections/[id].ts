@@ -13,7 +13,10 @@ export const GET: RequestHandler = async ({ params, url }) => {
   ).map(({ data }) => data)[0]
 
   if (section === undefined) {
-    return { status: 404 }
+    return { headers: { "Access-Control-Allow-Origin": "*" }, status: 404 }
   }
-  return { body: { section: section as unknown as JSONObject } }
+  return {
+    headers: { "Access-Control-Allow-Origin": "*" },
+    body: { section: section as unknown as JSONObject },
+  }
 }

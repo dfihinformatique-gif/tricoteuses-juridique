@@ -48,6 +48,7 @@ export const GET: RequestHandler = async ({ url }) => {
     )
     return {
       // status: 400,
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: {
         error: {
           query: queryError as unknown as JSONObject,
@@ -72,8 +73,11 @@ export const GET: RequestHandler = async ({ url }) => {
           WHERE id = ${articleId}
         `
       ).map(({ data }) => data)
-      return { body: { articles: articles as unknown as JSONObject[], q } }
+      return {
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: { articles: articles as unknown as JSONObject[], q },
+      }
     }
   }
-  return { body: {} }
+  return { headers: { "Access-Control-Allow-Origin": "*" }, body: {} }
 }

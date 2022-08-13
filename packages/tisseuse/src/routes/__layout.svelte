@@ -14,6 +14,7 @@
     href?: string
     items?: MenuItemLink[]
     label: string
+    title?: string
   }
 
   interface MenuItemLink extends MenuItemBase {
@@ -27,16 +28,36 @@
   const menuItems: MenuItem[] = [
     { href: "/recherche", label: "Recherche" },
     {
-      label: "Données",
       items: [
-        { href: "/articles", label: "Articles" },
-        { href: "/eli/ids", label: "ELI ID" },
-        { href: "/eli/versions", label: "ELI versions" },
-        { href: "/sections", label: "Sections" },
-        { href: "/structs", label: "Structures" },
-        { href: "/textes", label: "Textes" },
+        { href: "/article", label: "ARTICLE" },
+        // { href: "/eli/ids", label: "ID" },
+        { href: "/jo", label: "JO" },
+        { href: "/section_ta", label: "SECTION_TA" },
+        { href: "/texte_version", label: "TEXTE_VERSION" },
+        { href: "/textelr", label: "TEXTELR" },
+        // { href: "/eli/versions", label: "VERSIONS" },
       ],
+      label: "Données",
     },
+    // {
+    //   items: [
+    //     { href: "/jo", label: "JO" },
+    //   ],
+    //   label: "JORF",
+    //   title: "Textes publiés au Journal officiel de la République française",
+    // },
+    // {
+    //   items: [
+    //     { href: "/article", label: "ARTICLE" },
+    //     // { href: "/eli/ids", label: "ID" },
+    //     { href: "/section_ta", label: "SECTION_TA" },
+    //     { href: "/texte_version", label: "TEXTE_VERSION" },
+    //     { href: "/textelr", label: "TEXTELR" },
+    //     // { href: "/eli/versions", label: "VERSIONS" },
+    //   ],
+    //   label: "LEGI",
+    //   title: "Codes, lois et règlements consolidés",
+    // },
   ]
   const title = $session.title
 </script>
@@ -51,18 +72,18 @@
         tabindex="0"
         class="dropdown-content menu rounded-box menu-compact mt-3 w-52 bg-neutral p-2 text-neutral-content shadow"
       >
-        {#each menuItems as { href, items, label }}
+        {#each menuItems as { href, items, label, title }}
           {#if href !== undefined}
-            <li><a {href}>{label}</a></li>
+            <li><a {href} {title}>{label}</a></li>
           {:else if items !== undefined}
             <li tabindex="0">
-              <span class="justify-between">
+              <span class="justify-between" {title}>
                 {label}
                 <Icon class="h-5 w-5" icon={chevronRight} />
               </span>
               <ul class="p-2 bg-neutral text-neutral-content">
                 {#each items as { href, label }}
-                  <li><a {href}>{label}</a></li>
+                  <li><a {href} {title}>{label}</a></li>
                 {/each}
               </ul>
             </li>
@@ -74,18 +95,18 @@
   </div>
   <div class="navbar-center hidden lg:flex">
     <ul class="menu menu-horizontal p-0">
-      {#each menuItems as { href, items, label }}
+      {#each menuItems as { href, items, label, title }}
         {#if href !== undefined}
-          <li><a {href}>{label}</a></li>
+          <li><a {href} {title}>{label}</a></li>
         {:else if items !== undefined}
           <li tabindex="0">
-            <span class="justify-between">
+            <span class="justify-between" {title}>
               {label}
               <Icon class="h-5 w-5" icon={chevronDown} />
             </span>
             <ul class="p-2 bg-neutral text-neutral-content">
               {#each items as { href, label }}
-                <li><a {href}>{label}</a></li>
+                <li><a {href} {title}>{label}</a></li>
               {/each}
             </ul>
           </li>

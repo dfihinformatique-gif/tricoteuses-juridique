@@ -1,22 +1,22 @@
 import type { RequestHandler } from "@sveltejs/kit"
 import type { JSONObject } from "@sveltejs/kit/types/private"
 
-import type { TexteVersion } from "$lib/data"
+import type { Textelr } from "$lib/data"
 import { db } from "$lib/server/database"
 
-export const GET: RequestHandler = async ({ params, url }) => {
-  const texte = (
-    await db<{ data: TexteVersion }[]>`
-    SELECT data FROM textes_versions
+export const GET: RequestHandler = async ({ params }) => {
+  const textelr = (
+    await db<{ data: Textelr }[]>`
+    SELECT data FROM textelr
     WHERE id = ${params.id}
   `
   ).map(({ data }) => data)[0]
 
-  if (texte === undefined) {
+  if (textelr === undefined) {
     return { headers: { "Access-Control-Allow-Origin": "*" }, status: 404 }
   }
   return {
     headers: { "Access-Control-Allow-Origin": "*" },
-    body: { texte: texte as unknown as JSONObject },
+    body: { textelr: textelr as unknown as JSONObject },
   }
 }

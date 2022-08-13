@@ -10,6 +10,7 @@ import sade from "sade"
 import { auditId, auditVersions } from "$lib/auditors/data"
 import type {
   Article,
+  Jo,
   SectionTa,
   Textelr,
   TexteVersion,
@@ -22,20 +23,11 @@ import { walkDir } from "$lib/server/file_systems"
 const xmlParser = new XMLParser({
   attributeNamePrefix: "@",
   ignoreAttributes: false,
-  stopNodes: [
-    "ARTICLE.BLOC_TEXTUEL.CONTENU",
-    "TEXTE_VERSION.ABRO.CONTENU",
-    "TEXTE_VERSION.CONTENU",
-    "TEXTE_VERSION.NOTA.CONTENU",
-    "TEXTE_VERSION.RECT.CONTENU",
-    "TEXTE_VERSION.SIGNATAIRES.CONTENU",
-    "TEXTE_VERSION.TP.CONTENU",
-    "TEXTE_VERSION.VISAS.CONTENU",
-  ],
+  stopNodes: ["ARTICLE.BLOC_TEXTUEL.CONTENU", "ARTICLE.SM.CONTENU"],
   tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
 })
 
-async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
+async function importJorf({ resume }: { resume?: string } = {}): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
 
@@ -44,7 +36,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
       await db<{ id: string }[]>`
         SELECT id
         FROM article
-        WHERE id LIKE 'LEGI%'
+        WHERE id LIKE 'JORF%'
       `
     ).map(({ id }) => id),
   )
@@ -56,12 +48,20 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
       `
     ).map(({ eli }) => eli),
   )
+  const joRemainingIds = new Set(
+    (
+      await db<{ id: string }[]>`
+        SELECT id
+        FROM jo
+      `
+    ).map(({ id }) => id),
+  )
   const sectionTaRemainingIds = new Set(
     (
       await db<{ id: string }[]>`
         SELECT id
         FROM section_ta
-        WHERE id LIKE 'LEGI%'
+        WHERE id LIKE 'JORF%'
       `
     ).map(({ id }) => id),
   )
@@ -70,16 +70,16 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
       await db<{ id: string }[]>`
         SELECT id
         FROM textelr
-        WHERE id LIKE 'LEGI%'
+        WHERE id LIKE 'JORF%'
       `
     ).map(({ id }) => id),
   )
-  const texteVersionRemainingElis = new Set(
+  const texteVersionRemainingIds = new Set(
     (
       await db<{ id: string }[]>`
         SELECT id
         FROM texte_version
-        WHERE id LIKE 'LEGI%'
+        WHERE id LIKE 'JORF%'
       `
     ).map(({ id }) => id),
   )
@@ -92,7 +92,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
     ).map(({ eli }) => eli),
   )
 
-  const dataDir = path.join("..", "dila-data", "legi")
+  const dataDir = path.join("..", "dila-data", "jorf")
   assert(await fs.pathExists(dataDir))
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
@@ -118,7 +118,15 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
       const xmlData = xmlParser.parse(xmlString)
       for (const [key, element] of Object.entries(xmlData) as [
         string,
-        Article | SectionTa | Textelr | TexteVersion | Versions | XmlHeader,
+        (
+          | Article
+          | Jo
+          | SectionTa
+          | Textelr
+          | TexteVersion
+          | Versions
+          | XmlHeader
+        ),
       ][]) {
         switch (key) {
           case "?xml": {
@@ -177,6 +185,23 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
             idRemainingElis.delete(eli)
             break
           }
+          case "JO": {
+            const jo = element as Jo
+            await db`
+              INSERT INTO jo (
+                id,
+                data
+              ) VALUES (
+                ${jo.META.META_COMMUN.ID},
+                ${db.json(jo as unknown as JSONValue)}
+              )
+              ON CONFLICT (id)
+              DO UPDATE SET
+                data = ${db.json(jo as unknown as JSONValue)}
+            `
+            joRemainingIds.delete(jo.META.META_COMMUN.ID)
+            break
+          }
           case "SECTION_TA": {
             const section = element as SectionTa
             await db`
@@ -208,7 +233,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
               DO UPDATE SET
                 data = ${db.json(version as unknown as JSONValue)}
             `
-            texteVersionRemainingElis.delete(version.META.META_COMMUN.ID)
+            texteVersionRemainingIds.delete(version.META.META_COMMUN.ID)
             break
           }
           case "TEXTELR": {
@@ -293,6 +318,13 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
         WHERE eli = ${eli}
       `
     }
+    for (const id of joRemainingIds) {
+      console.log(`Deleting JO ${id}…`)
+      await db`
+        DELETE FROM jo
+        WHERE id = ${id}
+      `
+    }
     for (const id of sectionTaRemainingIds) {
       console.log(`Deleting SECTION_TA ${id}…`)
       await db`
@@ -307,7 +339,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
         WHERE id = ${id}
       `
     }
-    for (const id of texteVersionRemainingElis) {
+    for (const id of texteVersionRemainingIds) {
       console.log(`Deleting TEXTE_VERSION ${id}…`)
       await db`
         DELETE FROM texte_version
@@ -324,14 +356,14 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
   }
 }
 
-sade("import_legi", true)
-  .describe("Import Dila's LEGI database")
+sade("import_jorf", true)
+  .describe("Import Dila's JORF database")
   .option("-r", "--resume", "Resume import at given relative file path")
   .example(
     "--resume global/eli/accord/2002/5/5/MESS0221690X/jo/article_1/versions.xml",
   )
   .action(async (options) => {
-    await importLegi(options)
+    await importJorf(options)
     process.exit(0)
   })
   .parse(process.argv)

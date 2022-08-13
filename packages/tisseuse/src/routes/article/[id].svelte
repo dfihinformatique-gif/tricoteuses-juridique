@@ -5,13 +5,13 @@
   import type { Article } from "$lib/data"
   import {
     summarizeArticleProperties,
-    summarizeLegiObject,
+    summarizeLegalObject,
   } from "$lib/summaries"
 
   export let error: unknown
   export let article: Article
 
-  const summary = summarizeLegiObject({ key: "article" }, "article", article)
+  const summary = summarizeLegalObject({ key: "article" }, "article", article)
 </script>
 
 <header class="prose my-6 max-w-full">

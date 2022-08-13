@@ -3,7 +3,7 @@ import type { RequestHandler } from "@sveltejs/kit"
 import type { JSONObject } from "@sveltejs/kit/types/private"
 
 import { auditSearchQueryContent } from "$lib/auditors/queries"
-import type { Struct } from "$lib/data"
+import type { Textelr } from "$lib/data"
 import { db } from "$lib/server/database"
 
 export function auditQuery(
@@ -58,15 +58,15 @@ export const GET: RequestHandler = async ({ url }) => {
   }
   const { limit, offset } = query
 
-  const structs = (
-    await db<{ data: Struct }[]>`
-    SELECT data FROM structs
+  const textelrArray = (
+    await db<{ data: Textelr }[]>`
+    SELECT data FROM textelr
     OFFSET ${offset}
     LIMIT ${limit}
   `
   ).map(({ data }) => data)
   return {
     headers: { "Access-Control-Allow-Origin": "*" },
-    body: { structs: structs as unknown as JSONObject[] },
+    body: { textelr: textelrArray as unknown as JSONObject[] },
   }
 }

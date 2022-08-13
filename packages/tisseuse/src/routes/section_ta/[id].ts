@@ -1,22 +1,22 @@
 import type { RequestHandler } from "@sveltejs/kit"
 import type { JSONObject } from "@sveltejs/kit/types/private"
 
-import type { Struct } from "$lib/data"
+import type { SectionTa } from "$lib/data"
 import { db } from "$lib/server/database"
 
-export const GET: RequestHandler = async ({ params, url }) => {
-  const struct = (
-    await db<{ data: Struct }[]>`
-    SELECT data FROM structs
+export const GET: RequestHandler = async ({ params }) => {
+  const sectionTa = (
+    await db<{ data: SectionTa }[]>`
+    SELECT data FROM section_ta
     WHERE id = ${params.id}
   `
   ).map(({ data }) => data)[0]
 
-  if (struct === undefined) {
+  if (sectionTa === undefined) {
     return { headers: { "Access-Control-Allow-Origin": "*" }, status: 404 }
   }
   return {
     headers: { "Access-Control-Allow-Origin": "*" },
-    body: { struct: struct as unknown as JSONObject },
+    body: { section_ta: sectionTa as unknown as JSONObject },
   }
 }

@@ -2,20 +2,25 @@
   import { TreeView, SummaryView } from "augmented-data-viewer"
 
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
-  import type { Section } from "$lib/data"
+  import type { TexteVersion } from "$lib/data"
   import {
-    summarizeSectionProperties,
-    summarizeLegiObject,
+    summarizeTexteVersionProperties,
+    summarizeLegalObject,
   } from "$lib/summaries"
 
   export let error: unknown
-  export let section: Section
+  let texteVersion: TexteVersion
+  export { texteVersion as texte_version }
 
-  const summary = summarizeLegiObject({ key: "section" }, "section", section)
+  const summary = summarizeLegalObject(
+    { key: "texte_version" },
+    "texte_version",
+    texteVersion,
+  )
 </script>
 
 <header class="prose my-6 max-w-full">
-  <h2>Section</h2>
+  <h2>TEXTE_VERSION</h2>
   {#if summary !== undefined}
     <h1>
       <SummaryView {summary} />
@@ -29,10 +34,10 @@
 
 {#if error == null}
   <TreeView
-    access={{ key: "section" }}
+    access={{ key: "texte_version" }}
     frame={false}
     open
-    summarize={summarizeSectionProperties}
-    value={section}
+    summarize={summarizeTexteVersionProperties}
+    value={texteVersion}
   />
 {/if}

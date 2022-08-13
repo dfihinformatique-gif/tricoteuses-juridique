@@ -11,22 +11,11 @@ export interface Article {
       }
     }
   }
-  CONTEXTE: {
-    TEXTE: {
-      TITRE_TXT: TitreTexte | TitreTexte[]
-    }
-  }
+  CONTEXTE: Contexte
   VERSIONS: {
     VERSION: Array<{
       "@etat": Etat
-      LIEN_ART: {
-        "@id": string
-        "@fin": string
-        "@num": string
-        "@etat": Etat
-        "@debut": string
-        "@origine": "LEGI"
-      }
+      LIEN_ART: LienArt
     }>
   }
   BLOC_TEXTUEL: {
@@ -34,36 +23,65 @@ export interface Article {
   }
 }
 
-export type EliId = string
-
-export interface EliVersions {}
+export interface Contexte {
+  TEXTE: {
+    TITRE_TXT: TitreTxt | TitreTxt[]
+  }
+}
 
 export type Etat = "MODIFIE" | "VIGUEUR"
-export type LegiObject =
-  | Article
-  | EliId
-  | EliVersions
-  | Section
-  | Struct
-  | TexteVersion
 
-export type LegiObjectType =
+export interface Jo {
+  META: {
+    META_SPEC: {
+      META_CONTENEUR: {
+        NUM: string
+        TITRE: string
+        DATE_PUBLI: string
+      }
+    }
+    META_COMMUN: MetaCommun
+  }
+}
+
+export type LegalObject =
+  | Article
+  | Jo
+  | SectionTa
+  | Textelr
+  | TexteVersion
+  | Versions
+
+export type LegalObjectType =
   | "article"
-  | "eli_id"
-  | "eli_versions"
-  | "section"
-  | "struct"
-  | "texte"
+  | "id"
+  | "jo"
+  | "section_ta"
+  | "texte_version"
+  | "textelr"
+  | "versions"
+
+export interface LienArt {
+  "@id": string
+  "@fin": string
+  "@num": string
+  "@etat": Etat
+  "@debut": string
+  "@origine": "LEGI"
+}
 
 export interface MetaCommun {
   ID: string
 }
 
-export interface Section {
+export interface SectionTa {
   ID: string
+  CONTEXTE: Contexte
+  TITRE_TA: string
+  STRUCTURE_TA: { LIEN_ART?: LienArt | LienArt[] }
 }
 
-export interface Struct {
+export interface Textelr {
   META: {
     META_COMMUN: MetaCommun
   }
@@ -71,58 +89,102 @@ export interface Struct {
 
 export interface TexteVersion {
   META: {
+    META_SPEC: {
+      META_TEXTE_VERSION: {
+        TITRE: string
+        TITREFULL: string
+      }
+    }
     META_COMMUN: MetaCommun
   }
 }
 
-export interface TitreTexte {
+export interface TitreTxt {
+  "@fin": string
+  "@debut": string
+  "@id_txt": string
+  "@c_titre_court": string
   "#text": string
 }
 
-export function assertNeverLegiObjectType(type: never): never {
-  throw `Unexpected type for LEGI object: ${type}`
-}
-
-export function pathnameFromLegiObject(
-  type: LegiObjectType,
-  object: LegiObject,
-): string {
-  switch (type) {
-    case "article":
-      return `/articles/${(object as Article).META.META_COMMUN.ID}`
-    case "eli_id":
-      return `/eli/ids/TODO`
-    case "eli_versions":
-      return `/eli/ids/TODO`
-    case "section":
-      return `/sections/${(object as Section).ID}`
-    case "struct":
-      return `/structs/${(object as Struct).META.META_COMMUN.ID}`
-    case "texte":
-      return `/textes/${(object as TexteVersion).META.META_COMMUN.ID}`
-    default:
-      assertNeverLegiObjectType(type)
+export interface Versions {
+  VERSION: {
+    "@id": string
+    "@fin": "2999-01-01"
+    "@etat": ""
+    "@debut": "2999-01-01"
   }
 }
 
-export function pathnameFromLegiObjectId(
-  type: LegiObjectType,
+export interface XmlHeader {
+  "@encoding": "UTF-8"
+  "@version": "1.0"
+}
+
+export function assertNeverLegalObjectType(type: never): never {
+  throw `Unexpected type for legal object: ${type}`
+}
+
+export function bestItemForDate<T extends { "@debut": string; "@fin": string }>(
+  items: T | T[],
+  date: string,
+): T | undefined {
+  if (!Array.isArray(items)) {
+    // Singleton
+    return items
+  }
+  for (const item of items) {
+    if (item["@debut"] <= date && date <= item["@fin"]) {
+      return item
+    }
+  }
+  return items[0]
+}
+
+export function pathnameFromLegalObject(
+  type: LegalObjectType,
+  object: LegalObject,
+): string {
+  switch (type) {
+    case "article":
+      return `/article/${(object as Article).META.META_COMMUN.ID}`
+    case "id":
+      return `/eli/ids/TODO`
+    case "jo":
+      return `/jo/${(object as Jo).META.META_COMMUN.ID}`
+    case "section_ta":
+      return `/section_ta/${(object as unknown as SectionTa).ID}`
+    case "texte_version":
+      return `/texte_version/${(object as TexteVersion).META.META_COMMUN.ID}`
+    case "textelr":
+      return `/textelr/${(object as Textelr).META.META_COMMUN.ID}`
+    case "versions":
+      return `/eli/versions/TODO`
+    default:
+      assertNeverLegalObjectType(type)
+  }
+}
+
+export function pathnameFromLegalObjectId(
+  type: LegalObjectType,
   id: string,
 ): string {
   switch (type) {
     case "article":
-      return `/articles/${id}`
-    case "eli_id":
+      return `/article/${id}`
+    case "id":
       return `/eli/ids/TODO`
-    case "eli_versions":
-      return `/eli/ids/TODO`
-    case "section":
-      return `/sections/${id}`
-    case "struct":
-      return `/structs/${id}`
-    case "texte":
-      return `/textes/${id}`
+    case "jo":
+      return `/jo/${id}`
+    case "section_ta":
+      return `/section_ta/${id}`
+    case "texte_version":
+      return `/texte_version/${id}`
+    case "textelr":
+      return `/textelr/${id}`
+    case "versions":
+      return `/eli/versions/TODO`
     default:
-      assertNeverLegiObjectType(type)
+      assertNeverLegalObjectType(type)
   }
 }

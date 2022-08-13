@@ -6,10 +6,12 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
+  import type { Article } from "$lib/data"
   import { summarizeArticleProperties } from "$lib/summaries"
 
+  let articles: Article[]
+  export { articles as article }
   export let error: unknown
-  export let articles: unknown[]
 </script>
 
 <header class="prose my-6 max-w-full">
@@ -55,7 +57,7 @@
 
 {#if error == null}
   <TreeView
-    access={{ key: "articles" }}
+    access={{ key: "article" }}
     frame={false}
     open
     summarize={summarizeArticleProperties}

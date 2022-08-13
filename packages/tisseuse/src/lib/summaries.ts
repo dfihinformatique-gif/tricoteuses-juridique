@@ -1,34 +1,45 @@
+import arrowRight from "@iconify-icons/codicon/arrow-small-right"
 import type { Access, Summarizer, Summary } from "augmented-data-viewer"
 
 import {
   type Article,
-  assertNeverLegiObjectType,
-  type LegiObject,
-  type LegiObjectType,
-  pathnameFromLegiObject,
-  pathnameFromLegiObjectId,
-  type Section,
-  type Struct,
+  assertNeverLegalObjectType,
+  bestItemForDate,
+  type Jo,
+  type LegalObject,
+  type LegalObjectType,
+  pathnameFromLegalObject,
+  pathnameFromLegalObjectId,
+  type SectionTa,
+  type Textelr,
   type TexteVersion,
+  type LienArt,
 } from "$lib/data"
 
 export const summarizeArticleProperties: Summarizer = (access, value) => {
-  if (access?.key === "article") {
-    return summarizeLegiObject(access, "article", value)
+  if (access?.key === "article" && typeof value !== "number") {
+    return summarizeLegalObject(access, "article", value)
   }
-  if (access?.access?.key === "articles") {
-    return summarizeLegiObjectToLink(access, "article", value)
+  if (typeof access?.key === "number" && access?.access?.key === "article") {
+    return summarizeLegalObjectToLink(access, "article", value)
   }
 
-  if (access?.key === "@id" && access?.access?.key === "LIEN_ART") {
-    return {
-      content: value as string,
-      href: pathnameFromLegiObjectId("article", value as string),
-      type: "link",
-    }
+  if (
+    access?.key === "@id" &&
+    (access?.access?.key === "LIEN_ART" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN_ART"))
+  ) {
+    return summarizeLienArtId(access.access, access.parent)
   }
   if (access?.key === "CONTENU") {
     return { content: value as string, type: "html" }
+  }
+  if (access?.key === "LIEN_ART" && !Array.isArray(value)) {
+    return summarizeLienArt(access, value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "LIEN_ART") {
+    return summarizeLienArt(access, value)
   }
   if (access?.access?.key === "VERSION") {
     const version = value as Article["VERSIONS"]["VERSION"][0]
@@ -60,16 +71,27 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
         ],
         type: "concatenation",
       },
-      href: pathnameFromLegiObjectId("article", lienArt["@id"]),
+      href: pathnameFromLegalObjectId("article", lienArt["@id"]),
       type: "link",
     }
   }
   return undefined
 }
 
-export function summarizeLegiObject(
+export const summarizeJoProperties: Summarizer = (access, value) => {
+  if (access?.key === "jo" && typeof value !== "number") {
+    return summarizeLegalObject(access, "jo", value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "jo") {
+    return summarizeLegalObjectToLink(access, "jo", value)
+  }
+
+  return undefined
+}
+
+export function summarizeLegalObject(
   access: Access | undefined,
-  type: LegiObjectType,
+  type: LegalObjectType,
   value: unknown,
 ): Summary | undefined {
   switch (type) {
@@ -113,70 +135,127 @@ export function summarizeLegiObject(
         type: "concatenation",
       }
     }
-    case "eli_id":
+    case "id":
       return `/eli/ids/TODO`
-    case "eli_versions":
-      return `/eli/ids/TODO`
-    case "section": {
-      const section = value as Section | undefined
-      return section?.ID
+    case "jo": {
+      const jo = value as Jo | undefined
+      return jo?.META.META_SPEC.META_CONTENEUR.TITRE
     }
-    case "struct": {
-      const struct = value as Struct | undefined
-      return struct?.META.META_COMMUN.ID
+    case "section_ta": {
+      const sectionTa = value as SectionTa | undefined
+      if (sectionTa === undefined) {
+        return undefined
+      }
+      const today = new Date().toISOString().split("T")[0]
+      return `${sectionTa.TITRE_TA} — ${
+        bestItemForDate(sectionTa.CONTEXTE.TEXTE.TITRE_TXT, today)?.["#text"]
+      }`
     }
-    case "texte": {
-      const texte = value as TexteVersion | undefined
-      return texte?.META.META_COMMUN.ID
+    case "texte_version": {
+      const texteVersion = value as TexteVersion | undefined
+      return texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL
     }
+    case "textelr": {
+      const textelr = value as Textelr | undefined
+      return textelr?.META.META_COMMUN.ID
+    }
+    case "versions":
+      return `/eli/versions/TODO`
     default:
-      assertNeverLegiObjectType(type)
+      assertNeverLegalObjectType(type)
   }
 }
 
-export function summarizeLegiObjectToLink(
+export function summarizeLegalObjectToLink(
   access: Access | undefined,
-  type: LegiObjectType,
+  type: LegalObjectType,
   value: unknown,
 ): Summary | undefined {
-  const objectSummary = summarizeLegiObject(access, type, value)
+  const objectSummary = summarizeLegalObject(access, type, value)
   return objectSummary === undefined
     ? undefined
     : {
         content: objectSummary,
-        href: pathnameFromLegiObject(type, value as LegiObject),
+        href: pathnameFromLegalObject(type, value as LegalObject),
         type: "link",
       }
 }
 
-export const summarizeSectionProperties: Summarizer = (access, value) => {
-  if (access?.key === "section") {
-    return summarizeLegiObject(access, "section", value)
+export const summarizeLienArt: Summarizer = (access, value) => {
+  const lienArt = value as LienArt | undefined
+  if (lienArt === undefined) {
+    return undefined
   }
-  if (access?.access?.key === "sections") {
-    return summarizeLegiObjectToLink(access, "section", value)
+  return {
+    content: `Article n° ${lienArt["@num"]}`,
+    href: pathnameFromLegalObjectId("article", lienArt["@id"]),
+    type: "link",
+  }
+}
+
+export const summarizeLienArtId: Summarizer = (access, value) => {
+  const lienArt = value as LienArt | undefined
+  if (lienArt === undefined) {
+    return undefined
+  }
+  return {
+    items: [
+      {
+        content: JSON.stringify(lienArt["@id"]),
+        type: "raw_data",
+      },
+      { class: "mx-1", icon: arrowRight, inline: true, type: "icon" },
+      summarizeLienArt(access, lienArt)!,
+    ],
+    type: "concatenation",
+  }
+}
+
+export const summarizeSectionTaProperties: Summarizer = (access, value) => {
+  if (access?.key === "section_ta" && typeof value !== "number") {
+    return summarizeLegalObject(access, "section_ta", value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "section_ta") {
+    return summarizeLegalObjectToLink(access, "section_ta", value)
+  }
+
+  if (
+    access?.key === "@id" &&
+    (access?.access?.key === "LIEN_ART" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN_ART"))
+  ) {
+    return summarizeLienArtId(access.access, access.parent)
+  }
+  if (access?.key === "LIEN_ART" && !Array.isArray(value)) {
+    return summarizeLienArt(access, value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "LIEN_ART") {
+    return summarizeLienArt(access, value)
+  }
+  return undefined
+}
+
+export const summarizeTextelrProperties: Summarizer = (access, value) => {
+  if (access?.key === "textelr" && typeof value !== "number") {
+    return summarizeLegalObject(access, "textelr", value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "textelr") {
+    return summarizeLegalObjectToLink(access, "textelr", value)
   }
 
   return undefined
 }
 
-export const summarizeStructProperties: Summarizer = (access, value) => {
-  if (access?.key === "struct") {
-    return summarizeLegiObject(access, "struct", value)
+export const summarizeTexteVersionProperties: Summarizer = (access, value) => {
+  if (access?.key === "texte_version" && typeof value !== "number") {
+    return summarizeLegalObject(access, "texte_version", value)
   }
-  if (access?.access?.key === "structs") {
-    return summarizeLegiObjectToLink(access, "struct", value)
-  }
-
-  return undefined
-}
-
-export const summarizeTexteProperties: Summarizer = (access, value) => {
-  if (access?.key === "texte") {
-    return summarizeLegiObject(access, "texte", value)
-  }
-  if (access?.access?.key === "textes") {
-    return summarizeLegiObjectToLink(access, "texte", value)
+  if (
+    typeof access?.key === "number" &&
+    access?.access?.key === "texte_version"
+  ) {
+    return summarizeLegalObjectToLink(access, "texte_version", value)
   }
 
   return undefined

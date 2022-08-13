@@ -6,14 +6,16 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import { summarizeSectionProperties } from "$lib/summaries"
+  import type { Textelr } from "$lib/data"
+  import { summarizeTextelrProperties } from "$lib/summaries"
 
   export let error: unknown
-  export let sections: unknown[]
+  let textelrArray: Textelr[]
+  export { textelrArray as textelr }
 </script>
 
 <header class="prose my-6 max-w-full">
-  <h1>Sections</h1>
+  <h1>TEXTELR</h1>
 </header>
 
 <!-- <form action={$page.url.pathname} class="mx-auto max-w-sm" method="get">
@@ -55,12 +57,12 @@
 
 {#if error == null}
   <TreeView
-    access={{ key: "sections" }}
+    access={{ key: "textelr" }}
     frame={false}
     open
-    summarize={summarizeSectionProperties}
-    value={sections}
+    summarize={summarizeTextelrProperties}
+    value={textelrArray}
   />
 
-  <Pagination currentPageCount={sections.length ?? 0} />
+  <Pagination currentPageCount={textelrArray.length ?? 0} />
 {/if}

@@ -1,5 +1,4 @@
 import assert from "assert"
-import dedent from "dedent-js"
 
 import { db, type Version, versionNumber } from "$lib/server/database"
 
@@ -34,55 +33,72 @@ export async function configureDatabase() {
 
   // Apply patches that must be executed before every table is created.
 
+  if (version.number < 2) {
+    await db`ALTER TABLE IF EXISTS articles RENAME TO article`
+    await db`DROP TABLE IF EXISTS eli_ids`
+    await db`DROP TABLE IF EXISTS eli_versions`
+    await db`ALTER TABLE IF EXISTS sections RENAME TO section_ta`
+    await db`ALTER TABLE IF EXISTS structs RENAME TO textelr`
+    await db`ALTER TABLE IF EXISTS textes RENAME TO texte_version`
+  }
+
   // Types
 
   // Tables
 
-  // Table: articles
+  // Table: article
   await db`
-    CREATE TABLE IF NOT EXISTS articles (
+    CREATE TABLE IF NOT EXISTS article (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL
     )
   `
 
-  // // Table: articles_autocompletions
+  // // Table: article_autocompletions
   // await `
-  //   CREATE TABLE IF NOT EXISTS articles_autocompletions (
+  //   CREATE TABLE IF NOT EXISTS article_autocompletions (
   //     autocompletion text NOT NULL,
-  //     id bigint NOT NULL REFERENCES articles(id) ON DELETE CASCADE,
+  //     id bigint NOT NULL REFERENCES article(id) ON DELETE CASCADE,
   //     weight int NOT NULL,
   //     PRIMARY KEY (id, autocompletion)
   //   )
   // `
 
-  // Table: eli_ids
+  // Table: id
   await db`
-    CREATE TABLE IF NOT EXISTS eli_ids (
-      id text PRIMARY KEY,
-      data jsonb NOT NULL
+    CREATE TABLE IF NOT EXISTS id (
+      eli text PRIMARY KEY,
+      id char(20) NOT NULL
     )
   `
 
-  // Table: eli_versions
+  // Table: jo
   await db`
-    CREATE TABLE IF NOT EXISTS eli_versions (
-      id text PRIMARY KEY,
-      data jsonb NOT NULL
-    )
-  `
-
-  // Table: sections
-  await db`
-    CREATE TABLE IF NOT EXISTS sections (
+    CREATE TABLE IF NOT EXISTS jo (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL
     )
   `
 
-  // Table: structs
+  // Table: section_ta
   await db`
-    CREATE TABLE IF NOT EXISTS structs (
+    CREATE TABLE IF NOT EXISTS section_ta (
+      id char(20) PRIMARY KEY,
+      data jsonb NOT NULL
+    )
+  `
+
+  // Table: texte_version
+  await db`
+    CREATE TABLE IF NOT EXISTS texte_version (
+      id char(20) PRIMARY KEY,
+      data jsonb NOT NULL
+    )
+  `
+
+  // Table: textelr
+  await db`
+    CREATE TABLE IF NOT EXISTS textelr (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL
     )
@@ -90,8 +106,9 @@ export async function configureDatabase() {
 
   // Table: versions
   await db`
-    CREATE TABLE IF NOT EXISTS textes_versions (
-      id char(20) PRIMARY KEY,
+    CREATE TABLE IF NOT EXISTS versions (
+      eli text PRIMARY KEY,
+      id char(20) NOT NULL,
       data jsonb NOT NULL
     )
   `
@@ -101,8 +118,8 @@ export async function configureDatabase() {
   // Add indexes once every table and column exists.
 
   // await db`
-  //   CREATE INDEX IF NOT EXISTS articles_autocompletions_trigrams_idx
-  //   ON articles_autocompletions
+  //   CREATE INDEX IF NOT EXISTS article_autocompletions_trigrams_idx
+  //   ON article_autocompletions
   //   USING GIST (autocompletion gist_trgm_ops)
   // `
 

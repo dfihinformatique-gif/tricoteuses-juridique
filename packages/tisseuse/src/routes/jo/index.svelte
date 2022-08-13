@@ -6,14 +6,16 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import { summarizeTexteProperties } from "$lib/summaries"
+  import type { Jo } from "$lib/data"
+  import { summarizeJoProperties } from "$lib/summaries"
 
   export let error: unknown
-  export let textes: unknown[]
+  let jos: Jo[]
+  export { jos as jo }
 </script>
 
 <header class="prose my-6 max-w-full">
-  <h1>Textes</h1>
+  <h1>JO</h1>
 </header>
 
 <!-- <form action={$page.url.pathname} class="mx-auto max-w-sm" method="get">
@@ -39,7 +41,7 @@
         bind:value={legislature}
       >
         <option value="">Toutes</option>
-        {#each Object.entries(Legislature) as [key, value]}
+        {#each Object.entries(Jorfslature) as [key, value]}
           {#if value !== "*"}
             <option {value}>{key}</option>
           {/if}
@@ -55,12 +57,12 @@
 
 {#if error == null}
   <TreeView
-    access={{ key: "textes" }}
+    access={{ key: "jo" }}
     frame={false}
     open
-    summarize={summarizeTexteProperties}
-    value={textes}
+    summarize={summarizeJoProperties}
+    value={jos}
   />
 
-  <Pagination currentPageCount={textes.length ?? 0} />
+  <Pagination currentPageCount={jos.length ?? 0} />
 {/if}

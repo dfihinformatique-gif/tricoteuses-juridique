@@ -60,13 +60,13 @@ export const GET: RequestHandler = async ({ url }) => {
 
   const articles = (
     await db<{ data: Article }[]>`
-    SELECT data FROM articles
+    SELECT data FROM article
     OFFSET ${offset}
     LIMIT ${limit}
   `
   ).map(({ data }) => data)
   return {
     headers: { "Access-Control-Allow-Origin": "*" },
-    body: { articles: articles as unknown as JSONObject[] },
+    body: { article: articles as unknown as JSONObject[] },
   }
 }

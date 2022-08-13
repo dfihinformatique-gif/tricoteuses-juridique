@@ -6,14 +6,16 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import { summarizeStructProperties } from "$lib/summaries"
+  import type { SectionTa } from "$lib/data"
+  import { summarizeSectionTaProperties } from "$lib/summaries"
 
   export let error: unknown
-  export let structs: unknown[]
+  let sectionTaArray: SectionTa[]
+  export { sectionTaArray as section_ta }
 </script>
 
 <header class="prose my-6 max-w-full">
-  <h1>Structures</h1>
+  <h1>SECTION_TA</h1>
 </header>
 
 <!-- <form action={$page.url.pathname} class="mx-auto max-w-sm" method="get">
@@ -55,12 +57,12 @@
 
 {#if error == null}
   <TreeView
-    access={{ key: "structs" }}
+    access={{ key: "section_ta" }}
     frame={false}
     open
-    summarize={summarizeStructProperties}
-    value={structs}
+    summarize={summarizeSectionTaProperties}
+    value={sectionTaArray}
   />
 
-  <Pagination currentPageCount={structs.length ?? 0} />
+  <Pagination currentPageCount={sectionTaArray.length ?? 0} />
 {/if}

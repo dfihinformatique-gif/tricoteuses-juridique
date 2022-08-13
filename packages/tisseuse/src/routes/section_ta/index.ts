@@ -3,7 +3,7 @@ import type { RequestHandler } from "@sveltejs/kit"
 import type { JSONObject } from "@sveltejs/kit/types/private"
 
 import { auditSearchQueryContent } from "$lib/auditors/queries"
-import type { TexteVersion } from "$lib/data"
+import type { SectionTa } from "$lib/data"
 import { db } from "$lib/server/database"
 
 export function auditQuery(
@@ -58,15 +58,15 @@ export const GET: RequestHandler = async ({ url }) => {
   }
   const { limit, offset } = query
 
-  const textes = (
-    await db<{ data: TexteVersion }[]>`
-    SELECT data FROM textes_versions
+  const sectionTaArray = (
+    await db<{ data: SectionTa }[]>`
+    SELECT data FROM section_ta
     OFFSET ${offset}
     LIMIT ${limit}
   `
   ).map(({ data }) => data)
   return {
     headers: { "Access-Control-Allow-Origin": "*" },
-    body: { textes: textes as unknown as JSONObject[] },
+    body: { section_ta: sectionTaArray as unknown as JSONObject[] },
   }
 }

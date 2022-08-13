@@ -15,7 +15,7 @@
 </script>
 
 <header class="prose my-6 max-w-full">
-  <h2>Article</h2>
+  <h2>ARTICLE</h2>
   {#if summary !== undefined}
     <h1>
       <SummaryView {summary} />

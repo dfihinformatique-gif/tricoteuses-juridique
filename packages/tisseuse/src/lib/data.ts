@@ -29,6 +29,15 @@ export interface Contexte {
   }
 }
 
+export interface DossierLegislatif {
+  META: {
+    META_COMMUN: MetaCommun
+    META_DOSSIER_LEGISLATIF: {
+      TITRE: string
+    }
+  }
+}
+
 export type Etat = "MODIFIE" | "VIGUEUR"
 
 export interface IdWrapper {
@@ -51,6 +60,7 @@ export interface Jo {
 
 export type LegalObject =
   | Article
+  | DossierLegislatif
   | IdWrapper
   | Jo
   | SectionTa
@@ -60,6 +70,7 @@ export type LegalObject =
 
 export type LegalObjectType =
   | "article"
+  | "dossier_legislatif"
   | "id"
   | "jo"
   | "section_ta"
@@ -159,6 +170,10 @@ export function pathnameFromLegalObject(
   switch (type) {
     case "article":
       return `/article/${(object as Article).META.META_COMMUN.ID}`
+    case "dossier_legislatif":
+      return `/dossier_legislatif/${
+        (object as DossierLegislatif).META.META_COMMUN.ID
+      }`
     case "id":
       return `/id/${(object as IdWrapper).eli}`
     case "jo":
@@ -183,6 +198,8 @@ export function pathnameFromLegalObjectId(
   switch (type) {
     case "article":
       return `/article/${id}`
+    case "dossier_legislatif":
+      return `/dossier_legislatif/${id}`
     case "id":
       // Here, id is an ELI.
       return `/id/{id}`

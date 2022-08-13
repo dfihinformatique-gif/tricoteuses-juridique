@@ -16,6 +16,7 @@ import {
   type TexteVersion,
   type LienArt,
   type VersionsWrapper,
+  type DossierLegislatif,
 } from "$lib/data"
 
 export const summarizeArticleProperties: Summarizer = (access, value) => {
@@ -76,6 +77,32 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
       href: pathnameFromLegalObjectId("article", lienArt["@id"]),
       type: "link",
     }
+  }
+  return undefined
+}
+
+export const summarizeDossierLegislatifProperties: Summarizer = (
+  access,
+  value,
+) => {
+  if (access?.key === "dossier_legislatif" && typeof value !== "number") {
+    return summarizeLegalObject(access, "dossier_legislatif", value)
+  }
+  if (
+    typeof access?.key === "number" &&
+    access?.access?.key === "dossier_legislatif"
+  ) {
+    return summarizeLegalObjectToLink(access, "dossier_legislatif", value)
+  }
+
+  if (access?.key === "CONTENU_DOSSIER_1") {
+    return { content: value as string, type: "html" }
+  }
+  if (access?.key === "CONTENU_DOSSIER_2") {
+    return { content: value as string, type: "html" }
+  }
+  if (access?.key === "EXPOSE_MOTIF") {
+    return { content: value as string, type: "html" }
   }
   return undefined
 }
@@ -147,6 +174,10 @@ export function summarizeLegalObject(
         ],
         type: "concatenation",
       }
+    }
+    case "dossier_legislatif": {
+      const dossierLegislatif = value as DossierLegislatif | undefined
+      return dossierLegislatif?.META.META_DOSSIER_LEGISLATIF.TITRE
     }
     case "id":
       const idWrapper = value as IdWrapper | undefined

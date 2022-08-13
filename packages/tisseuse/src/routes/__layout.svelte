@@ -30,6 +30,7 @@
     {
       items: [
         { href: "/article", label: "ARTICLE" },
+        { href: "/dossier_legislatif", label: "DOSSIER_LEGISLATIF" },
         { href: "/id", label: "ID" },
         { href: "/jo", label: "JO" },
         { href: "/section_ta", label: "SECTION_TA" },

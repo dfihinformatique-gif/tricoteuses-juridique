@@ -64,6 +64,14 @@ export async function configureDatabase() {
   //   )
   // `
 
+  // Table: dossier_legislatif
+  await db`
+    CREATE TABLE IF NOT EXISTS dossier_legislatif (
+      id char(20) PRIMARY KEY,
+      data jsonb NOT NULL
+    )
+  `
+
   // Table: id
   await db`
     CREATE TABLE IF NOT EXISTS id (

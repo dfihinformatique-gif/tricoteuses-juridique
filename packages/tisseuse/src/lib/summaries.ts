@@ -5,6 +5,7 @@ import {
   type Article,
   assertNeverLegalObjectType,
   bestItemForDate,
+  type Idcc,
   type IdWrapper,
   type Jo,
   type LegalObject,
@@ -12,6 +13,7 @@ import {
   pathnameFromLegalObject,
   pathnameFromLegalObjectId,
   type SectionTa,
+  type Textekali,
   type Textelr,
   type TexteVersion,
   type LienArt,
@@ -107,6 +109,17 @@ export const summarizeDossierLegislatifProperties: Summarizer = (
   return undefined
 }
 
+export const summarizeIdccProperties: Summarizer = (access, value) => {
+  if (access?.key === "idcc" && typeof value !== "number") {
+    return summarizeLegalObject(access, "idcc", value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "idcc") {
+    return summarizeLegalObjectToLink(access, "idcc", value)
+  }
+
+  return undefined
+}
+
 export const summarizeIdWrapperProperties: Summarizer = (access, value) => {
   if (access?.key === "id" && typeof value !== "number") {
     return summarizeLegalObject(access, "id", value)
@@ -182,6 +195,10 @@ export function summarizeLegalObject(
     case "id":
       const idWrapper = value as IdWrapper | undefined
       return idWrapper?.eli
+    case "idcc": {
+      const idcc = value as Idcc | undefined
+      return idcc?.META.META_SPEC.META_CONTENEUR.TITRE
+    }
     case "jo": {
       const jo = value as Jo | undefined
       return jo?.META.META_SPEC.META_CONTENEUR.TITRE
@@ -199,6 +216,10 @@ export function summarizeLegalObject(
     case "texte_version": {
       const texteVersion = value as TexteVersion | undefined
       return texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL
+    }
+    case "textekali": {
+      const textekali = value as Textekali | undefined
+      return textekali?.META.META_COMMUN.ID
     }
     case "textelr": {
       const textelr = value as Textelr | undefined
@@ -279,6 +300,17 @@ export const summarizeSectionTaProperties: Summarizer = (access, value) => {
   if (typeof access?.key === "number" && access?.access?.key === "LIEN_ART") {
     return summarizeLienArt(access, value)
   }
+  return undefined
+}
+
+export const summarizeTextekaliProperties: Summarizer = (access, value) => {
+  if (access?.key === "textekali" && typeof value !== "number") {
+    return summarizeLegalObject(access, "textekali", value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "textekali") {
+    return summarizeLegalObjectToLink(access, "textekali", value)
+  }
+
   return undefined
 }
 

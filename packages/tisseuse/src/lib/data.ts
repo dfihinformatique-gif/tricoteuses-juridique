@@ -38,7 +38,21 @@ export interface DossierLegislatif {
   }
 }
 
-export type Etat = "MODIFIE" | "VIGUEUR"
+export type Etat = "MODIFIE" | "PERIME" | "VIGUEUR"
+
+export interface Idcc {
+  META: {
+    META_COMMUN: MetaCommun
+    META_SPEC: {
+      META_CONTENEUR: {
+        TITRE: string
+        ETAT: Etat
+        NUM: string
+        DATE_PUBLI: string
+      }
+    }
+  }
+}
 
 export interface IdWrapper {
   eli: string
@@ -61,9 +75,11 @@ export interface Jo {
 export type LegalObject =
   | Article
   | DossierLegislatif
+  | Idcc
   | IdWrapper
   | Jo
   | SectionTa
+  | Textekali
   | Textelr
   | TexteVersion
   | VersionsWrapper
@@ -72,9 +88,11 @@ export type LegalObjectType =
   | "article"
   | "dossier_legislatif"
   | "id"
+  | "idcc"
   | "jo"
   | "section_ta"
   | "texte_version"
+  | "textekali"
   | "textelr"
   | "versions"
 
@@ -96,6 +114,27 @@ export interface SectionTa {
   CONTEXTE: Contexte
   TITRE_TA: string
   STRUCTURE_TA: { LIEN_ART?: LienArt | LienArt[] }
+}
+
+export interface Textekali {
+  META: {
+    META_COMMUN: MetaCommun
+    META_SPEC: {
+      META_TEXTE_CHRONICLE: {
+        CID: string
+        NUM: string
+        NUM_PARUTION: string
+        NUM_SEQUENCE: string
+        NOR: string
+        DATE_PUBLI: string
+        DATE_TEXTE: string
+        DERNIERE_MODIFICATION: string
+        ORIGINE_PUBLI: string
+        PAGE_DEB_PUBLI: string
+        PAGE_FIN_PUBLI: string
+      }
+    }
+  }
 }
 
 export interface Textelr {
@@ -176,12 +215,16 @@ export function pathnameFromLegalObject(
       }`
     case "id":
       return `/id/${(object as IdWrapper).eli}`
+    case "idcc":
+      return `/idcc/${(object as Idcc).META.META_COMMUN.ID}`
     case "jo":
       return `/jo/${(object as Jo).META.META_COMMUN.ID}`
     case "section_ta":
       return `/section_ta/${(object as SectionTa).ID}`
     case "texte_version":
       return `/texte_version/${(object as TexteVersion).META.META_COMMUN.ID}`
+    case "textekali":
+      return `/textekali/${(object as Textekali).META.META_COMMUN.ID}`
     case "textelr":
       return `/textelr/${(object as Textelr).META.META_COMMUN.ID}`
     case "versions":
@@ -203,12 +246,16 @@ export function pathnameFromLegalObjectId(
     case "id":
       // Here, id is an ELI.
       return `/id/{id}`
+    case "idcc":
+      return `/idcc/${id}`
     case "jo":
       return `/jo/${id}`
     case "section_ta":
       return `/section_ta/${id}`
     case "texte_version":
       return `/texte_version/${id}`
+    case "textekali":
+      return `/textekali/${id}`
     case "textelr":
       return `/textelr/${id}`
     case "versions":

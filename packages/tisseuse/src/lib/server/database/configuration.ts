@@ -80,6 +80,14 @@ export async function configureDatabase() {
     )
   `
 
+  // Table: idcc
+  await db`
+    CREATE TABLE IF NOT EXISTS idcc (
+      id char(20) PRIMARY KEY,
+      data jsonb NOT NULL
+    )
+  `
+
   // Table: jo
   await db`
     CREATE TABLE IF NOT EXISTS jo (
@@ -99,6 +107,14 @@ export async function configureDatabase() {
   // Table: texte_version
   await db`
     CREATE TABLE IF NOT EXISTS texte_version (
+      id char(20) PRIMARY KEY,
+      data jsonb NOT NULL
+    )
+  `
+
+  // Table: textekali
+  await db`
+    CREATE TABLE IF NOT EXISTS textekali (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL
     )

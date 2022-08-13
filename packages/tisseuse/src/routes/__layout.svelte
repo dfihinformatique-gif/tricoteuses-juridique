@@ -30,12 +30,12 @@
     {
       items: [
         { href: "/article", label: "ARTICLE" },
-        // { href: "/eli/ids", label: "ID" },
+        { href: "/id", label: "ID" },
         { href: "/jo", label: "JO" },
         { href: "/section_ta", label: "SECTION_TA" },
         { href: "/texte_version", label: "TEXTE_VERSION" },
         { href: "/textelr", label: "TEXTELR" },
-        // { href: "/eli/versions", label: "VERSIONS" },
+        { href: "/versions", label: "VERSIONS" },
       ],
       label: "Données",
     },

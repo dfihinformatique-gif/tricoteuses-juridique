@@ -5,6 +5,7 @@ import {
   type Article,
   assertNeverLegalObjectType,
   bestItemForDate,
+  type IdWrapper,
   type Jo,
   type LegalObject,
   type LegalObjectType,
@@ -14,6 +15,7 @@ import {
   type Textelr,
   type TexteVersion,
   type LienArt,
+  type VersionsWrapper,
 } from "$lib/data"
 
 export const summarizeArticleProperties: Summarizer = (access, value) => {
@@ -78,6 +80,17 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
   return undefined
 }
 
+export const summarizeIdWrapperProperties: Summarizer = (access, value) => {
+  if (access?.key === "id" && typeof value !== "number") {
+    return summarizeLegalObject(access, "id", value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "id") {
+    return summarizeLegalObjectToLink(access, "id", value)
+  }
+
+  return undefined
+}
+
 export const summarizeJoProperties: Summarizer = (access, value) => {
   if (access?.key === "jo" && typeof value !== "number") {
     return summarizeLegalObject(access, "jo", value)
@@ -136,7 +149,8 @@ export function summarizeLegalObject(
       }
     }
     case "id":
-      return `/eli/ids/TODO`
+      const idWrapper = value as IdWrapper | undefined
+      return idWrapper?.eli
     case "jo": {
       const jo = value as Jo | undefined
       return jo?.META.META_SPEC.META_CONTENEUR.TITRE
@@ -160,7 +174,8 @@ export function summarizeLegalObject(
       return textelr?.META.META_COMMUN.ID
     }
     case "versions":
-      return `/eli/versions/TODO`
+      const versionsWrapper = value as VersionsWrapper | undefined
+      return versionsWrapper?.eli
     default:
       assertNeverLegalObjectType(type)
   }
@@ -256,6 +271,20 @@ export const summarizeTexteVersionProperties: Summarizer = (access, value) => {
     access?.access?.key === "texte_version"
   ) {
     return summarizeLegalObjectToLink(access, "texte_version", value)
+  }
+
+  return undefined
+}
+
+export const summarizeVersionsWrapperProperties: Summarizer = (
+  access,
+  value,
+) => {
+  if (access?.key === "versions" && typeof value !== "number") {
+    return summarizeLegalObject(access, "versions", value)
+  }
+  if (typeof access?.key === "number" && access?.access?.key === "versions") {
+    return summarizeLegalObjectToLink(access, "versions", value)
   }
 
   return undefined

@@ -31,6 +31,11 @@ export interface Contexte {
 
 export type Etat = "MODIFIE" | "VIGUEUR"
 
+export interface IdWrapper {
+  eli: string
+  id: string
+}
+
 export interface Jo {
   META: {
     META_SPEC: {
@@ -46,11 +51,12 @@ export interface Jo {
 
 export type LegalObject =
   | Article
+  | IdWrapper
   | Jo
   | SectionTa
   | Textelr
   | TexteVersion
-  | Versions
+  | VersionsWrapper
 
 export type LegalObjectType =
   | "article"
@@ -116,6 +122,11 @@ export interface Versions {
   }
 }
 
+export interface VersionsWrapper {
+  eli: string
+  versions: Versions
+}
+
 export interface XmlHeader {
   "@encoding": "UTF-8"
   "@version": "1.0"
@@ -149,17 +160,17 @@ export function pathnameFromLegalObject(
     case "article":
       return `/article/${(object as Article).META.META_COMMUN.ID}`
     case "id":
-      return `/eli/ids/TODO`
+      return `/id/${(object as IdWrapper).eli}`
     case "jo":
       return `/jo/${(object as Jo).META.META_COMMUN.ID}`
     case "section_ta":
-      return `/section_ta/${(object as unknown as SectionTa).ID}`
+      return `/section_ta/${(object as SectionTa).ID}`
     case "texte_version":
       return `/texte_version/${(object as TexteVersion).META.META_COMMUN.ID}`
     case "textelr":
       return `/textelr/${(object as Textelr).META.META_COMMUN.ID}`
     case "versions":
-      return `/eli/versions/TODO`
+      return `/versions/${(object as VersionsWrapper).eli}`
     default:
       assertNeverLegalObjectType(type)
   }
@@ -173,7 +184,8 @@ export function pathnameFromLegalObjectId(
     case "article":
       return `/article/${id}`
     case "id":
-      return `/eli/ids/TODO`
+      // Here, id is an ELI.
+      return `/id/{id}`
     case "jo":
       return `/jo/${id}`
     case "section_ta":
@@ -183,7 +195,8 @@ export function pathnameFromLegalObjectId(
     case "textelr":
       return `/textelr/${id}`
     case "versions":
-      return `/eli/versions/TODO`
+      // Here, id is an ELI.
+      return `/versions/${id}`
     default:
       assertNeverLegalObjectType(type)
   }

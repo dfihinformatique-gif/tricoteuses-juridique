@@ -2,7 +2,7 @@
   import { TreeView, SummaryView } from "augmented-data-viewer"
 
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
-  import type { Jo } from "$lib/data"
+  import type { Jo } from "$lib/legal"
   import { summarizeJoProperties, summarizeLegalObject } from "$lib/summaries"
 
   export let error: unknown

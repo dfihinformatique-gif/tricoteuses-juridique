@@ -6,7 +6,7 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import type { IdWrapper } from "$lib/data"
+  import type { IdWrapper } from "$lib/legal"
   import { summarizeIdWrapperProperties } from "$lib/summaries"
 
   let idsWrapper: IdWrapper[]

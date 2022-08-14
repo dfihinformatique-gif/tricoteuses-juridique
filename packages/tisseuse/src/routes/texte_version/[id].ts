@@ -1,7 +1,7 @@
 import type { RequestHandler } from "@sveltejs/kit"
 import type { JSONObject } from "@sveltejs/kit/types/private"
 
-import type { TexteVersion } from "$lib/data"
+import type { TexteVersion } from "$lib/legal"
 import { db } from "$lib/server/database"
 
 export const GET: RequestHandler = async ({ params }) => {

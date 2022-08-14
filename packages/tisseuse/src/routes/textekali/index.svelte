@@ -6,7 +6,7 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import type { Textekali } from "$lib/data"
+  import type { Textekali } from "$lib/legal"
   import { summarizeTextekaliProperties } from "$lib/summaries"
 
   export let error: unknown

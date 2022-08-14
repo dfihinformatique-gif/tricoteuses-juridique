@@ -6,7 +6,7 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import type { Textelr } from "$lib/data"
+  import type { Textelr } from "$lib/legal"
   import { summarizeTextelrProperties } from "$lib/summaries"
 
   export let error: unknown

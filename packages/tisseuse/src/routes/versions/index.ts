@@ -3,7 +3,7 @@ import type { RequestHandler } from "@sveltejs/kit"
 import type { JSONObject } from "@sveltejs/kit/types/private"
 
 import { auditSearchQueryContent } from "$lib/auditors/queries"
-import type { VersionsWrapper } from "$lib/data"
+import type { VersionsWrapper } from "$lib/legal"
 import { db } from "$lib/server/database"
 
 export function auditQuery(

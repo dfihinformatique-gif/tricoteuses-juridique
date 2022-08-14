@@ -2,7 +2,7 @@
   import { TreeView, SummaryView } from "augmented-data-viewer"
 
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
-  import type { Article } from "$lib/data"
+  import type { Article } from "$lib/legal"
   import {
     summarizeArticleProperties,
     summarizeLegalObject,

@@ -7,7 +7,7 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
-import type { DossierLegislatif, XmlHeader } from "$lib/data"
+import type { DossierLegislatif, XmlHeader } from "$lib/legal"
 import { db } from "$lib/server/database"
 import { walkDir } from "$lib/server/file_systems"
 

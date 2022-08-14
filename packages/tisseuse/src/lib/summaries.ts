@@ -19,7 +19,7 @@ import {
   type LienArt,
   type VersionsWrapper,
   type DossierLegislatif,
-} from "$lib/data"
+} from "$lib/legal"
 
 export const summarizeArticleProperties: Summarizer = (access, value) => {
   if (access?.key === "article" && typeof value !== "number") {

@@ -6,7 +6,7 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import type { VersionsWrapper } from "$lib/data"
+  import type { VersionsWrapper } from "$lib/legal"
   import { summarizeVersionsWrapperProperties } from "$lib/summaries"
 
   let versionsWrapper: VersionsWrapper[]

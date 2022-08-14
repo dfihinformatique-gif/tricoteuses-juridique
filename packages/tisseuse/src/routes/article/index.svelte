@@ -6,7 +6,7 @@
   // import { page } from "$app/stores"
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
   import Pagination from "$lib/components/Pagination.svelte"
-  import type { Article } from "$lib/data"
+  import type { Article } from "$lib/legal"
   import { summarizeArticleProperties } from "$lib/summaries"
 
   let articles: Article[]

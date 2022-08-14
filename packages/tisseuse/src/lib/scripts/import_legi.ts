@@ -15,7 +15,7 @@ import type {
   TexteVersion,
   Versions,
   XmlHeader,
-} from "$lib/data"
+} from "$lib/legal"
 import { db } from "$lib/server/database"
 import { walkDir } from "$lib/server/file_systems"
 

@@ -2,7 +2,7 @@
   import { TreeView, SummaryView } from "augmented-data-viewer"
 
   import ErrorAlert from "$lib/components/errors/ErrorAlert.svelte"
-  import type { Idcc } from "$lib/data"
+  import type { Idcc } from "$lib/legal"
   import { summarizeIdccProperties, summarizeLegalObject } from "$lib/summaries"
 
   export let error: unknown

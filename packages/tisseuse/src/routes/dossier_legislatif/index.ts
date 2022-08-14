@@ -48,7 +48,7 @@ export const GET: RequestHandler = async ({ url }) => {
     )
     return {
       // status: 400,
-      headers: { "Access-Control-Allow-Origin": "*" },
+
       body: {
         error: {
           query: queryError as unknown as JSONObject,
@@ -66,7 +66,6 @@ export const GET: RequestHandler = async ({ url }) => {
   `
   ).map(({ data }) => data)
   return {
-    headers: { "Access-Control-Allow-Origin": "*" },
     body: {
       dossier_legislatif: dossiersLegislatifs as unknown as JSONObject[],
     },

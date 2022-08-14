@@ -13,10 +13,9 @@ export const GET: RequestHandler = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (texteVersion === undefined) {
-    return { headers: { "Access-Control-Allow-Origin": "*" }, status: 404 }
+    return { status: 404 }
   }
   return {
-    headers: { "Access-Control-Allow-Origin": "*" },
     body: { texte_version: texteVersion as unknown as JSONObject },
   }
 }

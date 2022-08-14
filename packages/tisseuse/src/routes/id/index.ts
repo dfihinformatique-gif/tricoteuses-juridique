@@ -48,7 +48,7 @@ export const GET: RequestHandler = async ({ url }) => {
     )
     return {
       // status: 400,
-      headers: { "Access-Control-Allow-Origin": "*" },
+
       body: {
         error: {
           query: queryError as unknown as JSONObject,
@@ -64,7 +64,6 @@ export const GET: RequestHandler = async ({ url }) => {
     LIMIT ${limit}
   `
   return {
-    headers: { "Access-Control-Allow-Origin": "*" },
     body: { id: idsWrapper as unknown as JSONObject[] },
   }
 }

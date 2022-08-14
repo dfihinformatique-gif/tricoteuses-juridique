@@ -9,6 +9,7 @@ export const getSession: GetSession = async () => {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
+  // Add CORS support.
   const { request } = event
   if (request.method === "OPTIONS") {
     const headers: { [name: string]: string } = {
@@ -32,5 +33,9 @@ export const handle: Handle = async ({ event, resolve }) => {
     return new Response(null, { status: 204, headers })
   }
 
-  return await resolve(event)
+  const response = await resolve(event)
+  if (response.headers.get("Content-Type")?.startsWith("application/json")) {
+    response.headers.set("Access-Control-Allow-Origin", "*")
+  }
+  return response
 }

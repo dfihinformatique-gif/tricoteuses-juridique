@@ -13,10 +13,9 @@ export const GET: RequestHandler = async ({ params }) => {
   )[0]
 
   if (versionsWrapper === undefined) {
-    return { headers: { "Access-Control-Allow-Origin": "*" }, status: 404 }
+    return { status: 404 }
   }
   return {
-    headers: { "Access-Control-Allow-Origin": "*" },
     body: { versions: versionsWrapper as unknown as JSONObject },
   }
 }

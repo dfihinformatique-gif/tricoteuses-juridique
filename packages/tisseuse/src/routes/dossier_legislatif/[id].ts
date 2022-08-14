@@ -13,10 +13,9 @@ export const GET: RequestHandler = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (dossierLegislatif === undefined) {
-    return { headers: { "Access-Control-Allow-Origin": "*" }, status: 404 }
+    return { status: 404 }
   }
   return {
-    headers: { "Access-Control-Allow-Origin": "*" },
     body: { dossier_legislatif: dossierLegislatif as unknown as JSONObject },
   }
 }

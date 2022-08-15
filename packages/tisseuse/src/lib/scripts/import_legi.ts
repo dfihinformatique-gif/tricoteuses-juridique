@@ -7,7 +7,7 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
-import { auditId, auditVersions } from "$lib/auditors/data"
+import { auditId, auditVersions } from "$lib/auditors/legal"
 import type {
   Article,
   SectionTa,

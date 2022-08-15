@@ -84,7 +84,7 @@
                 {label}
                 <Icon class="h-5 w-5" icon={chevronRight} />
               </span>
-              <ul class="p-2 bg-neutral text-neutral-content">
+              <ul class="bg-neutral p-2 text-neutral-content">
                 {#each items as { href, label }}
                   <li><a {href} {title}>{label}</a></li>
                 {/each}
@@ -107,7 +107,7 @@
               {label}
               <Icon class="h-5 w-5" icon={chevronDown} />
             </span>
-            <ul class="p-2 bg-neutral text-neutral-content">
+            <ul class="bg-neutral p-2 text-neutral-content">
               {#each items as { href, label }}
                 <li><a {href} {title}>{label}</a></li>
               {/each}

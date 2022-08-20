@@ -192,9 +192,10 @@ export function summarizeLegalObject(
       const dossierLegislatif = value as DossierLegislatif | undefined
       return dossierLegislatif?.META.META_DOSSIER_LEGISLATIF.TITRE
     }
-    case "id":
+    case "id": {
       const idWrapper = value as IdWrapper | undefined
       return idWrapper?.eli
+    }
     case "idcc": {
       const idcc = value as Idcc | undefined
       return idcc?.META.META_SPEC.META_CONTENEUR.TITRE
@@ -225,9 +226,10 @@ export function summarizeLegalObject(
       const textelr = value as Textelr | undefined
       return textelr?.META.META_COMMUN.ID
     }
-    case "versions":
+    case "versions": {
       const versionsWrapper = value as VersionsWrapper | undefined
       return versionsWrapper?.eli
+    }
     default:
       assertNeverLegalObjectType(type)
   }

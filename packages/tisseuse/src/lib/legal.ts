@@ -1,3 +1,5 @@
+import type { MenuItem } from "@tricoteuses/explorer-tools"
+
 export interface Article {
   META: {
     META_COMMUN: MetaCommun
@@ -181,6 +183,44 @@ export interface XmlHeader {
   "@encoding": "UTF-8"
   "@version": "1.0"
 }
+
+export const appMenu: MenuItem[] = [
+  { href: "/recherche", label: "Recherche" },
+  {
+    items: [
+      { href: "/article", label: "ARTICLE" },
+      { href: "/dossier_legislatif", label: "DOSSIER_LEGISLATIF" },
+      { href: "/id", label: "ID" },
+      { href: "/idcc", label: "IDCC" },
+      { href: "/jo", label: "JO" },
+      { href: "/section_ta", label: "SECTION_TA" },
+      { href: "/texte_version", label: "TEXTE_VERSION" },
+      { href: "/textekali", label: "TEXTEKALI" },
+      { href: "/textelr", label: "TEXTELR" },
+      { href: "/versions", label: "VERSIONS" },
+    ],
+    label: "Données",
+  },
+  // {
+  //   items: [
+  //     { href: "/jo", label: "JO" },
+  //   ],
+  //   label: "JORF",
+  //   title: "Textes publiés au Journal officiel de la République française",
+  // },
+  // {
+  //   items: [
+  //     { href: "/article", label: "ARTICLE" },
+  //     // { href: "/eli/ids", label: "ID" },
+  //     { href: "/section_ta", label: "SECTION_TA" },
+  //     { href: "/texte_version", label: "TEXTE_VERSION" },
+  //     { href: "/textelr", label: "TEXTELR" },
+  //     // { href: "/eli/versions", label: "VERSIONS" },
+  //   ],
+  //   label: "LEGI",
+  //   title: "Codes, lois et règlements consolidés",
+  // },
+]
 
 export function assertNeverLegalObjectType(type: never): never {
   throw `Unexpected type for legal object: ${type}`

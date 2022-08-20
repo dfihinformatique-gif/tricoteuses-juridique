@@ -1,12 +1,4 @@
-import type { GetSession, Handle } from "@sveltejs/kit"
-
-import config from "$lib/server/config"
-
-export const getSession: GetSession = async () => {
-  return {
-    title: config.title,
-  }
-}
+import type { Handle } from "@sveltejs/kit"
 
 export const handle: Handle = async ({ event, resolve }) => {
   // Add CORS support.

@@ -62,7 +62,7 @@ export const load: PageServerLoad = async ({ url }) => {
     if (articleId != null) {
       const articles = (
         await db<{ data: Article }[]>`
-          SELECT data FROM articles
+          SELECT data FROM article
           WHERE id = ${articleId}
         `
       ).map(({ data }) => data)

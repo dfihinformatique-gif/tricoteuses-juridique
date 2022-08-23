@@ -10,8 +10,7 @@
   import type { PageData } from "./$types"
 
   export let data: PageData
-
-  $: ({ articles, q } = data)
+  let { articles, q } = data
 </script>
 
 <header class="prose my-6 max-w-full">

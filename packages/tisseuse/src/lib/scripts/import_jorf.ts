@@ -23,7 +23,19 @@ import { walkDir } from "$lib/server/file_systems"
 const xmlParser = new XMLParser({
   attributeNamePrefix: "@",
   ignoreAttributes: false,
-  stopNodes: ["ARTICLE.BLOC_TEXTUEL.CONTENU", "ARTICLE.SM.CONTENU"],
+  stopNodes: [
+    "ARTICLE.BLOC_TEXTUEL.CONTENU",
+    "ARTICLE.NOTA.CONTENU",
+    "ARTICLE.SM.CONTENU",
+    "TEXTE_VERSION.ABRO.CONTENU",
+    "TEXTE_VERSION.NOTA.CONTENU",
+    "TEXTE_VERSION.NOTICE.CONTENU",
+    "TEXTE_VERSION.RECT.CONTENU",
+    "TEXTE_VERSION.SIGNATAIRES.CONTENU",
+    "TEXTE_VERSION.SM.CONTENU",
+    "TEXTE_VERSION.TP.CONTENU",
+    "TEXTE_VERSION.VISAS.CONTENU",
+  ],
   tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
 })
 

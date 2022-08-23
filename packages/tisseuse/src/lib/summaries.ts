@@ -3,22 +3,30 @@ import type { Access, Summarizer, Summary } from "augmented-data-viewer"
 
 import {
   type Article,
+  type ArticleVersion,
   assertNeverLegalObjectType,
   bestItemForDate,
+  type DossierLegislatif,
   type Idcc,
   type IdWrapper,
   type Jo,
   type LegalObject,
   type LegalObjectType,
+  type Lien,
+  type LienArt,
+  pathnameFromLegalId,
   pathnameFromLegalObject,
   pathnameFromLegalObjectId,
   type SectionTa,
   type Textekali,
   type Textelr,
+  type TextelrVersionLienTxt,
   type TexteVersion,
-  type LienArt,
+  type TitreTxt,
+  type TitreTm,
+  type Tm,
+  type TmLienTxt,
   type VersionsWrapper,
-  type DossierLegislatif,
 } from "$lib/legal"
 
 export const summarizeArticleProperties: Summarizer = (access, value) => {
@@ -29,6 +37,25 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
     return summarizeLegalObjectToLink(access, "article", value)
   }
 
+  if (access?.key === "@cid" && access?.access?.key === "TEXTE") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (
+    access?.key === "@cidtexte" &&
+    (access?.access?.key === "LIEN" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN"))
+  ) {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (
+    access?.key === "@id" &&
+    (access?.access?.key === "LIEN" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN"))
+  ) {
+    return summarizeLienId(access.access, access.parent)
+  }
   if (
     access?.key === "@id" &&
     (access?.access?.key === "LIEN_ART" ||
@@ -37,17 +64,39 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
   ) {
     return summarizeLienArtId(access.access, access.parent)
   }
+  if (
+    access?.key === "@id" &&
+    (access?.access?.key === "TITRE_TM" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "TITRE_TM"))
+  ) {
+    return summarizeTitreTmId(access.access, access.parent)
+  }
+  if (
+    access?.key === "@id_txt" &&
+    (access?.access?.key === "TITRE_TXT" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "TITRE_TXT"))
+  ) {
+    return summarizeTitreTxtIdTxt(access.access, access.parent)
+  }
   if (access?.key === "CONTENU") {
     return { content: value as string, type: "html" }
   }
-  if (access?.key === "LIEN_ART" && !Array.isArray(value)) {
-    return summarizeLienArt(access, value)
+  if (
+    (access?.key === "LIEN" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "LIEN")
+  ) {
+    return summarizeLien(access, value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "LIEN_ART") {
+  if (
+    (access?.key === "LIEN_ART" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "LIEN_ART")
+  ) {
     return summarizeLienArt(access, value)
   }
   if (access?.access?.key === "VERSION") {
-    const version = value as Article["VERSIONS"]["VERSION"][0]
+    const version = value as ArticleVersion
     const lienArt = version.LIEN_ART
     return {
       content: {
@@ -139,7 +188,59 @@ export const summarizeJoProperties: Summarizer = (access, value) => {
     return summarizeLegalObjectToLink(access, "jo", value)
   }
 
+  if (
+    (access?.key === "LIEN_TXT" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "LIEN_TXT")
+  ) {
+    return summarizeTmLienTxt(access, value)
+  }
+  if (
+    (access?.key === "TM" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "TM")
+  ) {
+    return summarizeTm(access, value)
+  }
+
   return undefined
+}
+
+export function summarizeLegalIdToLink(
+  access: Access | undefined,
+  value: unknown,
+): Summary | undefined {
+  const id = value as string | undefined
+  if (id === undefined) {
+    return undefined
+  }
+  const pathname = pathnameFromLegalId(id)
+  if (pathname === undefined) {
+    return undefined
+  }
+  return {
+    content: id,
+    href: pathname,
+    type: "link",
+  }
+}
+
+export function summarizeLegalIdToValueArrowLink(
+  access: Access | undefined,
+  value: unknown,
+): Summary | undefined {
+  const uidLinkSummary = summarizeLegalIdToLink(access, value)
+  return uidLinkSummary === undefined
+    ? undefined
+    : {
+        items: [
+          {
+            content: JSON.stringify(value),
+            type: "raw_data",
+          },
+          { class: "mx-1 mt-1", icon: arrowRight, inline: true, type: "icon" },
+          uidLinkSummary,
+        ],
+        type: "concatenation",
+      }
 }
 
 export function summarizeLegalObject(
@@ -250,6 +351,22 @@ export function summarizeLegalObjectToLink(
       }
 }
 
+export const summarizeLien: Summarizer = (access, value) => {
+  const lien = value as Lien | undefined
+  if (lien === undefined) {
+    return undefined
+  }
+  const pathname = pathnameFromLegalId(lien["@id"])
+  if (pathname === undefined) {
+    return undefined
+  }
+  return {
+    content: `${lien["@typelien"]} ${lien["@sens"]} : ${lien["#text"]}`,
+    href: pathname,
+    type: "link",
+  }
+}
+
 export const summarizeLienArt: Summarizer = (access, value) => {
   const lienArt = value as LienArt | undefined
   if (lienArt === undefined) {
@@ -273,8 +390,34 @@ export const summarizeLienArtId: Summarizer = (access, value) => {
         content: JSON.stringify(lienArt["@id"]),
         type: "raw_data",
       },
-      { class: "mx-1", icon: arrowRight, inline: true, type: "icon" },
+      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
       summarizeLienArt(access, lienArt)!,
+    ],
+    type: "concatenation",
+  }
+}
+
+export const summarizeLienId: Summarizer = (access, value) => {
+  const lien = value as Lien | undefined
+  if (lien === undefined) {
+    return undefined
+  }
+  const pathname = pathnameFromLegalId(lien["@id"])
+  if (pathname === undefined) {
+    return undefined
+  }
+  return {
+    items: [
+      {
+        content: JSON.stringify(lien["@id"]),
+        type: "raw_data",
+      },
+      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      {
+        content: lien["#text"],
+        href: pathname,
+        type: "link",
+      },
     ],
     type: "concatenation",
   }
@@ -288,6 +431,9 @@ export const summarizeSectionTaProperties: Summarizer = (access, value) => {
     return summarizeLegalObjectToLink(access, "section_ta", value)
   }
 
+  if (access?.key === "@cid" && access?.access?.key === "TEXTE") {
+    return summarizeLegalIdToLink(access, value)
+  }
   if (
     access?.key === "@id" &&
     (access?.access?.key === "LIEN_ART" ||
@@ -296,10 +442,10 @@ export const summarizeSectionTaProperties: Summarizer = (access, value) => {
   ) {
     return summarizeLienArtId(access.access, access.parent)
   }
-  if (access?.key === "LIEN_ART" && !Array.isArray(value)) {
-    return summarizeLienArt(access, value)
-  }
-  if (typeof access?.key === "number" && access?.access?.key === "LIEN_ART") {
+  if (
+    (access?.key === "LIEN_ART" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "LIEN_ART")
+  ) {
     return summarizeLienArt(access, value)
   }
   return undefined
@@ -313,7 +459,27 @@ export const summarizeTextekaliProperties: Summarizer = (access, value) => {
     return summarizeLegalObjectToLink(access, "textekali", value)
   }
 
+  if (access?.key === "CID") {
+    return summarizeLegalIdToLink(access, value)
+  }
+
   return undefined
+}
+
+export const summarizeTextelrVersionLienTxt: Summarizer = (access, value) => {
+  const lienTxt = value as TextelrVersionLienTxt | undefined
+  if (lienTxt === undefined) {
+    return undefined
+  }
+  const pathname = pathnameFromLegalId(lienTxt["@id"])
+  if (pathname === undefined) {
+    return undefined
+  }
+  return {
+    content: lienTxt["@id"],
+    href: pathname,
+    type: "link",
+  }
 }
 
 export const summarizeTextelrProperties: Summarizer = (access, value) => {
@@ -322,6 +488,27 @@ export const summarizeTextelrProperties: Summarizer = (access, value) => {
   }
   if (typeof access?.key === "number" && access?.access?.key === "textelr") {
     return summarizeLegalObjectToLink(access, "textelr", value)
+  }
+
+  if (
+    access?.key === "@id" &&
+    (access?.access?.key === "LIEN_ART" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN_ART"))
+  ) {
+    return summarizeLienArtId(access.access, access.parent)
+  }
+  if (access?.key === "CID") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (
+    (access?.key === "LIEN_ART" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "LIEN_ART")
+  ) {
+    return summarizeLienArt(access, value)
+  }
+  if (access?.key === "LIEN_TXT") {
+    return summarizeTextelrVersionLienTxt(access, value)
   }
 
   return undefined
@@ -338,7 +525,93 @@ export const summarizeTexteVersionProperties: Summarizer = (access, value) => {
     return summarizeLegalObjectToLink(access, "texte_version", value)
   }
 
+  if (access?.key === "CID") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (access?.key === "CONTENU") {
+    return { content: value as string, type: "html" }
+  }
+
   return undefined
+}
+
+export const summarizeTitreTmId: Summarizer = (access, value) => {
+  const titreTm = value as TitreTm | undefined
+  if (titreTm === undefined) {
+    return undefined
+  }
+  const pathname = pathnameFromLegalId(titreTm["@id"])
+  if (pathname === undefined) {
+    return undefined
+  }
+  return {
+    items: [
+      {
+        content: JSON.stringify(titreTm["@id"]),
+        type: "raw_data",
+      },
+      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      {
+        content: titreTm["#text"],
+        href: pathname,
+        type: "link",
+      },
+    ],
+    type: "concatenation",
+  }
+}
+
+export const summarizeTitreTxtIdTxt: Summarizer = (access, value) => {
+  const titreTxt = value as TitreTxt | undefined
+  if (titreTxt === undefined) {
+    return undefined
+  }
+  const pathname = pathnameFromLegalId(titreTxt["@id_txt"])
+  if (pathname === undefined) {
+    return undefined
+  }
+  return {
+    items: [
+      {
+        content: JSON.stringify(titreTxt["@id_txt"]),
+        type: "raw_data",
+      },
+      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      {
+        content: titreTxt["#text"],
+        href: pathname,
+        type: "link",
+      },
+    ],
+    type: "concatenation",
+  }
+}
+
+export function summarizeTm(
+  access: Access | undefined,
+  value: unknown,
+): Summary | undefined {
+  const tm = value as Tm | undefined
+  if (tm === undefined) {
+    return undefined
+  }
+  return tm.TITRE_TM
+}
+
+export const summarizeTmLienTxt: Summarizer = (access, value) => {
+  const lienTxt = value as TmLienTxt | undefined
+  if (lienTxt === undefined) {
+    return undefined
+  }
+  const pathname = pathnameFromLegalId(lienTxt["@idtxt"])
+  if (pathname === undefined) {
+    return undefined
+  }
+  return {
+    content: lienTxt["@titretxt"],
+    href: pathname,
+    type: "link",
+  }
 }
 
 export const summarizeVersionsWrapperProperties: Summarizer = (

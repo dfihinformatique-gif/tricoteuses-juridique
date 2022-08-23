@@ -1,8 +1,4 @@
 <script lang="ts">
-  throw new Error(
-    "@migration task: Add data prop (https://github.com/sveltejs/kit/discussions/5774#discussioncomment-3292707)",
-  )
-
   // import Icon from "@iconify/svelte"
   // import searchIcon from "@iconify-icons/codicon/search"
   import { TreeView } from "augmented-data-viewer"

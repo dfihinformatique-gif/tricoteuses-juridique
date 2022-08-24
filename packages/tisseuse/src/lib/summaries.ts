@@ -14,6 +14,7 @@ import {
   type LegalObjectType,
   type Lien,
   type LienArt,
+  type LienSectionTa,
   pathnameFromLegalId,
   pathnameFromLegalObject,
   pathnameFromLegalObjectId,
@@ -261,7 +262,7 @@ export function summarizeLegalObject(
       ]
       return {
         items: [
-          `Article ${metaArticle.TYPE} ${metaArticle.ETAT} n° ${metaArticle.NUM}, en vigueur`,
+          `Article ${metaArticle.NUM} ${metaArticle.TYPE} ${metaArticle.ETAT}, en vigueur`,
           ...(metaArticle.DATE_FIN === "2999-01-01"
             ? ([
                 " depuis le ",
@@ -373,7 +374,7 @@ export const summarizeLienArt: Summarizer = (access, value) => {
     return undefined
   }
   return {
-    content: `Article n° ${lienArt["@num"]}`,
+    content: `Article ${lienArt["@num"]}`,
     href: pathnameFromLegalObjectId("article", lienArt["@id"]),
     type: "link",
   }
@@ -423,6 +424,36 @@ export const summarizeLienId: Summarizer = (access, value) => {
   }
 }
 
+export const summarizeLienSectionTa: Summarizer = (access, value) => {
+  const lienSectionTa = value as LienSectionTa | undefined
+  if (lienSectionTa === undefined) {
+    return undefined
+  }
+  return {
+    content: lienSectionTa["#text"],
+    href: pathnameFromLegalObjectId("section_ta", lienSectionTa["@id"]),
+    type: "link",
+  }
+}
+
+export const summarizeLienSectionTaId: Summarizer = (access, value) => {
+  const lienSectionTa = value as LienSectionTa | undefined
+  if (lienSectionTa === undefined) {
+    return undefined
+  }
+  return {
+    items: [
+      {
+        content: JSON.stringify(lienSectionTa["@id"]),
+        type: "raw_data",
+      },
+      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      summarizeLienSectionTa(access, lienSectionTa)!,
+    ],
+    type: "concatenation",
+  }
+}
+
 export const summarizeSectionTaProperties: Summarizer = (access, value) => {
   if (access?.key === "section_ta" && typeof value !== "number") {
     return summarizeLegalObject(access, "section_ta", value)
@@ -435,6 +466,14 @@ export const summarizeSectionTaProperties: Summarizer = (access, value) => {
     return summarizeLegalIdToLink(access, value)
   }
   if (
+    access?.key === "@cid" &&
+    (access?.access?.key === "LIEN_SECTION_TA" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN_SECTION_TA"))
+  ) {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (
     access?.key === "@id" &&
     (access?.access?.key === "LIEN_ART" ||
       (typeof access?.access?.key === "number" &&
@@ -443,10 +482,25 @@ export const summarizeSectionTaProperties: Summarizer = (access, value) => {
     return summarizeLienArtId(access.access, access.parent)
   }
   if (
+    access?.key === "@id" &&
+    (access?.access?.key === "LIEN_SECTION_TA" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN_SECTION_TA"))
+  ) {
+    return summarizeLienSectionTaId(access.access, access.parent)
+  }
+  if (
     (access?.key === "LIEN_ART" && !Array.isArray(value)) ||
     (typeof access?.key === "number" && access?.access?.key === "LIEN_ART")
   ) {
     return summarizeLienArt(access, value)
+  }
+  if (
+    (access?.key === "LIEN_SECTION_TA" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" &&
+      access?.access?.key === "LIEN_SECTION_TA")
+  ) {
+    return summarizeLienSectionTa(access, value)
   }
   return undefined
 }
@@ -491,12 +545,28 @@ export const summarizeTextelrProperties: Summarizer = (access, value) => {
   }
 
   if (
+    access?.key === "@cid" &&
+    (access?.access?.key === "LIEN_SECTION_TA" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN_SECTION_TA"))
+  ) {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (
     access?.key === "@id" &&
     (access?.access?.key === "LIEN_ART" ||
       (typeof access?.access?.key === "number" &&
         access?.access?.access?.key === "LIEN_ART"))
   ) {
     return summarizeLienArtId(access.access, access.parent)
+  }
+  if (
+    access?.key === "@id" &&
+    (access?.access?.key === "LIEN_SECTION_TA" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN_SECTION_TA"))
+  ) {
+    return summarizeLienSectionTaId(access.access, access.parent)
   }
   if (access?.key === "CID") {
     return summarizeLegalIdToLink(access, value)
@@ -506,6 +576,13 @@ export const summarizeTextelrProperties: Summarizer = (access, value) => {
     (typeof access?.key === "number" && access?.access?.key === "LIEN_ART")
   ) {
     return summarizeLienArt(access, value)
+  }
+  if (
+    (access?.key === "LIEN_SECTION_TA" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" &&
+      access?.access?.key === "LIEN_SECTION_TA")
+  ) {
+    return summarizeLienSectionTa(access, value)
   }
   if (access?.key === "LIEN_TXT") {
     return summarizeTextelrVersionLienTxt(access, value)

@@ -140,6 +140,17 @@ export interface LienArt {
   "@origine": "LEGI"
 }
 
+export interface LienSectionTa {
+  "@id": string
+  "@cid": string
+  "@fin": string
+  "@niv": string
+  "@url": string
+  "@etat": Etat
+  "@debut": string
+  "#text": string
+}
+
 export interface MetaCommun {
   ID: string
 }
@@ -165,6 +176,7 @@ export interface SectionTa {
   TITRE_TA: string
   STRUCTURE_TA: {
     LIEN_ART?: LienArt | LienArt[]
+    LIEN_SECTION_TA?: LienSectionTa | LienSectionTa[]
   }
 }
 
@@ -186,6 +198,7 @@ export interface Textelr {
   }
   STRUCT: {
     LIEN_ART?: LienArt | LienArt[]
+    LIEN_SECTION_TA?: LienSectionTa | LienSectionTa[]
   }
   VERSIONS: {
     VERSION: TextelrVersion | TextelrVersion[]
@@ -293,7 +306,7 @@ export const appMenu: MenuItem[] = [
   {
     items: [
       { href: "/idcc", label: "Accords de branche et conventions collectives" },
-      { href: "/texte_version", label: "Codes, lois et règlements" },
+      { href: "/textes", label: "Codes, lois et règlements" },
       { href: "/dossier_legislatif", label: "Dossiers législatifs" },
       { href: "/jo", label: "Journal officiel" },
     ],
@@ -355,36 +368,34 @@ export function bestItemForDate<T extends { "@debut": string; "@fin": string }>(
   return items[0]
 }
 
+export function menuItemsFromLegalId(
+  id: string | undefined | null,
+): MenuItem[] | undefined {
+  if (id == null) {
+    return undefined
+  }
+  const rootType = rootTypeFromLegalId(id)
+  if (rootType === undefined) {
+    return undefined
+  }
+  switch (rootType) {
+    case "texte_version":
+      return [
+        { href: `/textes/${id}`, label: "Présentation" },
+        { href: `/texte_version/${id}`, label: "TEXTE_VERSION" },
+        { href: `/textelr/${id}`, label: "TEXTELR" },
+      ]
+    default:
+      return undefined
+  }
+}
+
 export function pathnameFromLegalId(id: string): string | undefined {
-  if (id.match(/^[A-Z]{4}ARTI/) !== null) {
-    return `/article/${id}`
+  const rootType = rootTypeFromLegalId(id)
+  if (rootType === undefined) {
+    return undefined
   }
-  if (id.match(/^[A-Z]{4}DOLE/) !== null) {
-    return `/dossier_legislatif/${id}`
-  }
-  if (id.match(/^KALICONT/) !== null) {
-    return `/idcc/${id}`
-  }
-  if (id.match(/^JORFCONT/) !== null) {
-    return `/jo/${id}`
-  }
-  if (id.match(/^[A-Z]{4}SCTA/) !== null) {
-    return `/section_ta/${id}`
-  }
-  if (id.match(/^[A-Z]{4}TEXT/) !== null) {
-    return `/texte_version/${id}`
-  }
-  // TODO: Ce test est redondant avec le précédent (pour KALITEXT).
-  // => Trouver quel lien mettre par défaut.
-  // if (id.match(/^KALITEXT/) !== null) {
-  //   return `/textekali/${id}`
-  // }
-  // TODO: Ce test est redondant avec le précédent (pour JORFTEXT & LEGITEXT).
-  // => Trouver quel lien mettre par défaut.
-  // if (id.match(/^[A-Z]{4}TEXT/) !== null) {
-  //   return `/textelr/${id}`
-  // }
-  return undefined
+  return `/${rootType}/${id}`
 }
 
 export function pathnameFromLegalObject(
@@ -449,4 +460,29 @@ export function pathnameFromLegalObjectId(
     default:
       assertNeverLegalObjectType(type)
   }
+}
+
+export function rootTypeFromLegalId(id: string): LegalObjectType | undefined {
+  if (!id) {
+    return undefined
+  }
+  if (id.match(/^[A-Z]{4}ARTI/) !== null) {
+    return "article"
+  }
+  if (id.match(/^[A-Z]{4}DOLE/) !== null) {
+    return "dossier_legislatif"
+  }
+  if (id.match(/^KALICONT/) !== null) {
+    return "idcc"
+  }
+  if (id.match(/^JORFCONT/) !== null) {
+    return "jo"
+  }
+  if (id.match(/^[A-Z]{4}SCTA/) !== null) {
+    return "section_ta"
+  }
+  if (id.match(/^[A-Z]{4}TEXT/) !== null) {
+    return "texte_version"
+  }
+  throw new Error(`Unexpected legal ID: "${id}"`)
 }

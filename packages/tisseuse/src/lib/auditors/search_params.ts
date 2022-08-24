@@ -57,7 +57,7 @@ export function auditLimitSearchParam(
         (value: number) => value <= 100,
         "Value must be less than or equal to 100",
       ),
-      auditSetNullish(10),
+      auditSetNullish(20),
     ),
   )
 }

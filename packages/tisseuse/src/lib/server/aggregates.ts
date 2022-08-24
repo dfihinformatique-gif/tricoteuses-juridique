@@ -1,20 +1,24 @@
 import { iterArrayOrSingleton } from "@tricoteuses/explorer-tools"
 
-import type { Follow } from "$lib/aggregates"
-import type { Article, Lien } from "$lib/legal"
+import type { Aggregate, Follow } from "$lib/aggregates"
+import {
+  rootTypeFromLegalId,
+  type Article,
+  type LegalObjectType,
+  type SectionTa,
+  type Textelr,
+  type TexteVersion,
+} from "$lib/legal"
 import { db } from "$lib/server/database"
-
-export interface Aggregate {
-  article?: { [id: string]: Article }
-  id?: string
-  ids?: string[]
-}
 
 export class Aggregator {
   article: { [id: string]: Article } = {}
   follow: Set<Follow>
-  requestedIds: Set<string> = new Set()
-  visitedIds: Set<string> = new Set()
+  requestedTypeAndIds: Set<TypeAndId> = new Set()
+  section_ta: { [id: string]: SectionTa } = {}
+  texte_version: { [id: string]: TexteVersion } = {}
+  textelr: { [id: string]: Textelr } = {}
+  visitedTypeAndIds: Set<TypeAndId> = new Set()
 
   constructor(follow: Iterable<Follow>) {
     this.follow = new Set(follow)
@@ -33,46 +37,135 @@ export class Aggregator {
     }
   }
 
-  addToVisitedIds(ids: string[]) {
-    for (const id of ids) {
-      this.visitedIds.add(id)
+  addSectionTa(sectionTa: SectionTa): void {
+    const id = sectionTa.ID
+    this.section_ta[id] = sectionTa
+
+    if (this.follow.has("STRUCTURE_TA.LIEN_ART.@id")) {
+      for (const lien of iterArrayOrSingleton(
+        sectionTa.STRUCTURE_TA.LIEN_ART,
+      )) {
+        this.requestId(lien["@id"])
+      }
+    }
+
+    if (this.follow.has("STRUCTURE_TA.LIEN_SECTION_TA.@id")) {
+      for (const lien of iterArrayOrSingleton(
+        sectionTa.STRUCTURE_TA.LIEN_SECTION_TA,
+      )) {
+        this.requestId(lien["@id"])
+      }
     }
   }
 
-  deleteFromRequestedIds(ids: string[]) {
-    for (const id of ids) {
-      this.requestedIds.delete(id)
+  addTextelr(textelr: Textelr): void {
+    const id = textelr.META.META_COMMUN.ID
+    this.textelr[id] = textelr
+
+    if (this.follow.has("STRUCT.LIEN_ART.@id")) {
+      for (const lien of iterArrayOrSingleton(textelr.STRUCT.LIEN_ART)) {
+        this.requestId(lien["@id"])
+      }
+    }
+
+    if (this.follow.has("STRUCT.LIEN_SECTION_TA.@id")) {
+      for (const lien of iterArrayOrSingleton(textelr.STRUCT.LIEN_SECTION_TA)) {
+        this.requestId(lien["@id"])
+      }
+    }
+  }
+
+  addTexteVersion(texteVersion: TexteVersion): void {
+    const id = texteVersion.META.META_COMMUN.ID
+    this.texte_version[id] = texteVersion
+
+    if (this.follow.has("TEXTELR")) {
+      this.requestTypeAndId(["textelr", id])
+    }
+  }
+
+  addToVisitedTypeAndIds(typeAndIds: TypeAndId[]) {
+    for (const typeAndId of typeAndIds) {
+      this.visitedTypeAndIds.add(typeAndId)
+    }
+  }
+
+  deleteFromRequestedTypeAndIds(typeAndIds: TypeAndId[]) {
+    for (const typeAndId of typeAndIds) {
+      this.requestedTypeAndIds.delete(typeAndId)
     }
   }
 
   async getAll(): Promise<void> {
     while (true) {
-      if (this.requestedIds.size === 0) {
+      if (this.requestedTypeAndIds.size === 0) {
         break
       }
-      console.log("this.requestedIds.size", this.requestedIds.size)
+      console.log(
+        "this.requestedTypeAndIds.size",
+        this.requestedTypeAndIds.size,
+      )
 
       {
-        const articleIds = [...this.requestedIds].filter(
-          (id) => id.match(/^[A-Z]{4}ARTI/) !== null,
+        const articleTypeAndIds = [...this.requestedTypeAndIds].filter(
+          ([type]) => type === "article",
         )
-        if (articleIds.length > 0) {
-          this.deleteFromRequestedIds(articleIds)
+        if (articleTypeAndIds.length > 0) {
+          this.deleteFromRequestedTypeAndIds(articleTypeAndIds)
           for (const { data } of await db<{ id: string; data: Article }[]>`
               SELECT id, data FROM article
-              WHERE id IN ${db(articleIds)}
+              WHERE id IN ${db(articleTypeAndIds.map(([, id]) => id))}
             `) {
             this.addArticle(data)
           }
-          this.addToVisitedIds(articleIds)
+          this.addToVisitedTypeAndIds(articleTypeAndIds)
+        }
+      }
+
+      {
+        const sectionTaTypeAndIds = [...this.requestedTypeAndIds].filter(
+          ([type]) => type === "section_ta",
+        )
+        if (sectionTaTypeAndIds.length > 0) {
+          this.deleteFromRequestedTypeAndIds(sectionTaTypeAndIds)
+          for (const { data } of await db<{ id: string; data: SectionTa }[]>`
+              SELECT id, data FROM section_ta
+              WHERE id IN ${db(sectionTaTypeAndIds.map(([, id]) => id))}
+            `) {
+            this.addSectionTa(data)
+          }
+          this.addToVisitedTypeAndIds(sectionTaTypeAndIds)
+        }
+      }
+
+      {
+        const textelrTypeAndIds = [...this.requestedTypeAndIds].filter(
+          ([type]) => type === "textelr",
+        )
+        if (textelrTypeAndIds.length > 0) {
+          this.deleteFromRequestedTypeAndIds(textelrTypeAndIds)
+          for (const { data } of await db<{ id: string; data: Textelr }[]>`
+              SELECT id, data FROM textelr
+              WHERE id IN ${db(textelrTypeAndIds.map(([, id]) => id))}
+            `) {
+            this.addTextelr(data)
+          }
+          this.addToVisitedTypeAndIds(textelrTypeAndIds)
         }
       }
     }
   }
 
   requestId(id: string): void {
-    if (!this.visitedIds.has(id)) {
-      this.requestedIds.add(id)
+    const rootType = rootTypeFromLegalId(id)
+    if (rootType !== undefined) {
+      return this.requestTypeAndId([rootType, id])
+    }
+  }
+
+  requestTypeAndId(typeAndId: TypeAndId): void {
+    if (!this.visitedTypeAndIds.has(typeAndId)) {
+      this.requestedTypeAndIds.add(typeAndId)
     }
   }
 
@@ -81,6 +174,17 @@ export class Aggregator {
     if (Object.keys(this.article).length > 0) {
       json.article = this.article
     }
+    if (Object.keys(this.section_ta).length > 0) {
+      json.section_ta = this.section_ta
+    }
+    if (Object.keys(this.texte_version).length > 0) {
+      json.texte_version = this.texte_version
+    }
+    if (Object.keys(this.textelr).length > 0) {
+      json.textelr = this.textelr
+    }
     return json
   }
 }
+
+export type TypeAndId = [LegalObjectType, string]

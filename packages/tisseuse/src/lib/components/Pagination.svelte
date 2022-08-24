@@ -38,7 +38,17 @@
 
   function newPaginationUrl(
     pathname: string,
-    query: Partial<PaginationQuery> | { [key: string]: string },
+    query:
+      | Partial<PaginationQuery>
+      | {
+          [key: string]:
+            | boolean
+            | number
+            | string
+            | undefined
+            | null
+            | Array<boolean | number | string | undefined | null>
+        },
     { limit, offset }: { limit?: number; offset?: number } = {},
   ) {
     query = { ...query }
@@ -53,10 +63,20 @@
       delete query.offset
     }
     const search = new URLSearchParams(
-      Object.entries(query).map(([key, value]) => [
-        key,
-        typeof value === "number" ? value.toString() : value,
-      ]),
+      Object.entries(query).reduce((couples, [key, value]) => {
+        if (value != null) {
+          if (Array.isArray(value)) {
+            for (const item of value) {
+              if (item != null) {
+                couples.push([key, item.toString()])
+              }
+            }
+          } else {
+            couples.push([key, value.toString()])
+          }
+        }
+        return couples
+      }, [] as Array<[string, string]>),
     ).toString()
     return search ? `${pathname}?${search}` : pathname
   }

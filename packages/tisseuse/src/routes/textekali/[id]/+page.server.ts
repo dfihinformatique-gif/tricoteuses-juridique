@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (textekali === undefined) {
-    throw error(404, `Texte KALI ${params.id} non trouvé`)
+    throw error(404, `TEXTEKALI ${params.id} non trouvé`)
   }
   return { textekali }
 }

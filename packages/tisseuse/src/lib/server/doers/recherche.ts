@@ -1,13 +1,13 @@
 import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
-import type { Follow } from "$lib/aggregates"
+import type { Aggregate, Follow } from "$lib/aggregates"
 import {
   auditFollowSearchParams,
   auditQSearchParam,
 } from "$lib/auditors/search_params"
 import type { Article } from "$lib/legal"
-import { type Aggregate, Aggregator } from "$lib/server/aggregates"
+import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/database"
 
 export function auditSearchParams(
@@ -41,15 +41,15 @@ export function auditSearchParams(
 export const doGetRecherche = async (
   url: URL,
 ): Promise<
-  | (Aggregate & {
-      q: string
-    })
-  | null
+  Aggregate & {
+    follow: Follow[]
+    q?: string
+  }
 > => {
   const [query, queryError] = auditSearchParams(
     cleanAudit,
     url.searchParams,
-  ) as [{ follow: Follow[]; q?: string }, unknown]
+  ) as [{ follow: Set<Follow>; q?: string }, unknown]
   if (queryError !== null) {
     console.error(
       `Error in ${url.pathname} query:\n${JSON.stringify(
@@ -62,6 +62,8 @@ export const doGetRecherche = async (
   }
   const { follow, q } = query
 
+  const aggregator = new Aggregator(follow)
+  let id: string | undefined = undefined
   if (q !== undefined) {
     // https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006308296/
     // https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006308296/1983-12-30/
@@ -69,23 +71,25 @@ export const doGetRecherche = async (
     // https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000036456533
     // https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000036456533/2018-01-01
     // https://www.legifrance.gouv.fr/loda/id/LEGIARTI000006317314/1983-12-30
-    const articleId = q.match(/LEGIARTI\d+/)?.[0]
-    if (articleId != null) {
+    id = q.match(/LEGIARTI\d+/)?.[0]
+    if (id != null) {
       const article = (
         await db<{ data: Article }[]>`
           SELECT data FROM article
-          WHERE id = ${articleId}
-          LIMIT 1
+          WHERE id = ${id}
         `
       ).map(({ data }) => data)[0]
       if (article !== undefined) {
-        const aggregator = new Aggregator(follow)
         aggregator.addArticle(article)
-        await aggregator.getAll()
-
-        return { ...aggregator.toJson(), id: article.META.META_COMMUN.ID, q }
       }
     }
   }
-  return null
+  await aggregator.getAll()
+
+  return {
+    ...aggregator.toJson(),
+    follow: [...follow],
+    id,
+    q,
+  }
 }

@@ -16,7 +16,7 @@
   {#each [...iterArrayOrSingleton(textelr.STRUCT.LIEN_ART)] as lienArt}
     {@const article = data.article?.[lienArt["@id"]]}
     {#if article !== undefined}
-      <ArticleView {article} {data} level={level + 1} />
+      <ArticleView {article} level={level + 1} />
     {/if}
   {/each}
 {:else if textelr.STRUCT.LIEN_ART !== undefined}

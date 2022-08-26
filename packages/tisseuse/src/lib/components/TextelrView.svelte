@@ -4,7 +4,7 @@
   import type { Aggregate } from "$lib/aggregates"
   import ArticleView from "$lib/components/ArticleView.svelte"
   import SectionTaView from "$lib/components/SectionTaView.svelte"
-  import type { Textelr } from "$lib/legal"
+  import { pathnameFromLegalId, type Textelr } from "$lib/legal"
 
   export let data: Aggregate
   export let level = 1
@@ -23,7 +23,12 @@
   <ul class="inline">
     {#each [...iterArrayOrSingleton(textelr.STRUCT.LIEN_ART)] as lienArt}
       <li class="inline after:content-[',_'] after:last:content-['']">
-        Article {lienArt["@num"]}
+        <a
+          class="link link-hover link-primary"
+          href={pathnameFromLegalId(lienArt["@id"])}
+        >
+          Article {lienArt["@num"]}
+        </a>
       </li>
     {/each}
   </ul>

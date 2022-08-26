@@ -1,6 +1,9 @@
 <script lang="ts">
   import { TreeView, SummaryView } from "augmented-data-viewer"
 
+  import { goto } from "$app/navigation"
+  import { page } from "$app/stores"
+  import type { Follow } from "$lib/aggregates"
   import IdPagesSwitcher from "$lib/components/IdPagesSwitcher.svelte"
   import TexteVersionView from "$lib/components/TexteVersionView.svelte"
   import { summarizeLegalObject } from "$lib/summaries"
@@ -9,17 +12,43 @@
 
   export let data: PageData
 
+  let follow = data.follow
   let showArticles = false
   let showRawData = false
 
   $: id = data.id!
   $: texteVersion = data.texte_version![id]
+  $: url = $page.url
 
   $: summary = summarizeLegalObject(
     { key: "texte_version" },
     "texte_version",
     texteVersion,
   )
+
+  $: if (
+    showArticles &&
+    !(["STRUCT.LIEN_ART.@id", "STRUCTURE_TA.LIEN_ART.@id"] as Follow[]).every(
+      (aFollow) => follow.includes(aFollow),
+    )
+  ) {
+    const newFollow = new Set(follow)
+    for (const aFollow of [
+      "STRUCT.LIEN_ART.@id",
+      "STRUCTURE_TA.LIEN_ART.@id",
+    ] as Follow[]) {
+      newFollow.add(aFollow)
+    }
+    const searchParams = new URLSearchParams(url.search)
+    searchParams.delete("follow")
+    for (const aFollow of [...newFollow].sort()) {
+      searchParams.append("follow", aFollow)
+    }
+    goto(new URL(`${url.pathname}?${searchParams.toString()}`, url), {
+      keepfocus: true,
+      noscroll: true,
+    })
+  }
 </script>
 
 <IdPagesSwitcher {id} />

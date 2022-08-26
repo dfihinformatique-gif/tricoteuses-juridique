@@ -33,6 +33,22 @@ export function auditFollowSearchParams(
   )
 }
 
+export function auditFollowWithFalseSearchParams(
+  audit: Audit,
+  data: { [key: string]: unknown },
+  errors: { [key: string]: unknown },
+  remainingKeys: Set<string>,
+): void {
+  audit.attribute(
+    data,
+    "follow",
+    true,
+    errors,
+    remainingKeys,
+    auditSearchParamsOptionsSet([...allFollowsMutable, "false"]),
+  )
+}
+
 export function auditLimitSearchParam(
   audit: Audit,
   data: { [key: string]: unknown },

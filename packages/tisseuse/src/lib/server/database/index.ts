@@ -14,7 +14,7 @@ export const db = postgres({
   port: config.db.port,
   user: config.db.user,
 })
-export const versionNumber = 2
+export const versionNumber = 3
 
 /// Check that database exists and is up to date.
 export async function checkDb(): Promise<void> {

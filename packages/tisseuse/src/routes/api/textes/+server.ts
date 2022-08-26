@@ -1,5 +1,11 @@
-import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
+import {
+  type Audit,
+  auditSetNullish,
+  auditTrimString,
+  cleanAudit,
+} from "@auditors/core"
 import { error } from "@sveltejs/kit"
+import type { PendingQuery, Row } from "postgres"
 
 import type { Follow } from "$lib/aggregates"
 import {
@@ -7,10 +13,12 @@ import {
   auditLimitSearchParam,
   auditOffsetSearchParam,
   auditQSearchParam,
+  auditSingleton,
 } from "$lib/auditors/search_params"
 import type { TexteVersion } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/database"
+import { joinSqlClauses } from "$lib/server/sql"
 
 import type { RequestHandler } from "./$types"
 
@@ -38,6 +46,14 @@ export function auditSearchParams(
 
   auditFollowSearchParams(audit, data, errors, remainingKeys)
   auditLimitSearchParam(audit, data, errors, remainingKeys)
+  audit.attribute(
+    data,
+    "nature",
+    true,
+    errors,
+    remainingKeys,
+    auditSingleton(auditTrimString),
+  )
   auditOffsetSearchParam(audit, data, errors, remainingKeys)
   auditQSearchParam(audit, data, errors, remainingKeys)
 
@@ -54,6 +70,7 @@ export const GET: RequestHandler = async ({ url }) => {
       limit: number
       offset: number
       q?: string
+      nature?: string
     },
     unknown,
   ]
@@ -67,13 +84,47 @@ export const GET: RequestHandler = async ({ url }) => {
     )
     throw error(400, JSON.stringify(queryError, null, 2))
   }
-  const { follow, limit, offset, q } = query
+  const { follow, limit, nature, offset, q } = query
+
+  const joinClauses: Array<PendingQuery<Row[]>> = []
+  const orderByClauses: Array<PendingQuery<Row[]>> = []
+  const selectClauses: Array<PendingQuery<Row[]>> = [db`data`]
+  const whereClauses: Array<PendingQuery<Row[]>> = []
+
+  if (nature !== undefined) {
+    whereClauses.push(db`nature = ${nature}`)
+  }
+  if (q !== undefined) {
+    joinClauses.push(db`
+      CROSS JOIN (
+        SELECT plainto_tsquery('french', ${q}) AS query
+      ) AS constants
+    `)
+    orderByClauses.push(db`rank DESC`)
+    selectClauses.push(db`ts_rank_cd(text_search, query) AS rank`)
+    whereClauses.push(db`query @@ text_search`)
+  }
+
+  const joinClause = joinSqlClauses(db``, joinClauses)
+  const orderByClause =
+    orderByClauses.length > 0
+      ? db`ORDER BY ${joinSqlClauses(db`,`, orderByClauses)}`
+      : db``
+  const selectClause = joinSqlClauses(db`,`, selectClauses)
+  const whereClause =
+    whereClauses.length > 0
+      ? db`WHERE ${joinSqlClauses(db`AND`, whereClauses)}`
+      : db``
+
   const texteVersionArray = (
     await db<{ data: TexteVersion }[]>`
-    SELECT data FROM texte_version
-    OFFSET ${offset}
-    LIMIT ${limit}
-  `
+      SELECT ${db`${selectClause}`} FROM texte_version
+      ${db`${joinClause}`}
+      ${db`${whereClause}`}
+      ${db`${orderByClause}`}
+      OFFSET ${offset}
+      LIMIT ${limit}
+    `
   ).map(({ data }) => data)
 
   const aggregator = new Aggregator(follow)
@@ -91,6 +142,7 @@ export const GET: RequestHandler = async ({ url }) => {
           (texteVersion) => texteVersion.META.META_COMMUN.ID,
         ),
         limit,
+        nature,
         offset,
         q,
       },

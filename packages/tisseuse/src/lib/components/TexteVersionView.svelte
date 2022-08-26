@@ -13,7 +13,7 @@
 
   $: id = texteVersion.META.META_COMMUN.ID
 
-  $: textelr = data.textelr?.[id]
+  $: textelr = data.textekali?.[id] ?? data.textelr?.[id]
 
   $: summary = summarizeLegalObject(
     { key: "texte_version" },

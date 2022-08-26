@@ -4,13 +4,16 @@
   import { TreeView } from "augmented-data-viewer"
 
   import { page } from "$app/stores"
-  import Pagination from "$lib/components/Pagination.svelte"
+  // import Pagination from "$lib/components/Pagination.svelte"
   import { summarizeArticleProperties } from "$lib/summaries"
 
   import type { PageData } from "./$types"
 
   export let data: PageData
-  let { articles, q } = data
+
+  $: id = data.id
+  $: q = data.q
+  $: article = id === undefined ? undefined : data.article?.[id]
 </script>
 
 <header class="prose my-6 max-w-full">
@@ -34,7 +37,7 @@
 </form>
 
 {#if q !== undefined}
-  {#if articles === undefined}
+  {#if article === undefined}
     <p>Aucun article trouvé</p>
   {:else}
     <TreeView
@@ -42,9 +45,9 @@
       frame={false}
       open
       summarize={summarizeArticleProperties}
-      value={articles}
+      value={article}
     />
 
-    <Pagination currentPageCount={articles.length ?? 0} />
+    <!-- <Pagination currentPageCount={article.length ?? 0} /> -->
   {/if}
 {/if}

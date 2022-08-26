@@ -5,7 +5,7 @@ import type { ListTextesResult } from "$lib/aggregates"
 import type { PageLoad } from "./$types"
 
 export const load: PageLoad = async ({ fetch, url }) => {
-  const apiUrl = `/api${url.pathname}`
+  const apiUrl = `/api${url.pathname}${url.search}`
   const response = await fetch(apiUrl, {
     headers: { Accept: "application/json" },
   })

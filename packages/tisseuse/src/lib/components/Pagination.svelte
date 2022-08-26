@@ -4,6 +4,7 @@
   import { page } from "$app/stores"
   import { auditPaginationSearchParams } from "$lib/auditors/search_params"
   import type { PaginationQuery } from "$lib/queries"
+  import { urlFromUrlAndQuery } from "$lib/urls"
 
   export let count: number | undefined | null = undefined // Count is not always known.
   export let currentPageCount: number
@@ -47,7 +48,7 @@
             | string
             | undefined
             | null
-            | Array<boolean | number | string | undefined | null>
+            | Iterable<boolean | number | string | undefined | null>
         },
     { limit, offset }: { limit?: number; offset?: number } = {},
   ) {
@@ -62,23 +63,7 @@
     } else {
       delete query.offset
     }
-    const search = new URLSearchParams(
-      Object.entries(query).reduce((couples, [key, value]) => {
-        if (value != null) {
-          if (Array.isArray(value)) {
-            for (const item of value) {
-              if (item != null) {
-                couples.push([key, item.toString()])
-              }
-            }
-          } else {
-            couples.push([key, value.toString()])
-          }
-        }
-        return couples
-      }, [] as Array<[string, string]>),
-    ).toString()
-    return search ? `${pathname}?${search}` : pathname
+    return urlFromUrlAndQuery(pathname, query)
   }
 
   function pageNumber(limit: number, offset: number): number {

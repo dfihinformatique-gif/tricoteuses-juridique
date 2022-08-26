@@ -9,11 +9,11 @@
 
   export let data: PageData
 
-  const id = data.id!
-  const texteVersion = data.texte_version![id]
-
   let showArticles = false
   let showRawData = false
+
+  $: id = data.id!
+  $: texteVersion = data.texte_version![id]
 
   $: summary = summarizeLegalObject(
     { key: "texte_version" },

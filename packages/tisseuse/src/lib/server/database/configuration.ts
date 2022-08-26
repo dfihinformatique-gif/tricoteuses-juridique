@@ -1,5 +1,7 @@
 import assert from "assert"
+import type { SerializableParameter } from "postgres"
 
+import type { TexteVersion } from "$lib/legal"
 import { db, type Version, versionNumber } from "$lib/server/database"
 
 export async function configureDatabase() {
@@ -40,6 +42,17 @@ export async function configureDatabase() {
     await db`ALTER TABLE IF EXISTS sections RENAME TO section_ta`
     await db`ALTER TABLE IF EXISTS structs RENAME TO textelr`
     await db`ALTER TABLE IF EXISTS textes RENAME TO texte_version`
+  }
+
+  if (version.number < 3) {
+    await db`
+      ALTER TABLE IF EXISTS texte_version
+      ADD COLUMN IF NOT EXISTS nature text
+    `
+    await db`
+      ALTER TABLE IF EXISTS texte_version
+      ADD COLUMN IF NOT EXISTS text_search tsvector
+    `
   }
 
   // Types
@@ -108,7 +121,9 @@ export async function configureDatabase() {
   await db`
     CREATE TABLE IF NOT EXISTS texte_version (
       id char(20) PRIMARY KEY,
-      data jsonb NOT NULL
+      data jsonb NOT NULL,
+      nature text NOT NULL,
+      text_search tsvector NOT NULL
     )
   `
 
@@ -139,7 +154,61 @@ export async function configureDatabase() {
 
   // Apply patches that must be executed after every table is created.
 
+  if (version.number < 3) {
+    // Fill "nature" column of table texte_version.
+    for await (const rows of db<
+      Array<{ data: TexteVersion; id: string; nature: string }>
+    >`SELECT data, id, nature FROM texte_version`.cursor(100)) {
+      for (const { data, id, nature } of rows) {
+        if (data.META.META_COMMUN.NATURE !== nature) {
+          await db`
+            UPDATE texte_version
+            SET nature = ${data.META.META_COMMUN.NATURE}
+            WHERE id = ${id}
+          `
+        }
+      }
+    }
+    await db`
+      ALTER TABLE texte_version
+      ALTER COLUMN nature SET NOT NULL
+    `
+
+    // Fill "text_search" column of table texte_version.
+    for await (const rows of db<
+      Array<{ data: TexteVersion; id: string }>
+    >`SELECT data, id FROM texte_version`.cursor(100)) {
+      for (const { data, id } of rows) {
+        const textAFragments = [
+          data.META.META_SPEC.META_TEXTE_VERSION.TITRE,
+          data.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
+        ]
+        // const vector = (await db<{vector: SerializableParameter}[]>`
+        //   SELECT
+        //     setweight(to_tsvector('french', ${textAFragments.join(" ")}), 'A')
+        //     AS vector
+        // `)[0].vector
+        await db`
+          UPDATE texte_version
+          SET text_search = setweight(to_tsvector('french', ${textAFragments.join(
+            " ",
+          )}), 'A')
+          WHERE id = ${id}
+        `
+      }
+    }
+    await db`
+      ALTER TABLE texte_version
+      ALTER COLUMN text_search SET NOT NULL
+    `
+  }
+
   // Add indexes once every table and column exists.
+
+  await db`
+    CREATE INDEX IF NOT EXISTS texte_version_nature_key
+    ON texte_version (nature)
+  `
 
   // await db`
   //   CREATE INDEX IF NOT EXISTS article_autocompletions_trigrams_idx

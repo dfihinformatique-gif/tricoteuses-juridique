@@ -153,6 +153,10 @@ export interface LienSectionTa {
 
 export interface MetaCommun {
   ID: string
+  URL: string
+  NATURE: string
+  ORIGINE: string
+  ANCIEN_ID: string
 }
 
 export interface MetaTexteChronicle {
@@ -180,15 +184,9 @@ export interface SectionTa {
   }
 }
 
-export interface Textekali {
-  META: {
-    META_COMMUN: MetaCommun
-    META_SPEC: {
-      META_TEXTE_CHRONICLE: MetaTexteChronicle
-    }
-  }
-}
+export type Textekali = Textelr
 
+/// Racine de l'arborescence d'un texte législatif ou règlementaire
 export interface Textelr {
   META: {
     META_COMMUN: MetaCommun
@@ -383,7 +381,9 @@ export function menuItemsFromLegalId(
       return [
         { href: `/textes/${id}`, label: "Présentation" },
         { href: `/texte_version/${id}`, label: "TEXTE_VERSION" },
-        { href: `/textelr/${id}`, label: "TEXTELR" },
+        id.startsWith("KALI")
+          ? { href: `/textekali/${id}`, label: "TEXTEKALI" }
+          : { href: `/textelr/${id}`, label: "TEXTELR" },
       ]
     default:
       return undefined
@@ -394,6 +394,9 @@ export function pathnameFromLegalId(id: string): string | undefined {
   const rootType = rootTypeFromLegalId(id)
   if (rootType === undefined) {
     return undefined
+  }
+  if (["texte_version", "textekali", "textelr"].includes(rootType)) {
+    return `/textes/${id}`
   }
   return `/${rootType}/${id}`
 }
@@ -418,11 +421,14 @@ export function pathnameFromLegalObject(
     case "section_ta":
       return `/section_ta/${(object as SectionTa).ID}`
     case "texte_version":
-      return `/texte_version/${(object as TexteVersion).META.META_COMMUN.ID}`
+      // return `/texte_version/${(object as TexteVersion).META.META_COMMUN.ID}`
+      return `/textes/${(object as TexteVersion).META.META_COMMUN.ID}`
     case "textekali":
-      return `/textekali/${(object as Textekali).META.META_COMMUN.ID}`
+      // return `/textekali/${(object as Textekali).META.META_COMMUN.ID}`
+      return `/textes/${(object as TexteVersion).META.META_COMMUN.ID}`
     case "textelr":
-      return `/textelr/${(object as Textelr).META.META_COMMUN.ID}`
+      // return `/textelr/${(object as Textelr).META.META_COMMUN.ID}`
+      return `/textes/${(object as TexteVersion).META.META_COMMUN.ID}`
     case "versions":
       return `/versions/${(object as VersionsWrapper).eli}`
     default:
@@ -449,11 +455,14 @@ export function pathnameFromLegalObjectId(
     case "section_ta":
       return `/section_ta/${id}`
     case "texte_version":
-      return `/texte_version/${id}`
+      // return `/texte_version/${id}`
+      return `/textes/${id}`
     case "textekali":
-      return `/textekali/${id}`
+      // return `/textekali/${id}`
+      return `/textes/${id}`
     case "textelr":
-      return `/textelr/${id}`
+      // return `/textelr/${id}`
+      return `/textes/${id}`
     case "versions":
       // Here, id is an ELI.
       return `/versions/${id}`

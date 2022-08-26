@@ -6,6 +6,7 @@ import {
   type Article,
   type LegalObjectType,
   type SectionTa,
+  type Textekali,
   type Textelr,
   type TexteVersion,
 } from "$lib/legal"
@@ -17,6 +18,7 @@ export class Aggregator {
   requestedTypeAndIds: Set<TypeAndId> = new Set()
   section_ta: { [id: string]: SectionTa } = {}
   texte_version: { [id: string]: TexteVersion } = {}
+  textekali: { [id: string]: Textekali } = {}
   textelr: { [id: string]: Textelr } = {}
   visitedTypeAndIds: Set<TypeAndId> = new Set()
 
@@ -58,6 +60,25 @@ export class Aggregator {
     }
   }
 
+  addTextekali(textekali: Textekali): void {
+    const id = textekali.META.META_COMMUN.ID
+    this.textekali[id] = textekali
+
+    if (this.follow.has("STRUCT.LIEN_ART.@id")) {
+      for (const lien of iterArrayOrSingleton(textekali.STRUCT.LIEN_ART)) {
+        this.requestId(lien["@id"])
+      }
+    }
+
+    if (this.follow.has("STRUCT.LIEN_SECTION_TA.@id")) {
+      for (const lien of iterArrayOrSingleton(
+        textekali.STRUCT.LIEN_SECTION_TA,
+      )) {
+        this.requestId(lien["@id"])
+      }
+    }
+  }
+
   addTextelr(textelr: Textelr): void {
     const id = textelr.META.META_COMMUN.ID
     this.textelr[id] = textelr
@@ -79,6 +100,9 @@ export class Aggregator {
     const id = texteVersion.META.META_COMMUN.ID
     this.texte_version[id] = texteVersion
 
+    if (this.follow.has("TEXTEKALI")) {
+      this.requestTypeAndId(["textekali", id])
+    }
     if (this.follow.has("TEXTELR")) {
       this.requestTypeAndId(["textelr", id])
     }
@@ -97,12 +121,9 @@ export class Aggregator {
   }
 
   async getAll(): Promise<void> {
-    while (true) {
-      if (this.requestedTypeAndIds.size === 0) {
-        break
-      }
+    while (this.requestedTypeAndIds.size > 0) {
       console.log(
-        "this.requestedTypeAndIds.size",
+        "Aggregator.getAll: this.requestedTypeAndIds.size =",
         this.requestedTypeAndIds.size,
       )
 
@@ -135,6 +156,22 @@ export class Aggregator {
             this.addSectionTa(data)
           }
           this.addToVisitedTypeAndIds(sectionTaTypeAndIds)
+        }
+      }
+
+      {
+        const textekaliTypeAndIds = [...this.requestedTypeAndIds].filter(
+          ([type]) => type === "textekali",
+        )
+        if (textekaliTypeAndIds.length > 0) {
+          this.deleteFromRequestedTypeAndIds(textekaliTypeAndIds)
+          for (const { data } of await db<{ id: string; data: Textekali }[]>`
+              SELECT id, data FROM textekali
+              WHERE id IN ${db(textekaliTypeAndIds.map(([, id]) => id))}
+            `) {
+            this.addTextekali(data)
+          }
+          this.addToVisitedTypeAndIds(textekaliTypeAndIds)
         }
       }
 
@@ -179,6 +216,9 @@ export class Aggregator {
     }
     if (Object.keys(this.texte_version).length > 0) {
       json.texte_version = this.texte_version
+    }
+    if (Object.keys(this.textekali).length > 0) {
+      json.textekali = this.textekali
     }
     if (Object.keys(this.textelr).length > 0) {
       json.textelr = this.textelr

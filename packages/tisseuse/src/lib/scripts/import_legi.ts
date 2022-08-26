@@ -77,7 +77,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
       `
     ).map(({ id }) => id),
   )
-  const texteVersionRemainingElis = new Set(
+  const texteVersionRemainingIds = new Set(
     (
       await db<{ id: string }[]>`
         SELECT id
@@ -198,20 +198,34 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
             break
           }
           case "TEXTE_VERSION": {
-            const version = element as TexteVersion
+            const texteVersion = element as TexteVersion
+            const textAFragments = [
+              texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
+              texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
+            ]
             await db`
               INSERT INTO texte_version (
                 id,
-                data
+                data,
+                nature,
+                text_search
               ) VALUES (
-                ${version.META.META_COMMUN.ID},
-                ${db.json(version as unknown as JSONValue)}
+                ${texteVersion.META.META_COMMUN.ID},
+                ${db.json(texteVersion as unknown as JSONValue)},
+                ${texteVersion.META.META_COMMUN.NATURE}
+                setweight(to_tsvector('french', ${textAFragments.join(
+                  " ",
+                )}), 'A')
               )
               ON CONFLICT (id)
               DO UPDATE SET
-                data = ${db.json(version as unknown as JSONValue)}
+                data = ${db.json(texteVersion as unknown as JSONValue)},
+                nature = ${texteVersion.META.META_COMMUN.NATURE},
+                text_search = setweight(to_tsvector('french', ${textAFragments.join(
+                  " ",
+                )}), 'A')
             `
-            texteVersionRemainingElis.delete(version.META.META_COMMUN.ID)
+            texteVersionRemainingIds.delete(texteVersion.META.META_COMMUN.ID)
             break
           }
           case "TEXTELR": {
@@ -310,7 +324,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
         WHERE id = ${id}
       `
     }
-    for (const id of texteVersionRemainingElis) {
+    for (const id of texteVersionRemainingIds) {
       console.log(`Deleting TEXTE_VERSION ${id}…`)
       await db`
         DELETE FROM texte_version

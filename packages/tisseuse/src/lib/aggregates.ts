@@ -1,4 +1,10 @@
-import type { Article, SectionTa, Textelr, TexteVersion } from "$lib/legal"
+import type {
+  Article,
+  SectionTa,
+  Textekali,
+  Textelr,
+  TexteVersion,
+} from "$lib/legal"
 
 export interface Aggregate {
   article?: { [id: string]: Article }
@@ -6,6 +12,7 @@ export interface Aggregate {
   ids?: string[]
   section_ta?: { [id: string]: SectionTa }
   texte_version?: { [id: string]: TexteVersion }
+  textekali?: { [id: string]: Textekali }
   textelr?: { [id: string]: Textelr }
 }
 
@@ -13,7 +20,7 @@ export type Follow = typeof allFollows[number]
 
 export interface GetRechercheResult extends Aggregate {
   follow: Follow[]
-  id: string
+  id?: string
   q?: string
 }
 
@@ -26,6 +33,7 @@ export interface ListTextesResult extends Aggregate {
   follow: Follow[]
   ids: string[]
   limit: number
+  nature?: string
   offset: number
   q?: string
 }
@@ -36,6 +44,7 @@ export const allFollows = [
   "STRUCT.LIEN_SECTION_TA.@id",
   "STRUCTURE_TA.LIEN_ART.@id",
   "STRUCTURE_TA.LIEN_SECTION_TA.@id",
+  "TEXTEKALI",
   "TEXTELR",
 ] as const
 export const allFollowsMutable = [...allFollows]

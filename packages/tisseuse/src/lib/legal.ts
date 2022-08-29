@@ -395,6 +395,9 @@ export function pathnameFromLegalId(id: string): string | undefined {
   if (rootType === undefined) {
     return undefined
   }
+  if (rootType === "article") {
+    return `/articles/${id}`
+  }
   if (["texte_version", "textekali", "textelr"].includes(rootType)) {
     return `/textes/${id}`
   }
@@ -407,7 +410,8 @@ export function pathnameFromLegalObject(
 ): string {
   switch (type) {
     case "article":
-      return `/article/${(object as Article).META.META_COMMUN.ID}`
+      // return `/article/${(object as Article).META.META_COMMUN.ID}`
+      return `/articles/${(object as Article).META.META_COMMUN.ID}`
     case "dossier_legislatif":
       return `/dossier_legislatif/${
         (object as DossierLegislatif).META.META_COMMUN.ID
@@ -442,7 +446,8 @@ export function pathnameFromLegalObjectId(
 ): string {
   switch (type) {
     case "article":
-      return `/article/${id}`
+      // return `/article/${id}`
+      return `/articles/${id}`
     case "dossier_legislatif":
       return `/dossier_legislatif/${id}`
     case "id":

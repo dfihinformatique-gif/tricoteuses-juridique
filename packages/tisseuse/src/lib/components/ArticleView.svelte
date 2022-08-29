@@ -1,12 +1,20 @@
 <script lang="ts">
+  import { iterArrayOrSingleton } from "@tricoteuses/explorer-tools"
   import { SummaryView } from "augmented-data-viewer"
 
+  import type { Aggregate } from "$lib/aggregates"
+  import LienView from "$lib/components/LienView.svelte"
   import type { Article } from "$lib/legal"
   import { summarizeLegalObject } from "$lib/summaries"
 
   export let article: Article
+  export let data: Aggregate
   export let level = 1
 
+  $: liens = [...iterArrayOrSingleton(article.LIENS?.LIEN)]
+  $: ciblesCreation = liens.filter(
+    (lien) => lien["@sens"] === "cible" && lien["@typelien"] === "CREATION",
+  )
   $: summary = summarizeLegalObject({ key: "article" }, "article", article)
 </script>
 
@@ -17,3 +25,13 @@
 {/if}
 
 {@html article.BLOC_TEXTUEL.CONTENU}
+
+{#if ciblesCreation.length > 0}
+  <ul>
+    {#each liens as lien}
+      <li>
+        <LienView {data} level={level + 1} {lien} />
+      </li>
+    {/each}
+  </ul>
+{/if}

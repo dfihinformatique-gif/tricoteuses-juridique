@@ -440,7 +440,7 @@ export function pathnameFromLegalObject(
   }
 }
 
-export function pathnameFromLegalObjectId(
+export function pathnameFromLegalObjectTypeAndId(
   type: LegalObjectType,
   id: string,
 ): string {

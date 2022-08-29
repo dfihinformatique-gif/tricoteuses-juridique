@@ -17,7 +17,7 @@ import {
   type LienSectionTa,
   pathnameFromLegalId,
   pathnameFromLegalObject,
-  pathnameFromLegalObjectId,
+  pathnameFromLegalObjectTypeAndId,
   type SectionTa,
   type Textekali,
   type Textelr,
@@ -126,7 +126,7 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
         ],
         type: "concatenation",
       },
-      href: pathnameFromLegalObjectId("article", lienArt["@id"]),
+      href: pathnameFromLegalObjectTypeAndId("article", lienArt["@id"]),
       type: "link",
     }
   }
@@ -375,7 +375,7 @@ export const summarizeLienArt: Summarizer = (access, value) => {
   }
   return {
     content: `Article ${lienArt["@num"]}`,
-    href: pathnameFromLegalObjectId("article", lienArt["@id"]),
+    href: pathnameFromLegalObjectTypeAndId("article", lienArt["@id"]),
     type: "link",
   }
 }
@@ -431,7 +431,7 @@ export const summarizeLienSectionTa: Summarizer = (access, value) => {
   }
   return {
     content: lienSectionTa["#text"],
-    href: pathnameFromLegalObjectId("section_ta", lienSectionTa["@id"]),
+    href: pathnameFromLegalObjectTypeAndId("section_ta", lienSectionTa["@id"]),
     type: "link",
   }
 }

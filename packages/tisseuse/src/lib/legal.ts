@@ -7,7 +7,7 @@ export interface Article {
       META_ARTICLE: {
         NUM: string
         ETAT: Etat
-        TYPE: "AUTONOME"
+        TYPE: "AUTONOME" | "ENTIEREMENT_MODIF" | "PARTIELLEMENT_MODIF"
         DATE_FIN: string
         DATE_DEBUT: string
       }
@@ -38,7 +38,7 @@ export interface Contexte {
     "@cid": string
     "@nor": string
     "@num": string
-    "@nature": string
+    "@nature": Nature
     "@autorite": string
     "@ministere": string
     "@date_publi": string
@@ -57,7 +57,22 @@ export interface DossierLegislatif {
   }
 }
 
-export type Etat = "" | "MODIFIE" | "PERIME" | "VIGUEUR"
+export type Etat =
+  | ""
+  | "ABROGE_DIFF"
+  | "ABROGE"
+  | "ANNULE"
+  | "DENONCE"
+  | "DISJOINT"
+  | "MODIFIE_MORT_NE"
+  | "MODIFIE"
+  | "PERIME"
+  | "REMPLACE"
+  | "TRANSFERE"
+  | "VIGUEUR_DIFF"
+  | "VIGUEUR_ETEN"
+  | "VIGUEUR_NON_ETEN"
+  | "VIGUEUR"
 
 export interface Idcc {
   META: {
@@ -125,8 +140,42 @@ export interface Lien {
   "@cidtexte": string
   "@nortexte": string
   "@numtexte": string
-  "@typelien": "CITATION" | "CODIFICATION" | "CREATION" | "SPEC_APPLI"
-  "@naturetexte": string
+  "@typelien":
+    | "ABROGATION"
+    | "ABROGE"
+    | "ADHERE"
+    | "ANNULATION"
+    | "ANNULE"
+    | "APPLICATION"
+    | "CITATION"
+    | "CODIFICATION"
+    | "CONCORDANCE"
+    | "CONCORDE"
+    | "CREATION"
+    | "CREE"
+    | "DENONCE"
+    | "DENONCIATION"
+    | "DEPLACE"
+    | "DEPLACEMENT"
+    | "DISJOINT"
+    | "DISJONCTION"
+    | "ELARGISSEMENT"
+    | "EXTENSION"
+    | "HISTO"
+    | "MODIFICATION"
+    | "MODIFIE"
+    | "PEREMPTION"
+    | "PERIME"
+    | "RATIFICATION"
+    | "RATIFIE"
+    | "RATTACHEMENT"
+    | "RECTIFICATION"
+    | "SPEC_APPLI"
+    | "TRANSFERE"
+    | "TRANSFERT"
+    | "TXT_ASSOCIE"
+    | "TXT_SOURCE"
+  "@naturetexte": Nature
   "@datesignatexte": string
   "#text": string
 }
@@ -137,7 +186,7 @@ export interface LienArt {
   "@num": string
   "@etat": Etat
   "@debut": string
-  "@origine": "LEGI"
+  "@origine": Origine
 }
 
 export interface LienSectionTa {
@@ -154,8 +203,8 @@ export interface LienSectionTa {
 export interface MetaCommun {
   ID: string
   URL: string
-  NATURE: string
-  ORIGINE: string
+  NATURE: Nature
+  ORIGINE: Origine
   ANCIEN_ID: string
 }
 
@@ -173,6 +222,93 @@ export interface MetaTexteChronicle {
   PAGE_FIN_PUBLI: number
   VERSIONS_A_VENIR?: string
 }
+
+export type Nature =
+  | ""
+  | "ACCORD COLLECTIF NATIONAL"
+  | "ACCORD COLLECTIF"
+  | "Accord de branche"
+  | "ACCORD DE BRANCHE"
+  | "Accord de champ"
+  | "Accord de méthode"
+  | "Accord de substitution"
+  | "ACCORD INTERBRANCHE"
+  | "Accord interbranches"
+  | "ACCORD INTERBRANCHES"
+  | "ACCORD INTERPROFESSIONNEL"
+  | "Accord multibranches"
+  | "Accord national interprofessionnel"
+  | "ACCORD NATIONAL PARITAIRE"
+  | "ACCORD NATIONAL PLURIPROFESSIONNEL"
+  | "ACCORD NATIONAL PROFESSIONNEL"
+  | "Accord national"
+  | "ACCORD NATIONAL"
+  | "Accord paritaire"
+  | "ACCORD PROFESSIONNEL INTER-SECTEURS"
+  | "Accord professionnel"
+  | "ACCORD PROFESSIONNEL"
+  | "Accord-cadre de convergence"
+  | "Accord-cadre interbranches"
+  | "Accord-cadre"
+  | "ACCORD-CADRE"
+  | "accord"
+  | "Accord"
+  | "ACCORD"
+  | "Additif"
+  | "Adhésion par lettre"
+  | "ANNEXE PARTICULIERE"
+  | "annexe"
+  | "Annexe"
+  | "ANNEXE"
+  | "ANNEXES"
+  | "ARRETE"
+  | "avenant"
+  | "Avenant"
+  | "AVENANT"
+  | "Avis d'interprétation"
+  | "avis interprétatif"
+  | "Avis interprétatif"
+  | "AVIS"
+  | "CIRCULAIRE"
+  | "CODE"
+  | "CONSTAT D'ACCORD"
+  | "CONSTITUTION"
+  | "Convention collective départementale"
+  | "CONVENTION COLLECTIVE INTERREGIONALE"
+  | "Convention collective interrégionale"
+  | "Convention collective nationale de la branche ferroviaire"
+  | "Convention collective nationale"
+  | "CONVENTION COLLECTIVE NATIONALE"
+  | "Convention collective régionale"
+  | "convention collective"
+  | "Convention collective"
+  | "CONVENTION COLLECTIVE"
+  | "Convention"
+  | "DECISION"
+  | "DECRET_LOI"
+  | "DECRET"
+  | "DELIBERATION"
+  | "Dénonciation par lettre"
+  | "Dénonciation"
+  | "DIRECTIVE_EURO"
+  | "Lettre"
+  | "LOI_CONSTIT"
+  | "LOI_ORGANIQUE"
+  | "LOI_PROGRAMME"
+  | "LOI"
+  | "ORDONNANCE"
+  | "Procès-verbal de désaccord"
+  | "PROTOCOLE D'ACCORD COLLECTIF"
+  | "PROTOCOLE D'ACCORD INTERBRANCHE"
+  | "Protocole d'accord"
+  | "PROTOCOLE D'ACCORD"
+  | "Protocole"
+  | "PROTOCOLE"
+  | "RAPPORT"
+  | "Recommandation patronale"
+  | "Rectificatif"
+
+export type Origine = "JORF" | "KALI" | "LEGI"
 
 export interface SectionTa {
   ID: string

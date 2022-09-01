@@ -3,7 +3,10 @@
 
   import ArticleView from "$lib/components/ArticleView.svelte"
   import IdPagesSwitcher from "$lib/components/IdPagesSwitcher.svelte"
-  import { summarizeLegalObject } from "$lib/summaries"
+  import {
+    summarizeAggregateProperties,
+    summarizeLegalObject,
+  } from "$lib/summaries"
 
   import type { PageData } from "./$types"
 
@@ -38,7 +41,12 @@
 </form>
 
 {#if showRawData}
-  <TreeView frame={false} open value={data} />
+  <TreeView
+    frame={false}
+    open
+    summarize={summarizeAggregateProperties}
+    value={data}
+  />
 {:else}
   <ArticleView {article} {data} />
 {/if}

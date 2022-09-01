@@ -30,11 +30,42 @@ import {
   type VersionsWrapper,
 } from "$lib/legal"
 
+export const summarizeAggregateProperties: Summarizer = (access, value) => {
+  for (const summarizer of [
+    summarizeArticleProperties,
+    summarizeDossierLegislatifProperties,
+    summarizeIdccProperties,
+    summarizeJoProperties,
+    summarizeSectionTaProperties,
+    summarizeTextekaliProperties,
+    summarizeTextelrProperties,
+    summarizeTexteVersionProperties,
+  ]) {
+    const summary = summarizer(access, value)
+    if (summary !== undefined) {
+      return summary
+    }
+  }
+  return undefined
+}
+
 export const summarizeArticleProperties: Summarizer = (access, value) => {
-  if (access?.key === "article" && typeof value !== "number") {
+  if (
+    access?.key === "article" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of article by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "article", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "article") {
+  if (
+    access?.access?.key === "article" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "article", value)
   }
 
@@ -96,7 +127,10 @@ export const summarizeArticleProperties: Summarizer = (access, value) => {
   ) {
     return summarizeLienArt(access, value)
   }
-  if (access?.access?.key === "VERSION") {
+  if (
+    (access?.key === "VERSION" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "VERSION")
+  ) {
     const version = value as ArticleVersion
     const lienArt = version.LIEN_ART
     return {
@@ -137,12 +171,21 @@ export const summarizeDossierLegislatifProperties: Summarizer = (
   access,
   value,
 ) => {
-  if (access?.key === "dossier_legislatif" && typeof value !== "number") {
+  if (
+    access?.key === "dossier_legislatif" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of dossier_legislatif by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "dossier_legislatif", value)
   }
   if (
-    typeof access?.key === "number" &&
-    access?.access?.key === "dossier_legislatif"
+    access?.access?.key === "dossier_legislatif" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
   ) {
     return summarizeLegalObjectToLink(access, "dossier_legislatif", value)
   }
@@ -160,10 +203,22 @@ export const summarizeDossierLegislatifProperties: Summarizer = (
 }
 
 export const summarizeIdccProperties: Summarizer = (access, value) => {
-  if (access?.key === "idcc" && typeof value !== "number") {
+  if (
+    access?.key === "idcc" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of idcc by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "idcc", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "idcc") {
+  if (
+    access?.access?.key === "idcc" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "idcc", value)
   }
 
@@ -171,10 +226,23 @@ export const summarizeIdccProperties: Summarizer = (access, value) => {
 }
 
 export const summarizeIdWrapperProperties: Summarizer = (access, value) => {
-  if (access?.key === "id" && typeof value !== "number") {
+  if (
+    access?.key === "id" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of id by eli.
+      Object.keys(value as { [key: string]: unknown }).some(
+        // TODO: Fix regexp.
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "id", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "id") {
+  if (
+    access?.access?.key === "id" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "id", value)
   }
 
@@ -182,10 +250,22 @@ export const summarizeIdWrapperProperties: Summarizer = (access, value) => {
 }
 
 export const summarizeJoProperties: Summarizer = (access, value) => {
-  if (access?.key === "jo" && typeof value !== "number") {
+  if (
+    access?.key === "jo" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of jo by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "jo", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "jo") {
+  if (
+    access?.access?.key === "jo" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "jo", value)
   }
 
@@ -455,10 +535,22 @@ export const summarizeLienSectionTaId: Summarizer = (access, value) => {
 }
 
 export const summarizeSectionTaProperties: Summarizer = (access, value) => {
-  if (access?.key === "section_ta" && typeof value !== "number") {
+  if (
+    access?.key === "section_ta" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of section_ta by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "section_ta", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "section_ta") {
+  if (
+    access?.access?.key === "section_ta" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "section_ta", value)
   }
 
@@ -506,10 +598,22 @@ export const summarizeSectionTaProperties: Summarizer = (access, value) => {
 }
 
 export const summarizeTextekaliProperties: Summarizer = (access, value) => {
-  if (access?.key === "textekali" && typeof value !== "number") {
+  if (
+    access?.key === "textekali" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of textekali by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "textekali", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "textekali") {
+  if (
+    access?.access?.key === "textekali" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "textekali", value)
   }
 
@@ -537,10 +641,22 @@ export const summarizeTextelrVersionLienTxt: Summarizer = (access, value) => {
 }
 
 export const summarizeTextelrProperties: Summarizer = (access, value) => {
-  if (access?.key === "textelr" && typeof value !== "number") {
+  if (
+    access?.key === "textelr" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of textelr by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "textelr", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "textelr") {
+  if (
+    access?.access?.key === "textelr" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "textelr", value)
   }
 
@@ -592,12 +708,22 @@ export const summarizeTextelrProperties: Summarizer = (access, value) => {
 }
 
 export const summarizeTexteVersionProperties: Summarizer = (access, value) => {
-  if (access?.key === "texte_version" && typeof value !== "number") {
+  if (
+    access?.key === "texte_version" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of texte_version by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        // TODO: Fix regexp.
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "texte_version", value)
   }
   if (
-    typeof access?.key === "number" &&
-    access?.access?.key === "texte_version"
+    access?.access?.key === "texte_version" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
   ) {
     return summarizeLegalObjectToLink(access, "texte_version", value)
   }
@@ -695,10 +821,22 @@ export const summarizeVersionsWrapperProperties: Summarizer = (
   access,
   value,
 ) => {
-  if (access?.key === "versions" && typeof value !== "number") {
+  if (
+    access?.key === "versions" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of versions by eli.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
     return summarizeLegalObject(access, "versions", value)
   }
-  if (typeof access?.key === "number" && access?.access?.key === "versions") {
+  if (
+    access?.access?.key === "versions" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
     return summarizeLegalObjectToLink(access, "versions", value)
   }
 

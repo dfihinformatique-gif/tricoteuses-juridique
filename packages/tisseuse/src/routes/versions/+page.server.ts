@@ -1,13 +1,13 @@
 import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
-import { auditSearchSearchParamsContent } from "$lib/auditors/search_params"
+import { auditSearchQueryContent } from "$lib/auditors/queries"
 import type { VersionsWrapper } from "$lib/legal"
 import { db } from "$lib/server/database"
 
 import type { PageServerLoad } from "./$types"
 
-export function auditSearchParams(
+export function auditQuery(
   audit: Audit,
   query: URLSearchParams,
 ): [unknown, unknown] {
@@ -29,16 +29,16 @@ export function auditSearchParams(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  auditSearchSearchParamsContent(audit, data, errors, remainingKeys)
+  auditSearchQueryContent(audit, data, errors, remainingKeys)
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
 export const load: PageServerLoad = async ({ url }) => {
-  const [query, queryError] = auditSearchParams(
-    cleanAudit,
-    url.searchParams,
-  ) as [{ limit: number; offset: number; q?: string }, unknown]
+  const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
+    { limit: number; offset: number; q?: string },
+    unknown,
+  ]
   if (queryError !== null) {
     console.error(
       `Error in ${url.pathname} query:\n${JSON.stringify(

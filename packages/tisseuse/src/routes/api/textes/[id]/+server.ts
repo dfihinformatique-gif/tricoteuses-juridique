@@ -1,7 +1,7 @@
 import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
-import { auditFollowSearchParams } from "$lib/auditors/search_params"
+import { auditFollowQuery } from "$lib/auditors/queries"
 
 import type { Follow } from "$lib/aggregates"
 import type { TexteVersion } from "$lib/legal"
@@ -10,7 +10,7 @@ import { db } from "$lib/server/database"
 
 import type { RequestHandler } from "./$types"
 
-export function auditSearchParams(
+export function auditQuery(
   audit: Audit,
   query: URLSearchParams,
 ): [unknown, unknown] {
@@ -32,16 +32,13 @@ export function auditSearchParams(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  auditFollowSearchParams(audit, data, errors, remainingKeys)
+  auditFollowQuery(audit, data, errors, remainingKeys)
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
 export const GET: RequestHandler = async ({ params, url }) => {
-  const [query, queryError] = auditSearchParams(
-    cleanAudit,
-    url.searchParams,
-  ) as [
+  const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
     {
       follow: Set<Follow>
     },

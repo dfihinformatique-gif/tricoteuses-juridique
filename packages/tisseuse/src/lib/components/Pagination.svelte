@@ -2,7 +2,7 @@
   import { cleanAudit } from "@auditors/core"
 
   import { page } from "$app/stores"
-  import { auditPaginationSearchParams } from "$lib/auditors/search_params"
+  import { auditPaginationQuery } from "$lib/auditors/queries"
   import type { PaginationQuery } from "$lib/queries"
   import { urlFromUrlAndQuery } from "$lib/urls"
 
@@ -20,7 +20,7 @@
   $: pathname = url.pathname
 
   function ensureValidQuery(query: URLSearchParams): PaginationQuery {
-    const [validQuery, queryError] = auditPaginationSearchParams(
+    const [validQuery, queryError] = auditPaginationQuery(
       cleanAudit,
       query,
     ) as [PaginationQuery, unknown]

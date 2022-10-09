@@ -2,12 +2,12 @@ import { error } from "@sveltejs/kit"
 import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 
 import type { Follow, GetArticleResult } from "$lib/aggregates"
-import { auditFollowWithFalseSearchParams } from "$lib/auditors/search_params"
+import { auditFollowWithFalseQuery } from "$lib/auditors/queries"
 import { urlFromUrlAndQuery } from "$lib/urls"
 
 import type { PageLoad } from "./$types"
 
-export function auditSearchParams(
+export function auditQuery(
   audit: Audit,
   query: URLSearchParams,
 ): [unknown, unknown] {
@@ -29,16 +29,13 @@ export function auditSearchParams(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  auditFollowWithFalseSearchParams(audit, data, errors, remainingKeys)
+  auditFollowWithFalseQuery(audit, data, errors, remainingKeys)
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
 export const load: PageLoad = async ({ fetch, url }) => {
-  const [query, queryError] = auditSearchParams(
-    cleanAudit,
-    url.searchParams,
-  ) as [
+  const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
     {
       follow: Set<Follow | "false">
     },

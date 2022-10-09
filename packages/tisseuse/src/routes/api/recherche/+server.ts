@@ -2,17 +2,14 @@ import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
 import type { Follow } from "$lib/aggregates"
-import {
-  auditFollowSearchParams,
-  auditQSearchParam,
-} from "$lib/auditors/search_params"
+import { auditFollowQuery, auditQSearchParam } from "$lib/auditors/queries"
 import type { Article } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/database"
 
 import type { RequestHandler } from "./$types"
 
-export function auditSearchParams(
+export function auditQuery(
   audit: Audit,
   query: URLSearchParams,
 ): [unknown, unknown] {
@@ -34,17 +31,17 @@ export function auditSearchParams(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  auditFollowSearchParams(audit, data, errors, remainingKeys)
+  auditFollowQuery(audit, data, errors, remainingKeys)
   auditQSearchParam(audit, data, errors, remainingKeys)
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
 export const GET: RequestHandler = async ({ url }) => {
-  const [query, queryError] = auditSearchParams(
-    cleanAudit,
-    url.searchParams,
-  ) as [{ follow: Set<Follow>; q?: string }, unknown]
+  const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
+    { follow: Set<Follow>; q?: string },
+    unknown,
+  ]
   if (queryError !== null) {
     console.error(
       `Error in ${url.pathname} query:\n${JSON.stringify(

@@ -9,12 +9,12 @@ import type { PendingQuery, Row } from "postgres"
 
 import type { Follow } from "$lib/aggregates"
 import {
-  auditFollowSearchParams,
+  auditFollowQuery,
   auditLimitSearchParam,
   auditOffsetSearchParam,
   auditQSearchParam,
   auditSingleton,
-} from "$lib/auditors/search_params"
+} from "$lib/auditors/queries"
 import type { TexteVersion } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/database"
@@ -22,7 +22,7 @@ import { joinSqlClauses } from "$lib/server/sql"
 
 import type { RequestHandler } from "./$types"
 
-export function auditSearchParams(
+export function auditQuery(
   audit: Audit,
   query: URLSearchParams,
 ): [unknown, unknown] {
@@ -44,7 +44,7 @@ export function auditSearchParams(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  auditFollowSearchParams(audit, data, errors, remainingKeys)
+  auditFollowQuery(audit, data, errors, remainingKeys)
   auditLimitSearchParam(audit, data, errors, remainingKeys)
   audit.attribute(
     data,
@@ -61,10 +61,7 @@ export function auditSearchParams(
 }
 
 export const GET: RequestHandler = async ({ url }) => {
-  const [query, queryError] = auditSearchParams(
-    cleanAudit,
-    url.searchParams,
-  ) as [
+  const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
     {
       follow: Set<Follow>
       limit: number

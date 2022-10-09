@@ -17,7 +17,7 @@ import {
 
 import { allFollowsMutable } from "$lib/aggregates"
 
-export function auditFollowSearchParams(
+export function auditFollowQuery(
   audit: Audit,
   data: { [key: string]: unknown },
   errors: { [key: string]: unknown },
@@ -29,11 +29,11 @@ export function auditFollowSearchParams(
     true,
     errors,
     remainingKeys,
-    auditSearchParamsOptionsSet(allFollowsMutable),
+    auditQueryOptionsSet(allFollowsMutable),
   )
 }
 
-export function auditFollowWithFalseSearchParams(
+export function auditFollowWithFalseQuery(
   audit: Audit,
   data: { [key: string]: unknown },
   errors: { [key: string]: unknown },
@@ -45,7 +45,7 @@ export function auditFollowWithFalseSearchParams(
     true,
     errors,
     remainingKeys,
-    auditSearchParamsOptionsSet([...allFollowsMutable, "false"]),
+    auditQueryOptionsSet([...allFollowsMutable, "false"]),
   )
 }
 
@@ -103,7 +103,7 @@ export function auditOffsetSearchParam(
   )
 }
 
-export function auditPaginationSearchParams(
+export function auditPaginationQuery(
   audit: Audit,
   query: URLSearchParams,
 ): [unknown, unknown] {
@@ -149,7 +149,7 @@ export function auditQSearchParam(
     auditSingleton(auditTrimString),
   )
 }
-export const auditSearchParamsArray = auditChain(
+export const auditQueryArray = auditChain(
   auditSwitch(
     auditNullish,
     [auditTrimString, auditFunction((value) => [value])],
@@ -158,32 +158,30 @@ export const auditSearchParamsArray = auditChain(
   auditSetNullish([]),
 )
 
-export function auditSearchParamsOptionsArray(
-  possibleValues: string[],
-): Auditor {
+export function auditQueryOptionsArray(possibleValues: string[]): Auditor {
   return auditChain(
-    auditSearchParamsArray,
+    auditQueryArray,
     auditArray(auditOptions(possibleValues)),
     auditUnique,
     auditSetNullish([]),
   )
 }
 
-export function auditSearchParamsOptionsSet(possibleValues: string[]): Auditor {
+export function auditQueryOptionsSet(possibleValues: string[]): Auditor {
   return auditChain(
-    auditSearchParamsOptionsArray(possibleValues),
+    auditQueryOptionsArray(possibleValues),
     auditFunction((values) => new Set(values)),
     auditSetNullish(new Set()),
   )
 }
 
-export const auditSearchParamsSet = auditChain(
-  auditSearchParamsArray,
+export const auditQuerySet = auditChain(
+  auditQueryArray,
   auditFunction((values) => new Set(values)),
   auditSetNullish(new Set()),
 )
 
-export function auditSearchSearchParams(
+export function auditSearchQuery(
   audit: Audit,
   query: URLSearchParams,
 ): [unknown, unknown] {
@@ -205,12 +203,12 @@ export function auditSearchSearchParams(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  auditSearchSearchParamsContent(audit, data, errors, remainingKeys)
+  auditSearchQueryContent(audit, data, errors, remainingKeys)
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
-export function auditSearchSearchParamsContent(
+export function auditSearchQueryContent(
   audit: Audit,
   data: { [key: string]: unknown },
   errors: { [key: string]: unknown },

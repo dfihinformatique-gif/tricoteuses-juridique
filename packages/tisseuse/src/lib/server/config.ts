@@ -13,7 +13,7 @@ export interface Config {
   title: string
 }
 
-const config = {
+const [config, error] = validateConfig({
   db: {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
@@ -22,17 +22,15 @@ const config = {
     password: process.env.DB_PASSWORD,
   },
   title: process.env.TITLE,
-}
-
-const [validConfig, error] = validateConfig(config) as [Config, unknown]
+}) as [Config, unknown]
 if (error !== null) {
   console.error(
     `Error in server configuration:\n${JSON.stringify(
-      validConfig,
+      config,
       null,
       2,
     )}\nError:\n${JSON.stringify(error, null, 2)}`,
   )
   process.exit(-1)
 }
-export default validConfig
+export default config

@@ -2,7 +2,7 @@ import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
 import type { Follow } from "$lib/aggregates"
-import { auditFollowQuery, auditQSearchParam } from "$lib/auditors/queries"
+import { auditFollowQuery, auditQQueryParameter } from "$lib/auditors/queries"
 import type { Article } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/database"
@@ -32,7 +32,7 @@ export function auditQuery(
   const remainingKeys = new Set(Object.keys(data))
 
   auditFollowQuery(audit, data, errors, remainingKeys)
-  auditQSearchParam(audit, data, errors, remainingKeys)
+  auditQQueryParameter(audit, data, errors, remainingKeys)
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }

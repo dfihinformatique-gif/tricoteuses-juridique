@@ -1,4 +1,3 @@
-import type { Audit, Auditor } from "@auditors/core"
 import {
   auditArray,
   auditChain,
@@ -13,6 +12,8 @@ import {
   auditTest,
   auditTrimString,
   auditUnique,
+  type Audit,
+  type Auditor,
 } from "@auditors/core"
 
 import { allFollowsMutable } from "$lib/aggregates"
@@ -49,7 +50,7 @@ export function auditFollowWithFalseQuery(
   )
 }
 
-export function auditLimitSearchParam(
+export function auditLimitQueryParameter(
   audit: Audit,
   data: { [key: string]: unknown },
   errors: { [key: string]: unknown },
@@ -78,7 +79,7 @@ export function auditLimitSearchParam(
   )
 }
 
-export function auditOffsetSearchParam(
+export function auditOffsetQueryParameter(
   audit: Audit,
   data: { [key: string]: unknown },
   errors: { [key: string]: unknown },
@@ -125,8 +126,8 @@ export function auditPaginationQuery(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  auditLimitSearchParam(audit, data, errors, remainingKeys)
-  auditOffsetSearchParam(audit, data, errors, remainingKeys)
+  auditLimitQueryParameter(audit, data, errors, remainingKeys)
+  auditOffsetQueryParameter(audit, data, errors, remainingKeys)
 
   // Keep the remaining keys as is.
   remainingKeys.clear()
@@ -134,7 +135,7 @@ export function auditPaginationQuery(
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
-export function auditQSearchParam(
+export function auditQQueryParameter(
   audit: Audit,
   data: { [key: string]: unknown },
   errors: { [key: string]: unknown },
@@ -214,9 +215,9 @@ export function auditSearchQueryContent(
   errors: { [key: string]: unknown },
   remainingKeys: Set<string>,
 ): void {
-  auditLimitSearchParam(audit, data, errors, remainingKeys)
-  auditOffsetSearchParam(audit, data, errors, remainingKeys)
-  auditQSearchParam(audit, data, errors, remainingKeys)
+  auditLimitQueryParameter(audit, data, errors, remainingKeys)
+  auditOffsetQueryParameter(audit, data, errors, remainingKeys)
+  auditQQueryParameter(audit, data, errors, remainingKeys)
 }
 
 export function auditSingleton(...auditors: Auditor[]): Auditor {

@@ -12,10 +12,10 @@
 
   export let data: PageData
 
-  let follow = data.follow
   let showArticles = false
   let showRawData = false
 
+  $: follow = data.follow
   $: id = data.id!
   $: texteVersion = data.texte_version![id]
   $: url = $page.url

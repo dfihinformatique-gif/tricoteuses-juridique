@@ -502,6 +502,30 @@ export function bestItemForDate<T extends { "@debut": string; "@fin": string }>(
   return items[0]
 }
 
+export function legifranceUrlFromLegalObject(
+  type: LegalObjectType,
+  object: LegalObject,
+): string {
+  switch (type) {
+    case "article":
+      return `https://www.legifrance.gouv.fr/codes/article_lc/${
+        (object as Article).META.META_COMMUN.ID
+      }`
+    case "dossier_legislatif":
+    case "id":
+    case "idcc":
+    case "jo":
+    case "section_ta":
+    case "texte_version":
+    case "textekali":
+    case "textelr":
+    case "versions":
+      return "TODO"
+    default:
+      assertNeverLegalObjectType(type)
+  }
+}
+
 export function menuItemsFromLegalId(
   id: string | undefined | null,
 ): MenuItem[] | undefined {

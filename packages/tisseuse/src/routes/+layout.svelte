@@ -16,6 +16,7 @@
   contributeUrl="https://git.en-root.org/tricoteuses/tricoteuses-legal-explorer"
   leftMenu={appMenu}
   title={$page.data.appTitle}
+  url={$page.url.origin}
 />
 
 <div class="mx-auto w-11/12">

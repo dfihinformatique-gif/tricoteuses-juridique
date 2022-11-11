@@ -10,9 +10,9 @@ import type { PendingQuery, Row } from "postgres"
 import type { Follow } from "$lib/aggregates"
 import {
   auditFollowQuery,
-  auditLimitSearchParam,
-  auditOffsetSearchParam,
-  auditQSearchParam,
+  auditLimitQueryParameter,
+  auditOffsetQueryParameter,
+  auditQQueryParameter,
   auditSingleton,
 } from "$lib/auditors/queries"
 import type { TexteVersion } from "$lib/legal"
@@ -45,7 +45,7 @@ export function auditQuery(
   const remainingKeys = new Set(Object.keys(data))
 
   auditFollowQuery(audit, data, errors, remainingKeys)
-  auditLimitSearchParam(audit, data, errors, remainingKeys)
+  auditLimitQueryParameter(audit, data, errors, remainingKeys)
   audit.attribute(
     data,
     "nature",
@@ -54,8 +54,8 @@ export function auditQuery(
     remainingKeys,
     auditSingleton(auditTrimString),
   )
-  auditOffsetSearchParam(audit, data, errors, remainingKeys)
-  auditQSearchParam(audit, data, errors, remainingKeys)
+  auditOffsetQueryParameter(audit, data, errors, remainingKeys)
+  auditQQueryParameter(audit, data, errors, remainingKeys)
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }

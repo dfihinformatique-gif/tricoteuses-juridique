@@ -1,4 +1,3 @@
-import { auditChain, auditRequire, strictAudit } from "@auditors/core"
 import assert from "assert"
 import { XMLParser } from "fast-xml-parser"
 import fs from "fs-extra"

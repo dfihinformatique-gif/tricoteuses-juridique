@@ -315,7 +315,7 @@ async function importKali({ resume }: { resume?: string } = {}): Promise<void> {
 
 sade("import_kali", true)
   .describe("Import Dila's KALI database")
-  .option("-r", "--resume", "Resume import at given relative file path")
+  .option("-r, --resume", "Resume import at given relative file path")
   .example(
     "--resume global/conteneur/KALI/CONT/00/00/05/63/50/KALICONT000005635082.xml",
   )

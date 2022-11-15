@@ -343,7 +343,7 @@ async function importLegi({ resume }: { resume?: string } = {}): Promise<void> {
 
 sade("import_legi", true)
   .describe("Import Dila's LEGI database")
-  .option("-r", "--resume", "Resume import at given relative file path")
+  .option("-r, --resume", "Resume import at given relative file path")
   .example(
     "--resume global/eli/accord/2002/5/5/MESS0221690X/jo/article_1/versions.xml",
   )

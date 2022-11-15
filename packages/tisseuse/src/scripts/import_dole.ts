@@ -115,7 +115,7 @@ async function importDole({ resume }: { resume?: string } = {}): Promise<void> {
 
 sade("import_dole", true)
   .describe("Import Dila's DOLE database")
-  .option("-r", "--resume", "Resume import at given relative file path")
+  .option("-r, --resume", "Resume import at given relative file path")
   .example(
     "--resume dole/global/JORF/DOLE/00/00/36/07/36/JORFDOLE000036073697.xml",
   )

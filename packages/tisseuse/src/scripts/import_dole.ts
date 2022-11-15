@@ -21,7 +21,10 @@ const xmlParser = new XMLParser({
   tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
 })
 
-async function importDole({ resume }: { resume?: string } = {}): Promise<void> {
+async function importDole(
+  dilaDir: string,
+  { resume }: { resume?: string } = {},
+): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
 
@@ -34,7 +37,7 @@ async function importDole({ resume }: { resume?: string } = {}): Promise<void> {
     ).map(({ id }) => id),
   )
 
-  const dataDir = path.join("..", "dila-data", "dole")
+  const dataDir = path.join(dilaDir, "dole")
   assert(await fs.pathExists(dataDir))
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
@@ -113,14 +116,14 @@ async function importDole({ resume }: { resume?: string } = {}): Promise<void> {
   }
 }
 
-sade("import_dole", true)
+sade("import_dole <dilaDir>", true)
   .describe("Import Dila's DOLE database")
   .option("-r, --resume", "Resume import at given relative file path")
   .example(
-    "--resume dole/global/JORF/DOLE/00/00/36/07/36/JORFDOLE000036073697.xml",
+    "--resume dole/global/JORF/DOLE/00/00/36/07/36/JORFDOLE000036073697.xml ../dila-data/",
   )
-  .action(async (options) => {
-    await importDole(options)
+  .action(async (dilaDir, options) => {
+    await importDole(dilaDir, options)
     process.exit(0)
   })
   .parse(process.argv)

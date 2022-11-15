@@ -7,6 +7,7 @@ import { $, cd } from "zx"
 
 async function downloadDataset(
   datasetName: string,
+  dilaDir: string,
   { push }: { push?: boolean } = {},
 ): Promise<void> {
   const datasetNameUpper = datasetName.toUpperCase()
@@ -75,7 +76,6 @@ async function downloadDataset(
     `Dila's ${datasetNameUpper} repository doesn't contain a full archive.`,
   )
 
-  const dilaDir = path.join("..", "dila-data")
   cd(dilaDir)
   let latestArchiveName: string | undefined = undefined
   if (await fs.pathExists(path.join(dilaDir, datasetName))) {
@@ -164,12 +164,12 @@ async function downloadDataset(
   }
 }
 
-sade("download_dila_dataset <dataset>", true)
+sade("download_dila_dataset <dataset> <dilaDir>", true)
   .describe("Download latest versions of a Dila dataset")
-  .example("dole")
+  .example("dole ../dila-data/s")
   .option("-p, --push", "Push dataset repository")
-  .action(async (dataset, options) => {
-    await downloadDataset(dataset, options)
+  .action(async (dataset, dilaDir, options) => {
+    await downloadDataset(dataset, dilaDir, options)
     process.exit(0)
   })
   .parse(process.argv)

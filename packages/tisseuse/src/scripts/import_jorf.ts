@@ -39,7 +39,10 @@ const xmlParser = new XMLParser({
   tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
 })
 
-async function importJorf({ resume }: { resume?: string } = {}): Promise<void> {
+async function importJorf(
+  dilaDir: string,
+  { resume }: { resume?: string } = {},
+): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
 
@@ -104,7 +107,7 @@ async function importJorf({ resume }: { resume?: string } = {}): Promise<void> {
     ).map(({ eli }) => eli),
   )
 
-  const dataDir = path.join("..", "dila-data", "jorf")
+  const dataDir = path.join(dilaDir, "dole")
   assert(await fs.pathExists(dataDir))
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
@@ -382,14 +385,14 @@ async function importJorf({ resume }: { resume?: string } = {}): Promise<void> {
   }
 }
 
-sade("import_jorf", true)
+sade("import_jorf <dilaDir>", true)
   .describe("Import Dila's JORF database")
   .option("-r, --resume", "Resume import at given relative file path")
   .example(
-    "--resume global/eli/accord/2002/5/5/MESS0221690X/jo/article_1/versions.xml",
+    "--resume global/eli/accord/2002/5/5/MESS0221690X/jo/article_1/versions.xml ../dila-data/",
   )
-  .action(async (options) => {
-    await importJorf(options)
+  .action(async (dilaDir, options) => {
+    await importJorf(dilaDir, options)
     process.exit(0)
   })
   .parse(process.argv)

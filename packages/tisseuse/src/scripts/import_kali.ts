@@ -37,7 +37,10 @@ const xmlParser = new XMLParser({
   tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
 })
 
-async function importKali({ resume }: { resume?: string } = {}): Promise<void> {
+async function importKali(
+  dilaDir: string,
+  { resume }: { resume?: string } = {},
+): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
 
@@ -94,7 +97,7 @@ async function importKali({ resume }: { resume?: string } = {}): Promise<void> {
     ).map(({ id }) => id),
   )
 
-  const dataDir = path.join("..", "dila-data", "kali")
+  const dataDir = path.join(dilaDir, "dole")
   assert(await fs.pathExists(dataDir))
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
@@ -313,14 +316,14 @@ async function importKali({ resume }: { resume?: string } = {}): Promise<void> {
   }
 }
 
-sade("import_kali", true)
+sade("import_kali <dilaDir>", true)
   .describe("Import Dila's KALI database")
   .option("-r, --resume", "Resume import at given relative file path")
   .example(
-    "--resume global/conteneur/KALI/CONT/00/00/05/63/50/KALICONT000005635082.xml",
+    "--resume global/conteneur/KALI/CONT/00/00/05/63/50/KALICONT000005635082.xml ../dila-data/",
   )
-  .action(async (options) => {
-    await importKali(options)
+  .action(async (dilaDir, options) => {
+    await importKali(dilaDir, options)
     process.exit(0)
   })
   .parse(process.argv)

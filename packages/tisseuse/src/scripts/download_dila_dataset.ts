@@ -158,7 +158,9 @@ async function downloadDataset(
     await $`rm ${archiveName}`
   }
   if (changed && push) {
+    cd(datasetName)
     await $`git push`
+    cd("..")
   }
 }
 

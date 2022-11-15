@@ -88,7 +88,6 @@ async function downloadDataset(
     cd("..")
   }
   const latestArchiveDate = latestArchiveName?.match(/(\d{8}-\d{6})/)?.[1]
-  let changed = false
   for (const [date, archiveName] of Object.entries(archiveNameByDate).sort(
     ([date1], [date2]) => date1.localeCompare(date2),
   )) {
@@ -151,16 +150,13 @@ async function downloadDataset(
     cd(datasetName)
     await $`git add .`
     if ((await $`git diff --quiet --staged`.exitCode) !== 0) {
-      await $`git commit -m ${archiveName}`
-      changed = true
+      await $`git commit -m ${archiveName} --quiet`
+      if (push) {
+        await $`git push`
+      }
     }
     cd("..")
     await $`rm ${archiveName}`
-  }
-  if (changed && push) {
-    cd(datasetName)
-    await $`git push`
-    cd("..")
   }
 }
 

@@ -78,7 +78,7 @@ async function downloadDataset(
 
   cd(dilaDir)
   let latestArchiveName: string | undefined = undefined
-  if (await fs.pathExists(path.join(dilaDir, datasetName))) {
+  if (await fs.pathExists(datasetName)) {
     cd(datasetName)
     try {
       latestArchiveName = (await $`git log -1 --pretty=%B`).stdout.trim()

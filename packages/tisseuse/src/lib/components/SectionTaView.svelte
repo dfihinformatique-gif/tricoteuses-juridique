@@ -36,7 +36,7 @@
       {#each [...iterArrayOrSingleton(sectionTa.STRUCTURE_TA.LIEN_ART)] as lienArt}
         <li class="inline after:content-[',_'] after:last:content-['']">
           <a
-            class="link link-hover link-primary"
+            class="link-hover link-primary link"
             href={pathnameFromLegalId(lienArt["@id"])}
           >
             Article {lienArt["@num"]}

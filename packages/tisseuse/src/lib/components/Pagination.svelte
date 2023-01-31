@@ -83,7 +83,7 @@
   <div class="btn-group">
     {#if offset > 0}
       <a
-        class="btn btn-outline"
+        class="btn-outline btn"
         href={newPaginationUrl(pathname, query, {
           offset: Math.max(offset - limit, 0),
         })}
@@ -91,26 +91,26 @@
         Précédent
       </a>
     {:else}
-      <span class="btn btn-disabled">Précédent</span>
+      <span class="btn-disabled btn">Précédent</span>
     {/if}
     {#each [offset - 3 * limit, offset - 2 * limit, offset - limit] as previousOffset (previousOffset)}
       {#if previousOffset >= 0 && (count == null || previousOffset < count)}
         <a
-          class="btn btn-outline"
+          class="btn-outline btn"
           href={newPaginationUrl(pathname, query, { offset: previousOffset })}
         >
           {pageNumber(limit, previousOffset)}
         </a>
       {/if}
     {/each}
-    <span class="btn btn-disabled">
+    <span class="btn-disabled btn">
       {pageNumber(limit, offset)}
       <span class="sr-only">(page actuelle)</span>
     </span>
     {#each [offset + limit, offset + 2 * limit, offset + 3 * limit] as nextOffset (nextOffset)}
       {#if nextOffset >= 0 && (count == null || nextOffset < count)}
         <a
-          class="btn btn-outline"
+          class="btn-outline btn"
           href={newPaginationUrl(pathname, query, { offset: nextOffset })}
         >
           {pageNumber(limit, nextOffset)}
@@ -119,12 +119,12 @@
     {/each}
     {#if count == null || offset + limit < count}
       <a
-        class="btn btn-outline"
+        class="btn-outline btn"
         href={newPaginationUrl(pathname, query, { offset: offset + limit })}
         >Suivant</a
       >
     {:else}
-      <span class="btn btn-disabled">Suivant</span>
+      <span class="btn-disabled btn">Suivant</span>
     {/if}
   </div>
 </div>

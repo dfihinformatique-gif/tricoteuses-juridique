@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import Icon from "@iconify/svelte"
   // import searchIcon from "@iconify-icons/codicon/search"
   import { TreeView } from "augmented-data-viewer"
 
@@ -46,7 +45,7 @@
       <span class="label-text">Intitulé</span>
     </label>
     <input
-      class="input input-bordered"
+      class="input-bordered input"
       id="q"
       name="q"
       placeholder="Code civil…"
@@ -60,7 +59,7 @@
       <span class="label-text">Nature</span>
     </label>
     <select
-      class="select select-bordered"
+      class="select-bordered select"
       id="nature"
       name="nature"
       bind:value={nature}

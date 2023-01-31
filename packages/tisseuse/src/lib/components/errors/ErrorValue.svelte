@@ -34,7 +34,7 @@
       <span class="label-text">Alternative Errors:</span>
     </label>
     <select
-      class="select select-bordered w-full max-w-xs"
+      class="select-bordered select w-full max-w-xs"
       on:blur={changeSwitchIndex}
       on:change={changeSwitchIndex}
       value={switchError.index}

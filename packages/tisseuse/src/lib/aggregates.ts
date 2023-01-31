@@ -24,7 +24,7 @@ export interface Aggregate {
   versions?: { [eli: string]: Versions }
 }
 
-export type Follow = typeof allFollows[number]
+export type Follow = (typeof allFollows)[number]
 
 export interface GetArticleResult extends Aggregate {
   follow: Follow[]

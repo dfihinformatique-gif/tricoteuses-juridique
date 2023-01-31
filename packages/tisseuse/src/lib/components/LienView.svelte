@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Icon from "@iconify/svelte"
   import dash from "@iconify-icons/codicon/dash"
   import triangleDown from "@iconify-icons/codicon/triangle-down"
   import triangleRight from "@iconify-icons/codicon/triangle-right"
@@ -64,8 +63,8 @@
 
 {#if componentAndProperties === undefined}
   <div class="inline-flex align-top" on:click|stopPropagation={toggle}>
-    <Icon class="mt-1 inline-block shrink-0" icon={dash} inline />
-    <a class="link link-hover link-primary" href={pathnameFromLegalId(id)}>
+    <iconify-icon class="mt-1 inline-block shrink-0" icon={dash} inline />
+    <a class="link-hover link-primary link" href={pathnameFromLegalId(id)}>
       {lien["#text"]}
     </a>
   </div>
@@ -74,7 +73,7 @@
     class="inline-flex cursor-pointer align-top"
     on:click|stopPropagation={toggle}
   >
-    <Icon
+    <iconify-icon
       class="mt-1 inline-block shrink-0"
       icon={open ? triangleDown : triangleRight}
       inline

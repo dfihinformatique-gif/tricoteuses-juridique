@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import Icon from "@iconify/svelte"
   // import searchIcon from "@iconify-icons/codicon/search"
   import { TreeView } from "augmented-data-viewer"
 
@@ -28,7 +27,7 @@
         bind:value={q}
       />
       <button class="btn btn-square" type="submit">
-        <Icon icon={searchIcon} />
+        <iconify-icon icon={searchIcon} />
       </button>
     </div>
   </div>

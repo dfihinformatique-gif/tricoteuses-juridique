@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Icon from "@iconify/svelte"
   import searchIcon from "@iconify-icons/codicon/search"
   import { TreeView } from "augmented-data-viewer"
 
@@ -24,13 +23,13 @@
   <div class="form-control">
     <div class="input-group">
       <input
-        class="input input-bordered"
+        class="input-bordered input"
         name="q"
         type="search"
         bind:value={q}
       />
-      <button class="btn btn-square" type="submit">
-        <Icon icon={searchIcon} />
+      <button class="btn-square btn" type="submit">
+        <iconify-icon icon={searchIcon} />
       </button>
     </div>
   </div>

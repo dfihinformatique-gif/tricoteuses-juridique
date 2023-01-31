@@ -7,10 +7,7 @@ import { urlFromUrlAndQuery } from "$lib/urls"
 
 import type { PageLoad } from "./$types"
 
-export function auditQuery(
-  audit: Audit,
-  query: URLSearchParams,
-): [unknown, unknown] {
+function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {
     return [query, null]
   }

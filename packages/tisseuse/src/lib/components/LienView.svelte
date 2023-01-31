@@ -62,7 +62,11 @@
 </script>
 
 {#if componentAndProperties === undefined}
-  <div class="inline-flex align-top" on:click|stopPropagation={toggle}>
+  <div
+    class="inline-flex align-top"
+    on:click|stopPropagation={toggle}
+    on:keyup|stopPropagation={toggle}
+  >
     <iconify-icon class="mt-1 inline-block shrink-0" icon={dash} inline />
     <a class="link-hover link-primary link" href={pathnameFromLegalId(id)}>
       {lien["#text"]}
@@ -72,6 +76,7 @@
   <div
     class="inline-flex cursor-pointer align-top"
     on:click|stopPropagation={toggle}
+    on:keyup|stopPropagation={toggle}
   >
     <iconify-icon
       class="mt-1 inline-block shrink-0"

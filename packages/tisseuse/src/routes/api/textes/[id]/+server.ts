@@ -10,10 +10,7 @@ import { db } from "$lib/server/database"
 
 import type { RequestHandler } from "./$types"
 
-export function auditQuery(
-  audit: Audit,
-  query: URLSearchParams,
-): [unknown, unknown] {
+function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {
     return [query, null]
   }

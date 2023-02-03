@@ -1,3 +1,4 @@
+import { auditChain, auditRequire, strictAudit } from "@auditors/core"
 import assert from "assert"
 import { XMLParser } from "fast-xml-parser"
 import fs from "fs-extra"
@@ -6,6 +7,7 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
+import { auditDossierLegislatif } from "$lib/auditors/dossiers_legislatifs"
 import type { DossierLegislatif, XmlHeader } from "$lib/legal"
 import { db } from "$lib/server/database"
 import { walkDir } from "$lib/server/file_systems"
@@ -73,7 +75,19 @@ async function importDole(
             break
           }
           case "DOSSIER_LEGISLATIF": {
-            const dossierLegislatif = element as DossierLegislatif
+            const [dossierLegislatif, error] = auditChain(
+              auditDossierLegislatif,
+              auditRequire,
+            )(strictAudit, element) as [DossierLegislatif, unknown]
+            assert.strictEqual(
+              error,
+              null,
+              `Unexpected format for DOSSIER_LEGISLATIF:\n${JSON.stringify(
+                dossierLegislatif,
+                null,
+                2,
+              )}\nError:\n${JSON.stringify(error, null, 2)}`,
+            )
             await db`
               INSERT INTO dossier_legislatif (
                 id,

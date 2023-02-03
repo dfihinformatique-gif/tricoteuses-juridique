@@ -55,6 +55,12 @@ export interface DossierLegislatif {
       TITRE: string
     }
   }
+  CONTENU: {
+    ECHEANCIER?: {
+      "@derniere_maj"?: string
+      LIGNE: Ligne[]
+    }
+  }
 }
 
 export type Etat =
@@ -198,6 +204,20 @@ export interface LienSectionTa {
   "@etat": Etat
   "@debut": string
   "#text": string
+}
+
+export interface Ligne {
+  ARTICLE?: string
+  BASE_LEGALE?: string
+  CID_LOI_CIBLE?: string // Always a JORFTEXT ID
+  DATE_PREVUE?: string
+  DECRET?: string
+  LIEN_ARTICLE?: Array<{
+    "@id": string // Always a JORFARTI ID
+    "#text": string
+  }>
+  NUMERO_ORDRE: number[]
+  OBJET?: string
 }
 
 export interface MetaCommun {

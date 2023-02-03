@@ -7,6 +7,7 @@ import {
   auditNullish,
   auditOptions,
   auditSetNullish,
+  auditSingleton,
   auditStringToNumber,
   auditSwitch,
   auditTest,
@@ -218,16 +219,4 @@ export function auditSearchQueryContent(
   auditLimitQueryParameter(audit, data, errors, remainingKeys)
   auditOffsetQueryParameter(audit, data, errors, remainingKeys)
   auditQQueryParameter(audit, data, errors, remainingKeys)
-}
-
-export function auditSingleton(...auditors: Auditor[]): Auditor {
-  return auditChain(
-    auditArray(),
-    auditTest(
-      (values) => values.length <= 1,
-      "Parameter must be present only once in query",
-    ),
-    auditFunction((value) => value[0]),
-    ...auditors,
-  )
 }

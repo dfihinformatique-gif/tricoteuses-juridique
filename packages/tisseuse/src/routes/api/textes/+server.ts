@@ -1,6 +1,7 @@
 import {
   type Audit,
   auditSetNullish,
+  auditSingleton,
   auditTrimString,
   cleanAudit,
 } from "@auditors/core"
@@ -13,7 +14,6 @@ import {
   auditLimitQueryParameter,
   auditOffsetQueryParameter,
   auditQQueryParameter,
-  auditSingleton,
 } from "$lib/auditors/queries"
 import type { TexteVersion } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"

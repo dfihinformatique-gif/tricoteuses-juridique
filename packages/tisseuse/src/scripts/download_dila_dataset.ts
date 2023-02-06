@@ -8,7 +8,7 @@ import { $, cd } from "zx"
 async function downloadDataset(
   datasetName: string,
   dilaDir: string,
-  { push }: { push?: boolean } = {},
+  { push, silent }: { push?: boolean; silent?: boolean } = {},
 ): Promise<void> {
   const datasetNameUpper = datasetName.toUpperCase()
   const archivesUrl = `https://echanges.dila.gouv.fr/OPENDATA/${datasetNameUpper}/`
@@ -94,6 +94,9 @@ async function downloadDataset(
     if (latestArchiveDate != null && date <= latestArchiveDate) {
       continue
     }
+    if (!silent) {
+      console.log(`Adding ${archiveName} to dataset…`)
+    }
     const archiveUrl = new URL(archiveName, archivesUrl).toString()
     await $`curl --remote-name --show-error --silent ${archiveUrl}`
     if (archiveName.match(fullArchiveNameRegExp) === null) {
@@ -162,8 +165,9 @@ async function downloadDataset(
 
 sade("download_dila_dataset <dataset> <dilaDir>", true)
   .describe("Download latest versions of a Dila dataset")
-  .example("dole ../dila-data/s")
+  .example("dole ../dila-data/")
   .option("-p, --push", "Push dataset repository")
+  .option("-s, --silent", "Hide log messages")
   .action(async (dataset, dilaDir, options) => {
     await downloadDataset(dataset, dilaDir, options)
     process.exit(0)

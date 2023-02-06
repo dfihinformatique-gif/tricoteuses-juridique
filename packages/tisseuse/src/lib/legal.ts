@@ -216,7 +216,7 @@ export interface Ligne {
     "@id": string // Always a JORFARTI ID
     "#text": string
   }>
-  NUMERO_ORDRE: number[]
+  NUMERO_ORDRE?: string
   OBJET?: string
 }
 

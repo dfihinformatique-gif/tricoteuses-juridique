@@ -12,6 +12,7 @@ import {
   auditSwitch,
   auditString,
   auditTest,
+  auditNumber,
 } from "@auditors/core"
 
 function auditContenu(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
@@ -177,7 +178,23 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  for (const key of ["ARTICLE", "BASE_LEGALE", "DECRET", "OBJET"]) {
+  audit.attribute(
+    data,
+    "ARTICLE",
+    true,
+    errors,
+    remainingKeys,
+    auditSwitch(
+      [
+        auditNumber,
+        auditInteger,
+        auditFunction((article) => article.toString()),
+      ],
+      auditTrimString,
+    ),
+    auditEmptyToNull,
+  )
+  for (const key of ["BASE_LEGALE", "DECRET", "OBJET"]) {
     audit.attribute(
       data,
       key,
@@ -224,15 +241,10 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditSwitch(
-      [auditInteger, auditFunction((numero) => [numero])],
-      [
-        auditString,
-        auditFunction((numeros) => numeros.split(",")),
-        auditArray(auditStringToNumber, auditInteger),
-      ],
+      [auditNumber, auditInteger, auditFunction((numero) => numero.toString())],
+      auditTrimString,
     ),
-    auditArray(auditRequire),
-    auditRequire,
+    auditEmptyToNull,
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)

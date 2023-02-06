@@ -47,9 +47,7 @@ async function exportEcheanciers(csvFilePath: string): Promise<void> {
           lien_article_texte: lienArticle["#text"],
           derniere_maj: echeancier["@derniere_maj"],
           id: dossierLegislatif.META.META_COMMUN.ID,
-          numero_ordre: ligne.NUMERO_ORDRE.map((numero) =>
-            numero.toString(),
-          ).join(", "),
+          numero_ordre: ligne.NUMERO_ORDRE,
           objet: ligne.OBJET,
           titre: dossierLegislatif.META.META_DOSSIER_LEGISLATIF.TITRE,
         })

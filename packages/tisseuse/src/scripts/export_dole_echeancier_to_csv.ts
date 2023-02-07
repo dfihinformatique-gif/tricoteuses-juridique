@@ -14,11 +14,13 @@ async function exportEcheanciers(csvFilePath: string): Promise<void> {
     decret?: string
     derniere_maj?: string
     id: string
+    legislature: string
     lien_article_id?: string
     lien_article_texte?: string
     numero_ordre?: string
     objet?: string
     titre: string
+    type?: string
   }> = []
   for (const { data: dossierLegislatif } of await db<
     { data: DossierLegislatif }[]
@@ -29,7 +31,10 @@ async function exportEcheanciers(csvFilePath: string): Promise<void> {
     if (echeancier === undefined) {
       data.push({
         id: dossierLegislatif.META.META_COMMUN.ID,
+        legislature:
+          dossierLegislatif.META.META_DOSSIER_LEGISLATIF.LEGISLATURE.NUMERO.toString(),
         titre: dossierLegislatif.META.META_DOSSIER_LEGISLATIF.TITRE,
+        type: dossierLegislatif.META.META_DOSSIER_LEGISLATIF.TYPE,
       })
       continue
     }
@@ -47,9 +52,12 @@ async function exportEcheanciers(csvFilePath: string): Promise<void> {
           lien_article_texte: lienArticle["#text"],
           derniere_maj: echeancier["@derniere_maj"],
           id: dossierLegislatif.META.META_COMMUN.ID,
+          legislature:
+            dossierLegislatif.META.META_DOSSIER_LEGISLATIF.LEGISLATURE.NUMERO.toString(),
           numero_ordre: ligne.NUMERO_ORDRE,
           objet: ligne.OBJET,
           titre: dossierLegislatif.META.META_DOSSIER_LEGISLATIF.TITRE,
+          type: dossierLegislatif.META.META_DOSSIER_LEGISLATIF.TYPE,
         })
       }
     }
@@ -58,7 +66,9 @@ async function exportEcheanciers(csvFilePath: string): Promise<void> {
     csvFilePath,
     Papa.unparse(data, {
       columns: [
+        "legislature",
         "id",
+        "type",
         "titre",
         "derniere_maj",
         "article",

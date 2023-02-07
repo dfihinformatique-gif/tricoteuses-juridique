@@ -12,7 +12,6 @@ import {
   auditTest,
   auditNumber,
   auditCleanArray,
-  auditHttpUrl,
   auditOptions,
 } from "@auditors/core"
 

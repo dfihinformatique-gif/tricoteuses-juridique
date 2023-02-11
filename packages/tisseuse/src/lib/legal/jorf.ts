@@ -59,6 +59,10 @@ export interface JorfArticle {
   }
 }
 
+export type JoNature = (typeof allJoNatures)[number]
+
+export type JoOrigine = (typeof allJoOrigines)[number]
+
 export type JorfArticleEtat = (typeof allJorfArticleEtats)[number]
 
 export type JorfArticleLienArticleOrigine =
@@ -82,6 +86,12 @@ export interface JorfArticleTm {
   }
   TM?: JorfArticleTm
 }
+
+export const allJoNatures = ["JO"] as const
+export const allJoNaturesMutable = [...allJoNatures]
+
+export const allJoOrigines = ["JORF"] as const
+export const allJoOriginesMutable = [...allJoOrigines]
 
 export const allJorfArticleEtats = [
   "ABROGE",

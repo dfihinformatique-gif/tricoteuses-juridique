@@ -23,6 +23,22 @@ import {
   allJorfArticleTypesMutable,
 } from "$lib/legal"
 
+export const jorfArticleStats: {
+  // countByEtat: { [etat: string]: number }
+  // countByLienArtEtat: { [etat: string]: number }
+  // countByLienNature: { [nature: string]: number }
+  // countByLienType: { [type: string]: number }
+  // countByTexteNature: { [nature: string]: number }
+  // countByVersionEtat: { [etat: string]: number }
+} = {
+  // countByEtat: {},
+  // countByLienArtEtat: {},
+  // countByLienNature: {},
+  // countByLienType: {},
+  // countByTexteNature: {},
+  // countByVersionEtat: {},
+}
+
 function auditBlocTextuel(
   audit: Audit,
   dataUnknown: unknown,

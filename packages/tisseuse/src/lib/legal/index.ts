@@ -4,6 +4,10 @@ import type { DossierLegislatif } from "./dole"
 
 export type { DossierLegislatif } from "./dole"
 export {
+  allJoNatures,
+  allJoNaturesMutable,
+  allJoOrigines,
+  allJoOriginesMutable,
   allJorfArticleEtats,
   allJorfArticleEtatsMutable,
   allJorfArticleLienArticleOrigines,
@@ -16,6 +20,8 @@ export {
   allJorfArticleTexteNaturesMutable,
   allJorfArticleTypes,
   allJorfArticleTypesMutable,
+  type JoNature,
+  type JoOrigine,
   type JorfArticle,
   type JorfArticleEtat,
   type JorfArticleLienArticleOrigine,

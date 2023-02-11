@@ -20,6 +20,10 @@ export { default as TextelrView } from "./components/TextelrView.svelte"
 export { default as TexteVersionView } from "./components/TexteVersionView.svelte"
 
 export {
+  allJoNatures,
+  allJoNaturesMutable,
+  allJoOrigines,
+  allJoOriginesMutable,
   allJorfArticleEtats,
   allJorfArticleEtatsMutable,
   allJorfArticleLienArticleOrigines,
@@ -49,6 +53,8 @@ export {
   allLegiArticleTypes,
   allLegiArticleTypesMutable,
   type DossierLegislatif,
+  type JoNature,
+  type JoOrigine,
   type JorfArticle,
   type JorfArticleEtat,
   type JorfArticleLienArticleOrigine,

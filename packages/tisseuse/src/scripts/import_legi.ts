@@ -1,4 +1,9 @@
-import { auditChain, auditRequire, strictAudit } from "@auditors/core"
+import {
+  auditChain,
+  auditOptions,
+  auditRequire,
+  strictAudit,
+} from "@auditors/core"
 import assert from "assert"
 import { XMLParser } from "fast-xml-parser"
 import fs from "fs-extra"
@@ -23,6 +28,17 @@ import type {
 import { db } from "$lib/server/database"
 import { walkDir } from "$lib/server/file_systems"
 
+type CategoryTag = (typeof allCategoriesCode)[number]
+
+const allCategoriesCode = [
+  "ARTICLE",
+  "ID",
+  "SECTION_TA",
+  "TEXTE_VERSION",
+  "TEXTELR",
+  "VERSIONS",
+] as const
+
 const xmlParser = new XMLParser({
   attributeNamePrefix: "@",
   ignoreAttributes: false,
@@ -44,63 +60,94 @@ const xmlParser = new XMLParser({
 
 async function importLegi(
   dilaDir: string,
-  { resume }: { resume?: string } = {},
+  { category, resume }: { category?: string; resume?: string } = {},
 ): Promise<void> {
+  const [categoryTag, categoryError] = auditOptions([
+    ...[...allCategoriesCode],
+  ])(strictAudit, category) as [CategoryTag | undefined, unknown]
+  assert.strictEqual(
+    categoryError,
+    null,
+    `Error for category ${JSON.stringify(categoryTag)}:\n${JSON.stringify(
+      categoryError,
+      null,
+      2,
+    )}`,
+  )
   let skip = resume !== undefined
+
   const deleteRemainingIds = !skip
 
-  const articleRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM article
-        WHERE id LIKE 'LEGI%'
-      `
-    ).map(({ id }) => id),
-  )
-  const idRemainingElis = new Set(
-    (
-      await db<{ eli: string }[]>`
-        SELECT eli
-        FROM id
-      `
-    ).map(({ eli }) => eli),
-  )
-  const sectionTaRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM section_ta
-        WHERE id LIKE 'LEGI%'
-      `
-    ).map(({ id }) => id),
-  )
-  const textelrRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM textelr
-        WHERE id LIKE 'LEGI%'
-      `
-    ).map(({ id }) => id),
-  )
-  const texteVersionRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM texte_version
-        WHERE id LIKE 'LEGI%'
-      `
-    ).map(({ id }) => id),
-  )
-  const versionsRemainingElis = new Set(
-    (
-      await db<{ eli: string }[]>`
-        SELECT eli
-        FROM versions
-      `
-    ).map(({ eli }) => eli),
-  )
+  const articleRemainingIds =
+    categoryTag === undefined || categoryTag === "ARTICLE"
+      ? new Set(
+          (
+            await db<{ id: string }[]>`
+              SELECT id
+              FROM article
+              WHERE id LIKE 'LEGI%'
+            `
+          ).map(({ id }) => id),
+        )
+      : new Set<string>()
+  const idRemainingElis =
+    categoryTag === undefined || categoryTag === "ID"
+      ? new Set(
+          (
+            await db<{ eli: string }[]>`
+              SELECT eli
+              FROM id
+            `
+          ).map(({ eli }) => eli),
+        )
+      : new Set<string>()
+  const sectionTaRemainingIds =
+    categoryTag === undefined || categoryTag === "SECTION_TA"
+      ? new Set(
+          (
+            await db<{ id: string }[]>`
+              SELECT id
+              FROM section_ta
+              WHERE id LIKE 'LEGI%'
+            `
+          ).map(({ id }) => id),
+        )
+      : new Set<string>()
+  const textelrRemainingIds =
+    categoryTag === undefined || categoryTag === "TEXTELR"
+      ? new Set(
+          (
+            await db<{ id: string }[]>`
+              SELECT id
+              FROM textelr
+              WHERE id LIKE 'LEGI%'
+            `
+          ).map(({ id }) => id),
+        )
+      : new Set<string>()
+  const texteVersionRemainingIds =
+    categoryTag === undefined || categoryTag === "TEXTE_VERSION"
+      ? new Set(
+          (
+            await db<{ id: string }[]>`
+              SELECT id
+              FROM texte_version
+              WHERE id LIKE 'LEGI%'
+            `
+          ).map(({ id }) => id),
+        )
+      : new Set<string>()
+  const versionsRemainingElis =
+    categoryTag === undefined || categoryTag === "VERSIONS"
+      ? new Set(
+          (
+            await db<{ eli: string }[]>`
+              SELECT eli
+              FROM versions
+            `
+          ).map(({ eli }) => eli),
+        )
+      : new Set<string>()
 
   const dataDir = path.join(dilaDir, "legi")
   assert(await fs.pathExists(dataDir))
@@ -126,183 +173,189 @@ async function importLegi(
         encoding: "utf8",
       })
       const xmlData = xmlParser.parse(xmlString)
-      for (const [key, element] of Object.entries(xmlData) as [
-        string,
+      for (const [tag, element] of Object.entries(xmlData) as [
+        CategoryTag | "?xml",
         LegiArticle | SectionTa | Textelr | TexteVersion | Versions | XmlHeader,
       ][]) {
-        switch (key) {
+        switch (tag) {
           case "?xml": {
             const xmlHeader = element as XmlHeader
             assert.strictEqual(xmlHeader["@encoding"], "UTF-8", filePath)
             assert.strictEqual(xmlHeader["@version"], "1.0", filePath)
             break
           }
-          case "ARTICLE": {
-            const [article, error] = auditChain(auditLegiArticle, auditRequire)(
-              strictAudit,
-              element,
-            ) as [LegiArticle, unknown]
-            assert.strictEqual(
-              error,
-              null,
-              `Unexpected format for ARTICLE:\n${JSON.stringify(
-                article,
+          case "ARTICLE":
+            if (categoryTag === undefined || categoryTag === tag) {
+              const [article, error] = auditChain(
+                auditLegiArticle,
+                auditRequire,
+              )(strictAudit, element) as [LegiArticle, unknown]
+              assert.strictEqual(
+                error,
                 null,
-                2,
-              )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            )
-            await db`
-              INSERT INTO article (
-                id,
-                data
-              ) VALUES (
-                ${article.META.META_COMMUN.ID},
-                ${db.json(article as unknown as JSONValue)}
+                `Unexpected format for ARTICLE:\n${JSON.stringify(
+                  article,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(error, null, 2)}`,
               )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = ${db.json(article as unknown as JSONValue)}
-            `
-            articleRemainingIds.delete(article.META.META_COMMUN.ID)
+              await db`
+                INSERT INTO article (
+                  id,
+                  data
+                ) VALUES (
+                  ${article.META.META_COMMUN.ID},
+                  ${db.json(article as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = ${db.json(article as unknown as JSONValue)}
+              `
+              articleRemainingIds.delete(article.META.META_COMMUN.ID)
+            }
             break
-          }
-          case "ID": {
-            assert.strictEqual(relativeSplitPath[0], "global")
-            assert.strictEqual(relativeSplitPath[1], "eli")
-            const eli = relativeSplitPath.slice(2, -1).join("/")
-            const [id, idError] = auditChain(auditId, auditRequire)(
-              strictAudit,
-              element,
-            )
-            assert.strictEqual(
-              idError,
-              null,
-              `Unexpected format for ID:\n${JSON.stringify(
-                id,
+          case "ID":
+            if (categoryTag === undefined || categoryTag === tag) {
+              assert.strictEqual(relativeSplitPath[0], "global")
+              assert.strictEqual(relativeSplitPath[1], "eli")
+              const eli = relativeSplitPath.slice(2, -1).join("/")
+              const [id, idError] = auditChain(auditId, auditRequire)(
+                strictAudit,
+                element,
+              )
+              assert.strictEqual(
+                idError,
                 null,
-                2,
-              )}\nError:\n${JSON.stringify(idError, null, 2)}`,
-            )
-            assert
-            await db`
-              INSERT INTO id (
-                eli,
-                id
-              ) VALUES (
-                ${eli},
-                ${id}
+                `Unexpected format for ID:\n${JSON.stringify(
+                  id,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(idError, null, 2)}`,
               )
-              ON CONFLICT (eli)
-              DO UPDATE SET
-                id = ${id}
-            `
-            idRemainingElis.delete(eli)
+              assert
+              await db`
+                INSERT INTO id (
+                  eli,
+                  id
+                ) VALUES (
+                  ${eli},
+                  ${id}
+                )
+                ON CONFLICT (eli)
+                DO UPDATE SET
+                  id = ${id}
+              `
+              idRemainingElis.delete(eli)
+            }
             break
-          }
-          case "SECTION_TA": {
-            const section = element as SectionTa
-            await db`
-              INSERT INTO section_ta (
-                id,
-                data
-              ) VALUES (
-                ${section.ID},
-                ${db.json(section as unknown as JSONValue)}
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = ${db.json(section as unknown as JSONValue)}
-            `
-            sectionTaRemainingIds.delete(section.ID)
+          case "SECTION_TA":
+            if (categoryTag === undefined || categoryTag === tag) {
+              const section = element as SectionTa
+              await db`
+                INSERT INTO section_ta (
+                  id,
+                  data
+                ) VALUES (
+                  ${section.ID},
+                  ${db.json(section as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = ${db.json(section as unknown as JSONValue)}
+              `
+              sectionTaRemainingIds.delete(section.ID)
+            }
             break
-          }
-          case "TEXTE_VERSION": {
-            const texteVersion = element as TexteVersion
-            const textAFragments = [
-              texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
-              texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
-            ]
-            await db`
-              INSERT INTO texte_version (
-                id,
-                data,
-                nature,
-                text_search
-              ) VALUES (
-                ${texteVersion.META.META_COMMUN.ID},
-                ${db.json(texteVersion as unknown as JSONValue)},
-                ${texteVersion.META.META_COMMUN.NATURE},
-                setweight(to_tsvector('french', ${textAFragments.join(
-                  " ",
-                )}), 'A')
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = ${db.json(texteVersion as unknown as JSONValue)},
-                nature = ${texteVersion.META.META_COMMUN.NATURE},
-                text_search = setweight(to_tsvector('french', ${textAFragments.join(
-                  " ",
-                )}), 'A')
-            `
-            texteVersionRemainingIds.delete(texteVersion.META.META_COMMUN.ID)
+          case "TEXTE_VERSION":
+            if (categoryTag === undefined || categoryTag === tag) {
+              const texteVersion = element as TexteVersion
+              const textAFragments = [
+                texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
+                texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
+              ]
+              await db`
+                INSERT INTO texte_version (
+                  id,
+                  data,
+                  nature,
+                  text_search
+                ) VALUES (
+                  ${texteVersion.META.META_COMMUN.ID},
+                  ${db.json(texteVersion as unknown as JSONValue)},
+                  ${texteVersion.META.META_COMMUN.NATURE},
+                  setweight(to_tsvector('french', ${textAFragments.join(
+                    " ",
+                  )}), 'A')
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = ${db.json(texteVersion as unknown as JSONValue)},
+                  nature = ${texteVersion.META.META_COMMUN.NATURE},
+                  text_search = setweight(to_tsvector('french', ${textAFragments.join(
+                    " ",
+                  )}), 'A')
+              `
+              texteVersionRemainingIds.delete(texteVersion.META.META_COMMUN.ID)
+            }
             break
-          }
-          case "TEXTELR": {
-            const textelr = element as Textelr
-            await db`
-              INSERT INTO textelr (
-                id,
-                data
-              ) VALUES (
-                ${textelr.META.META_COMMUN.ID},
-                ${db.json(textelr as unknown as JSONValue)}
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = ${db.json(textelr as unknown as JSONValue)}
-            `
-            textelrRemainingIds.delete(textelr.META.META_COMMUN.ID)
+          case "TEXTELR":
+            if (categoryTag === undefined || categoryTag === tag) {
+              const textelr = element as Textelr
+              await db`
+                INSERT INTO textelr (
+                  id,
+                  data
+                ) VALUES (
+                  ${textelr.META.META_COMMUN.ID},
+                  ${db.json(textelr as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = ${db.json(textelr as unknown as JSONValue)}
+              `
+              textelrRemainingIds.delete(textelr.META.META_COMMUN.ID)
+            }
             break
-          }
-          case "VERSIONS": {
-            assert.strictEqual(relativeSplitPath[0], "global")
-            assert.strictEqual(relativeSplitPath[1], "eli")
-            const eli = relativeSplitPath.slice(2, -1).join("/")
-            const [versions, versionsError] = auditChain(
-              auditVersions,
-              auditRequire,
-            )(strictAudit, element)
-            assert.strictEqual(
-              versionsError,
-              null,
-              `Unexpected format for VERSIONS:\n${JSON.stringify(
-                versions,
+          case "VERSIONS":
+            if (categoryTag === undefined || categoryTag === tag) {
+              assert.strictEqual(relativeSplitPath[0], "global")
+              assert.strictEqual(relativeSplitPath[1], "eli")
+              const eli = relativeSplitPath.slice(2, -1).join("/")
+              const [versions, versionsError] = auditChain(
+                auditVersions,
+                auditRequire,
+              )(strictAudit, element)
+              assert.strictEqual(
+                versionsError,
                 null,
-                2,
-              )}\nError:\n${JSON.stringify(versionsError, null, 2)}`,
-            )
-            const id = versions.VERSION["@id"]
-            await db`
-              INSERT INTO versions (
-                eli,
-                id,
-                data
-              ) VALUES (
-                ${eli},
-                ${id},
-                ${db.json(versions as unknown as JSONValue)}
+                `Unexpected format for VERSIONS:\n${JSON.stringify(
+                  versions,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(versionsError, null, 2)}`,
               )
-              ON CONFLICT (eli)
-              DO UPDATE SET
-                id = ${id},
-                data = ${db.json(versions as unknown as JSONValue)}
-            `
-            versionsRemainingElis.delete(id)
+              const id = versions.VERSION["@id"]
+              await db`
+                INSERT INTO versions (
+                  eli,
+                  id,
+                  data
+                ) VALUES (
+                  ${eli},
+                  ${id},
+                  ${db.json(versions as unknown as JSONValue)}
+                )
+                ON CONFLICT (eli)
+                DO UPDATE SET
+                  id = ${id},
+                  data = ${db.json(versions as unknown as JSONValue)}
+              `
+              versionsRemainingElis.delete(id)
+            }
             break
-          }
           default: {
             console.warn(
-              `Unexpected root element "${key}" in XML file: ${filePath}`,
+              `Unexpected root element "${tag}" in XML file: ${filePath}`,
             )
             break iterXmlFiles
           }

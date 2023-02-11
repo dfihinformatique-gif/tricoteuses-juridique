@@ -8,9 +8,10 @@ import type { JSONValue } from "postgres"
 import sade from "sade"
 
 import { auditId, auditVersions } from "$lib/auditors/legal"
+import { auditJorfArticle } from "$lib/auditors/jorf"
 import type {
-  Article,
   Jo,
+  JorfArticle,
   SectionTa,
   Textelr,
   TexteVersion,
@@ -107,7 +108,7 @@ async function importJorf(
     ).map(({ eli }) => eli),
   )
 
-  const dataDir = path.join(dilaDir, "dole")
+  const dataDir = path.join(dilaDir, "jorf")
   assert(await fs.pathExists(dataDir))
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
@@ -134,7 +135,7 @@ async function importJorf(
       for (const [key, element] of Object.entries(xmlData) as [
         string,
         (
-          | Article
+          | JorfArticle
           | Jo
           | SectionTa
           | Textelr
@@ -151,7 +152,19 @@ async function importJorf(
             break
           }
           case "ARTICLE": {
-            const article = element as Article
+            const [article, error] = auditChain(auditJorfArticle, auditRequire)(
+              strictAudit,
+              element,
+            ) as [JorfArticle, unknown]
+            assert.strictEqual(
+              error,
+              null,
+              `Unexpected format for ARTICLE:\n${JSON.stringify(
+                article,
+                null,
+                2,
+              )}\nError:\n${JSON.stringify(error, null, 2)}`,
+            )
             await db`
               INSERT INTO article (
                 id,
@@ -184,7 +197,6 @@ async function importJorf(
                 2,
               )}\nError:\n${JSON.stringify(idError, null, 2)}`,
             )
-            assert
             await db`
               INSERT INTO id (
                 eli,
@@ -249,7 +261,7 @@ async function importJorf(
               ) VALUES (
                 ${texteVersion.META.META_COMMUN.ID},
                 ${db.json(texteVersion as unknown as JSONValue)},
-                ${texteVersion.META.META_COMMUN.NATURE}
+                ${texteVersion.META.META_COMMUN.NATURE},
                 setweight(to_tsvector('french', ${textAFragments.join(
                   " ",
                 )}), 'A')

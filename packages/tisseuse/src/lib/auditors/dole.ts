@@ -473,9 +473,8 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditSwitch(
       [auditNumber, auditInteger, auditFunction((numero) => numero.toString())],
-      auditTrimString,
+      [auditTrimString, auditEmptyToNull],
     ),
-    auditEmptyToNull,
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)

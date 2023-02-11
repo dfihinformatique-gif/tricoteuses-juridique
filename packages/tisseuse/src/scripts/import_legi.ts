@@ -8,8 +8,12 @@ import type { JSONValue } from "postgres"
 import sade from "sade"
 
 import { auditId, auditVersions } from "$lib/auditors/legal"
+import {
+  auditLegiArticle,
+  // legiArticleStats
+} from "$lib/auditors/legi"
 import type {
-  Article,
+  LegiArticle,
   SectionTa,
   Textelr,
   TexteVersion,
@@ -98,7 +102,7 @@ async function importLegi(
     ).map(({ eli }) => eli),
   )
 
-  const dataDir = path.join(dilaDir, "dole")
+  const dataDir = path.join(dilaDir, "legi")
   assert(await fs.pathExists(dataDir))
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
@@ -124,7 +128,7 @@ async function importLegi(
       const xmlData = xmlParser.parse(xmlString)
       for (const [key, element] of Object.entries(xmlData) as [
         string,
-        Article | SectionTa | Textelr | TexteVersion | Versions | XmlHeader,
+        LegiArticle | SectionTa | Textelr | TexteVersion | Versions | XmlHeader,
       ][]) {
         switch (key) {
           case "?xml": {
@@ -134,7 +138,19 @@ async function importLegi(
             break
           }
           case "ARTICLE": {
-            const article = element as Article
+            const [article, error] = auditChain(auditLegiArticle, auditRequire)(
+              strictAudit,
+              element,
+            ) as [LegiArticle, unknown]
+            assert.strictEqual(
+              error,
+              null,
+              `Unexpected format for ARTICLE:\n${JSON.stringify(
+                article,
+                null,
+                2,
+              )}\nError:\n${JSON.stringify(error, null, 2)}`,
+            )
             await db`
               INSERT INTO article (
                 id,
@@ -215,7 +231,7 @@ async function importLegi(
               ) VALUES (
                 ${texteVersion.META.META_COMMUN.ID},
                 ${db.json(texteVersion as unknown as JSONValue)},
-                ${texteVersion.META.META_COMMUN.NATURE}
+                ${texteVersion.META.META_COMMUN.NATURE},
                 setweight(to_tsvector('french', ${textAFragments.join(
                   " ",
                 )}), 'A')
@@ -342,6 +358,10 @@ async function importLegi(
       `
     }
   }
+  // console.log(
+  //   "LEGI articles stats =",
+  //   JSON.stringify(legiArticleStats, null, 2),
+  // )
 }
 
 sade("import_legi <dilaDir>", true)

@@ -7,24 +7,71 @@ export {
   type GetRechercheResult,
   type GetTexteResult,
   type ListTextesResult,
-} from "$lib/aggregates"
+} from "./aggregates"
 
-export { default as ArticleView } from "$lib/components/ArticleView.svelte"
+export { default as ArticleView } from "./components/ArticleView.svelte"
 
-export { default as LienView } from "$lib/components/LienView.svelte"
+export { default as LienView } from "./components/LienView.svelte"
 
-export { default as SectionTaView } from "$lib/components/SectionTaView.svelte"
+export { default as SectionTaView } from "./components/SectionTaView.svelte"
 
-export { default as TextelrView } from "$lib/components/TextelrView.svelte"
+export { default as TextelrView } from "./components/TextelrView.svelte"
 
-export { default as TexteVersionView } from "$lib/components/TexteVersionView.svelte"
+export { default as TexteVersionView } from "./components/TexteVersionView.svelte"
+
+export {
+  allJorfArticleEtats,
+  allJorfArticleEtatsMutable,
+  allJorfArticleLienArticleOrigines,
+  allJorfArticleLienArticleOriginesMutable,
+  allJorfArticleNatures,
+  allJorfArticleNaturesMutable,
+  allJorfArticleOrigines,
+  allJorfArticleOriginesMutable,
+  allJorfArticleTexteNatures,
+  allJorfArticleTexteNaturesMutable,
+  allJorfArticleTypes,
+  allJorfArticleTypesMutable,
+  allLegiArticleEtats,
+  allLegiArticleEtatsMutable,
+  allLegiArticleLienArticleOrigines,
+  allLegiArticleLienArticleOriginesMutable,
+  allLegiArticleLienNatures,
+  allLegiArticleLienNaturesMutable,
+  allLegiArticleLienSens,
+  allLegiArticleLienSensMutable,
+  allLegiArticleNatures,
+  allLegiArticleNaturesMutable,
+  allLegiArticleOrigines,
+  allLegiArticleOriginesMutable,
+  allLegiArticleTexteNatures,
+  allLegiArticleTexteNaturesMutable,
+  allLegiArticleTypes,
+  allLegiArticleTypesMutable,
+  type DossierLegislatif,
+  type JorfArticle,
+  type JorfArticleEtat,
+  type JorfArticleLienArticleOrigine,
+  type JorfArticleNature,
+  type JorfArticleOrigine,
+  type JorfArticleTexteNature,
+  type JorfArticleType,
+  type LegiArticle,
+  type LegiArticleEtat,
+  type LegiArticleLienArticleOrigine,
+  type LegiArticleLienNature,
+  type LegiArticleLienSens,
+  type LegiArticleNature,
+  type LegiArticleOrigine,
+  type LegiArticleTexteNature,
+  type LegiArticleType,
+} from "./legal"
 
 export {
   type Article,
   type ArticleVersion,
   bestItemForDate,
   type Contexte,
-  type DossierLegislatif,
   type Etat,
   type Idcc,
   type Jo,
@@ -50,4 +97,4 @@ export {
   type Tm,
   type TmLienTxt,
   type Versions,
-} from "$lib/legal"
+} from "./legal"

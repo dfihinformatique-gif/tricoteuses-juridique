@@ -97,7 +97,7 @@ async function importKali(
     ).map(({ id }) => id),
   )
 
-  const dataDir = path.join(dilaDir, "dole")
+  const dataDir = path.join(dilaDir, "kali")
   assert(await fs.pathExists(dataDir))
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
@@ -206,7 +206,7 @@ async function importKali(
               ) VALUES (
                 ${texteVersion.META.META_COMMUN.ID},
                 ${db.json(texteVersion as unknown as JSONValue)},
-                ${texteVersion.META.META_COMMUN.NATURE}
+                ${texteVersion.META.META_COMMUN.NATURE},
                 setweight(to_tsvector('french', ${textAFragments.join(
                   " ",
                 )}), 'A')

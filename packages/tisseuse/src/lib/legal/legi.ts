@@ -4,16 +4,18 @@ export interface LegiArticle {
   }
   CONTEXTE: {
     TEXTE: {
+      "@autorite"?: string
       "@cid": string
       "@date_publi": string
       "@date_signature": string
+      "@ministere"?: string
       "@nature"?: LegiArticleTexteNature
       "@nor"?: string
       "@num"?: string
       "@num_parution_jo"?: string
       TITRE_TXT: Array<{
         "#text": string
-        "@c_titre_court"?: string
+        "@c_titre_court": string
         "@debut": string
         "@fin": string
         "@id_txt": string
@@ -21,28 +23,39 @@ export interface LegiArticle {
       TM?: LegiArticleTm
     }
   }
+  LIENS?: {
+    LIEN: Array<{
+      "#text"?: string
+      "@cidtexte"?: string
+      "@datesignatexte"?: string
+      "@id"?: string
+      "@naturetexte"?: LegiArticleLienNature
+      "@nortexte"?: string
+      "@num"?: string
+      "@sens": LegiArticleLienSens
+      "@typelien": LegiArticleLienType
+    }>
+  }
   META: {
     META_COMMUN: {
       ANCIEN_ID?: string
-      ELI_ALIAS?: {
-        ID_ELI_ALIAS: string
-      }
       ID: string
-      ID_ELI?: string
-      NATURE?: LegiArticleNature
-      URL: string
+      NATURE: LegiArticleNature
       ORIGINE: LegiArticleOrigine
+      URL: string
     }
     META_SPEC: {
       META_ARTICLE: {
-        DATE_FIN: string
         DATE_DEBUT: string
-        /// Mots-clés
-        MCS_ART?: { MC: string[] }
+        DATE_FIN: string
+        ETAT?: LegiArticleEtat
         NUM?: string
         TYPE?: LegiArticleType
       }
     }
+  }
+  NOTA?: {
+    CONTENU: string // HTML
   }
   VERSIONS: {
     VERSION: Array<{
@@ -53,7 +66,7 @@ export interface LegiArticle {
         "@fin": string
         "@id": string
         "@num"?: string
-        "@origine": LegiArticleLienArticleOrigine
+        "@origine": LegiArticleOrigine
       }
     }>
   }
@@ -81,7 +94,7 @@ export type LegiArticleType = (typeof allLegiArticleTypes)[number]
 /// Table des matières (TM)
 export interface LegiArticleTm {
   TITRE_TM: {
-    "#text"?: string
+    "#text": string
     "@debut": string
     "@fin": string
     "@id": string

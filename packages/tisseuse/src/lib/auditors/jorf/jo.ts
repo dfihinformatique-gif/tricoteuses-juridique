@@ -1,18 +1,18 @@
 import {
-  type Audit,
-  auditRequire,
-  auditDateIso8601String,
-  auditTrimString,
-  auditInteger,
-  auditFunction,
-  auditEmptyToNull,
-  auditNullish,
-  auditSwitch,
-  auditNumber,
   auditCleanArray,
-  auditOptions,
+  auditDateIso8601String,
+  auditEmptyToNull,
+  auditFunction,
   auditHttpUrl,
+  auditInteger,
+  auditNullish,
+  auditNumber,
+  auditOptions,
+  auditRequire,
   auditStringToNumber,
+  auditSwitch,
+  auditTrimString,
+  type Audit,
 } from "@auditors/core"
 
 import { allJoNaturesMutable, allJoOriginesMutable } from "$lib/legal"
@@ -340,7 +340,7 @@ function auditTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditStringToNumber,
-    auditNumber,
+    auditInteger,
     auditRequire,
   )
   audit.attribute(

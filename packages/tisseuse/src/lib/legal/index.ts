@@ -2,6 +2,8 @@ import type { MenuItem } from "@tricoteuses/explorer-tools"
 
 import type { DossierLegislatif } from "./dole"
 
+import type { Jo } from "./jorf"
+
 export type { DossierLegislatif } from "./dole"
 export {
   allJoNatures,
@@ -20,6 +22,15 @@ export {
   allJorfArticleTexteNaturesMutable,
   allJorfArticleTypes,
   allJorfArticleTypesMutable,
+  allJorfSectionTaLienArtEtats,
+  allJorfSectionTaLienArtEtatsMutable,
+  allJorfSectionTaLienArtOrigines,
+  allJorfSectionTaLienArtOriginesMutable,
+  allJorfSectionTaLienSectionTaEtats,
+  allJorfSectionTaLienSectionTaEtatsMutable,
+  allJorfSectionTaTexteNatures,
+  allJorfSectionTaTexteNaturesMutable,
+  type Jo,
   type JoNature,
   type JoOrigine,
   type JorfArticle,
@@ -29,6 +40,9 @@ export {
   type JorfArticleOrigine,
   type JorfArticleTexteNature,
   type JorfArticleType,
+  type JorfSectionTa,
+  type JorfSectionTaLienArtEtat,
+  type JorfSectionTaTexteNature,
 } from "./jorf"
 export {
   allLegiArticleEtats,
@@ -143,22 +157,6 @@ export interface Idcc {
 export interface IdWrapper {
   eli: string
   id: string
-}
-
-export interface Jo {
-  META: {
-    META_SPEC: {
-      META_CONTENEUR: {
-        NUM: string
-        TITRE: string
-        DATE_PUBLI: string
-      }
-    }
-    META_COMMUN: MetaCommun
-  }
-  STRUCTURE_TXT: {
-    TM: Tm
-  }
 }
 
 export type LegalObject =

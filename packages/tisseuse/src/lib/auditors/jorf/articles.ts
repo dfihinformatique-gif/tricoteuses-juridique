@@ -1,17 +1,17 @@
 import {
-  type Audit,
-  auditRequire,
-  auditDateIso8601String,
-  auditTrimString,
-  auditInteger,
-  auditFunction,
-  auditEmptyToNull,
-  auditNullish,
-  auditSwitch,
-  auditNumber,
   auditCleanArray,
-  auditOptions,
+  auditDateIso8601String,
+  auditEmptyToNull,
+  auditFunction,
   auditHttpUrl,
+  auditInteger,
+  auditNullish,
+  auditNumber,
+  auditOptions,
+  auditRequire,
+  auditSwitch,
+  auditTrimString,
+  type Audit,
 } from "@auditors/core"
 
 import {
@@ -590,7 +590,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditFunction((titreTxt) =>
       Array.isArray(titreTxt) ? titreTxt : [titreTxt],
     ),
-    auditCleanArray(auditTitreTxt),
+    auditCleanArray(auditTitreTxt, auditRequire),
     auditRequire,
   )
   audit.attribute(data, "TM", true, errors, remainingKeys, auditTm)
@@ -781,7 +781,7 @@ function auditVersions(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditFunction((version) => (Array.isArray(version) ? version : [version])),
-    auditCleanArray(auditVersion),
+    auditCleanArray(auditVersion, auditRequire),
     auditRequire,
   )
 

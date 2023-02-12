@@ -16,12 +16,15 @@ import { auditId, auditVersions } from "$lib/auditors/legal"
 import {
   auditJo,
   auditJorfArticle,
-  joStats,
+  auditJorfSectionTa,
+  // jorfArticleStats,
+  jorfSectionTaStats,
+  // joStats,
 } from "$lib/auditors/jorf"
 import type {
   Jo,
   JorfArticle,
-  SectionTa,
+  JorfSectionTa,
   Textelr,
   TexteVersion,
   Versions,
@@ -483,10 +486,14 @@ async function importJorf(
   }
 
   // console.log(
-  //   "JORF articles stats =",
+  //   "JORF ARTICLE stats =",
   //   JSON.stringify(jorfArticleStats, null, 2),
   // )
-  console.log("JO stats =", JSON.stringify(joStats, null, 2))
+  // console.log("JO stats =", JSON.stringify(joStats, null, 2))
+  console.log(
+    "JORF SECTION_TA stats =",
+    JSON.stringify(jorfSectionTaStats, null, 2),
+  )
 }
 
 sade("import_jorf <dilaDir>", true)

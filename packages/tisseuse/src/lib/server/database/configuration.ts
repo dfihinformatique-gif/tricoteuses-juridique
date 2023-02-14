@@ -55,6 +55,13 @@ export async function configureDatabase() {
     `
   }
 
+  if (version.number < 4) {
+    await db`
+      ALTER TABLE IF EXISTS texte_version
+      ALTER COLUMN nature DROP NOT NULL
+    `
+  }
+
   // Types
 
   // Tables
@@ -122,7 +129,7 @@ export async function configureDatabase() {
     CREATE TABLE IF NOT EXISTS texte_version (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL,
-      nature text NOT NULL,
+      nature text,
       text_search tsvector NOT NULL
     )
   `
@@ -160,19 +167,15 @@ export async function configureDatabase() {
       Array<{ data: TexteVersion; id: string; nature: string }>
     >`SELECT data, id, nature FROM texte_version`.cursor(100)) {
       for (const { data, id, nature } of rows) {
-        if (data.META.META_COMMUN.NATURE !== nature) {
+        if ((data.META.META_COMMUN.NATURE ?? null) !== nature) {
           await db`
             UPDATE texte_version
-            SET nature = ${data.META.META_COMMUN.NATURE}
+            SET nature = ${data.META.META_COMMUN.NATURE ?? null}
             WHERE id = ${id}
           `
         }
       }
     }
-    await db`
-      ALTER TABLE texte_version
-      ALTER COLUMN nature SET NOT NULL
-    `
 
     // Fill "text_search" column of table texte_version.
     for await (const rows of db<

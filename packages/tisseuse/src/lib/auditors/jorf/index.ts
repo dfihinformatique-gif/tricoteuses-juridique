@@ -1,3 +1,5 @@
 export { auditJo, joStats } from "./jo"
 export { auditJorfArticle, jorfArticleStats } from "./articles"
 export { auditJorfSectionTa, jorfSectionTaStats } from "./section_ta"
+export { auditJorfTextelr, jorfTextelrStats } from "./textelr"
+export { auditJorfTexteVersion, jorfTexteVersionStats } from "./texte_version"

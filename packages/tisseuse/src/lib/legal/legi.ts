@@ -1,3 +1,5 @@
+import type { Sens } from "./shared"
+
 export interface LegiArticle {
   BLOC_TEXTUEL?: {
     CONTENU: string // HTML
@@ -32,7 +34,7 @@ export interface LegiArticle {
       "@naturetexte"?: LegiArticleLienNature
       "@nortexte"?: string
       "@num"?: string
-      "@sens": LegiArticleLienSens
+      "@sens": Sens
       "@typelien": LegiArticleLienType
     }>
   }
@@ -78,8 +80,6 @@ export type LegiArticleLienArticleOrigine =
   (typeof allLegiArticleLienArticleOrigines)[number]
 
 export type LegiArticleLienNature = (typeof allLegiArticleLienNatures)[number]
-
-export type LegiArticleLienSens = (typeof allLegiArticleLienSens)[number]
 
 export type LegiArticleLienType = (typeof allLegiArticleLienTypes)[number]
 
@@ -153,9 +153,6 @@ export const allLegiArticleLienNatures = [
   "REGLEMENTEUROPEEN", // 3
 ] as const
 export const allLegiArticleLienNaturesMutable = [...allLegiArticleLienNatures]
-
-export const allLegiArticleLienSens = ["cible", "source"] as const
-export const allLegiArticleLienSensMutable = [...allLegiArticleLienSens]
 
 export const allLegiArticleLienTypes = [
   "ABROGATION", // 237556

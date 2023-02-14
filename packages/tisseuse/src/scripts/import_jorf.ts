@@ -17,16 +17,20 @@ import {
   auditJo,
   auditJorfArticle,
   auditJorfSectionTa,
+  auditJorfTextelr,
+  auditJorfTexteVersion,
   // jorfArticleStats,
-  jorfSectionTaStats,
+  // jorfSectionTaStats,
   // joStats,
+  jorfTextelrStats,
+  // jorfTexteVersionStats,
 } from "$lib/auditors/jorf"
 import type {
   Jo,
   JorfArticle,
   JorfSectionTa,
-  Textelr,
-  TexteVersion,
+  JorfTextelr,
+  JorfTexteVersion,
   Versions,
   XmlHeader,
 } from "$lib/legal"
@@ -196,8 +200,8 @@ async function importJorf(
           | Jo
           | JorfArticle
           | JorfSectionTa
-          | Textelr
-          | TexteVersion
+          | JorfTextelr
+          | JorfTexteVersion
           | Versions
           | XmlHeader
         ),
@@ -334,7 +338,19 @@ async function importJorf(
             break
           case "TEXTE_VERSION":
             if (categoryTag === undefined || categoryTag === tag) {
-              const texteVersion = element as TexteVersion
+              const [texteVersion, error] = auditChain(
+                auditJorfTexteVersion,
+                auditRequire,
+              )(strictAudit, element) as [JorfTexteVersion, unknown]
+              assert.strictEqual(
+                error,
+                null,
+                `Unexpected format for TEXTE_VERSION:\n${JSON.stringify(
+                  texteVersion,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(error, null, 2)}`,
+              )
               const textAFragments = [
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
@@ -348,7 +364,7 @@ async function importJorf(
                 ) VALUES (
                   ${texteVersion.META.META_COMMUN.ID},
                   ${db.json(texteVersion as unknown as JSONValue)},
-                  ${texteVersion.META.META_COMMUN.NATURE},
+                  ${texteVersion.META.META_COMMUN.NATURE ?? null},
                   setweight(to_tsvector('french', ${textAFragments.join(
                     " ",
                   )}), 'A')
@@ -356,7 +372,7 @@ async function importJorf(
                 ON CONFLICT (id)
                 DO UPDATE SET
                   data = ${db.json(texteVersion as unknown as JSONValue)},
-                  nature = ${texteVersion.META.META_COMMUN.NATURE},
+                  nature = ${texteVersion.META.META_COMMUN.NATURE ?? null},
                   text_search = setweight(to_tsvector('french', ${textAFragments.join(
                     " ",
                   )}), 'A')
@@ -366,7 +382,19 @@ async function importJorf(
             break
           case "TEXTELR":
             if (categoryTag === undefined || categoryTag === tag) {
-              const textelr = element as Textelr
+              const [textelr, error] = auditChain(
+                auditJorfTextelr,
+                auditRequire,
+              )(strictAudit, element) as [JorfTextelr, unknown]
+              assert.strictEqual(
+                error,
+                null,
+                `Unexpected format for TEXTELR:\n${JSON.stringify(
+                  textelr,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(error, null, 2)}`,
+              )
               await db`
                 INSERT INTO textelr (
                   id,
@@ -490,10 +518,15 @@ async function importJorf(
   //   JSON.stringify(jorfArticleStats, null, 2),
   // )
   // console.log("JO stats =", JSON.stringify(joStats, null, 2))
-  console.log(
-    "JORF SECTION_TA stats =",
-    JSON.stringify(jorfSectionTaStats, null, 2),
-  )
+  // console.log(
+  //   "JORF SECTION_TA stats =",
+  //   JSON.stringify(jorfSectionTaStats, null, 2),
+  // )
+  console.log("JORF TEXTELR stats =", JSON.stringify(jorfTextelrStats, null, 2))
+  // console.log(
+  //   "JORF TEXTE_VERSION stats =",
+  //   JSON.stringify(jorfTexteVersionStats, null, 2),
+  // )
 }
 
 sade("import_jorf <dilaDir>", true)

@@ -39,6 +39,7 @@ export function auditJo(
   const data = { ...dataUnknown }
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
+
   audit.attribute(
     data,
     "META",

@@ -1,3 +1,5 @@
+import type { Sens } from "./shared"
+
 export interface Jo {
   META: {
     META_COMMUN: {
@@ -116,9 +118,9 @@ export interface JorfArticleTm {
 export type JorfArticleType = (typeof allJorfArticleTypes)[number]
 
 export interface JorfSectionTa {
+  ID: string
   COMMENTAIRE?: string
   CONTEXTE: {
-    ID: string
     TEXTE: {
       "@autorite"?: string
       "@cid": string
@@ -184,6 +186,120 @@ interface JorfSectionTaTm {
   TM?: JorfSectionTaTm
 }
 
+export interface JorfTextelr {
+  // TODO
+}
+
+export type JorfTextelrEtat = (typeof allJorfTextelrEtats)[number]
+
+export type JorfTextelrLienArtEtat = (typeof allJorfTextelrLienArtEtats)[number]
+
+export type JorfTextelrLienArtNature =
+  (typeof allJorfTextelrLienArtNatures)[number]
+
+export type JorfTextelrLienArtOrigine =
+  (typeof allJorfTextelrLienArtOrigines)[number]
+
+export type JorfTextelrNature = (typeof allJorfTextelrNatures)[number]
+
+export type JorfTextelrOrigine = (typeof allJorfTextelrOrigines)[number]
+
+export interface JorfTexteVersion {
+  ABRO?: {
+    CONTENU: string // HTML
+  }
+  ENTREPRISE?: {
+    "@texte_entreprise": "non" | "oui"
+    DATES_EFFET?: {
+      DATE_EFFET: string[]
+    }
+    DOMAINES?: {
+      DOMAINE: string[]
+    }
+  }
+  META: {
+    META_COMMUN: {
+      ANCIEN_ID?: string
+      ELI_ALIAS?: {
+        ID_ELI_ALIAS: string
+      }
+      ID: string
+      ID_ELI?: string
+      NATURE?: JorfTexteVersionNature
+      ORIGINE: JorfTexteVersionOrigine
+      URL: string
+    }
+    META_SPEC: {
+      META_TEXTE_CHRONICLE: {
+        CID: string
+        DATE_PUBLI: string
+        DATE_TEXTE: string
+        NOR?: string
+        NUM?: string
+        NUM_PARUTION?: number
+        NUM_SEQUENCE?: number
+        ORIGINE_PUBLI?: string
+        PAGE_DEB_PUBLI?: number
+        PAGE_FIN_PUBLI?: number
+      }
+      META_TEXTE_VERSION: {
+        AUTORITE?: string
+        DATE_DEBUT: string
+        DATE_FIN: string
+        LIENS?: {
+          LIEN: {
+            "#text"?: string
+            "@cidtexte"?: string
+            "@datesignatexte"?: string
+            "@id"?: string
+            "@naturetexte"?: JorfTexteVersionLienNature
+            "@num"?: string
+            "@nortexte"?: string
+            "@numtexte"?: string
+            "@sens": Sens
+            "@typelien": JorfTexteVersionLienType
+          }
+        }
+        MCS_TXT?: {
+          MC: string[]
+        }
+        MINISTERE?: string
+        TITRE: string
+        TITREFULL: string
+      }
+    }
+  }
+  NOTICE?: {
+    CONTENU: string // HTML
+  }
+  RECT?: {
+    CONTENU: string // HTML
+  }
+  SIGNATAIRES?: {
+    CONTENU: string // HTML
+  }
+  SM?: {
+    CONTENU: string // HTML
+  }
+  TP?: {
+    CONTENU: string // HTML
+  }
+  VISAS?: {
+    CONTENU: string // HTML
+  }
+}
+
+export type JorfTexteVersionLienNature =
+  (typeof allJorfTexteVersionLienNatures)[number]
+
+export type JorfTexteVersionLienType =
+  (typeof allJorfTexteVersionLienTypes)[number]
+
+export type JorfTexteVersionNature = (typeof allJorfTexteVersionNatures)[number]
+
+export type JorfTexteVersionOrigine =
+  (typeof allJorfTexteVersionOrigines)[number]
+
 /// Table des matières (TM) d'un Journal officiel
 export interface JoTm {
   "@niv": number
@@ -199,15 +315,15 @@ export const allJoOrigines = ["JORF"] as const
 export const allJoOriginesMutable = [...allJoOrigines]
 
 export const allJorfArticleEtats = [
-  "ABROGE",
   "ABROGE_DIFF",
+  "ABROGE",
   "ANNULE",
-  "MODIFIE",
   "MODIFIE_MORT_NE",
+  "MODIFIE",
   "PERIME",
   "TRANSFERE",
-  "VIGUEUR",
   "VIGUEUR_DIFF",
+  "VIGUEUR",
 ] as const
 export const allJorfArticleEtatsMutable = [...allJorfArticleEtats]
 
@@ -352,4 +468,407 @@ export const allJorfSectionTaTexteNatures = [
 ] as const
 export const allJorfSectionTaTexteNaturesMutable = [
   ...allJorfSectionTaTexteNatures,
+]
+
+export const allJorfTextelrEtats = [
+  "ABROGE_DIFF", // 129
+  "ABROGE", // 21890
+  "ANNULE", // 199
+  "MODIFIE_MORT_NE", // 24
+  "MODIFIE", // 3008
+  "PERIME", // 3127
+  "VIGUEUR_DIFF", // 103
+  "VIGUEUR", // 98711
+] as const
+export const allJorfTextelrEtatsMutable = [...allJorfTextelrEtats]
+
+export const allJorfTextelrLienArtEtats = ["VIGUEUR"] as const
+export const allJorfTextelrLienArtEtatsMutable = [...allJorfTextelrLienArtEtats]
+
+export const allJorfTextelrLienArtNatures = [] as const
+export const allJorfTextelrLienArtNaturesMutable = [
+  ...allJorfTextelrLienArtNatures,
+]
+
+export const allJorfTextelrLienArtOrigines = ["JORF"] as const
+export const allJorfTextelrLienArtOriginesMutable = [
+  ...allJorfTextelrLienArtOrigines,
+]
+
+export const allJorfTextelrNatures = [
+  "ABROGATION", // 8
+  "Accord multilatéral", // 1
+  "ACCORD_FONCTION_PUBLIQUE", // 4
+  "ACCORD", // 46
+  "ACTE", // 3
+  "ADDITIF", // 131
+  "ANNEXE", // 1
+  "ANNONCES", // 756
+  "ARRANGEMENT", // 1
+  "ARRET", // 65
+  "ARRETE", // 615239
+  "ARRETEAVIS", // 1
+  "ARRETEEURO", // 14
+  "ARRETEURO", // 556
+  "ATTESTATION", // 1
+  "AVENANT", // 186
+  "AVIS", // 97999
+  "AVISEURO", // 4618
+  "CANDIDAT", // 2
+  "CHARTE", // 1
+  "CIRCULAIRE", // 3532
+  "CITATION", // 494
+  "CODE", // 58
+  "COMMUNIQUE", // 17
+  "COMPLEMENT", // 2
+  "COMPOSITION", // 9
+  "CONSTITUTION", // 4
+  "CONTRAT", // 2
+  "CONVENTION", // 151
+  "DATE", // 1
+  "DECISION_CC", // 96
+  "DECISION_EURO", // 550
+  "DECISION", // 67164
+  "DECLARATION", // 20
+  "DECLARATIONEURO", // 18
+  "DECRET_LOI", // 660
+  "DECRET", // 209363
+  "DELEGATION", // 1
+  "DELIBERATION", // 3993
+  "DELIBERATIONEURO", // 36
+  "DEUXIEME", // 5
+  "DIRECTIVE_EURO", // 4249
+  "DIRECTIVE", // 13
+  "DISPOSITIONS", // 1
+  "ELECTION", // 1
+  "ELECTIONDUPRESIDENTDELAREPUBLIQU", // 2
+  "EXEQUATUR", // 174
+  "INFORMATION", // 106
+  "INFORMATIONEURO", // 1
+  "INFORMATIONS_CESE", // 285
+  "INFORMATIONS_DIVERSES", // 524
+  "INFORMATIONS_PARLEMENTAIRES", // 6042
+  "INSTRUCTION", // 158
+  "INSTRUCTIONEURO", // 524
+  "LETTRE", // 13
+  "LETTREEURO", // 15
+  "LISTE", // 5552
+  "LOI_CONSTIT", // 12
+  "LOI_ORGANIQUE", // 105
+  "LOI_PROGRAMME", // 2
+  "LOI", // 12859
+  "MEMOIRE", // 63
+  "MESSAGE", // 2
+  "MODIFICATION", // 497
+  "NOTE", // 3
+  "OBSERVATION", // 288
+  "ORDONNANCE", // 3282
+  "PREMIER", // 1
+  "PROCLAMATION", // 3
+  "PROJET", // 3
+  "PROPOSITION", // 6
+  "PROTOCOLE", // 16
+  "PUBLICATION", // 2
+  "RAPPORT", // 1968
+  "RECOMMANDATION", // 126
+  "RECTIFICATIF", // 3
+  "REGLEMENT", // 902
+  "REGLEMENTEUROPEEN", // 571
+  "RELEVE", // 3
+  "REMISE", // 121
+  "RESULTATS", // 14479
+  "SAISINE", // 392
+  "SENATUS", // 2
+  "SUSPENSION", // 1
+  "TABLEAU", // 1092
+  "TRAITE", // 5
+  "TROISIEME", // 2
+  "VOCABULAIRE", // 169
+] as const
+export const allJorfTextelrNaturesMutable = [...allJorfTextelrNatures]
+
+export const allJorfTextelrOrigines = ["JORF"] as const
+export const allJorfTextelrOriginesMutable = [...allJorfTextelrOrigines]
+
+export const allJorfTexteVersionLienNatures = [
+  "ABROGATION", // 5
+  "Accord autonome", // 3
+  "ACCORD CADRE", // 1
+  "Accord collectif national sectoriel", // 7
+  "Accord collectif national", // 50
+  "ACCORD COLLECTIF NATIONAL", // 57
+  "Accord collectif", // 6
+  "ACCORD DE BRANCHE", // 1
+  "Accord de branche", // 24
+  "Accord de champ", // 1
+  "Accord de convergence", // 3
+  "Accord de méthode", // 23
+  "Accord de rattachement", // 1
+  "Accord de substitution", // 12
+  "Accord du", // 1
+  "Accord interbranches", // 5
+  "Accord interprétatif", // 3
+  "Accord interprofessionnel départemental", // 1
+  "Accord interprofessionnel", // 8
+  "Accord national de branche", // 45
+  "Accord national interprofessionnel", // 6
+  "ACCORD NATIONAL PARITAIRE", // 16
+  "Accord national professionnel", // 1
+  "ACCORD NATIONAL PROFESSIONNEL", // 11
+  "ACCORD NATIONAL", // 101
+  "Accord national", // 20
+  "Accord paritaire national", // 4
+  "ACCORD PARITAIRE", // 5
+  "Accord paritaire", // 8
+  "ACCORD PROFESSIONNEL", // 4
+  "Accord professionnel", // 56
+  "Accord régional", // 2
+  "ACCORD_FONCTION_PUBLIQUE", // 12
+  "Accord-cadre interbranches", // 2
+  "ACCORD-CADRE", // 20
+  "Accord-cadre", // 7
+  "Accord-type", // 1
+  "ACCORD", // 1048
+  "accord", // 130
+  "Accord", // 22442
+  "ACTE", // 5
+  "Additif", // 24
+  "ADDITIF", // 39
+  "Adhésion par lettre", // 8
+  "Adhésion", // 1
+  "Annexe spécifique", // 2
+  "ANNEXE", // 149
+  "Annexe", // 367
+  "ANNEXES", // 3
+  "ANNONCES", // 4
+  "ARRET", // 48
+  "ARRETE", // 547820
+  "ARRETEEURO", // 15
+  "ARRETEURO", // 599
+  "ATTESTATION", // 2
+  "Avenant de révision", // 36
+  "Avenant rectificatif", // 1
+  "Avenant", // 18057
+  "avenant", // 185
+  "AVENANT", // 858
+  "AVIS D'INTERPRETATION", // 2
+  "Avis d'interprétation", // 8
+  "Avis interprétatif", // 4
+  "AVIS", // 30500
+  "AVISEURO", // 3645
+  "CIRCULAIRE", // 4362
+  "CODE", // 535600
+  "COMMUNIQUE", // 4
+  "COMPOSITION", // 7
+  "CONSTITUTION", // 13896
+  "Convention collective de travail", // 4
+  "Convention collective départementale", // 36
+  "CONVENTION COLLECTIVE INTERREGIONALE", // 217
+  "Convention collective interrégionale", // 7
+  "Convention collective nationale de travail", // 1
+  "CONVENTION COLLECTIVE NATIONALE", // 6
+  "Convention collective nationale", // 6077
+  "Convention collective régionale", // 148
+  "convention collective", // 106
+  "CONVENTION COLLECTIVE", // 148
+  "Convention collective", // 666
+  "Convention de référencement", // 1
+  "Convention", // 1
+  "CONVENTION", // 329
+  "DECISION_CC", // 116
+  "DECISION_EURO", // 243
+  "Décision", // 1
+  "DECISION", // 109937
+  "DECLARATION", // 8
+  "DECRET_LOI", // 2061
+  "DECRET", // 747993
+  "Délibération", // 1
+  "DELIBERATION", // 10824
+  "DELIBERATIONEURO", // 26
+  "Dénonciation par lettre", // 3
+  "Dénonciation", // 2
+  "DIRECTIVE_EURO", // 22593
+  "DIRECTIVE", // 43
+  "ELECTIONDUPRESIDENTDELAREPUBLIQU", // 6
+  "INFORMATION", // 26
+  "INFORMATIONS_DIVERSES", // 16
+  "INFORMATIONS_PARLEMENTAIRES", // 2576
+  "INSTRUCTION", // 218
+  "INSTRUCTIONEURO", // 700
+  "Lettre de dénonciation", // 1
+  "LETTREEURO", // 5
+  "LISTE", // 262
+  "LOI_CONSTIT", // 30
+  "LOI_ORGANIQUE", // 2899
+  "LOI_PROGRAMME", // 55
+  "LOI", // 216342
+  "MEMOIRE", // 21
+  "MODIFICATION", // 125
+  "NOTE", // 3
+  "OBSERVATION", // 256
+  "ORDONNANCE", // 35340
+  "Procès-verbal de désaccord", // 4
+  "PROJET", // 93
+  "PROTOCOLE D'ACCORD COLLECTIF", // 7
+  "Protocole d'accord de méthode", // 1
+  "PROTOCOLE D'ACCORD INTERBRANCHE", // 3
+  "Protocole D'accord", // 1
+  "PROTOCOLE D'ACCORD", // 33
+  "Protocole d'accord", // 62
+  "Protocole", // 55
+  "PROTOCOLE", // 7
+  "PUBLICATION", // 1
+  "RAPPORT", // 1756
+  "Recommandation patronale", // 2
+  "RECOMMANDATION_EURO", // 1
+  "RECOMMANDATION", // 243
+  "Rectificatif au Bulletin officiel n°", // 4
+  "REGLEMENT", // 800
+  "REGLEMENTEUROPEEN", // 1897
+  "RESULTATS", // 3901
+  "SAISINE", // 352
+  "SALAIRES", // 4
+  "SENATUS", // 4
+  "SUSPENSION", // 1
+  "TABLEAU", // 12
+] as const
+export const allJorfTexteVersionLienNaturesMutable = [
+  ...allJorfTexteVersionLienNatures,
+]
+
+export const allJorfTexteVersionLienTypes = [
+  "ABROGATION", // 34942
+  "ABROGE", // 72512
+  "ANNULATION", // 381
+  "ANNULE", // 32
+  "APPLICATION", // 294702
+  "CITATION", // 1220159
+  "CODIFICATION", // 249655
+  "CONCORDANCE", // 27893
+  "CONCORDE", // 328
+  "CREATION", // 44426
+  "CREE", // 1
+  "DENONCE", // 1
+  "DISJOINT", // 2
+  "DISJONCTION", // 1
+  "ELARGISSEMENT", // 10
+  "ETEND", // 40707
+  "EXTENSION", // 1002
+  "HISTO", // 2
+  "MODIFICATION", // 39581
+  "MODIFIE", // 277772
+  "PEREMPTION", // 1559
+  "PERIME", // 2
+  "RATIFICATION", // 3
+  "RATIFIE", // 342
+  "RATTACHEMENT", // 1
+  "RECTIFICATION", // 762
+  "RENVOI", // 1
+  "RENVOIT", // 811
+  "SPEC_APPLI", // 29805
+  "TEXTE_SUITE", // 74
+  "TRANSFERT", // 981
+  "TRANSPOSITION", // 6513
+  "TXT_ASSOCIE", // 11821
+  "TXT_SOURCE", // 81350
+] as const
+export const allJorfTexteVersionLienTypesMutable = [
+  ...allJorfTexteVersionLienTypes,
+]
+
+export const allJorfTexteVersionNatures = [
+  "ABROGATION", // 8
+  "Accord multilatéral", // 1
+  "ACCORD_FONCTION_PUBLIQUE", // 4
+  "ACCORD", // 46
+  "ACTE", // 3
+  "ADDITIF", // 131
+  "ANNEXE", // 1
+  "ANNONCES", // 756
+  "ARRANGEMENT", // 1
+  "ARRET", // 65
+  "ARRETE", // 615239
+  "ARRETEAVIS", // 1
+  "ARRETEEURO", // 14
+  "ARRETEURO", // 556
+  "ATTESTATION", // 1
+  "AVENANT", // 186
+  "AVIS", // 97999
+  "AVISEURO", // 4618
+  "CANDIDAT", // 2
+  "CHARTE", // 1
+  "CIRCULAIRE", // 3532
+  "CITATION", // 494
+  "CODE", // 58
+  "COMMUNIQUE", // 17
+  "COMPLEMENT", // 2
+  "COMPOSITION", // 9
+  "CONSTITUTION", // 4
+  "CONTRAT", // 2
+  "CONVENTION", // 151
+  "DATE", // 1
+  "DECISION_CC", // 96
+  "DECISION_EURO", // 550
+  "DECISION", // 67164
+  "DECLARATION", // 20
+  "DECLARATIONEURO", // 18
+  "DECRET_LOI", // 660
+  "DECRET", // 209363
+  "DELEGATION", // 1
+  "DELIBERATION", // 3993
+  "DELIBERATIONEURO", // 36
+  "DEUXIEME", // 5
+  "DIRECTIVE_EURO", // 4249
+  "DIRECTIVE", // 13
+  "DISPOSITIONS", // 1
+  "ELECTION", // 1
+  "ELECTIONDUPRESIDENTDELAREPUBLIQU", // 2
+  "EXEQUATUR", // 174
+  "INFORMATION", // 106
+  "INFORMATIONEURO", // 1
+  "INFORMATIONS_CESE", // 285
+  "INFORMATIONS_DIVERSES", // 524
+  "INFORMATIONS_PARLEMENTAIRES", // 6042
+  "INSTRUCTION", // 158
+  "INSTRUCTIONEURO", // 524
+  "LETTRE", // 13
+  "LETTREEURO", // 15
+  "LISTE", // 5552
+  "LOI_CONSTIT", // 12
+  "LOI_ORGANIQUE", // 105
+  "LOI_PROGRAMME", // 2
+  "LOI", // 12859
+  "MEMOIRE", // 63
+  "MESSAGE", // 2
+  "MODIFICATION", // 497
+  "NOTE", // 3
+  "OBSERVATION", // 288
+  "ORDONNANCE", // 3282
+  "PREMIER", // 1
+  "PROCLAMATION", // 3
+  "PROJET", // 3
+  "PROPOSITION", // 6
+  "PROTOCOLE", // 16
+  "PUBLICATION", // 2
+  "RAPPORT", // 1968
+  "RECOMMANDATION", // 126
+  "RECTIFICATIF", // 3
+  "REGLEMENT", // 902
+  "REGLEMENTEUROPEEN", // 571
+  "RELEVE", // 3
+  "REMISE", // 121
+  "RESULTATS", // 14479
+  "SAISINE", // 392
+  "SENATUS", // 2
+  "SUSPENSION", // 1
+  "TABLEAU", // 1092
+  "TRAITE", // 5
+  "TROISIEME", // 2
+  "VOCABULAIRE", // 169
+] as const
+export const allJorfTexteVersionNaturesMutable = [...allJorfTexteVersionNatures]
+
+export const allJorfTexteVersionOrigines = ["JORF"] as const
+export const allJorfTexteVersionOriginesMutable = [
+  ...allJorfTexteVersionOrigines,
 ]

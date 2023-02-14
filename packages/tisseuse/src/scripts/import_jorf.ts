@@ -522,7 +522,7 @@ async function importJorf(
   //   "JORF SECTION_TA stats =",
   //   JSON.stringify(jorfSectionTaStats, null, 2),
   // )
-  console.log("JORF TEXTELR stats =", JSON.stringify(jorfTextelrStats, null, 2))
+  // console.log("JORF TEXTELR stats =", JSON.stringify(jorfTextelrStats, null, 2))
   // console.log(
   //   "JORF TEXTE_VERSION stats =",
   //   JSON.stringify(jorfTexteVersionStats, null, 2),

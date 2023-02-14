@@ -185,7 +185,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditInteger, auditFunction((num) => num.toString())],
+      [auditNumber, auditFunction((num) => num.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )
@@ -476,7 +476,7 @@ function auditMetaCommun(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditInteger, auditFunction((id) => id.toString())],
+      [auditNumber, auditFunction((id) => id.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )
@@ -670,7 +670,7 @@ function auditTitreTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       errors,
       remainingKeys,
       auditSwitch(
-        [auditNumber, auditInteger, auditFunction((num) => num.toString())],
+        [auditNumber, auditFunction((num) => num.toString())],
         [auditTrimString, auditEmptyToNull],
       ),
       auditRequire,

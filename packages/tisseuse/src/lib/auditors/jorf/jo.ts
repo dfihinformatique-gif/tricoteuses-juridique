@@ -148,7 +148,7 @@ function auditMetaCommun(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditInteger, auditFunction((id) => id.toString())],
+      [auditNumber, auditFunction((id) => id.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
     auditNullish,

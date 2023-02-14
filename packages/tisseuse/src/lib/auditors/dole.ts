@@ -472,7 +472,7 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditInteger, auditFunction((numero) => numero.toString())],
+      [auditNumber, auditFunction((numero) => numero.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )

@@ -298,7 +298,7 @@ function auditMcsArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(
       auditSwitch(
-        [auditNumber, auditInteger, auditFunction((num) => num.toString())],
+        [auditNumber, auditFunction((num) => num.toString())],
         [auditTrimString, auditEmptyToNull],
       ),
     ),
@@ -423,7 +423,7 @@ function auditMetaCommun(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditInteger, auditFunction((id) => id.toString())],
+      [auditNumber, auditFunction((id) => id.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )

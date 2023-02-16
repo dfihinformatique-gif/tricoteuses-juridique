@@ -5,6 +5,7 @@ import {
   auditFunction,
   auditInteger,
   auditNullish,
+  auditNumber,
   auditOptions,
   auditRequire,
   auditStringToNumber,
@@ -14,13 +15,13 @@ import {
 } from "@auditors/core"
 
 import {
-  allJorfSectionTaLienArtEtatsMutable,
-  allJorfSectionTaLienArtOriginesMutable,
-  // allJorfSectionTaLienSectionTaEtatsMutable,
-  allJorfSectionTaTexteNaturesMutable,
+  allLegiSectionTaLienArtEtatsMutable,
+  allLegiSectionTaLienArtOriginesMutable,
+  allLegiSectionTaLienSectionTaEtatsMutable,
+  allLegiSectionTaTexteNaturesMutable,
 } from "$lib/legal"
 
-export const jorfSectionTaStats: {
+export const legiSectionTaStats: {
   countByLienArtEtat: { [etat: string]: number }
   countByLienArtOrigine: { [origine: string]: number }
   countByLienSectionTaEtat: { [etat: string]: number }
@@ -57,7 +58,7 @@ function auditContexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
   return audit.reduceRemaining(data, errors, remainingKeys)
 }
 
-export function auditJorfSectionTa(
+export function auditLegiSectionTa(
   audit: Audit,
   dataUnknown: unknown,
 ): [unknown, unknown] {
@@ -72,17 +73,15 @@ export function auditJorfSectionTa(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  for (const key of ["COMMENTAIRE", "TITRE_TA"]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditTrimString,
-      auditEmptyToNull,
-    )
-  }
+  audit.attribute(
+    data,
+    "COMMENTAIRE",
+    true,
+    errors,
+    remainingKeys,
+    auditTrimString,
+    auditEmptyToNull,
+  )
   audit.attribute(
     data,
     "CONTEXTE",
@@ -111,6 +110,17 @@ export function auditJorfSectionTa(
     auditSwitch(
       [auditTrimString, auditEmptyToNull, auditNullish],
       auditStructureTa,
+    ),
+  )
+  audit.attribute(
+    data,
+    "TITRE_TA",
+    true,
+    errors,
+    remainingKeys,
+    auditSwitch(
+      [auditNumber, auditFunction((num) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
     ),
   )
 
@@ -149,11 +159,11 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((etat) => {
-    //   jorfSectionTaStats.countByLienArtEtat[etat] =
-    //     (jorfSectionTaStats.countByLienArtEtat[etat] ?? 0) + 1
+    //   legiSectionTaStats.countByLienArtEtat[etat] =
+    //     (legiSectionTaStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allJorfSectionTaLienArtEtatsMutable),
+    auditOptions(allLegiSectionTaLienArtEtatsMutable),
   )
   audit.attribute(
     data,
@@ -183,11 +193,11 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((origine) => {
-    //   jorfSectionTaStats.countByLienArtOrigine[origine] =
-    //     (jorfSectionTaStats.countByLienArtOrigine[origine] ?? 0) + 1
+    //   legiSectionTaStats.countByLienArtOrigine[origine] =
+    //     (legiSectionTaStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJorfSectionTaLienArtOriginesMutable),
+    auditOptions(allLegiSectionTaLienArtOriginesMutable),
     auditRequire,
   )
 
@@ -216,8 +226,10 @@ function auditLienSectionTa(
       true,
       errors,
       remainingKeys,
-      auditTrimString,
-      auditEmptyToNull,
+      auditSwitch(
+        [auditNumber, auditFunction((num) => num.toString())],
+        [auditTrimString, auditEmptyToNull],
+      ),
     )
   }
   for (const key of ["@cid", "@id", "@url"]) {
@@ -252,12 +264,11 @@ function auditLienSectionTa(
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((etat) => {
-    //   jorfSectionTaStats.countByLienSectionTaEtat[etat] =
-    //     (jorfSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
+    //   legiSectionTaStats.countByLienSectionTaEtat[etat] =
+    //     (legiSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    // auditOptions(allJorfSectionTaLienSectionTaEtatsMutable),
-    auditNullish,
+    auditOptions(allLegiSectionTaLienSectionTaEtatsMutable),
   )
   audit.attribute(
     data,
@@ -370,11 +381,11 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((nature) => {
-    //   jorfSectionTaStats.countByTexteNature[nature] =
-    //     (jorfSectionTaStats.countByTexteNature[nature] ?? 0) + 1
+    //   legiSectionTaStats.countByTexteNature[nature] =
+    //     (legiSectionTaStats.countByTexteNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allJorfSectionTaTexteNaturesMutable),
+    auditOptions(allLegiSectionTaTexteNaturesMutable),
   )
   audit.attribute(
     data,
@@ -411,8 +422,10 @@ function auditTitreTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
   for (const key of ["@debut", "@fin"]) {
     audit.attribute(
@@ -506,7 +519,8 @@ function auditTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTitreTm,
+    auditFunction((titreTm) => (Array.isArray(titreTm) ? titreTm : [titreTm])),
+    auditCleanArray(auditTitreTm, auditRequire),
     auditRequire,
   )
   audit.attribute(data, "TM", true, errors, remainingKeys, auditTm)

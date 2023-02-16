@@ -187,7 +187,65 @@ interface JorfSectionTaTm {
 }
 
 export interface JorfTextelr {
-  // TODO
+  META: {
+    META_COMMUN: {
+      ANCIEN_ID?: string
+      ELI_ALIAS?: {
+        ID_ELI_ALIAS: string
+      }
+      ID: string
+      ID_ELI?: string
+      NATURE?: JorfTextelrNature
+      ORIGINE: JorfTextelrOrigine
+      URL: string
+    }
+    META_SPEC: {
+      META_TEXTE_CHRONICLE: {
+        CID: string
+        DATE_PUBLI: string
+        DATE_TEXTE: string
+        NOR?: string
+        NUM?: string
+        NUM_PARUTION?: number
+        NUM_SEQUENCE?: number
+        ORIGINE_PUBLI?: string
+        PAGE_DEB_PUBLI?: number
+        PAGE_FIN_PUBLI?: number
+      }
+    }
+  }
+  STRUCT?: {
+    LIEN_ART?: Array<{
+      "@debut": string
+      "@etat"?: JorfTextelrLienArtEtat
+      "@fin": string
+      "@id": string
+      // "@nature"?: undefined
+      "@num"?: string
+      "@origine"?: JorfTextelrLienArtOrigine
+    }>
+    LIEN_SECTION_TA?: Array<{
+      "#text"?: string
+      "@cid": string
+      "@debut": string
+      // "@etat"?: undefined
+      "@fin": string
+      "@id": string
+      "@niv": number
+      "@url": string
+    }>
+  }
+  VERSIONS: {
+    VERSION: Array<{
+      "@etat"?: JorfTextelrEtat
+      LIEN_TXT: {
+        "@debut": string
+        "@fin": string
+        "@id": string
+        "@num"?: string
+      }
+    }>
+  }
 }
 
 export type JorfTextelrEtat = (typeof allJorfTextelrEtats)[number]

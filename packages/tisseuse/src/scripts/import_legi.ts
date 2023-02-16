@@ -15,13 +15,19 @@ import sade from "sade"
 import { auditId, auditVersions } from "$lib/auditors/legal"
 import {
   auditLegiArticle,
+  auditLegiSectionTa,
+  auditLegiTextelr,
+  auditLegiTexteVersion,
   // legiArticleStats
+  // legiSectionTaStats,
+  // legiTextelrStats,
+  // legiTexteVersionStats,
 } from "$lib/auditors/legi"
 import type {
   LegiArticle,
-  SectionTa,
-  Textelr,
-  TexteVersion,
+  LegiSectionTa,
+  LegiTextelr,
+  LegiTexteVersion,
   Versions,
   XmlHeader,
 } from "$lib/legal"
@@ -175,7 +181,14 @@ async function importLegi(
       const xmlData = xmlParser.parse(xmlString)
       for (const [tag, element] of Object.entries(xmlData) as [
         CategoryTag | "?xml",
-        LegiArticle | SectionTa | Textelr | TexteVersion | Versions | XmlHeader,
+        (
+          | LegiArticle
+          | LegiSectionTa
+          | LegiTextelr
+          | LegiTexteVersion
+          | Versions
+          | XmlHeader
+        ),
       ][]) {
         switch (tag) {
           case "?xml": {
@@ -250,7 +263,19 @@ async function importLegi(
             break
           case "SECTION_TA":
             if (categoryTag === undefined || categoryTag === tag) {
-              const section = element as SectionTa
+              const [section, error] = auditChain(
+                auditLegiSectionTa,
+                auditRequire,
+              )(strictAudit, element) as [LegiSectionTa, unknown]
+              assert.strictEqual(
+                error,
+                null,
+                `Unexpected format for SECTION_TA:\n${JSON.stringify(
+                  section,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(error, null, 2)}`,
+              )
               await db`
                 INSERT INTO section_ta (
                   id,
@@ -268,7 +293,19 @@ async function importLegi(
             break
           case "TEXTE_VERSION":
             if (categoryTag === undefined || categoryTag === tag) {
-              const texteVersion = element as TexteVersion
+              const [texteVersion, error] = auditChain(
+                auditLegiTexteVersion,
+                auditRequire,
+              )(strictAudit, element) as [LegiTexteVersion, unknown]
+              assert.strictEqual(
+                error,
+                null,
+                `Unexpected format for TEXTE_VERSION:\n${JSON.stringify(
+                  texteVersion,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(error, null, 2)}`,
+              )
               const textAFragments = [
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
@@ -282,7 +319,7 @@ async function importLegi(
                 ) VALUES (
                   ${texteVersion.META.META_COMMUN.ID},
                   ${db.json(texteVersion as unknown as JSONValue)},
-                  ${texteVersion.META.META_COMMUN.NATURE},
+                  ${texteVersion.META.META_COMMUN.NATURE ?? ""},
                   setweight(to_tsvector('french', ${textAFragments.join(
                     " ",
                   )}), 'A')
@@ -290,7 +327,7 @@ async function importLegi(
                 ON CONFLICT (id)
                 DO UPDATE SET
                   data = ${db.json(texteVersion as unknown as JSONValue)},
-                  nature = ${texteVersion.META.META_COMMUN.NATURE},
+                  nature = ${texteVersion.META.META_COMMUN.NATURE ?? ""},
                   text_search = setweight(to_tsvector('french', ${textAFragments.join(
                     " ",
                   )}), 'A')
@@ -300,7 +337,19 @@ async function importLegi(
             break
           case "TEXTELR":
             if (categoryTag === undefined || categoryTag === tag) {
-              const textelr = element as Textelr
+              const [textelr, error] = auditChain(
+                auditLegiTextelr,
+                auditRequire,
+              )(strictAudit, element) as [LegiTextelr, unknown]
+              assert.strictEqual(
+                error,
+                null,
+                `Unexpected format for TEXTELR:\n${JSON.stringify(
+                  textelr,
+                  null,
+                  2,
+                )}\nError:\n${JSON.stringify(error, null, 2)}`,
+              )
               await db`
                 INSERT INTO textelr (
                   id,
@@ -412,8 +461,17 @@ async function importLegi(
     }
   }
   // console.log(
-  //   "LEGI articles stats =",
+  //   "LEGI ARTICLE stats =",
   //   JSON.stringify(legiArticleStats, null, 2),
+  // )
+  // console.log(
+  //   "LEGI SECTION_TA stats =",
+  //   JSON.stringify(legiSectionTaStats, null, 2),
+  // )
+  // console.log("LEGI TEXTELR stats =", JSON.stringify(legiTextelrStats, null, 2))
+  // console.log(
+  //   "LEGI TEXTE_VERSION stats =",
+  //   JSON.stringify(legiTexteVersionStats, null, 2),
   // )
 }
 

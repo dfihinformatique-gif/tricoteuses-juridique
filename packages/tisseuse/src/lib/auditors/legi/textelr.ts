@@ -16,19 +16,20 @@ import {
 } from "@auditors/core"
 
 import {
-  allJorfTextelrEtatsMutable,
-  allJorfTextelrLienArtEtatsMutable,
-  // allJorfTextelrLienArtNaturesMutable,
-  allJorfTextelrLienArtOriginesMutable,
-  allJorfTextelrNaturesMutable,
-  allJorfTextelrOriginesMutable,
+  allLegiTextelrEtatsMutable,
+  allLegiTextelrLienArtEtatsMutable,
+  allLegiTextelrLienArtOriginesMutable,
+  allLegiTextelrLienSectionTaEtatsMutable,
+  allLegiTextelrNaturesMutable,
+  allLegiTextelrOriginesMutable,
 } from "$lib/legal"
 
-export const jorfTextelrStats: {
+export const legiTextelrStats: {
   countByEtat: { [etat: string]: number }
   countByLienArtEtat: { [etat: string]: number }
   countByLienArtNature: { [nature: string]: number }
   countByLienArtOrigine: { [origine: string]: number }
+  countByLienSectionTaEtat: { [etat: string]: number }
   countByNature: { [nature: string]: number }
   countByOrigine: { [origine: string]: number }
 } = {
@@ -36,6 +37,7 @@ export const jorfTextelrStats: {
   countByLienArtEtat: {},
   countByLienArtNature: {},
   countByLienArtOrigine: {},
+  countByLienSectionTaEtat: {},
   countByNature: {},
   countByOrigine: {},
 }
@@ -52,22 +54,10 @@ function auditEliAlias(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  audit.attribute(
-    data,
-    "ID_ELI_ALIAS",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-    auditHttpUrl,
-    auditRequire,
-  )
-
   return audit.reduceRemaining(data, errors, remainingKeys)
 }
 
-export function auditJorfTextelr(
+export function auditLegiTextelr(
   audit: Audit,
   dataUnknown: unknown,
 ): [unknown, unknown] {
@@ -144,11 +134,11 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((etat) => {
-    //   jorfTextelrStats.countByLienArtEtat[etat] =
-    //     (jorfTextelrStats.countByLienArtEtat[etat] ?? 0) + 1
+    //   legiTextelrStats.countByLienArtEtat[etat] =
+    //     (legiTextelrStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allJorfTextelrLienArtEtatsMutable),
+    auditOptions(allLegiTextelrLienArtEtatsMutable),
   )
   for (const key of ["@id"]) {
     audit.attribute(
@@ -162,22 +152,6 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       auditRequire,
     )
   }
-  audit.attribute(
-    data,
-    "@nature",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-    // auditFunction((nature) => {
-    //   jorfTextelrStats.countByLienArtNature[nature] =
-    //     (jorfTextelrStats.countByLienArtNature[nature] ?? 0) + 1
-    //   return nature
-    // }),
-    // auditOptions(allJorfTextelrLienArtNaturesMutable),
-    auditNullish,
-  )
   for (const key of ["@num"]) {
     audit.attribute(
       data,
@@ -198,11 +172,12 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((origine) => {
-    //   jorfTextelrStats.countByLienArtOrigine[origine] =
-    //     (jorfTextelrStats.countByLienArtOrigine[origine] ?? 0) + 1
+    //   legiTextelrStats.countByLienArtOrigine[origine] =
+    //     (legiTextelrStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJorfTextelrLienArtOriginesMutable),
+    auditOptions(allLegiTextelrLienArtOriginesMutable),
+    auditRequire,
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -223,16 +198,7 @@ function auditLienSectionTa(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  audit.attribute(
-    data,
-    "#text",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-  )
-  for (const key of ["@cid", "@id", "@url"]) {
+  for (const key of ["#text", "@cid", "@id", "@url"]) {
     audit.attribute(
       data,
       key,
@@ -264,12 +230,11 @@ function auditLienSectionTa(
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((etat) => {
-    //   jorfSectionTaStats.countByLienSectionTaEtat[etat] =
-    //     (jorfSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
+    //   legiTextelrStats.countByLienSectionTaEtat[etat] =
+    //     (legiTextelrStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    // auditOptions(allJorfSectionTaLienSectionTaEtatsMutable),
-    auditNullish,
+    auditOptions(allLegiTextelrLienSectionTaEtatsMutable),
   )
   audit.attribute(
     data,
@@ -391,7 +356,16 @@ function auditMetaCommun(
       [auditTrimString, auditEmptyToNull],
     ),
   )
-  audit.attribute(data, "ELI_ALIAS", true, errors, remainingKeys, auditEliAlias)
+  audit.attribute(
+    data,
+    "ELI_ALIAS",
+    true,
+    errors,
+    remainingKeys,
+    auditEliAlias,
+    auditEmptyToNull,
+    auditNullish,
+  )
   for (const key of ["ID", "URL"]) {
     audit.attribute(
       data,
@@ -406,16 +380,6 @@ function auditMetaCommun(
   }
   audit.attribute(
     data,
-    "ID_ELI",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-    auditHttpUrl,
-  )
-  audit.attribute(
-    data,
     "NATURE",
     true,
     errors,
@@ -423,11 +387,11 @@ function auditMetaCommun(
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((nature) => {
-    //   jorfTextelrStats.countByNature[nature] =
-    //     (jorfTextelrStats.countByNature[nature] ?? 0) + 1
+    //   legiTextelrStats.countByNature[nature] =
+    //     (legiTextelrStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allJorfTextelrNaturesMutable),
+    auditOptions(allLegiTextelrNaturesMutable),
   )
   audit.attribute(
     data,
@@ -438,11 +402,11 @@ function auditMetaCommun(
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((origine) => {
-    //   jorfTextelrStats.countByOrigine[origine] =
-    //     (jorfTextelrStats.countByOrigine[origine] ?? 0) + 1
+    //   legiTextelrStats.countByOrigine[origine] =
+    //     (legiTextelrStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJorfTextelrOriginesMutable),
+    auditOptions(allLegiTextelrOriginesMutable),
     auditRequire,
   )
 
@@ -501,7 +465,7 @@ function auditMetaTexteChronicle(
       auditRequire,
     )
   }
-  for (const key of ["DATE_PUBLI", "DATE_TEXTE"]) {
+  for (const key of ["DATE_PUBLI", "DATE_TEXTE", "DERNIERE_MODIFICATION"]) {
     audit.attribute(
       data,
       key,
@@ -552,6 +516,17 @@ function auditMetaTexteChronicle(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
+  )
+  audit.attribute(
+    data,
+    "VERSIONS_A_VENIR",
+    true,
+    errors,
+    remainingKeys,
+    auditSwitch(
+      [auditTrimString, auditEmptyToNull, auditNullish],
+      auditVersionsAVenir,
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -612,11 +587,11 @@ function auditVersion(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditTrimString,
     auditEmptyToNull,
     // auditFunction((etat) => {
-    //   jorfTextelrStats.countByEtat[etat] =
-    //     (jorfTextelrStats.countByEtat[etat] ?? 0) + 1
+    //   legiTextelrStats.countByEtat[etat] =
+    //     (legiTextelrStats.countByEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allJorfTextelrEtatsMutable),
+    auditOptions(allLegiTextelrEtatsMutable),
   )
   audit.attribute(
     data,
@@ -651,6 +626,35 @@ function auditVersions(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditFunction((version) => (Array.isArray(version) ? version : [version])),
     auditCleanArray(auditVersion, auditRequire),
+    auditRequire,
+  )
+
+  return audit.reduceRemaining(data, errors, remainingKeys)
+}
+
+function auditVersionsAVenir(
+  audit: Audit,
+  dataUnknown: unknown,
+): [unknown, unknown] {
+  if (dataUnknown == null) {
+    return [dataUnknown, null]
+  }
+  if (typeof dataUnknown !== "object") {
+    return audit.unexpectedType(dataUnknown, "object")
+  }
+
+  const data = { ...dataUnknown }
+  const errors: { [key: string]: unknown } = {}
+  const remainingKeys = new Set(Object.keys(data))
+
+  audit.attribute(
+    data,
+    "VERSION_A_VENIR",
+    true,
+    errors,
+    remainingKeys,
+    auditFunction((date) => (Array.isArray(date) ? date : [date])),
+    auditCleanArray(auditDateIso8601String, auditRequire),
     auditRequire,
   )
 

@@ -674,17 +674,15 @@ function auditMetaTexteChronicle(
       ),
     )
   }
-  for (const key of ["ORIGINE_PUBLI"]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditTrimString,
-      auditEmptyToNull,
-    )
-  }
+  audit.attribute(
+    data,
+    "ORIGINE_PUBLI",
+    true,
+    errors,
+    remainingKeys,
+    auditTrimString,
+    auditEmptyToNull,
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

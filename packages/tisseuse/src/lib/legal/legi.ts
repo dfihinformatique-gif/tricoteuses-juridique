@@ -595,7 +595,31 @@ export const allLegiTexteVersionEtats = [
 ] as const
 export const allLegiTexteVersionEtatsMutable = [...allLegiTexteVersionEtats]
 
-export const allLegiTexteVersionLienNatures = [] as const
+export const allLegiTexteVersionLienNatures = [
+  "ARRETE", // 24259
+  "ARRETEEURO", // 4
+  "AVENANT", // 3
+  "AVIS", // 25
+  "CIRCULAIRE", // 5
+  "CODE", // 94380
+  "CONSTITUTION", // 194
+  "DECISION_EURO", // 1
+  "DECISION", // 167
+  "DECRET_LOI", // 14
+  "DECRET", // 125804
+  "DELIBERATION", // 152
+  "DIRECTIVE_EURO", // 317
+  "INSTRUCTION", // 4
+  "INSTRUCTIONEURO", // 3
+  "LOI_CONSTIT", // 3
+  "LOI_ORGANIQUE", // 775
+  "LOI_PROGRAMME", // 18
+  "LOI", // 59181
+  "ORDONNANCE", // 7496
+  "RAPPORT", // 39
+  "REGLEMENT", // 1
+  "REGLEMENTEUROPEEN", // 2
+] as const
 export const allLegiTexteVersionLienNaturesMutable = [
   ...allLegiTexteVersionLienNatures,
 ]

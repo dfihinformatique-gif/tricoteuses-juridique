@@ -9,7 +9,7 @@ async function downloadDataset(
   datasetName: string,
   dilaDir: string,
   { push, silent }: { push?: boolean; silent?: boolean } = {},
-): Promise<void> {
+): Promise<number> {
   const datasetNameUpper = datasetName.toUpperCase()
   const archivesUrl = `https://echanges.dila.gouv.fr/OPENDATA/${datasetNameUpper}/`
   const fullArchiveNameRegExp = new RegExp(
@@ -43,6 +43,7 @@ async function downloadDataset(
     archivesA = [archivesA]
   }
   const archiveNameByDate: { [date: string]: string } = {}
+  let newDatasetVersionsCount = 0
   let latestFullArchiveDate: string | undefined = undefined
   for (const { "@href": filename } of archivesA) {
     if (
@@ -153,6 +154,7 @@ async function downloadDataset(
     cd(datasetName)
     await $`git add .`
     if ((await $`git diff --quiet --staged`.exitCode) !== 0) {
+      newDatasetVersionsCount++
       await $`git commit -m ${archiveName} --quiet`
       if (push) {
         await $`git push`
@@ -161,6 +163,9 @@ async function downloadDataset(
     cd("..")
     await $`rm ${archiveName}`
   }
+  return (newDatasetVersionsCount = 0
+    ? 1 // No new version of dataset has been added to git repository.
+    : 0)
 }
 
 sade("download_dila_dataset <dataset> <dilaDir>", true)
@@ -169,7 +174,6 @@ sade("download_dila_dataset <dataset> <dilaDir>", true)
   .option("-p, --push", "Push dataset repository")
   .option("-s, --silent", "Hide log messages")
   .action(async (dataset, dilaDir, options) => {
-    await downloadDataset(dataset, dilaDir, options)
-    process.exit(0)
+    process.exit(await downloadDataset(dataset, dilaDir, options))
   })
   .parse(process.argv)

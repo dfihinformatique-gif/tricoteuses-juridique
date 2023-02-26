@@ -164,7 +164,7 @@ async function downloadDataset(
     await $`rm ${archiveName}`
   }
   return (newDatasetVersionsCount = 0
-    ? 1 // No new version of dataset has been added to git repository.
+    ? 10 // No new version of dataset has been added to git repository.
     : 0)
 }
 

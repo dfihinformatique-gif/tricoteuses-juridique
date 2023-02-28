@@ -163,9 +163,9 @@ async function downloadDataset(
     cd("..")
     await $`rm ${archiveName}`
   }
-  return (newDatasetVersionsCount = 0
+  return newDatasetVersionsCount === 0
     ? 10 // No new version of dataset has been added to git repository.
-    : 0)
+    : 0
 }
 
 sade("download_dila_dataset <dataset> <dilaDir>", true)

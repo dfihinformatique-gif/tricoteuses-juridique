@@ -4,7 +4,7 @@ import sade from "sade"
 import type { JorfTexteVersion } from "$lib"
 import { db } from "$lib/server/database"
 
-async function linkDecretsToLois(): Promise<void> {
+async function associateDecretsToLois(): Promise<void> {
   for (const texteVersion of (
     await db<{ data: JorfTexteVersion }[]>`
       SELECT data
@@ -30,10 +30,10 @@ async function linkDecretsToLois(): Promise<void> {
   }
 }
 
-sade("link_decrets_and_lois", true)
-  .describe("Link decrets to lois in database")
+sade("associate_decrets_and_lois", true)
+  .describe("Associate décrets with lois in database")
   .action(async () => {
-    await linkDecretsToLois()
+    await associateDecretsToLois()
     process.exit(0)
   })
   .parse(process.argv)

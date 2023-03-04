@@ -4,7 +4,7 @@
 
   import { page } from "$app/stores"
   import Pagination from "$lib/components/Pagination.svelte"
-  import type { Article, SectionTa, Textelr, TexteVersion } from "$lib/legal"
+  import type { TexteVersion } from "$lib/legal"
   import { summarizeTexteVersionProperties } from "$lib/summaries"
 
   import type { PageData } from "./$types"

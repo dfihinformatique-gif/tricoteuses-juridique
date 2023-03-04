@@ -4,7 +4,6 @@ import {
   auditEmptyToNull,
   auditFunction,
   auditHttpUrl,
-  auditInteger,
   auditNullish,
   auditNumber,
   auditOptions,

@@ -472,7 +472,7 @@ export const summarizeLienArtId: Summarizer = (access, value) => {
         type: "raw_data",
       },
       { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
-      summarizeLienArt(access, lienArt)!,
+      summarizeLienArt(access, lienArt) as Summary,
     ],
     type: "concatenation",
   }
@@ -528,7 +528,7 @@ export const summarizeLienSectionTaId: Summarizer = (access, value) => {
         type: "raw_data",
       },
       { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
-      summarizeLienSectionTa(access, lienSectionTa)!,
+      summarizeLienSectionTa(access, lienSectionTa) as Summary,
     ],
     type: "concatenation",
   }

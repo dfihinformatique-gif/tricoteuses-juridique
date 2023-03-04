@@ -1,6 +1,5 @@
 <script lang="ts">
   import { iterArrayOrSingleton } from "@tricoteuses/explorer-tools"
-  import { SummaryView } from "augmented-data-viewer"
 
   import type { Aggregate } from "$lib/aggregates"
   import ArticleView from "$lib/components/ArticleView.svelte"

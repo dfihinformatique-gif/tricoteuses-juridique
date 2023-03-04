@@ -62,7 +62,7 @@ async function exportEcheanciers(csvFilePath: string): Promise<void> {
       }
     }
   }
-  const csvFile = await fs.writeFile(
+  await fs.writeFile(
     csvFilePath,
     Papa.unparse(data, {
       columns: [

@@ -1,5 +1,4 @@
 import assert from "assert"
-import type { SerializableParameter } from "postgres"
 
 import type { TexteVersion } from "$lib/legal"
 import { db, type Version, versionNumber } from "$lib/server/database"

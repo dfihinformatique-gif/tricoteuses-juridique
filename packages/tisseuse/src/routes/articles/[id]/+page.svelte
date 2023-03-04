@@ -3,6 +3,7 @@
 
   import ArticleView from "$lib/components/ArticleView.svelte"
   import IdPagesSwitcher from "$lib/components/IdPagesSwitcher.svelte"
+  import type { Article } from "$lib/legal"
   import {
     summarizeAggregateProperties,
     summarizeLegalObject,
@@ -14,8 +15,8 @@
 
   let showRawData = false
 
-  $: id = data.id!
-  $: article = data.article![id]
+  $: id = data.id
+  $: article = (data.article as { [articleId: string]: Article })[id]
 
   $: summary = summarizeLegalObject({ key: "article" }, "article", article)
 </script>

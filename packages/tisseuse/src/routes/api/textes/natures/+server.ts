@@ -2,7 +2,7 @@ import { db } from "$lib/server/database"
 
 import type { RequestHandler } from "./$types"
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async () => {
   const natures = (
     await db<{ nature: string }[]>`
       SELECT distinct nature

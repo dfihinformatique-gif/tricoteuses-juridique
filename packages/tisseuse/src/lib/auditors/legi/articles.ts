@@ -3,8 +3,6 @@ import {
   auditDateIso8601String,
   auditEmptyToNull,
   auditFunction,
-  auditHttpUrl,
-  auditInteger,
   auditNumber,
   auditOptions,
   auditRequire,

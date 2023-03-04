@@ -102,7 +102,7 @@ async function importKali(
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
     if (skip) {
-      if (relativePath.startsWith(resume!)) {
+      if (relativePath.startsWith(resume as string)) {
         skip = false
         console.log(`Resuming at file ${relativePath}...`)
       } else {

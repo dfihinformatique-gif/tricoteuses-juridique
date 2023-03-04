@@ -6,6 +6,7 @@
   import type { Follow } from "$lib/aggregates"
   import IdPagesSwitcher from "$lib/components/IdPagesSwitcher.svelte"
   import TexteVersionView from "$lib/components/TexteVersionView.svelte"
+  import type { TexteVersion } from "$lib/legal"
   import { summarizeLegalObject } from "$lib/summaries"
 
   import type { PageData } from "./$types"
@@ -16,8 +17,10 @@
   let showRawData = false
 
   $: follow = data.follow
-  $: id = data.id!
-  $: texteVersion = data.texte_version![id]
+  $: id = data.id
+  $: texteVersion = (
+    data.texte_version as { [texteVersionId: string]: TexteVersion }
+  )[id]
   $: url = $page.url
 
   $: summary = summarizeLegalObject(
@@ -45,8 +48,8 @@
       searchParams.append("follow", aFollow)
     }
     goto(new URL(`${url.pathname}?${searchParams.toString()}`, url), {
-      keepfocus: true,
-      noscroll: true,
+      keepFocus: true,
+      noScroll: true,
     })
   }
 </script>

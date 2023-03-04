@@ -674,31 +674,6 @@ function auditNota(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
   return audit.reduceRemaining(data, errors, remainingKeys)
 }
 
-function auditNotice(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
-  if (dataUnknown == null) {
-    return [dataUnknown, null]
-  }
-  if (typeof dataUnknown !== "object") {
-    return audit.unexpectedType(dataUnknown, "object")
-  }
-
-  const data = { ...dataUnknown }
-  const errors: { [key: string]: unknown } = {}
-  const remainingKeys = new Set(Object.keys(data))
-
-  audit.attribute(
-    data,
-    "CONTENU",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-  )
-
-  return audit.reduceRemaining(data, errors, remainingKeys)
-}
-
 function auditRect(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
   if (dataUnknown == null) {
     return [dataUnknown, null]
@@ -747,33 +722,6 @@ function auditSignataires(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-  )
-
-  return audit.reduceRemaining(data, errors, remainingKeys)
-}
-
-function auditSm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
-  if (dataUnknown == null) {
-    return [dataUnknown, null]
-  }
-  if (typeof dataUnknown !== "object") {
-    return audit.unexpectedType(dataUnknown, "object")
-  }
-
-  const data = { ...dataUnknown }
-  const errors: { [key: string]: unknown } = {}
-  const remainingKeys = new Set(Object.keys(data))
-
-  audit.attribute(
-    data,
-    "CONTENU",
-    true,
-    errors,
-    remainingKeys,
-    auditSwitch(
-      [auditNumber, auditFunction((num) => num.toString())],
-      [auditTrimString, auditEmptyToNull],
-    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)

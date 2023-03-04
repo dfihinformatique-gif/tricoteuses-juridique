@@ -22,7 +22,7 @@ import {
   // jorfArticleStats,
   // jorfSectionTaStats,
   // joStats,
-  jorfTextelrStats,
+  // jorfTextelrStats,
   // jorfTexteVersionStats,
 } from "$lib/auditors/jorf"
 import type {
@@ -175,7 +175,7 @@ async function importJorf(
   iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
     const relativePath = path.join(...relativeSplitPath)
     if (skip) {
-      if (relativePath.startsWith(resume!)) {
+      if (relativePath.startsWith(resume as string)) {
         skip = false
         console.log(`Resuming at file ${relativePath}...`)
       } else {

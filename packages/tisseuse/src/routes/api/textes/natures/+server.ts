@@ -1,4 +1,4 @@
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 
 import type { RequestHandler } from "./$types"
 

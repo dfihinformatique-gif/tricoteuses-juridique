@@ -1,7 +1,7 @@
 import assert from "assert"
 
 import type { TexteVersion } from "$lib/legal"
-import { db, type Version, versionNumber } from "$lib/server/database"
+import { db, type Version, versionNumber } from "$lib/server/databases"
 
 export async function configureDatabase() {
   // Table: version
@@ -88,6 +88,14 @@ export async function configureDatabase() {
     CREATE TABLE IF NOT EXISTS dossier_legislatif (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL
+    )
+  `
+
+  // Table: dossier_legislatif_assemblee_association
+  await db`
+    CREATE TABLE IF NOT EXISTS dossier_legislatif_assemblee_associations (
+      id char(20) PRIMARY KEY REFERENCES dossier_legislatif(id),
+      assemblee_uid char(13) NOT NULL
     )
   `
 

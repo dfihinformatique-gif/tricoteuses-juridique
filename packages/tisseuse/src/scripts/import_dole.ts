@@ -9,7 +9,7 @@ import sade from "sade"
 
 import { auditDossierLegislatif } from "$lib/auditors/dole"
 import type { DossierLegislatif, XmlHeader } from "$lib/legal"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 import { walkDir } from "$lib/server/file_systems"
 
 const xmlParser = new XMLParser({

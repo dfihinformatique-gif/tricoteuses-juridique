@@ -3,7 +3,7 @@ import Papa from "papaparse"
 import sade from "sade"
 
 import type { DossierLegislatif } from "$lib/legal"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 
 async function exportEcheanciers(csvFilePath: string): Promise<void> {
   const data: Array<{

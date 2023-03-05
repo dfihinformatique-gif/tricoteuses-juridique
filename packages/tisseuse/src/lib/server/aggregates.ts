@@ -10,7 +10,7 @@ import {
   type Textelr,
   type TexteVersion,
 } from "$lib/legal"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 
 export class Aggregator {
   article: { [id: string]: Article } = {}

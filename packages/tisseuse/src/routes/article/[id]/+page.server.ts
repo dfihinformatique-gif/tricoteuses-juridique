@@ -1,7 +1,7 @@
 import { error } from "@sveltejs/kit"
 
 import type { Article } from "$lib/legal"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 
 import type { PageServerLoad } from "./$types"
 

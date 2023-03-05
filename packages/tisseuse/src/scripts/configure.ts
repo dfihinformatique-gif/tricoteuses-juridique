@@ -1,4 +1,4 @@
-import { configureDatabase } from "$lib/server/database/configuration"
+import { configureDatabase } from "$lib/server/databases/configuration"
 
 export async function configure(): Promise<void> {
   await configureDatabase()

@@ -15,7 +15,7 @@ import type {
   TexteVersion,
   XmlHeader,
 } from "$lib/legal"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 import { walkDir } from "$lib/server/file_systems"
 
 const xmlParser = new XMLParser({

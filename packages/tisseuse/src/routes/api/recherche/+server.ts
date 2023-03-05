@@ -5,7 +5,7 @@ import type { Follow } from "$lib/aggregates"
 import { auditFollowQuery, auditQQueryParameter } from "$lib/auditors/queries"
 import type { Article } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 
 import type { RequestHandler } from "./$types"
 

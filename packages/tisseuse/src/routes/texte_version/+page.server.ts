@@ -3,7 +3,7 @@ import { error } from "@sveltejs/kit"
 
 import { auditSearchQueryContent } from "$lib/auditors/queries"
 import type { TexteVersion } from "$lib/legal"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 
 import type { PageServerLoad } from "./$types"
 

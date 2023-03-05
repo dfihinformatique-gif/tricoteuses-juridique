@@ -2,7 +2,7 @@ import metslesliens from "metslesliens"
 import sade from "sade"
 
 import type { JorfTexteVersion } from "$lib"
-import { db } from "$lib/server/database"
+import { db } from "$lib/server/databases"
 
 async function associateDecretsToLois(): Promise<void> {
   for (const texteVersion of (

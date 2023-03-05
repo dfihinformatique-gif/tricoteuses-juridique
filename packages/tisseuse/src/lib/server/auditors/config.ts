@@ -25,6 +25,15 @@ export function auditConfig(
 
   audit.attribute(
     data,
+    "assembleeDb",
+    true,
+    errors,
+    remainingKeys,
+    auditDb,
+    auditRequire,
+  )
+  audit.attribute(
+    data,
     "db",
     true,
     errors,

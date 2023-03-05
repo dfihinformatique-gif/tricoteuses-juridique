@@ -46,11 +46,11 @@ export interface DossierLegislatif {
     META_DOSSIER_LEGISLATIF: {
       DATE_CREATION: string
       DATE_DERNIERE_MODIFICATION: string
-      ID_TEXTE_1?: string
-      ID_TEXTE_2?: string
-      ID_TEXTE_3?: string
-      ID_TEXTE_4?: string
-      ID_TEXTE_5?: string
+      ID_TEXTE_1?: string // Always starts with JORFTEXT when present
+      ID_TEXTE_2?: string // Always starts with JORFTEXT when present
+      ID_TEXTE_3?: string // Always starts with JORFTEXT when present
+      ID_TEXTE_4?: string // Always starts with JORFTEXT when present
+      ID_TEXTE_5?: string // Always starts with JORFTEXT when present
       LEGISLATURE: {
         DATE_DEBUT: string
         DATE_FIN: string

@@ -17,7 +17,7 @@ async function associateDossiersLegislatifsWithAssemblee({
     ).map(({ id }) => id),
   )
 
-  const dossierIdByLawId: { [nor: string]: string } = {}
+  const dossiersIdByLawId: { [nor: string]: Set<string> } = {}
   const lawIdByNor: { [nor: string]: string } = {}
   for (const dossier of (
     await db<{ data: DossierLegislatif }[]>`
@@ -63,7 +63,11 @@ async function associateDossiersLegislatifsWithAssemblee({
         const nor = textelr.META.META_SPEC.META_TEXTE_CHRONICLE.NOR
         assert.notStrictEqual(nor, undefined)
         lawIdByNor[nor as string] = idTexte
-        dossierIdByLawId[idTexte] = dossier.META.META_COMMUN.ID
+        let lawDossiersId = dossiersIdByLawId[idTexte]
+        if (lawDossiersId === undefined) {
+          lawDossiersId = dossiersIdByLawId[idTexte] = new Set<string>()
+        }
+        dossiersIdByLawId[idTexte].add(dossier.META.META_COMMUN.ID)
       }
     }
     if (lawsId.size === 0) {
@@ -110,21 +114,22 @@ async function associateDossiersLegislatifsWithAssemblee({
       continue
     }
     assert.notStrictEqual(lawId, undefined)
-    const dossierId = dossierIdByLawId[lawId]
-    assert.notStrictEqual(dossierId, undefined)
-    await db`
-      INSERT INTO dossier_legislatif_assemblee_associations (
-        id,
-        assemblee_uid
-      ) VALUES (
-        ${dossierId},
-        ${assembleeDossier.uid}
-      )
-      ON CONFLICT (id)
-      DO UPDATE SET
-        assemblee_uid = ${assembleeDossier.uid}
-    `
-    dossierAssociationRemainingIds.delete(dossierId)
+    for (const dossierId of dossiersIdByLawId[lawId]) {
+      assert.notStrictEqual(dossierId, undefined)
+      await db`
+        INSERT INTO dossier_legislatif_assemblee_associations (
+          id,
+          assemblee_uid
+        ) VALUES (
+          ${dossierId},
+          ${assembleeDossier.uid}
+        )
+        ON CONFLICT (id)
+        DO UPDATE SET
+          assemblee_uid = ${assembleeDossier.uid}
+      `
+      dossierAssociationRemainingIds.delete(dossierId)
+    }
   }
 
   for (const id of dossierAssociationRemainingIds) {

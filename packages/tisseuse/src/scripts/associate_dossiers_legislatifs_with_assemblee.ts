@@ -142,7 +142,7 @@ sade("associate_dossiers_legislatifs_with_assemblee", true)
   .describe(
     'Associate Légifrance "dossiers législatifs" with those of Assemblée nationale',
   )
-  .option("--verbose", "Log all messages")
+  .option("-V, --verbose", "Log all messages")
   .action(async (options) => {
     await associateDossiersLegislatifsWithAssemblee(options)
     process.exit(0)

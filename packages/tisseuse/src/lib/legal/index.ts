@@ -4,7 +4,7 @@ import type { DossierLegislatif } from "./dole"
 
 import type { Jo } from "./jorf"
 
-export type { DossierLegislatif } from "./dole"
+export type { DossierLegislatif, EcheancierLigne } from "./dole"
 export {
   allJoNatures,
   allJoNaturesMutable,

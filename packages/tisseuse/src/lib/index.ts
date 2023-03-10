@@ -9,16 +9,6 @@ export {
   type ListTextesResult,
 } from "./aggregates"
 
-export { default as ArticleView } from "./components/ArticleView.svelte"
-
-export { default as LienView } from "./components/LienView.svelte"
-
-export { default as SectionTaView } from "./components/SectionTaView.svelte"
-
-export { default as TextelrView } from "./components/TextelrView.svelte"
-
-export { default as TexteVersionView } from "./components/TexteVersionView.svelte"
-
 export {
   allJoNatures,
   allJoNaturesMutable,
@@ -111,6 +101,7 @@ export {
   allSens,
   allSensMutable,
   type DossierLegislatif,
+  type EcheancierLigne,
   type Jo,
   type JoNature,
   type JoOrigine,

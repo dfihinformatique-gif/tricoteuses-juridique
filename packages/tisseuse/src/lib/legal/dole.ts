@@ -25,7 +25,7 @@ export interface DossierLegislatif {
     CONTENU_DOSSIER_5?: string
     ECHEANCIER?: {
       "@derniere_maj"?: string
-      LIGNE: Ligne[]
+      LIGNE: EcheancierLigne[]
     }
     EXPOSE_MOTIF?: string
     LIBELLE_TEXTE_1?: string
@@ -67,7 +67,7 @@ export interface DossierLegislatif {
   }
 }
 
-export interface Ligne {
+export interface EcheancierLigne {
   ARTICLE?: string
   BASE_LEGALE?: string
   CID_LOI_CIBLE?: string // Always a JORFTEXT ID

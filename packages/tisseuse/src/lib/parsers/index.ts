@@ -1,0 +1,1 @@
+export { parseDossierLegislatif } from "./dole"

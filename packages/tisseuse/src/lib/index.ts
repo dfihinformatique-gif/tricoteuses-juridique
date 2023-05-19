@@ -184,3 +184,4 @@ export {
   type TmLienTxt,
   type Versions,
 } from "./legal"
+export { parseDossierLegislatif } from "./parsers"

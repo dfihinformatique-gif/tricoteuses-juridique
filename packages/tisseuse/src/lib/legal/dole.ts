@@ -23,10 +23,7 @@ export interface DossierLegislatif {
     CONTENU_DOSSIER_3?: string
     CONTENU_DOSSIER_4?: string
     CONTENU_DOSSIER_5?: string
-    ECHEANCIER?: {
-      "@derniere_maj"?: string
-      LIGNE: EcheancierLigne[]
-    }
+    ECHEANCIER?: Echeancier
     EXPOSE_MOTIF?: string
     LIBELLE_TEXTE_1?: string
     LIBELLE_TEXTE_2?: string
@@ -65,6 +62,11 @@ export interface DossierLegislatif {
         | "ORDONNANCE_PUBLIEE"
     }
   }
+}
+
+export interface Echeancier {
+  "@derniere_maj"?: string
+  LIGNE: EcheancierLigne[]
 }
 
 export interface EcheancierLigne {

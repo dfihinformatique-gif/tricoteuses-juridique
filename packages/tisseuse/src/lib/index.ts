@@ -101,6 +101,7 @@ export {
   allSens,
   allSensMutable,
   type DossierLegislatif,
+  type Echeancier,
   type EcheancierLigne,
   type Jo,
   type JoNature,

@@ -205,6 +205,7 @@ export type Etat =
   | "ABROGE"
   | "ANNULE"
   | "DENONCE"
+  | "DEPLACE"
   | "DISJOINT"
   | "MODIFIE_MORT_NE"
   | "MODIFIE"

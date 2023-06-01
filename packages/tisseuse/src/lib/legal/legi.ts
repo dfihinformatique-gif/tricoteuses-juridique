@@ -342,6 +342,7 @@ export const allLegiArticleEtats = [
   "ABROGE_DIFF", // 16233
   "ABROGE", // 341353
   "ANNULE", // 1955
+  "DEPLACE", // 1
   "DISJOINT", // 87
   "MODIFIE_MORT_NE", // 6929
   "MODIFIE", // 429664

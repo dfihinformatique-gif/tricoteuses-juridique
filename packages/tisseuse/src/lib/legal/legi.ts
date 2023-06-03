@@ -465,6 +465,7 @@ export const allLegiSectionTaLienArtEtats = [
   "ABROGE_DIFF", // 7802
   "ABROGE", // 226461
   "ANNULE", // 1163
+  "DEPLACE", // 1
   "DISJOINT", // 92
   "MODIFIE_MORT_NE", // 7125
   "MODIFIE", // 399735

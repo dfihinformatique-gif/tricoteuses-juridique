@@ -13,13 +13,13 @@
 </script>
 
 {#if showArticles}
-  {#each [...iterArrayOrSingleton(textelr.STRUCT.LIEN_ART)] as lienArt}
+  {#each [...iterArrayOrSingleton(textelr.STRUCT?.LIEN_ART)] as lienArt}
     {@const article = data.article?.[lienArt["@id"]]}
     {#if article !== undefined}
       <ArticleView {article} {data} level={level + 1} />
     {/if}
   {/each}
-{:else if textelr.STRUCT.LIEN_ART !== undefined}
+{:else if textelr.STRUCT?.LIEN_ART !== undefined}
   <ul class="inline">
     {#each [...iterArrayOrSingleton(textelr.STRUCT.LIEN_ART)] as lienArt}
       <li class="inline after:content-[',_'] after:last:content-['']">
@@ -34,7 +34,7 @@
   </ul>
 {/if}
 
-{#each [...iterArrayOrSingleton(textelr.STRUCT.LIEN_SECTION_TA)] as lienSectionTa}
+{#each [...iterArrayOrSingleton(textelr.STRUCT?.LIEN_SECTION_TA)] as lienSectionTa}
   {@const sectionTa = data.section_ta?.[lienSectionTa["@id"]]}
   {#if sectionTa !== undefined}
     <SectionTaView {data} level={level + 1} {sectionTa} {showArticles} />

@@ -65,7 +65,7 @@ export class Aggregator {
     this.textekali[id] = textekali
 
     if (this.follow.has("STRUCT.LIEN_ART.@id")) {
-      for (const lien of iterArrayOrSingleton(textekali.STRUCT.LIEN_ART)) {
+      for (const lien of iterArrayOrSingleton(textekali.STRUCT?.LIEN_ART)) {
         this.requestId(lien["@id"])
       }
     }
@@ -84,13 +84,15 @@ export class Aggregator {
     this.textelr[id] = textelr
 
     if (this.follow.has("STRUCT.LIEN_ART.@id")) {
-      for (const lien of iterArrayOrSingleton(textelr.STRUCT.LIEN_ART)) {
+      for (const lien of iterArrayOrSingleton(textelr.STRUCT?.LIEN_ART)) {
         this.requestId(lien["@id"])
       }
     }
 
     if (this.follow.has("STRUCT.LIEN_SECTION_TA.@id")) {
-      for (const lien of iterArrayOrSingleton(textelr.STRUCT.LIEN_SECTION_TA)) {
+      for (const lien of iterArrayOrSingleton(
+        textelr.STRUCT?.LIEN_SECTION_TA,
+      )) {
         this.requestId(lien["@id"])
       }
     }

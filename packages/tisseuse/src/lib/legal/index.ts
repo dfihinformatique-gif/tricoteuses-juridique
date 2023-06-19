@@ -457,7 +457,7 @@ export interface Textelr {
       META_TEXTE_CHRONICLE: MetaTexteChronicle
     }
   }
-  STRUCT: {
+  STRUCT?: {
     LIEN_ART?: LienArt | LienArt[]
     LIEN_SECTION_TA?: LienSectionTa | LienSectionTa[]
   }

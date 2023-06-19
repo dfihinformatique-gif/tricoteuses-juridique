@@ -72,7 +72,7 @@ export class Aggregator {
 
     if (this.follow.has("STRUCT.LIEN_SECTION_TA.@id")) {
       for (const lien of iterArrayOrSingleton(
-        textekali.STRUCT.LIEN_SECTION_TA,
+        textekali.STRUCT?.LIEN_SECTION_TA,
       )) {
         this.requestId(lien["@id"])
       }

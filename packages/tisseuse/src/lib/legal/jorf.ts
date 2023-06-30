@@ -305,7 +305,7 @@ export interface JorfTexteVersion {
         DATE_DEBUT: string
         DATE_FIN: string
         LIENS?: {
-          LIEN: {
+          LIEN: Array<{
             "#text"?: string
             "@cidtexte"?: string
             "@datesignatexte"?: string
@@ -316,7 +316,7 @@ export interface JorfTexteVersion {
             "@numtexte"?: string
             "@sens": Sens
             "@typelien": JorfTexteVersionLienType
-          }
+          }>
         }
         MCS_TXT?: {
           MC: string[]

@@ -61,6 +61,26 @@ export async function configureDatabase() {
     `
   }
 
+  if (version.number < 6) {
+    await db`
+      ALTER TABLE IF EXISTS dossier_legislatif
+      ADD COLUMN IF NOT EXISTS jorf_texte_principal_id char(20)
+    `
+    await db`
+      ALTER TABLE IF EXISTS dossier_legislatif
+      ADD COLUMN IF NOT EXISTS jorf_textes_id char(20)[]
+    `
+
+    await db`
+      DROP TABLE IF EXISTS dossier_legislatif_assemblee_associations
+    `
+
+    await db`
+      ALTER TABLE IF EXISTS texte_version
+      ADD COLUMN IF NOT EXISTS est_texte_principal boolean
+    `
+  }
+
   // Types
 
   // Tables
@@ -87,15 +107,9 @@ export async function configureDatabase() {
   await db`
     CREATE TABLE IF NOT EXISTS dossier_legislatif (
       id char(20) PRIMARY KEY,
-      data jsonb NOT NULL
-    )
-  `
-
-  // Table: dossier_legislatif_assemblee_association
-  await db`
-    CREATE TABLE IF NOT EXISTS dossier_legislatif_assemblee_associations (
-      id char(20) PRIMARY KEY REFERENCES dossier_legislatif(id),
-      assemblee_uid char(13) NOT NULL
+      data jsonb NOT NULL,
+      jorf_texte_principal_id char(20),
+      jorf_textes_id char(20)[]
     )
   `
 
@@ -136,8 +150,17 @@ export async function configureDatabase() {
     CREATE TABLE IF NOT EXISTS texte_version (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL,
+      est_texte_principal boolean,
       nature text,
       text_search tsvector NOT NULL
+    )
+  `
+
+  // Table: texte_version_dossier_legislatif_assemblee_associations
+  await db`
+    CREATE TABLE IF NOT EXISTS texte_version_dossier_legislatif_assemblee_associations (
+      id char(20) PRIMARY KEY REFERENCES texte_version(id) ON DELETE CASCADE,
+      assemblee_uid char(13) NOT NULL
     )
   `
 
@@ -214,6 +237,16 @@ export async function configureDatabase() {
   }
 
   // Add indexes once every table and column exists.
+
+  await db`
+    CREATE INDEX IF NOT EXISTS dossier_legislatif_jorf_texte_principal_id_key
+    ON dossier_legislatif (jorf_texte_principal_id)
+  `
+
+  await db`
+    CREATE INDEX IF NOT EXISTS dossier_legislatif_jorf_textes_id_key
+    ON dossier_legislatif (jorf_textes_id)
+  `
 
   await db`
     CREATE INDEX IF NOT EXISTS texte_version_nature_key

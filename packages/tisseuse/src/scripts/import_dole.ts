@@ -4,6 +4,7 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
+import type { DossierLegislatif, JorfTextelr } from "$lib/legal"
 import { parseDossierLegislatif } from "$lib/parsers"
 import { db } from "$lib/server/databases"
 import { walkDir } from "$lib/server/file_systems"
@@ -51,17 +52,67 @@ async function importDole(
       if (dossierLegislatif === undefined) {
         break iterXmlFiles
       }
+
+      const metaDossierLegislatif =
+        dossierLegislatif.META.META_DOSSIER_LEGISLATIF
+      const jorfTextesId = new Set<string>()
+      let jorfTextePrincipalId: string | undefined = undefined
+      for (const idTexteName of [
+        "ID_TEXTE_1",
+        "ID_TEXTE_2",
+        "ID_TEXTE_3",
+        "ID_TEXTE_4",
+        "ID_TEXTE_5",
+      ] as Array<keyof DossierLegislatif["META"]["META_DOSSIER_LEGISLATIF"]>) {
+        const idTexte = metaDossierLegislatif[idTexteName] as string | undefined
+        if (idTexte === undefined) {
+          continue
+        }
+        assert(idTexte.startsWith("JORFTEXT"))
+
+        const textelr = (
+          await db<{ data: JorfTextelr }[]>`
+          SELECT data
+          FROM textelr
+          WHERE id = ${idTexte}
+        `
+        ).map(({ data }) => data)[0]
+        if (textelr === undefined) {
+          console.warn(
+            `In dossier législatif ${dossierLegislatif.META.META_COMMUN.ID}, field META.META_DOSSIER_LEGISLATIF.${idTexteName} has value ${idTexte} that is not a valid JORF reference`,
+          )
+          continue
+        }
+        if (
+          ["LOI", "LOI_CONSTIT", "LOI_ORGANIQUE", "ORDONNANCE"].includes(
+            textelr.META.META_COMMUN.NATURE as string,
+          ) &&
+          jorfTextePrincipalId === undefined
+        ) {
+          // Only the first law or "ordonnance" in dossier législatif is important.
+          // The following are "rectificatifs" or "ratification d'ordonnance", etc.
+          jorfTextePrincipalId = idTexte
+        }
+        jorfTextesId.add(idTexte)
+      }
+
       await db`
         INSERT INTO dossier_legislatif (
           id,
-          data
+          data,
+          jorf_texte_principal_id,
+          jorf_textes_id
         ) VALUES (
           ${dossierLegislatif.META.META_COMMUN.ID},
-          ${db.json(dossierLegislatif as unknown as JSONValue)}
+          ${db.json(dossierLegislatif as unknown as JSONValue)},
+          ${jorfTextePrincipalId ?? null},
+          ${jorfTextesId.size === 0 ? null : [...jorfTextesId]}
         )
         ON CONFLICT (id)
         DO UPDATE SET
-          data = ${db.json(dossierLegislatif as unknown as JSONValue)}
+          data = ${db.json(dossierLegislatif as unknown as JSONValue)},
+          jorf_texte_principal_id = ${jorfTextePrincipalId ?? null},
+          jorf_textes_id = ${jorfTextesId.size === 0 ? null : [...jorfTextesId]}
       `
       dossierLegislatifRemainingIds.delete(
         dossierLegislatif.META.META_COMMUN.ID,

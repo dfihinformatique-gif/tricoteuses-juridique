@@ -35,10 +35,6 @@ async function associateJorfTextesWithDossiersLegislatifsAssemblee({
   `.cursor(100)
   for await (const rows of texteVersionCursor) {
     for (const { data: texteVersion, id } of rows) {
-      console.log(
-        texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE,
-        id,
-      )
       const nor = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR
       assert.notStrictEqual(nor, undefined)
       jorfTexteIdByNor[nor as string] = id

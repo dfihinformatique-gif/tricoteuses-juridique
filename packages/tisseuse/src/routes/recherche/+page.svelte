@@ -23,12 +23,12 @@
   <div class="form-control">
     <div class="input-group">
       <input
-        class="input-bordered input"
+        class="input input-bordered"
         name="q"
         type="search"
         bind:value={q}
       />
-      <button class="btn-square btn" type="submit">
+      <button class="btn btn-square" type="submit">
         <iconify-icon icon={searchIcon} />
       </button>
     </div>

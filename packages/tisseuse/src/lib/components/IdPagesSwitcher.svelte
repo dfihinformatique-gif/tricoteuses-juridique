@@ -12,7 +12,7 @@
 {#if items !== undefined}
   <div class="tabs">
     {#each items as { href, label }}
-      <a class="tab-lifted tab" class:tab-active={href === pathname} {href}
+      <a class="tab tab-lifted" class:tab-active={href === pathname} {href}
         >{label}</a
       >
     {/each}

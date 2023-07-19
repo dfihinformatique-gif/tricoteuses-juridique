@@ -45,7 +45,7 @@
       <span class="label-text">Intitulé</span>
     </label>
     <input
-      class="input-bordered input"
+      class="input input-bordered"
       id="q"
       name="q"
       placeholder="Code civil…"
@@ -59,7 +59,7 @@
       <span class="label-text">Nature</span>
     </label>
     <select
-      class="select-bordered select"
+      class="select select-bordered"
       id="nature"
       name="nature"
       bind:value={nature}

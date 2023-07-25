@@ -60,4 +60,3 @@ export const allFollows = [
   "TEXTEKALI",
   "TEXTELR",
 ] as const
-export const allFollowsMutable = [...allFollows]

@@ -15,12 +15,12 @@ import {
 } from "@auditors/core"
 
 import {
-  allLegiTextelrEtatsMutable,
-  allLegiTextelrLienArtEtatsMutable,
-  allLegiTextelrLienArtOriginesMutable,
-  allLegiTextelrLienSectionTaEtatsMutable,
-  allLegiTextelrNaturesMutable,
-  allLegiTextelrOriginesMutable,
+  allLegiTextelrEtats,
+  allLegiTextelrLienArtEtats,
+  allLegiTextelrLienArtOrigines,
+  allLegiTextelrLienSectionTaEtats,
+  allLegiTextelrNatures,
+  allLegiTextelrOrigines,
 } from "$lib/legal"
 
 export const legiTextelrStats: {
@@ -137,7 +137,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiTextelrStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiTextelrLienArtEtatsMutable),
+    auditOptions(allLegiTextelrLienArtEtats),
   )
   for (const key of ["@id"]) {
     audit.attribute(
@@ -175,7 +175,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiTextelrStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allLegiTextelrLienArtOriginesMutable),
+    auditOptions(allLegiTextelrLienArtOrigines),
     auditRequire,
   )
 
@@ -233,7 +233,7 @@ function auditLienSectionTa(
     //     (legiTextelrStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiTextelrLienSectionTaEtatsMutable),
+    auditOptions(allLegiTextelrLienSectionTaEtats),
   )
   audit.attribute(
     data,
@@ -390,7 +390,7 @@ function auditMetaCommun(
     //     (legiTextelrStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allLegiTextelrNaturesMutable),
+    auditOptions(allLegiTextelrNatures),
   )
   audit.attribute(
     data,
@@ -405,7 +405,7 @@ function auditMetaCommun(
     //     (legiTextelrStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allLegiTextelrOriginesMutable),
+    auditOptions(allLegiTextelrOrigines),
     auditRequire,
   )
 
@@ -590,7 +590,7 @@ function auditVersion(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiTextelrStats.countByEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiTextelrEtatsMutable),
+    auditOptions(allLegiTextelrEtats),
   )
   audit.attribute(
     data,

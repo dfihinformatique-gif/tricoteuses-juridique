@@ -17,7 +17,7 @@ import {
   type Auditor,
 } from "@auditors/core"
 
-import { allFollowsMutable } from "$lib/aggregates"
+import { allFollows } from "$lib/aggregates"
 
 export function auditFollowQuery(
   audit: Audit,
@@ -31,7 +31,7 @@ export function auditFollowQuery(
     true,
     errors,
     remainingKeys,
-    auditQueryOptionsSet(allFollowsMutable),
+    auditQueryOptionsSet(allFollows),
   )
 }
 
@@ -47,7 +47,7 @@ export function auditFollowWithFalseQuery(
     true,
     errors,
     remainingKeys,
-    auditQueryOptionsSet([...allFollowsMutable, "false"]),
+    auditQueryOptionsSet([...allFollows, "false"]),
   )
 }
 
@@ -160,7 +160,9 @@ export const auditQueryArray = auditChain(
   auditSetNullish([]),
 )
 
-export function auditQueryOptionsArray(possibleValues: string[]): Auditor {
+export function auditQueryOptionsArray(
+  possibleValues: readonly string[],
+): Auditor {
   return auditChain(
     auditQueryArray,
     auditArray(auditOptions(possibleValues)),
@@ -169,7 +171,9 @@ export function auditQueryOptionsArray(possibleValues: string[]): Auditor {
   )
 }
 
-export function auditQueryOptionsSet(possibleValues: string[]): Auditor {
+export function auditQueryOptionsSet(
+  possibleValues: readonly string[],
+): Auditor {
   return auditChain(
     auditQueryOptionsArray(possibleValues),
     auditFunction((values) => new Set(values)),

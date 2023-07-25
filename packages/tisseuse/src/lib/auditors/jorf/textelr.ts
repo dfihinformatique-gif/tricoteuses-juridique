@@ -16,12 +16,12 @@ import {
 } from "@auditors/core"
 
 import {
-  allJorfTextelrEtatsMutable,
-  allJorfTextelrLienArtEtatsMutable,
-  // allJorfTextelrLienArtNaturesMutable,
-  allJorfTextelrLienArtOriginesMutable,
-  allJorfTextelrNaturesMutable,
-  allJorfTextelrOriginesMutable,
+  allJorfTextelrEtats,
+  allJorfTextelrLienArtEtats,
+  // allJorfTextelrLienArtNatures,
+  allJorfTextelrLienArtOrigines,
+  allJorfTextelrNatures,
+  allJorfTextelrOrigines,
 } from "$lib/legal"
 
 export const jorfTextelrStats: {
@@ -148,7 +148,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfTextelrStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allJorfTextelrLienArtEtatsMutable),
+    auditOptions(allJorfTextelrLienArtEtats),
   )
   for (const key of ["@id"]) {
     audit.attribute(
@@ -175,7 +175,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfTextelrStats.countByLienArtNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    // auditOptions(allJorfTextelrLienArtNaturesMutable),
+    // auditOptions(allJorfTextelrLienArtNatures),
     auditNullish,
   )
   for (const key of ["@num"]) {
@@ -202,7 +202,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfTextelrStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJorfTextelrLienArtOriginesMutable),
+    auditOptions(allJorfTextelrLienArtOrigines),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -268,7 +268,7 @@ function auditLienSectionTa(
     //     (jorfSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    // auditOptions(allJorfSectionTaLienSectionTaEtatsMutable),
+    // auditOptions(allJorfSectionTaLienSectionTaEtats),
     auditNullish,
   )
   audit.attribute(
@@ -427,7 +427,7 @@ function auditMetaCommun(
     //     (jorfTextelrStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allJorfTextelrNaturesMutable),
+    auditOptions(allJorfTextelrNatures),
   )
   audit.attribute(
     data,
@@ -442,7 +442,7 @@ function auditMetaCommun(
     //     (jorfTextelrStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJorfTextelrOriginesMutable),
+    auditOptions(allJorfTextelrOrigines),
     auditRequire,
   )
 
@@ -616,7 +616,7 @@ function auditVersion(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfTextelrStats.countByEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allJorfTextelrEtatsMutable),
+    auditOptions(allJorfTextelrEtats),
   )
   audit.attribute(
     data,

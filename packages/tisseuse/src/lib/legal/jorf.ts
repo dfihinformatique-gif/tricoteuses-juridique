@@ -367,10 +367,8 @@ export interface JoTm {
 }
 
 export const allJoNatures = ["JO"] as const
-export const allJoNaturesMutable = [...allJoNatures]
 
 export const allJoOrigines = ["JORF"] as const
-export const allJoOriginesMutable = [...allJoOrigines]
 
 export const allJorfArticleEtats = [
   "ABROGE_DIFF",
@@ -383,18 +381,12 @@ export const allJorfArticleEtats = [
   "VIGUEUR_DIFF",
   "VIGUEUR",
 ] as const
-export const allJorfArticleEtatsMutable = [...allJorfArticleEtats]
 
 export const allJorfArticleLienArticleOrigines = ["JORF", "LEGI"] as const
-export const allJorfArticleLienArticleOriginesMutable = [
-  ...allJorfArticleLienArticleOrigines,
-]
 
 export const allJorfArticleNatures = ["Article"] as const
-export const allJorfArticleNaturesMutable = [...allJorfArticleNatures]
 
 export const allJorfArticleOrigines = ["JORF"] as const
-export const allJorfArticleOriginesMutable = [...allJorfArticleOrigines]
 
 export const allJorfArticleTexteNatures = [
   "ABROGATION", // 10
@@ -469,29 +461,18 @@ export const allJorfArticleTexteNatures = [
   "TROISIEME", // 2
   "VOCABULAIRE", // 170
 ] as const
-export const allJorfArticleTexteNaturesMutable = [...allJorfArticleTexteNatures]
 
 export const allJorfArticleTypes = [
   "AUTONOME",
   "ENTIEREMENT_MODIF",
   "PARTIELLEMENT_MODIF",
 ] as const
-export const allJorfArticleTypesMutable = [...allJorfArticleTypes]
 
 export const allJorfSectionTaLienArtEtats = ["VIGUEUR"] as const
-export const allJorfSectionTaLienArtEtatsMutable = [
-  ...allJorfSectionTaLienArtEtats,
-]
 
 export const allJorfSectionTaLienArtOrigines = ["JORF"] as const
-export const allJorfSectionTaLienArtOriginesMutable = [
-  ...allJorfSectionTaLienArtOrigines,
-]
 
 export const allJorfSectionTaLienSectionTaEtats = [] as const
-export const allJorfSectionTaLienSectionTaEtatsMutable = [
-  ...allJorfSectionTaLienSectionTaEtats,
-]
 
 export const allJorfSectionTaTexteNatures = [
   "Accord multilatéral", // 2
@@ -524,9 +505,6 @@ export const allJorfSectionTaTexteNatures = [
   "SAISINE", // 3
   "TABLEAU", // 100
 ] as const
-export const allJorfSectionTaTexteNaturesMutable = [
-  ...allJorfSectionTaTexteNatures,
-]
 
 export const allJorfTextelrEtats = [
   "ABROGE_DIFF", // 129
@@ -538,20 +516,12 @@ export const allJorfTextelrEtats = [
   "VIGUEUR_DIFF", // 103
   "VIGUEUR", // 98711
 ] as const
-export const allJorfTextelrEtatsMutable = [...allJorfTextelrEtats]
 
 export const allJorfTextelrLienArtEtats = ["VIGUEUR"] as const
-export const allJorfTextelrLienArtEtatsMutable = [...allJorfTextelrLienArtEtats]
 
 export const allJorfTextelrLienArtNatures = [] as const
-export const allJorfTextelrLienArtNaturesMutable = [
-  ...allJorfTextelrLienArtNatures,
-]
 
 export const allJorfTextelrLienArtOrigines = ["JORF"] as const
-export const allJorfTextelrLienArtOriginesMutable = [
-  ...allJorfTextelrLienArtOrigines,
-]
 
 export const allJorfTextelrNatures = [
   "ABROGATION", // 8
@@ -643,10 +613,8 @@ export const allJorfTextelrNatures = [
   "TROISIEME", // 2
   "VOCABULAIRE", // 169
 ] as const
-export const allJorfTextelrNaturesMutable = [...allJorfTextelrNatures]
 
 export const allJorfTextelrOrigines = ["JORF"] as const
-export const allJorfTextelrOriginesMutable = [...allJorfTextelrOrigines]
 
 export const allJorfTexteVersionLienNatures = [
   "ABROGATION", // 5
@@ -790,9 +758,6 @@ export const allJorfTexteVersionLienNatures = [
   "SUSPENSION", // 1
   "TABLEAU", // 12
 ] as const
-export const allJorfTexteVersionLienNaturesMutable = [
-  ...allJorfTexteVersionLienNatures,
-]
 
 export const allJorfTexteVersionLienTypes = [
   "ABROGATION", // 34942
@@ -830,9 +795,6 @@ export const allJorfTexteVersionLienTypes = [
   "TXT_ASSOCIE", // 11821
   "TXT_SOURCE", // 81350
 ] as const
-export const allJorfTexteVersionLienTypesMutable = [
-  ...allJorfTexteVersionLienTypes,
-]
 
 export const allJorfTexteVersionNatures = [
   "ABROGATION", // 8
@@ -924,9 +886,5 @@ export const allJorfTexteVersionNatures = [
   "TROISIEME", // 2
   "VOCABULAIRE", // 169
 ] as const
-export const allJorfTexteVersionNaturesMutable = [...allJorfTexteVersionNatures]
 
 export const allJorfTexteVersionOrigines = ["JORF"] as const
-export const allJorfTexteVersionOriginesMutable = [
-  ...allJorfTexteVersionOrigines,
-]

@@ -15,7 +15,7 @@ import {
   type Audit,
 } from "@auditors/core"
 
-import { allJoNaturesMutable, allJoOriginesMutable } from "$lib/legal"
+import { allJoNatures, allJoOrigines } from "$lib/legal"
 
 export const joStats: {
   countByNature: { [nature: string]: number }
@@ -187,7 +187,7 @@ function auditMetaCommun(
     //   joStats.countByNature[nature] = (joStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allJoNaturesMutable),
+    auditOptions(allJoNatures),
     auditRequire,
   )
   audit.attribute(
@@ -203,7 +203,7 @@ function auditMetaCommun(
     //     (joStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJoOriginesMutable),
+    auditOptions(allJoOrigines),
     auditRequire,
   )
 

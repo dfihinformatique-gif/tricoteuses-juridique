@@ -15,10 +15,10 @@ import {
 } from "@auditors/core"
 
 import {
-  allLegiSectionTaLienArtEtatsMutable,
-  allLegiSectionTaLienArtOriginesMutable,
-  allLegiSectionTaLienSectionTaEtatsMutable,
-  allLegiSectionTaTexteNaturesMutable,
+  allLegiSectionTaLienArtEtats,
+  allLegiSectionTaLienArtOrigines,
+  allLegiSectionTaLienSectionTaEtats,
+  allLegiSectionTaTexteNatures,
 } from "$lib/legal"
 
 export const legiSectionTaStats: {
@@ -163,7 +163,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiSectionTaStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiSectionTaLienArtEtatsMutable),
+    auditOptions(allLegiSectionTaLienArtEtats),
   )
   audit.attribute(
     data,
@@ -197,7 +197,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiSectionTaStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allLegiSectionTaLienArtOriginesMutable),
+    auditOptions(allLegiSectionTaLienArtOrigines),
     auditRequire,
   )
 
@@ -268,7 +268,7 @@ function auditLienSectionTa(
     //     (legiSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiSectionTaLienSectionTaEtatsMutable),
+    auditOptions(allLegiSectionTaLienSectionTaEtats),
   )
   audit.attribute(
     data,
@@ -385,7 +385,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiSectionTaStats.countByTexteNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allLegiSectionTaTexteNaturesMutable),
+    auditOptions(allLegiSectionTaTexteNatures),
   )
   audit.attribute(
     data,

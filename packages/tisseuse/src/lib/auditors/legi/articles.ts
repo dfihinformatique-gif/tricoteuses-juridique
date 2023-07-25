@@ -12,14 +12,14 @@ import {
 } from "@auditors/core"
 
 import {
-  allLegiArticleEtatsMutable,
-  allLegiArticleLienNaturesMutable,
-  allLegiArticleLienTypesMutable,
-  allLegiArticleNaturesMutable,
-  allLegiArticleOriginesMutable,
-  allLegiArticleTexteNaturesMutable,
-  allLegiArticleTypesMutable,
-  allSensMutable,
+  allLegiArticleEtats,
+  allLegiArticleLienNatures,
+  allLegiArticleLienTypes,
+  allLegiArticleNatures,
+  allLegiArticleOrigines,
+  allLegiArticleTexteNatures,
+  allLegiArticleTypes,
+  allSens,
 } from "$lib/legal"
 
 export const legiArticleStats: {
@@ -221,7 +221,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiArticleStats.countByLienNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allLegiArticleLienNaturesMutable),
+    auditOptions(allLegiArticleLienNatures),
   )
   audit.attribute(
     data,
@@ -231,7 +231,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allSensMutable),
+    auditOptions(allSens),
     auditRequire,
   )
   audit.attribute(
@@ -247,7 +247,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiArticleStats.countByLienType[type] ?? 0) + 1
     //   return type
     // }),
-    auditOptions(allLegiArticleLienTypesMutable),
+    auditOptions(allLegiArticleLienTypes),
     auditRequire,
   )
 
@@ -290,7 +290,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiArticleStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiArticleEtatsMutable),
+    auditOptions(allLegiArticleEtats),
   )
   audit.attribute(
     data,
@@ -319,7 +319,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allLegiArticleOriginesMutable),
+    auditOptions(allLegiArticleOrigines),
     auditRequire,
   )
 
@@ -425,7 +425,7 @@ function auditMetaArticle(
     //     (legiArticleStats.countByEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiArticleEtatsMutable),
+    auditOptions(allLegiArticleEtats),
   )
   audit.attribute(
     data,
@@ -446,7 +446,7 @@ function auditMetaArticle(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allLegiArticleTypesMutable),
+    auditOptions(allLegiArticleTypes),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -498,7 +498,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allLegiArticleNaturesMutable),
+    auditOptions(allLegiArticleNatures),
     auditRequire,
   )
   audit.attribute(
@@ -509,7 +509,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allLegiArticleOriginesMutable),
+    auditOptions(allLegiArticleOrigines),
     auditRequire,
   )
 
@@ -629,7 +629,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiArticleStats.countByTexteNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allLegiArticleTexteNaturesMutable),
+    auditOptions(allLegiArticleTexteNatures),
   )
   audit.attribute(
     data,
@@ -781,7 +781,7 @@ function auditVersion(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiArticleStats.countByVersionEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiArticleEtatsMutable),
+    auditOptions(allLegiArticleEtats),
   )
   audit.attribute(
     data,

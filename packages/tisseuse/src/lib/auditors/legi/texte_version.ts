@@ -15,12 +15,12 @@ import {
 } from "@auditors/core"
 
 import {
-  allLegiTexteVersionEtatsMutable,
-  allLegiTexteVersionLienNaturesMutable,
-  allLegiTexteVersionLienTypesMutable,
-  allLegiTexteVersionNaturesMutable,
-  allLegiTexteVersionOriginesMutable,
-  allSensMutable,
+  allLegiTexteVersionEtats,
+  allLegiTexteVersionLienNatures,
+  allLegiTexteVersionLienTypes,
+  allLegiTexteVersionNatures,
+  allLegiTexteVersionOrigines,
+  allSens,
 } from "$lib/legal"
 
 export const legiTexteVersionStats: {
@@ -228,7 +228,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiTexteVersionStats.countByLienNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allLegiTexteVersionLienNaturesMutable),
+    auditOptions(allLegiTexteVersionLienNatures),
   )
   audit.attribute(
     data,
@@ -238,7 +238,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allSensMutable),
+    auditOptions(allSens),
     auditRequire,
   )
   audit.attribute(
@@ -254,7 +254,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiTexteVersionStats.countByLienType[type] ?? 0) + 1
     //   return type
     // }),
-    auditOptions(allLegiTexteVersionLienTypesMutable),
+    auditOptions(allLegiTexteVersionLienTypes),
     auditRequire,
   )
 
@@ -415,7 +415,7 @@ function auditMetaCommun(
     //     (legiTexteVersionStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allLegiTexteVersionNaturesMutable),
+    auditOptions(allLegiTexteVersionNatures),
   )
   audit.attribute(
     data,
@@ -430,7 +430,7 @@ function auditMetaCommun(
     //     (legiTexteVersionStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allLegiTexteVersionOriginesMutable),
+    auditOptions(allLegiTexteVersionOrigines),
     auditRequire,
   )
 
@@ -616,7 +616,7 @@ function auditMetaTexteVersion(
     //     (legiTexteVersionStats.countByEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiTexteVersionEtatsMutable),
+    auditOptions(allLegiTexteVersionEtats),
   )
   audit.attribute(
     data,

@@ -15,11 +15,11 @@ import {
 } from "@auditors/core"
 
 import {
-  allJorfTexteVersionLienNaturesMutable,
-  allJorfTexteVersionLienTypesMutable,
-  allJorfTexteVersionNaturesMutable,
-  allJorfTexteVersionOriginesMutable,
-  allSensMutable,
+  allJorfTexteVersionLienNatures,
+  allJorfTexteVersionLienTypes,
+  allJorfTexteVersionNatures,
+  allJorfTexteVersionOrigines,
+  allSens,
 } from "$lib/legal"
 
 export const jorfTexteVersionStats: {
@@ -350,7 +350,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfTexteVersionStats.countByLienNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allJorfTexteVersionLienNaturesMutable),
+    auditOptions(allJorfTexteVersionLienNatures),
   )
   for (const key of ["@num", "@nortexte", "@numtexte"]) {
     audit.attribute(
@@ -371,7 +371,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allSensMutable),
+    auditOptions(allSens),
     auditRequire,
   )
   audit.attribute(
@@ -387,7 +387,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfTexteVersionStats.countByLienType[type] ?? 0) + 1
     //   return type
     // }),
-    auditOptions(allJorfTexteVersionLienTypesMutable),
+    auditOptions(allJorfTexteVersionLienTypes),
     auditRequire,
   )
 
@@ -548,7 +548,7 @@ function auditMetaCommun(
     //     (jorfTexteVersionStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allJorfTexteVersionNaturesMutable),
+    auditOptions(allJorfTexteVersionNatures),
   )
   audit.attribute(
     data,
@@ -563,7 +563,7 @@ function auditMetaCommun(
     //     (jorfTexteVersionStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJorfTexteVersionOriginesMutable),
+    auditOptions(allJorfTexteVersionOrigines),
     auditRequire,
   )
 

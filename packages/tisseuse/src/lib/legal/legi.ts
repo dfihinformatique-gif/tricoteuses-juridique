@@ -351,12 +351,8 @@ export const allLegiArticleEtats = [
   "VIGUEUR_DIFF", // 14629
   "VIGUEUR", // 619477
 ] as const
-export const allLegiArticleEtatsMutable = [...allLegiArticleEtats]
 
 export const allLegiArticleLienArticleOrigines = ["JORF", "LEGI"] as const
-export const allLegiArticleLienArticleOriginesMutable = [
-  ...allLegiArticleLienArticleOrigines,
-]
 
 export const allLegiArticleLienNatures = [
   "Accord de branche", // 10
@@ -389,7 +385,6 @@ export const allLegiArticleLienNatures = [
   "RECOMMANDATION", // 6
   "REGLEMENTEUROPEEN", // 3
 ] as const
-export const allLegiArticleLienNaturesMutable = [...allLegiArticleLienNatures]
 
 export const allLegiArticleLienTypes = [
   "ABROGATION", // 237556
@@ -424,13 +419,10 @@ export const allLegiArticleLienTypes = [
   "TXT_ASSOCIE", // 47348
   "TXT_SOURCE", // 263557
 ] as const
-export const allLegiArticleLienTypesMutable = [...allLegiArticleLienTypes]
 
 export const allLegiArticleNatures = ["Article"] as const
-export const allLegiArticleNaturesMutable = [...allLegiArticleNatures]
 
 export const allLegiArticleOrigines = ["JORF", "LEGI"] as const
-export const allLegiArticleOriginesMutable = [...allLegiArticleOrigines]
 
 export const allLegiArticleTexteNatures = [
   "ACCORD_FONCTION_PUBLIQUE", // 9,
@@ -452,14 +444,12 @@ export const allLegiArticleTexteNatures = [
   "ORDONNANCE", // 26800,
   "RAPPORT", // 22,
 ] as const
-export const allLegiArticleTexteNaturesMutable = [...allLegiArticleTexteNatures]
 
 export const allLegiArticleTypes = [
   "AUTONOME",
   "ENTIEREMENT_MODIF",
   "PARTIELLEMENT_MODIF",
 ] as const
-export const allLegiArticleTypesMutable = [...allLegiArticleTypes]
 
 export const allLegiSectionTaLienArtEtats = [
   "ABROGE_DIFF", // 7802
@@ -474,14 +464,8 @@ export const allLegiSectionTaLienArtEtats = [
   "VIGUEUR_DIFF", // 8862
   "VIGUEUR", // 346656
 ] as const
-export const allLegiSectionTaLienArtEtatsMutable = [
-  ...allLegiSectionTaLienArtEtats,
-]
 
 export const allLegiSectionTaLienArtOrigines = ["LEGI"] as const
-export const allLegiSectionTaLienArtOriginesMutable = [
-  ...allLegiSectionTaLienArtOrigines,
-]
 
 export const allLegiSectionTaLienSectionTaEtats = [
   "ABROGE_DIFF", // 1193
@@ -494,9 +478,6 @@ export const allLegiSectionTaLienSectionTaEtats = [
   "VIGUEUR_DIFF", // 1840
   "VIGUEUR", // 95108
 ] as const
-export const allLegiSectionTaLienSectionTaEtatsMutable = [
-  ...allLegiSectionTaLienSectionTaEtats,
-]
 
 export const allLegiSectionTaTexteNatures = [
   "ACCORD_FONCTION_PUBLIQUE", // 2
@@ -514,9 +495,6 @@ export const allLegiSectionTaTexteNatures = [
   "LOI", // 12005
   "ORDONNANCE", // 4639
 ] as const
-export const allLegiSectionTaTexteNaturesMutable = [
-  ...allLegiSectionTaTexteNatures,
-]
 
 export const allLegiTextelrEtats = [
   "ABROGE_DIFF", // 1897
@@ -528,7 +506,6 @@ export const allLegiTextelrEtats = [
   "VIGUEUR_DIFF", // 2086
   "VIGUEUR", // 103917
 ] as const
-export const allLegiTextelrEtatsMutable = [...allLegiTextelrEtats]
 
 export const allLegiTextelrLienArtEtats = [
   "ABROGE_DIFF", // 9742
@@ -541,12 +518,8 @@ export const allLegiTextelrLienArtEtats = [
   "VIGUEUR_DIFF", // 6195
   "VIGUEUR", // 311266
 ] as const
-export const allLegiTextelrLienArtEtatsMutable = [...allLegiTextelrLienArtEtats]
 
 export const allLegiTextelrLienArtOrigines = ["LEGI"] as const
-export const allLegiTextelrLienArtOriginesMutable = [
-  ...allLegiTextelrLienArtOrigines,
-]
 
 export const allLegiTextelrLienSectionTaEtats = [
   "ABROGE_DIFF", // 1395
@@ -559,9 +532,6 @@ export const allLegiTextelrLienSectionTaEtats = [
   "VIGUEUR_DIFF", // 1816
   "VIGUEUR", // 48481
 ] as const
-export const allLegiTextelrLienSectionTaEtatsMutable = [
-  ...allLegiTextelrLienSectionTaEtats,
-]
 
 export const allLegiTextelrNatures = [
   "ACCORD_FONCTION_PUBLIQUE", // 4
@@ -580,10 +550,8 @@ export const allLegiTextelrNatures = [
   "LOI", // 3457
   "ORDONNANCE", // 1520
 ] as const
-export const allLegiTextelrNaturesMutable = [...allLegiTextelrNatures]
 
 export const allLegiTextelrOrigines = ["LEGI"] as const
-export const allLegiTextelrOriginesMutable = [...allLegiTextelrOrigines]
 
 export const allLegiTexteVersionEtats = [
   "ABROGE_DIFF", // 1712
@@ -595,7 +563,6 @@ export const allLegiTexteVersionEtats = [
   "VIGUEUR_DIFF", // 2073
   "VIGUEUR", // 101189
 ] as const
-export const allLegiTexteVersionEtatsMutable = [...allLegiTexteVersionEtats]
 
 export const allLegiTexteVersionLienNatures = [
   "ARRETE", // 24259
@@ -622,9 +589,6 @@ export const allLegiTexteVersionLienNatures = [
   "REGLEMENT", // 1
   "REGLEMENTEUROPEEN", // 2
 ] as const
-export const allLegiTexteVersionLienNaturesMutable = [
-  ...allLegiTexteVersionLienNatures,
-]
 
 export const allLegiTexteVersionLienTypes = [
   "ABROGATION", // 8409
@@ -650,9 +614,6 @@ export const allLegiTexteVersionLienTypes = [
   "TXT_ASSOCIE", // 4469
   "TXT_SOURCE", // 19858
 ] as const
-export const allLegiTexteVersionLienTypesMutable = [
-  ...allLegiTexteVersionLienTypes,
-]
 
 export const allLegiTexteVersionNatures = [
   "ACCORD_FONCTION_PUBLIQUE", // 4
@@ -671,9 +632,5 @@ export const allLegiTexteVersionNatures = [
   "LOI", // 3457
   "ORDONNANCE", // 1520
 ] as const
-export const allLegiTexteVersionNaturesMutable = [...allLegiTexteVersionNatures]
 
 export const allLegiTexteVersionOrigines = ["LEGI"] as const
-export const allLegiTexteVersionOriginesMutable = [
-  ...allLegiTexteVersionOrigines,
-]

@@ -14,10 +14,10 @@ import {
 } from "@auditors/core"
 
 import {
-  allJorfSectionTaLienArtEtatsMutable,
-  allJorfSectionTaLienArtOriginesMutable,
-  // allJorfSectionTaLienSectionTaEtatsMutable,
-  allJorfSectionTaTexteNaturesMutable,
+  allJorfSectionTaLienArtEtats,
+  allJorfSectionTaLienArtOrigines,
+  // allJorfSectionTaLienSectionTaEtats,
+  allJorfSectionTaTexteNatures,
 } from "$lib/legal"
 
 export const jorfSectionTaStats: {
@@ -153,7 +153,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfSectionTaStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allJorfSectionTaLienArtEtatsMutable),
+    auditOptions(allJorfSectionTaLienArtEtats),
   )
   audit.attribute(
     data,
@@ -187,7 +187,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfSectionTaStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allJorfSectionTaLienArtOriginesMutable),
+    auditOptions(allJorfSectionTaLienArtOrigines),
     auditRequire,
   )
 
@@ -256,7 +256,7 @@ function auditLienSectionTa(
     //     (jorfSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    // auditOptions(allJorfSectionTaLienSectionTaEtatsMutable),
+    // auditOptions(allJorfSectionTaLienSectionTaEtats),
     auditNullish,
   )
   audit.attribute(
@@ -374,7 +374,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (jorfSectionTaStats.countByTexteNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allJorfSectionTaTexteNaturesMutable),
+    auditOptions(allJorfSectionTaTexteNatures),
   )
   audit.attribute(
     data,

@@ -14,12 +14,12 @@ import {
 } from "@auditors/core"
 
 import {
-  allJorfArticleEtatsMutable,
-  allJorfArticleLienArticleOriginesMutable,
-  allJorfArticleNaturesMutable,
-  allJorfArticleOriginesMutable,
-  allJorfArticleTexteNaturesMutable,
-  allJorfArticleTypesMutable,
+  allJorfArticleEtats,
+  allJorfArticleLienArticleOrigines,
+  allJorfArticleNatures,
+  allJorfArticleOrigines,
+  allJorfArticleTexteNatures,
+  allJorfArticleTypes,
 } from "$lib/legal"
 
 export const jorfArticleStats: {
@@ -224,7 +224,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleEtatsMutable),
+    auditOptions(allJorfArticleEtats),
   )
   audit.attribute(
     data,
@@ -253,7 +253,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleLienArticleOriginesMutable),
+    auditOptions(allJorfArticleLienArticleOrigines),
     auditRequire,
   )
 
@@ -394,7 +394,7 @@ function auditMetaArticle(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleTypesMutable),
+    auditOptions(allJorfArticleTypes),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -457,7 +457,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleNaturesMutable),
+    auditOptions(allJorfArticleNatures),
   )
   audit.attribute(
     data,
@@ -467,7 +467,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleOriginesMutable),
+    auditOptions(allJorfArticleOrigines),
     auditRequire,
   )
 
@@ -567,7 +567,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleTexteNaturesMutable),
+    auditOptions(allJorfArticleTexteNatures),
   )
   for (const key of ["@nor", "@num", "@num_parution_jo"]) {
     audit.attribute(
@@ -746,7 +746,7 @@ function auditVersion(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleEtatsMutable),
+    auditOptions(allJorfArticleEtats),
   )
   audit.attribute(
     data,

@@ -1,6 +1,6 @@
 import assert from "assert"
-import { XMLParser } from "fast-xml-parser"
 import fs from "fs-extra"
+import { JSDOM } from "jsdom"
 import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
@@ -21,32 +21,18 @@ async function downloadDataset(
   const response = await fetch(archivesUrl)
   assert(response.ok)
   const html = await response.text()
-  const parsingOptions = {
-    attributeNamePrefix: "@",
-    htmlEntities: true,
-    ignoreAttributes: false,
-    // preserveOrder: true,
-    processEntities: true,
-    // In Dila server <pre> encapsulates the files list.
-    // => It must not be a stop node.
-    // stopNodes: ["*.pre", "*.script"],
-    stopNodes: ["*.script"],
-    // In Dila server <img> is not closed.
-    // unpairedTags: ["br", "hr", "link", "meta"],
-    unpairedTags: ["br", "hr", "img", "link", "meta"],
-  }
-  const parser = new XMLParser(parsingOptions)
-  const dom = parser.parse(html)
+  const { document } = new JSDOM(html).window
 
-  let archivesA = dom.html.body.pre.a
-  if (!Array.isArray(archivesA)) {
-    archivesA = [archivesA]
-  }
+  const archivesA = document.querySelectorAll("body pre a, body table tr td a")
+  assert.notStrictEqual(archivesA.length, 0)
+
   const archiveNameByDate: { [date: string]: string } = {}
   let newDatasetVersionsCount = 0
   let latestFullArchiveDate: string | undefined = undefined
-  for (const { "@href": filename } of archivesA) {
+  for (const a of archivesA) {
+    const filename = a.getAttribute("href")
     if (
+      filename === null ||
       filename.startsWith("?") ||
       filename.endsWith(".pdf") ||
       filename === "/OPENDATA/"

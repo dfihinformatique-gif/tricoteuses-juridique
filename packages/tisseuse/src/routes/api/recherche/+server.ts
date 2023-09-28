@@ -1,9 +1,16 @@
-import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
+import {
+  auditSetNullish,
+  auditSingleton,
+  auditTrimString,
+  auditStringToBoolean,
+  cleanAudit,
+  type Audit,
+} from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
 import type { Follow } from "$lib/aggregates"
 import { auditFollowQuery, auditQQueryParameter } from "$lib/auditors/queries"
-import type { Article } from "$lib/legal"
+import type { JorfArticle, LegiArticle } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/databases"
 
@@ -30,13 +37,25 @@ function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
 
   auditFollowQuery(audit, data, errors, remainingKeys)
   auditQQueryParameter(audit, data, errors, remainingKeys)
+  audit.attribute(
+    data,
+    "latest",
+    true,
+    errors,
+    remainingKeys,
+    auditSingleton(
+      auditTrimString,
+      auditStringToBoolean,
+      auditSetNullish(false),
+    ),
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
 export const GET: RequestHandler = async ({ url }) => {
   const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
-    { follow: Set<Follow>; q?: string },
+    { follow: Set<Follow>; latest: boolean; q?: string },
     unknown,
   ]
   if (queryError !== null) {
@@ -49,7 +68,7 @@ export const GET: RequestHandler = async ({ url }) => {
     )
     throw error(400, JSON.stringify(queryError, null, 2))
   }
-  const { follow, q } = query
+  const { follow, q, latest } = query
 
   const aggregator = new Aggregator(follow)
   let id: string | undefined = undefined
@@ -62,13 +81,35 @@ export const GET: RequestHandler = async ({ url }) => {
     // https://www.legifrance.gouv.fr/loda/id/LEGIARTI000006317314/1983-12-30
     id = q.match(/LEGIARTI\d+/)?.[0]
     if (id != null) {
-      const article = (
-        await db<{ data: Article }[]>`
+      let article = (
+        await db<{ data: JorfArticle | LegiArticle }[]>`
           SELECT data FROM article
           WHERE id = ${id}
         `
       ).map(({ data }) => data)[0]
       if (article !== undefined) {
+        if (latest) {
+          const latestVersion = article.VERSIONS.VERSION.at(-1)
+          const latestVersionId = latestVersion?.LIEN_ART["@id"]
+          const isLatestVersion =
+            article.META.META_COMMUN.ID === latestVersionId
+          if (!isLatestVersion && latestVersionId !== undefined) {
+            const latestArticle = (
+              await db<{ data: JorfArticle | LegiArticle }[]>`
+                SELECT data FROM article
+                WHERE ID = ${latestVersionId}
+              `
+            ).map(({ data }) => data)[0]
+            if (latestArticle === undefined) {
+              console.error(
+                `Dernière version ${latestVersionId} de l'ARTICLE ${article.META.META_COMMUN.ID} non trouvée`,
+              )
+            } else {
+              article = latestArticle
+              id = latestVersionId
+            }
+          }
+        }
         aggregator.addArticle(article)
       }
     }

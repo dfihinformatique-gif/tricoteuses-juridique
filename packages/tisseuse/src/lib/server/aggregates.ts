@@ -4,7 +4,9 @@ import type { Aggregate, Follow } from "$lib/aggregates"
 import {
   rootTypeFromLegalId,
   type Article,
+  type JorfArticle,
   type LegalObjectType,
+  type LegiArticle,
   type SectionTa,
   type Textekali,
   type Textelr,
@@ -13,7 +15,7 @@ import {
 import { db } from "$lib/server/databases"
 
 export class Aggregator {
-  article: { [id: string]: Article } = {}
+  article: { [id: string]: Article | JorfArticle | LegiArticle } = {}
   follow: Set<Follow>
   requestedTypeAndIds: Set<TypeAndId> = new Set()
   section_ta: { [id: string]: SectionTa } = {}
@@ -26,13 +28,19 @@ export class Aggregator {
     this.follow = new Set(follow)
   }
 
-  addArticle(article: Article): void {
+  addArticle(article: Article | JorfArticle | LegiArticle): void {
     const id = article.META.META_COMMUN.ID
     this.article[id] = article
 
     if (this.follow.has("LIENS.LIEN[@sens=cible,@typelien=CREATION].@id")) {
-      for (const lien of iterArrayOrSingleton(article.LIENS?.LIEN)) {
-        if (lien["@sens"] === "cible" && lien["@typelien"] === "CREATION") {
+      for (const lien of iterArrayOrSingleton(
+        (article as LegiArticle).LIENS?.LIEN,
+      )) {
+        if (
+          lien["@id"] !== undefined &&
+          lien["@sens"] === "cible" &&
+          lien["@typelien"] === "CREATION"
+        ) {
           this.requestId(lien["@id"])
         }
       }

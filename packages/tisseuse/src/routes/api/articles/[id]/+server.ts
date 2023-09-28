@@ -1,10 +1,16 @@
-import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
+import {
+  auditSetNullish,
+  auditSingleton,
+  auditStringToBoolean,
+  auditTrimString,
+  cleanAudit,
+  type Audit,
+} from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
-import { auditFollowQuery } from "$lib/auditors/queries"
-
 import type { Follow } from "$lib/aggregates"
-import type { Article } from "$lib/legal"
+import { auditFollowQuery } from "$lib/auditors/queries"
+import type { JorfArticle, LegiArticle } from "$lib/legal"
 import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/databases"
 
@@ -30,14 +36,28 @@ function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   const remainingKeys = new Set(Object.keys(data))
 
   auditFollowQuery(audit, data, errors, remainingKeys)
+  audit.attribute(
+    data,
+    "latest",
+    true,
+    errors,
+    remainingKeys,
+    auditSingleton(
+      auditTrimString,
+      auditStringToBoolean,
+      auditSetNullish(false),
+    ),
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
 export const GET: RequestHandler = async ({ params, url }) => {
+  let id = params.id
   const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
     {
       follow: Set<Follow>
+      latest: boolean
     },
     unknown,
   ]
@@ -51,15 +71,37 @@ export const GET: RequestHandler = async ({ params, url }) => {
     )
     throw error(400, JSON.stringify(queryError, null, 2))
   }
-  const { follow } = query
-  const article = (
-    await db<{ data: Article }[]>`
-    SELECT data FROM article
-    WHERE ID = ${params.id}
-  `
+  const { follow, latest } = query
+
+  let article = (
+    await db<{ data: JorfArticle | LegiArticle }[]>`
+      SELECT data FROM article
+      WHERE ID = ${id}
+    `
   ).map(({ data }) => data)[0]
   if (article === undefined) {
-    throw error(404, `ARTICLE ${params.id} non trouvé`)
+    throw error(404, `ARTICLE ${id} non trouvé`)
+  }
+  if (latest) {
+    const latestVersion = article.VERSIONS.VERSION.at(-1)
+    const latestVersionId = latestVersion?.LIEN_ART["@id"]
+    const isLatestVersion = article.META.META_COMMUN.ID === latestVersionId
+    if (!isLatestVersion && latestVersionId !== undefined) {
+      const latestArticle = (
+        await db<{ data: JorfArticle | LegiArticle }[]>`
+          SELECT data FROM article
+          WHERE ID = ${latestVersionId}
+        `
+      ).map(({ data }) => data)[0]
+      if (latestArticle === undefined) {
+        console.error(
+          `Dernière version ${latestVersionId} de l'ARTICLE ${article.META.META_COMMUN.ID} non trouvée`,
+        )
+      } else {
+        article = latestArticle
+        id = latestVersionId
+      }
+    }
   }
 
   const aggregator = new Aggregator(follow)
@@ -71,7 +113,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       {
         ...aggregator.toJson(),
         follow: [...follow],
-        id: params.id,
+        id,
       },
       null,
       2,

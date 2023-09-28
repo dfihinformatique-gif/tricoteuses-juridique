@@ -3,6 +3,8 @@ import type {
   DossierLegislatif,
   Idcc,
   Jo,
+  JorfArticle,
+  LegiArticle,
   SectionTa,
   Textekali,
   Textelr,
@@ -11,7 +13,7 @@ import type {
 } from "$lib/legal"
 
 export interface Aggregate {
-  article?: { [id: string]: Article }
+  article?: { [id: string]: Article | JorfArticle | LegiArticle }
   dossier_legislatif?: { [id: string]: DossierLegislatif }
   id?: string
   idcc?: { [id: string]: Idcc }

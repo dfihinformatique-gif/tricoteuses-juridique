@@ -782,6 +782,7 @@ export const allJorfTexteVersionLienTypes = [
   "MODIFIE", // 277772
   "PEREMPTION", // 1559
   "PERIME", // 2
+  "PILOTE_SUIVEUR", // Added 2023-09
   "RATIFICATION", // 3
   "RATIFIE", // 342
   "RATTACHEMENT", // 1

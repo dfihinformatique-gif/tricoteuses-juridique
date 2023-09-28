@@ -602,6 +602,7 @@ export const allLegiTexteVersionLienTypes = [
   "CONCORDE", // 9
   "CREATION", // 1711
   "HISTO", // 22
+  "PILOTE_SUIVEUR", // Added 2023-09
   "MODIFICATION", // 2116
   "MODIFIE", // 3557
   "PEREMPTION", // 5628

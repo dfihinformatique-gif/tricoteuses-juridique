@@ -150,7 +150,7 @@ export interface Contexte {
     "@date_publi": string
     "@date_signature": string
     "@num_parution_jo": string
-    TITRE_TXT: TitreTxt | TitreTxt[]
+    TITRE_TXT?: TitreTxt | TitreTxt[]
   }
 }
 

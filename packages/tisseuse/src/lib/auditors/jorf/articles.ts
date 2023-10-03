@@ -590,7 +590,6 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       Array.isArray(titreTxt) ? titreTxt : [titreTxt],
     ),
     auditCleanArray(auditTitreTxt, auditRequire),
-    auditRequire,
   )
   audit.attribute(data, "TM", true, errors, remainingKeys, auditTm)
 

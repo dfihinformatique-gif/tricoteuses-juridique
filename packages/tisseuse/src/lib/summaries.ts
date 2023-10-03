@@ -337,7 +337,7 @@ export function summarizeLegalObject(
       }
       const metaArticle = article.META.META_SPEC.META_ARTICLE
       const titreTxt = article.CONTEXTE.TEXTE.TITRE_TXT
-      const titreTexte = (Array.isArray(titreTxt) ? titreTxt[0] : titreTxt)[
+      const titreTexte = (Array.isArray(titreTxt) ? titreTxt[0] : titreTxt)?.[
         "#text"
       ]
       return {
@@ -363,9 +363,7 @@ export function summarizeLegalObject(
                   type: "date",
                 },
               ] as Summary[])),
-          " (",
-          titreTexte,
-          ")",
+          ...(titreTexte === undefined ? [] : [" (", titreTexte, ")"]),
         ],
         type: "concatenation",
       }

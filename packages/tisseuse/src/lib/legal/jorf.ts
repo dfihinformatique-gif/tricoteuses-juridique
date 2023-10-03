@@ -45,7 +45,7 @@ export interface JorfArticle {
       "@nor"?: string
       "@num"?: string
       "@num_parution_jo"?: string
-      TITRE_TXT: Array<{
+      TITRE_TXT?: Array<{
         "#text": string
         "@c_titre_court"?: string
         "@debut": string

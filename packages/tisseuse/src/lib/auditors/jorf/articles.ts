@@ -662,7 +662,7 @@ function auditTitreTxt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditRequire,
+    // auditRequire,
   )
   audit.attribute(
     data,

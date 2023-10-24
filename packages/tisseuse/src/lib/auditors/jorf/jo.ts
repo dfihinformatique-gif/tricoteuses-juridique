@@ -76,18 +76,25 @@ function auditLienTxt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  for (const key of ["@idtxt", "@titretxt"]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditTrimString,
-      auditEmptyToNull,
-      auditRequire,
-    )
-  }
+  audit.attribute(
+    data,
+    "@idtxt",
+    true,
+    errors,
+    remainingKeys,
+    auditTrimString,
+    auditEmptyToNull,
+    auditRequire,
+  )
+  audit.attribute(
+    data,
+    "@titretxt",
+    true,
+    errors,
+    remainingKeys,
+    auditTrimString,
+    auditEmptyToNull,
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

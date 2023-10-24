@@ -25,7 +25,7 @@ export interface Jo {
 
 export interface JoLienTxt {
   "@idtxt": string
-  "@titretxt": string
+  "@titretxt"?: string
 }
 
 export type JoNature = (typeof allJoNatures)[number]

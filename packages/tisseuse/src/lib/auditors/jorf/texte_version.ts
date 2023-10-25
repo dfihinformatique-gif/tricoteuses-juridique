@@ -702,7 +702,7 @@ function auditMetaTexteVersion(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  for (const key of ["AUTORITE", "MINISTERE", "TITRE"]) {
+  for (const key of ["AUTORITE", "MINISTERE", "TITRE", "TITREFULL"]) {
     audit.attribute(
       data,
       key,
@@ -742,18 +742,6 @@ function auditMetaTexteVersion(
     remainingKeys,
     auditSwitch([auditTrimString, auditEmptyToNull, auditNullish], auditMcsTxt),
   )
-  for (const key of ["TITREFULL"]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditTrimString,
-      auditEmptyToNull,
-      auditRequire,
-    )
-  }
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

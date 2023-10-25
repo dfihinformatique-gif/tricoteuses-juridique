@@ -322,8 +322,8 @@ export interface JorfTexteVersion {
           MC: string[]
         }
         MINISTERE?: string
-        TITRE: string
-        TITREFULL: string
+        TITRE?: string
+        TITREFULL?: string
       }
     }
   }

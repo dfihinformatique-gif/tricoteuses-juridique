@@ -354,7 +354,7 @@ async function importJorf(
               const textAFragments = [
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
-              ]
+              ].filter((text) => text !== undefined)
               await db`
                 INSERT INTO texte_version (
                   id,

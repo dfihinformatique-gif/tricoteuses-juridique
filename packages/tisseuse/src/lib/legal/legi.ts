@@ -304,7 +304,7 @@ export interface LegiTexteVersion {
         }
         MINISTERE?: string
         TITRE?: string
-        TITREFULL: string
+        TITREFULL?: string
       }
     }
   }

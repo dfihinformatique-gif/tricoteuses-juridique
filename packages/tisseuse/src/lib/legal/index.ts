@@ -441,8 +441,8 @@ export interface TexteVersion {
     META_SPEC: {
       META_TEXTE_CHRONICLE: MetaTexteChronicle
       META_TEXTE_VERSION: {
-        TITRE: string
-        TITREFULL: string
+        TITRE?: string
+        TITREFULL?: string
       }
     }
     META_COMMUN: MetaCommun

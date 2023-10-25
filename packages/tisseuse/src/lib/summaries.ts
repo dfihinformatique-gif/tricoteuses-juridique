@@ -397,7 +397,10 @@ export function summarizeLegalObject(
     }
     case "texte_version": {
       const texteVersion = value as TexteVersion | undefined
-      return texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL
+      return (
+        texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
+        texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITRE
+      )
     }
     case "textekali": {
       const textekali = value as Textekali | undefined

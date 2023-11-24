@@ -81,6 +81,13 @@ export async function configureDatabase() {
     `
   }
 
+  if (version.number < 7) {
+    await db`
+      ALTER TABLE IF EXISTS texte_version
+      ADD COLUMN IF NOT EXISTS commission_fond_assemblee_uid text
+    `
+  }
+
   // Types
 
   // Tables
@@ -150,6 +157,7 @@ export async function configureDatabase() {
     CREATE TABLE IF NOT EXISTS texte_version (
       id char(20) PRIMARY KEY,
       data jsonb NOT NULL,
+      commission_fond_assemblee_uid text,
       est_texte_principal boolean,
       nature text,
       text_search tsvector NOT NULL

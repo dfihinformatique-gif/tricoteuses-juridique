@@ -132,11 +132,6 @@ export class Aggregator {
 
   async getAll(): Promise<void> {
     while (this.requestedTypeAndIds.size > 0) {
-      console.log(
-        "Aggregator.getAll: this.requestedTypeAndIds.size =",
-        this.requestedTypeAndIds.size,
-      )
-
       {
         const articleTypeAndIds = [...this.requestedTypeAndIds].filter(
           ([type]) => type === "article",

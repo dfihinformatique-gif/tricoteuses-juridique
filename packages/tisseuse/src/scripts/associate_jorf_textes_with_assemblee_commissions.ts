@@ -19,7 +19,7 @@ async function associateJorfTextesWithAssembleeCommissions(
     { encoding: "utf-8" },
   )
   const loisCommissionsAssembleeOutput = Papa.parse(
-    loisCommissionsAssembleeCsv,
+    loisCommissionsAssembleeCsv.trim(),
     {
       header: true,
     },
@@ -36,6 +36,42 @@ async function associateJorfTextesWithAssembleeCommissions(
         ([, commissionFondAssembleeUid]) =>
           commissionFondAssembleeUid.match(/^PO\d+$/) !== null,
       ),
+  )
+
+  const loisCommissionsSpecialesAssembleeFilePath = path.join(
+    dilaDir,
+    "lois_commissions_speciales_assemblee.csv",
+  )
+  const loisCommissionsSpecialesAssembleeCsv = await fs.readFile(
+    loisCommissionsSpecialesAssembleeFilePath,
+    { encoding: "utf-8" },
+  )
+  const loisCommissionsSpecialesAssembleeOutput = Papa.parse(
+    loisCommissionsSpecialesAssembleeCsv.trim(),
+    {
+      header: true,
+    },
+  )
+  assert.strictEqual(
+    loisCommissionsSpecialesAssembleeOutput.errors.length,
+    0,
+    JSON.stringify(loisCommissionsSpecialesAssembleeOutput.errors, null, 2),
+  )
+  const commissionSpecialeAssembleeUidByLoiJorfId = Object.fromEntries(
+    (
+      loisCommissionsSpecialesAssembleeOutput.data as Array<{
+        [key: string]: string
+      }>
+    )
+      .map((row) => [row["ID loi JORF"], row["Code commission"]])
+      .filter(
+        ([, commissionSpecialeAssembleeUid]) =>
+          commissionSpecialeAssembleeUid.match(/^PO\d+$/) !== null,
+      ),
+  )
+  Object.assign(
+    commissionFondAssembleeUidByLoiJorfId,
+    commissionSpecialeAssembleeUidByLoiJorfId,
   )
 
   // Note: "2002-06-19" below is the first day of the XIIth legislature.

@@ -579,6 +579,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
   const remainingKeys = new Set(Object.keys(data))
   for (const key of [
     "@autorite",
+    "@cid",
     "@ministere",
     "@nor",
     "@num",
@@ -594,16 +595,6 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       auditEmptyToNull,
     )
   }
-  audit.attribute(
-    data,
-    "@cid",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-    auditRequire,
-  )
   for (const key of ["@date_publi", "@date_signature"]) {
     audit.attribute(
       data,
@@ -613,7 +604,6 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       remainingKeys,
       auditFunction((date) => date.replace(/^11992-12-27$/, "1992-12-27")),
       auditDateIso8601String,
-      auditRequire,
     )
   }
   audit.attribute(

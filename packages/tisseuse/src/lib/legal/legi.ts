@@ -7,9 +7,9 @@ export interface LegiArticle {
   CONTEXTE: {
     TEXTE: {
       "@autorite"?: string
-      "@cid": string
-      "@date_publi": string
-      "@date_signature": string
+      "@cid"?: string
+      "@date_publi"?: string
+      "@date_signature"?: string
       "@ministere"?: string
       "@nature"?: LegiArticleTexteNature
       "@nor"?: string

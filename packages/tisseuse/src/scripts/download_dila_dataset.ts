@@ -5,6 +5,8 @@ import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
 
+import { walkDir } from "$lib/server/file_systems"
+
 async function downloadDataset(
   datasetName: string,
   dilaDir: string,
@@ -99,7 +101,28 @@ async function downloadDataset(
             ", ",
           )}`,
         )
-        await $`cp -r ${date}/${datasetName}/* ${datasetName}/`
+
+        // When archive contains a symbolic link and dataset contains at the same path
+        // something that is not a symbolic link, remove it before copy, otherwise
+        // copy of symbolic link will fail.
+        const archiveDatasetDir = path.join(date, datasetName)
+        for (const relativeSplitPath of walkDir(archiveDatasetDir)) {
+          const archiveFilePath = path.join(
+            archiveDatasetDir,
+            ...relativeSplitPath,
+          )
+          if (fs.lstatSync(archiveFilePath).isSymbolicLink()) {
+            const datasetFilePath = path.join(datasetName, ...relativeSplitPath)
+            if (
+              fs.pathExistsSync(datasetFilePath) &&
+              !fs.lstatSync(datasetFilePath).isSymbolicLink()
+            ) {
+              fs.removeSync(datasetFilePath)
+            }
+          }
+        }
+
+        await $`cp -r ${archiveDatasetDir}/* ${datasetName}/`
         const removalListFilePath = path.join(
           date,
           `liste_suppression_${datasetName}.dat`,

@@ -12,7 +12,7 @@ export function* walkDir(
     }
     const filePath = path.join(dir, filename)
     const relativeSplitPath = [...relativeSplitDir, filename]
-    if (fs.statSync(filePath).isDirectory()) {
+    if (fs.lstatSync(filePath).isDirectory()) {
       yield* walkDir(rootDir, relativeSplitPath)
     } else {
       yield relativeSplitPath

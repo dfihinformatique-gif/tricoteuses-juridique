@@ -788,6 +788,7 @@ export const allJorfTexteVersionLienTypes = [
   "RATIFIE", // 342
   "RATTACHEMENT", // 1
   "RECTIFICATION", // 762
+  "RECTIFIE",
   "RENVOI", // 1
   "RENVOIT", // 811
   "SPEC_APPLI", // 29805

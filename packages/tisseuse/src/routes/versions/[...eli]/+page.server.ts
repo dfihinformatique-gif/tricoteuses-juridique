@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   )[0]
 
   if (versionsWrapper === undefined) {
-    throw error(404, `Versions ${params.eli} non trouvé`)
+    error(404, `Versions ${params.eli} non trouvé`)
   }
   return { versions: versionsWrapper }
 }

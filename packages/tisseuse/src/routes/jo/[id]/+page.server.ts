@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (jo === undefined) {
-    throw error(404, `JO ${params.id} non trouvé`)
+    error(404, `JO ${params.id} non trouvé`)
   }
   return { jo }
 }

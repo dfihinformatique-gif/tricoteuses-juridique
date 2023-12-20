@@ -46,7 +46,7 @@ export const load: PageLoad = async ({ fetch, url }) => {
         2,
       )}\n\nError:\n${JSON.stringify(queryError, null, 2)}`,
     )
-    throw error(400, JSON.stringify(queryError, null, 2))
+    error(400, JSON.stringify(queryError, null, 2))
   }
   const { follow: requestedFollow } = query
 
@@ -66,7 +66,7 @@ export const load: PageLoad = async ({ fetch, url }) => {
     console.error(
       `Error in ${url.pathname} while calling ${apiUrl}:\n${response.status} ${response.statusText}\n\n${text}`,
     )
-    throw error(response.status, text)
+    error(response.status, text)
   }
   return (await response.json()) as GetArticleResult
 }

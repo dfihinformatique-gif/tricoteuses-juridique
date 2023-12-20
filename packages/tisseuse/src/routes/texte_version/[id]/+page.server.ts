@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (texteVersion === undefined) {
-    throw error(404, `TEXTE_VERSION ${params.id} non trouvé`)
+    error(404, `TEXTE_VERSION ${params.id} non trouvé`)
   }
   return { texte_version: texteVersion }
 }

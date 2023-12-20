@@ -49,7 +49,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
         2,
       )}\n\nError:\n${JSON.stringify(queryError, null, 2)}`,
     )
-    throw error(400, JSON.stringify(queryError, null, 2))
+    error(400, JSON.stringify(queryError, null, 2))
   }
   const { follow } = query
   const texteVersion = (
@@ -59,7 +59,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
   `
   ).map(({ data }) => data)[0]
   if (texteVersion === undefined) {
-    throw error(404, `TEXTE_VERSION ${params.id} non trouvé`)
+    error(404, `TEXTE_VERSION ${params.id} non trouvé`)
   }
 
   const aggregator = new Aggregator(follow)

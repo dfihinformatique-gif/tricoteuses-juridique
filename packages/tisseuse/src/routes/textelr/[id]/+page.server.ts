@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (textelr === undefined) {
-    throw error(404, `TEXTELR ${params.id} non trouvé`)
+    error(404, `TEXTELR ${params.id} non trouvé`)
   }
   return { textelr: textelr }
 }

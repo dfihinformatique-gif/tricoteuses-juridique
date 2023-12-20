@@ -14,7 +14,7 @@ export const load: PageLoad = async ({ fetch, url }) => {
     console.error(
       `Error in ${url.pathname} while calling ${apiUrl}:\n${response.status} ${response.statusText}\n\n${text}`,
     )
-    throw error(response.status, text)
+    error(response.status, text)
   }
   return (await response.json()) as ListTextesResult
 }

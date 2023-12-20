@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   )[0]
 
   if (idWrapper === undefined) {
-    throw error(404, `ELI ${params.eli} non trouvé`)
+    error(404, `ELI ${params.eli} non trouvé`)
   }
   return { id: idWrapper }
 }

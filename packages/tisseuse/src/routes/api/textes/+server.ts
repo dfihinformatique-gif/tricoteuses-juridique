@@ -76,7 +76,7 @@ export const GET: RequestHandler = async ({ url }) => {
         2,
       )}\n\nError:\n${JSON.stringify(queryError, null, 2)}`,
     )
-    throw error(400, JSON.stringify(queryError, null, 2))
+    error(400, JSON.stringify(queryError, null, 2))
   }
   const { follow, limit, nature, offset, q } = query
 

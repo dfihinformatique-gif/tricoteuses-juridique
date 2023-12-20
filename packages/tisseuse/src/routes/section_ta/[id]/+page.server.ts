@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (sectionTa === undefined) {
-    throw error(404, `SECTION_TA ${params.id} non trouvé`)
+    error(404, `SECTION_TA ${params.id} non trouvé`)
   }
   return { section_ta: sectionTa }
 }

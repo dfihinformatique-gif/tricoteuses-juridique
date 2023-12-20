@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ params }) => {
   ).map(({ data }) => data)[0]
 
   if (dossierLegislatif === undefined) {
-    throw error(404, `Dossier législatif ${params.id} non trouvé`)
+    error(404, `Dossier législatif ${params.id} non trouvé`)
   }
   return { dossier_legislatif: dossierLegislatif }
 }

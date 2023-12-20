@@ -69,7 +69,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
         2,
       )}\n\nError:\n${JSON.stringify(queryError, null, 2)}`,
     )
-    throw error(400, JSON.stringify(queryError, null, 2))
+    error(400, JSON.stringify(queryError, null, 2))
   }
   const { follow, latest } = query
 
@@ -80,7 +80,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     `
   ).map(({ data }) => data)[0]
   if (article === undefined) {
-    throw error(404, `ARTICLE ${id} non trouvé`)
+    error(404, `ARTICLE ${id} non trouvé`)
   }
   if (latest) {
     const latestVersion = article.VERSIONS.VERSION.at(-1)

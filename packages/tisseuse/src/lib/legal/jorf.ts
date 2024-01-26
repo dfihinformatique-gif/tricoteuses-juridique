@@ -620,6 +620,7 @@ export const allJorfTexteVersionLienNatures = [
   "ABROGATION", // 5
   "Accord autonome", // 3
   "ACCORD CADRE", // 1
+  "ACCORD CADRE NATIONAL",
   "ACCORD COLLECTIF",
   "Accord collectif", // 6
   "Accord collectif national sectoriel", // 7

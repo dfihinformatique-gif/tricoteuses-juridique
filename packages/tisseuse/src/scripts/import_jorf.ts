@@ -355,16 +355,24 @@ async function importJorf(
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
                 texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
               ].filter((text) => text !== undefined)
+              const natureEtNum =
+                texteVersion.META.META_COMMUN.NATURE !== undefined &&
+                texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NUM !==
+                  undefined
+                  ? `${texteVersion.META.META_COMMUN.NATURE.toUpperCase()}.${texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NUM}`
+                  : null
               await db`
                 INSERT INTO texte_version (
                   id,
                   data,
                   nature,
+                  nature_et_num,
                   text_search
                 ) VALUES (
                   ${texteVersion.META.META_COMMUN.ID},
                   ${db.json(texteVersion as unknown as JSONValue)},
                   ${texteVersion.META.META_COMMUN.NATURE ?? null},
+                  ${natureEtNum},
                   setweight(to_tsvector('french', ${textAFragments.join(
                     " ",
                   )}), 'A')
@@ -373,6 +381,7 @@ async function importJorf(
                 DO UPDATE SET
                   data = ${db.json(texteVersion as unknown as JSONValue)},
                   nature = ${texteVersion.META.META_COMMUN.NATURE ?? null},
+                  nature_et_num = ${natureEtNum}
                   text_search = setweight(to_tsvector('french', ${textAFragments.join(
                     " ",
                   )}), 'A')

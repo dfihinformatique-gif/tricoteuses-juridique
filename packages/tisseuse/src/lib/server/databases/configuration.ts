@@ -88,6 +88,13 @@ export async function configureDatabase() {
     `
   }
 
+  if (version.number < 8) {
+    await db`
+      ALTER TABLE IF EXISTS texte_version
+      ADD COLUMN IF NOT EXISTS nature_et_num text
+    `
+  }
+
   // Types
 
   // Tables
@@ -160,6 +167,7 @@ export async function configureDatabase() {
       commission_fond_assemblee_uid text,
       est_texte_principal boolean,
       nature text,
+      nature_et_num text,
       text_search tsvector NOT NULL
     )
   `
@@ -244,6 +252,26 @@ export async function configureDatabase() {
     `
   }
 
+  if (version.number < 8) {
+    // Fill "nature_et_num" column of table texte_version;
+    for await (const rows of db<
+      Array<{ data: TexteVersion; id: string }>
+    >`SELECT data, id FROM texte_version`.cursor(100)) {
+      for (const { data, id } of rows) {
+        const natureEtNum =
+          data.META.META_COMMUN.NATURE !== undefined &&
+          data.META.META_SPEC.META_TEXTE_CHRONICLE.NUM !== undefined
+            ? `${data.META.META_COMMUN.NATURE.toUpperCase()}.${data.META.META_SPEC.META_TEXTE_CHRONICLE.NUM}`
+            : null
+        await db`
+          UPDATE texte_version
+          SET nature_et_num = ${natureEtNum}
+          WHERE id = ${id}
+        `
+      }
+    }
+  }
+
   // Add indexes once every table and column exists.
 
   await db`
@@ -257,8 +285,8 @@ export async function configureDatabase() {
   `
 
   await db`
-    CREATE INDEX IF NOT EXISTS texte_version_nature_key
-    ON texte_version (nature)
+    CREATE INDEX IF NOT EXISTS texte_version_nature_et_num_key
+    ON texte_version (nature_et_num)
   `
 
   // await db`

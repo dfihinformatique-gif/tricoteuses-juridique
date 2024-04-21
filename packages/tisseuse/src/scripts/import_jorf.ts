@@ -381,7 +381,7 @@ async function importJorf(
                 DO UPDATE SET
                   data = ${db.json(texteVersion as unknown as JSONValue)},
                   nature = ${texteVersion.META.META_COMMUN.NATURE ?? null},
-                  nature_et_num = ${natureEtNum}
+                  nature_et_num = ${natureEtNum},
                   text_search = setweight(to_tsvector('french', ${textAFragments.join(
                     " ",
                   )}), 'A')

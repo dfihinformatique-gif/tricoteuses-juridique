@@ -15,6 +15,7 @@ import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/databases"
 
 import type { RequestHandler } from "./$types"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 
 function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {
@@ -36,18 +37,20 @@ function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   const remainingKeys = new Set(Object.keys(data))
 
   auditFollowQuery(audit, data, errors, remainingKeys)
-  audit.attribute(
-    data,
-    "latest",
-    true,
-    errors,
-    remainingKeys,
-    auditSingleton(
-      auditTrimString,
-      auditStringToBoolean,
-      auditSetNullish(false),
-    ),
-  )
+  for (const key of ["latest", "liens_entrants"]) {
+    audit.attribute(
+      data,
+      key,
+      true,
+      errors,
+      remainingKeys,
+      auditSingleton(
+        auditTrimString,
+        auditStringToBoolean,
+        auditSetNullish(false),
+      ),
+    )
+  }
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
@@ -58,6 +61,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     {
       follow: Set<Follow>
       latest: boolean
+      liens_entrants: boolean
     },
     unknown,
   ]
@@ -71,7 +75,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     )
     error(400, JSON.stringify(queryError, null, 2))
   }
-  const { follow, latest } = query
+  const { follow, latest, liens_entrants } = query
 
   let article = (
     await db<{ data: JorfArticle | LegiArticle }[]>`
@@ -106,6 +110,24 @@ export const GET: RequestHandler = async ({ params, url }) => {
 
   const aggregator = new Aggregator(follow)
   aggregator.addArticle(article)
+
+  if (liens_entrants) {
+    for (const lien of await db<ArticleLienDb[]>`
+      SELECT *
+      FROM article_lien
+      WHERE id = ${id}
+    `) {
+      aggregator.addArticleLienDb(lien)
+    }
+    for (const lien of await db<TexteVersionLienDb[]>`
+      SELECT *
+      FROM texte_version_lien
+      WHERE id = ${id}
+    `) {
+      aggregator.addTexteVersionLienDb(lien)
+    }
+  }
+
   await aggregator.getAll()
 
   return new Response(
@@ -114,6 +136,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
         ...aggregator.toJson(),
         follow: [...follow],
         id,
+        liens_entrants,
       },
       null,
       2,

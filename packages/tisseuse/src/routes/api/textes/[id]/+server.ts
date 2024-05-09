@@ -1,10 +1,18 @@
-import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
+import {
+  type Audit,
+  auditSetNullish,
+  cleanAudit,
+  auditSingleton,
+  auditTrimString,
+  auditStringToBoolean,
+} from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
 import { auditFollowQuery } from "$lib/auditors/queries"
 
 import type { Follow } from "$lib/aggregates"
 import type { TexteVersion } from "$lib/legal"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 import { Aggregator } from "$lib/server/aggregates"
 import { db } from "$lib/server/databases"
 
@@ -30,14 +38,28 @@ function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   const remainingKeys = new Set(Object.keys(data))
 
   auditFollowQuery(audit, data, errors, remainingKeys)
+  audit.attribute(
+    data,
+    "liens_entrants",
+    true,
+    errors,
+    remainingKeys,
+    auditSingleton(
+      auditTrimString,
+      auditStringToBoolean,
+      auditSetNullish(false),
+    ),
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
 }
 
 export const GET: RequestHandler = async ({ params, url }) => {
+  const id = params.id
   const [query, queryError] = auditQuery(cleanAudit, url.searchParams) as [
     {
       follow: Set<Follow>
+      liens_entrants: boolean
     },
     unknown,
   ]
@@ -51,19 +73,37 @@ export const GET: RequestHandler = async ({ params, url }) => {
     )
     error(400, JSON.stringify(queryError, null, 2))
   }
-  const { follow } = query
+  const { follow, liens_entrants } = query
   const texteVersion = (
     await db<{ data: TexteVersion }[]>`
     SELECT data FROM texte_version
-    WHERE ID = ${params.id}
+    WHERE ID = ${id}
   `
   ).map(({ data }) => data)[0]
   if (texteVersion === undefined) {
-    error(404, `TEXTE_VERSION ${params.id} non trouvé`)
+    error(404, `TEXTE_VERSION ${id} non trouvé`)
   }
 
   const aggregator = new Aggregator(follow)
   aggregator.addTexteVersion(texteVersion)
+
+  if (liens_entrants) {
+    for (const lien of await db<ArticleLienDb[]>`
+      SELECT *
+      FROM article_lien
+      WHERE id = ${id}
+    `) {
+      aggregator.addArticleLienDb(lien)
+    }
+    for (const lien of await db<TexteVersionLienDb[]>`
+        SELECT *
+        FROM texte_version_lien
+        WHERE id = ${id}
+      `) {
+      aggregator.addTexteVersionLienDb(lien)
+    }
+  }
+
   await aggregator.getAll()
 
   return new Response(
@@ -71,7 +111,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
       {
         ...aggregator.toJson(),
         follow: [...follow],
-        id: params.id,
+        id,
+        liens_entrants,
       },
       null,
       2,

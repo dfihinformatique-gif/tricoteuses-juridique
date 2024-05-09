@@ -305,18 +305,7 @@ export interface JorfTexteVersion {
         DATE_DEBUT: string
         DATE_FIN: string
         LIENS?: {
-          LIEN: Array<{
-            "#text"?: string
-            "@cidtexte"?: string
-            "@datesignatexte"?: string
-            "@id"?: string
-            "@naturetexte"?: JorfTexteVersionLienNature
-            "@num"?: string
-            "@nortexte"?: string
-            "@numtexte"?: string
-            "@sens": Sens
-            "@typelien": JorfTexteVersionLienType
-          }>
+          LIEN: Array<JorfTexteVersionLien>
         }
         MCS_TXT?: {
           MC: string[]
@@ -345,6 +334,19 @@ export interface JorfTexteVersion {
   VISAS?: {
     CONTENU: string // HTML
   }
+}
+
+export interface JorfTexteVersionLien {
+  "#text"?: string
+  "@cidtexte"?: string
+  "@datesignatexte"?: string
+  "@id"?: string
+  "@naturetexte"?: JorfTexteVersionLienNature
+  "@nortexte"?: string
+  "@num"?: string
+  "@numtexte"?: string
+  "@sens": Sens
+  "@typelien": JorfTexteVersionLienType
 }
 
 export type JorfTexteVersionLienNature =

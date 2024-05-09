@@ -64,7 +64,10 @@ export const load: PageLoad = async ({ fetch, url }) => {
     ])
   }
 
-  const apiUrl = urlFromUrlAndQuery(`/api${url.pathname}`, { follow })
+  const apiUrl = urlFromUrlAndQuery(`/api${url.pathname}`, {
+    follow,
+    liens_entrants: true,
+  })
   const response = await fetch(apiUrl, {
     headers: { Accept: "application/json" },
   })

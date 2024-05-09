@@ -11,9 +11,11 @@ import type {
   TexteVersion,
   Versions,
 } from "$lib/legal"
+import type { ArticleLienDb, TexteVersionLienDb } from "./legal/shared"
 
 export interface Aggregate {
   article?: { [id: string]: Article | JorfArticle | LegiArticle }
+  article_lien?: ArticleLienDb[]
   dossier_legislatif?: { [id: string]: DossierLegislatif }
   id?: string
   idcc?: { [id: string]: Idcc }
@@ -21,6 +23,7 @@ export interface Aggregate {
   jo?: { [id: string]: Jo }
   section_ta?: { [id: string]: SectionTa }
   texte_version?: { [id: string]: TexteVersion }
+  texte_version_lien?: TexteVersionLienDb[]
   textekali?: { [id: string]: Textekali }
   textelr?: { [id: string]: Textelr }
   versions?: { [eli: string]: Versions }

@@ -111,11 +111,22 @@ export async function configureDatabase() {
   // await `
   //   CREATE TABLE IF NOT EXISTS article_autocompletions (
   //     autocompletion text NOT NULL,
-  //     id bigint NOT NULL REFERENCES article(id) ON DELETE CASCADE,
+  //     id char(20) NOT NULL REFERENCES article(id) ON DELETE CASCADE,
   //     weight int NOT NULL,
   //     PRIMARY KEY (id, autocompletion)
   //   )
   // `
+
+  // Table: article_lien
+  await db`
+    CREATE TABLE IF NOT EXISTS article_lien (
+      article_id char(20) NOT NULL REFERENCES article(id) ON DELETE CASCADE,
+      cible boolean,
+      id char(20) NOT NULL,
+      typelien text NOT NULL,
+      PRIMARY KEY (article_id, cible, typelien, id)
+    )
+  `
 
   // Table: dossier_legislatif
   await db`
@@ -177,6 +188,17 @@ export async function configureDatabase() {
     CREATE TABLE IF NOT EXISTS texte_version_dossier_legislatif_assemblee_associations (
       id char(20) PRIMARY KEY REFERENCES texte_version(id) ON DELETE CASCADE,
       assemblee_uid char(13) NOT NULL
+    )
+  `
+
+  // Table: texte_version_lien
+  await db`
+  CREATE TABLE IF NOT EXISTS texte_version_lien (
+      texte_version_id char(20) NOT NULL REFERENCES texte_version(id) ON DELETE CASCADE,
+      cible boolean,
+      id char(20) NOT NULL,
+      typelien text NOT NULL,
+      PRIMARY KEY (texte_version_id, cible, typelien, id)
     )
   `
 
@@ -274,6 +296,17 @@ export async function configureDatabase() {
 
   // Add indexes once every table and column exists.
 
+  // await db`
+  //   CREATE INDEX IF NOT EXISTS article_autocompletions_trigrams_idx
+  //   ON article_autocompletions
+  //   USING GIST (autocompletion gist_trgm_ops)
+  // `
+
+  await db`
+    CREATE INDEX IF NOT EXISTS article_lien_reverse_key
+    ON article_lien (id, cible, typelien)
+  `
+
   await db`
     CREATE INDEX IF NOT EXISTS dossier_legislatif_jorf_texte_principal_id_key
     ON dossier_legislatif (jorf_texte_principal_id)
@@ -289,11 +322,10 @@ export async function configureDatabase() {
     ON texte_version (nature_et_num)
   `
 
-  // await db`
-  //   CREATE INDEX IF NOT EXISTS article_autocompletions_trigrams_idx
-  //   ON article_autocompletions
-  //   USING GIST (autocompletion gist_trgm_ops)
-  // `
+  await db`
+    CREATE INDEX IF NOT EXISTS texte_version_lien_reverse_key
+    ON texte_version_lien (id, cible, typelien)
+  `
 
   // Add comments once every table and column exists.
 

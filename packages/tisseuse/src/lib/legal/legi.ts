@@ -26,17 +26,7 @@ export interface LegiArticle {
     }
   }
   LIENS?: {
-    LIEN: Array<{
-      "#text"?: string
-      "@cidtexte"?: string
-      "@datesignatexte"?: string
-      "@id"?: string
-      "@naturetexte"?: LegiArticleLienNature
-      "@nortexte"?: string
-      "@num"?: string
-      "@sens": Sens
-      "@typelien": LegiArticleLienType
-    }>
+    LIEN: Array<LegiArticleLien>
   }
   META: {
     META_COMMUN: {
@@ -75,6 +65,18 @@ export interface LegiArticle {
 }
 
 export type LegiArticleEtat = (typeof allLegiArticleEtats)[number]
+
+export interface LegiArticleLien {
+  "#text"?: string
+  "@cidtexte"?: string
+  "@datesignatexte"?: string
+  "@id"?: string
+  "@naturetexte"?: LegiArticleLienNature
+  "@nortexte"?: string
+  "@num"?: string
+  "@sens": Sens
+  "@typelien": LegiArticleLienType
+}
 
 export type LegiArticleLienArticleOrigine =
   (typeof allLegiArticleLienArticleOrigines)[number]
@@ -286,18 +288,7 @@ export interface LegiTexteVersion {
         DATE_FIN?: string
         ETAT?: LegiTexteVersionEtat
         LIENS?: {
-          LIEN: Array<{
-            "#text"?: string
-            "@cidtexte"?: string
-            "@datesignatexte"?: string
-            "@id"?: string
-            "@naturetexte"?: LegiTexteVersionLienNature
-            "@num"?: string
-            "@nortexte"?: string
-            "@numtexte"?: string
-            "@sens": Sens
-            "@typelien": LegiTexteVersionLienType
-          }>
+          LIEN: Array<LegiTexteVersionLien>
         }
         MCS_TXT?: {
           MC: string[]
@@ -326,6 +317,19 @@ export interface LegiTexteVersion {
 }
 
 export type LegiTexteVersionEtat = (typeof allLegiTexteVersionEtats)[number]
+
+export interface LegiTexteVersionLien {
+  "#text"?: string
+  "@cidtexte"?: string
+  "@datesignatexte"?: string
+  "@id"?: string
+  "@naturetexte"?: LegiTexteVersionLienNature
+  "@num"?: string
+  "@nortexte"?: string
+  "@numtexte"?: string
+  "@sens": Sens
+  "@typelien": LegiTexteVersionLienType
+}
 
 export type LegiTexteVersionLienNature =
   (typeof allLegiTexteVersionLienNatures)[number]

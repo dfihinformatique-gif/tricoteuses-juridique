@@ -68,7 +68,7 @@ export type LegiArticleEtat = (typeof allLegiArticleEtats)[number]
 
 export interface LegiArticleLien {
   "#text"?: string
-  "@cidtexte"?: string
+  "@cidtexte"?: string // Present if and only if @id is present
   "@datesignatexte"?: string
   "@id"?: string
   "@naturetexte"?: LegiArticleLienNature
@@ -320,7 +320,7 @@ export type LegiTexteVersionEtat = (typeof allLegiTexteVersionEtats)[number]
 
 export interface LegiTexteVersionLien {
   "#text"?: string
-  "@cidtexte"?: string
+  "@cidtexte"?: string // Present if and only if @id is present
   "@datesignatexte"?: string
   "@id"?: string
   "@naturetexte"?: LegiTexteVersionLienNature

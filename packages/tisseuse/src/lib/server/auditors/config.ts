@@ -1,11 +1,12 @@
 import {
-  type Audit,
+  auditEmptyToNull,
   auditInteger,
   auditRequire,
   auditStringToNumber,
   auditTest,
   auditTrimString,
   cleanAudit,
+  type Audit,
 } from "@auditors/core"
 
 export function auditConfig(
@@ -48,6 +49,7 @@ export function auditConfig(
     errors,
     remainingKeys,
     auditTrimString,
+    auditEmptyToNull,
     auditRequire,
   )
 
@@ -77,6 +79,7 @@ export function auditDb(
       errors,
       remainingKeys,
       auditTrimString,
+      auditEmptyToNull,
       auditRequire,
     )
   }

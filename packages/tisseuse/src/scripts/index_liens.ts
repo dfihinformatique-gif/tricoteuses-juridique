@@ -36,11 +36,12 @@ async function indexLiens(): Promise<void> {
           await db<
             {
               cible: boolean
+              cidtexte: string | null
               id: string
               typelien: LegiArticleLienType
             }[]
           >`
-          SELECT id, cible, typelien
+          SELECT cible, cidtexte, id, typelien
           FROM article_lien
           WHERE article_id = ${id}
         `
@@ -54,6 +55,7 @@ async function indexLiens(): Promise<void> {
         existingLienByHash.delete(
           objectHash({
             cible: lien["@sens"] === "cible",
+            cidtexte: lien["@cidtexte"] ?? null,
             id: lien["@id"],
             typelien: lien["@typelien"],
           }),
@@ -62,11 +64,13 @@ async function indexLiens(): Promise<void> {
           INSERT INTO article_lien (
             article_id,
             cible,
+            cidtexte,
             id,
             typelien
           ) VALUES (
             ${id},
             ${lien["@sens"] === "cible"},
+            ${lien["@cidtexte"] ?? null},
             ${lien["@id"]},
             ${lien["@typelien"]}
           )
@@ -77,6 +81,7 @@ async function indexLiens(): Promise<void> {
 
       for (const {
         cible,
+        cidtexte,
         id: linkedId,
         typelien,
       } of existingLienByHash.values()) {
@@ -85,6 +90,7 @@ async function indexLiens(): Promise<void> {
           WHERE
             article_id = ${id}
             AND cible = ${cible}
+            AND cidtexte = ${cidtexte}
             AND id = ${linkedId}
             AND typelien = ${typelien}
         `
@@ -114,6 +120,7 @@ async function indexLiens(): Promise<void> {
           await db<
             {
               cible: boolean
+              cidtexte: string | null
               id: string
               typelien: JorfTexteVersionLienType | LegiTexteVersionLienType
             }[]
@@ -132,6 +139,7 @@ async function indexLiens(): Promise<void> {
         existingLienByHash.delete(
           objectHash({
             cible: lien["@sens"] === "cible",
+            cidtexte: lien["@cidtexte"] ?? null,
             id: lien["@id"],
             typelien: lien["@typelien"],
           }),
@@ -140,11 +148,13 @@ async function indexLiens(): Promise<void> {
           INSERT INTO texte_version_lien (
             texte_version_id,
             cible,
+            cidtexte,
             id,
             typelien
           ) VALUES (
             ${id},
             ${lien["@sens"] === "cible"},
+            ${lien["@cidtexte"] ?? null},
             ${lien["@id"]},
             ${lien["@typelien"]}
           )
@@ -155,6 +165,7 @@ async function indexLiens(): Promise<void> {
 
       for (const {
         cible,
+        cidtexte,
         id: linkedId,
         typelien,
       } of existingLienByHash.values()) {
@@ -163,6 +174,7 @@ async function indexLiens(): Promise<void> {
           WHERE
             texte_version_id_id = ${id}
             AND cible = ${cible}
+            AND cidtexte = ${cidtexte}
             AND id = ${linkedId}
             AND typelien = ${typelien}
         `

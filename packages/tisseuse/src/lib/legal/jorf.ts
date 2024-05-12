@@ -338,7 +338,7 @@ export interface JorfTexteVersion {
 
 export interface JorfTexteVersionLien {
   "#text"?: string
-  "@cidtexte"?: string
+  "@cidtexte"?: string // Present if and only if @id is present
   "@datesignatexte"?: string
   "@id"?: string
   "@naturetexte"?: JorfTexteVersionLienNature

@@ -95,6 +95,15 @@ export async function configureDatabase() {
     `
   }
 
+  if (version.number < 10) {
+    await db`
+      DROP TABLE article_lien
+    `
+    await db`
+      DROP TABLE texte_version_lien
+    `
+  }
+
   // Types
 
   // Tables
@@ -122,6 +131,7 @@ export async function configureDatabase() {
     CREATE TABLE IF NOT EXISTS article_lien (
       article_id char(20) NOT NULL REFERENCES article(id) ON DELETE CASCADE,
       cible boolean,
+      cidtexte char(20),
       id char(20) NOT NULL,
       typelien text NOT NULL,
       PRIMARY KEY (article_id, cible, typelien, id)
@@ -196,6 +206,7 @@ export async function configureDatabase() {
   CREATE TABLE IF NOT EXISTS texte_version_lien (
       texte_version_id char(20) NOT NULL REFERENCES texte_version(id) ON DELETE CASCADE,
       cible boolean,
+      cidtexte char(20),
       id char(20) NOT NULL,
       typelien text NOT NULL,
       PRIMARY KEY (texte_version_id, cible, typelien, id)
@@ -303,7 +314,11 @@ export async function configureDatabase() {
   // `
 
   await db`
-    CREATE INDEX IF NOT EXISTS article_lien_reverse_key
+    CREATE INDEX IF NOT EXISTS article_lien_cidtext_reverse_key
+    ON article_lien (cidtexte, cible, typelien)
+  `
+  await db`
+    CREATE INDEX IF NOT EXISTS article_lien_id_reverse_key
     ON article_lien (id, cible, typelien)
   `
 
@@ -323,7 +338,12 @@ export async function configureDatabase() {
   `
 
   await db`
-    CREATE INDEX IF NOT EXISTS texte_version_lien_reverse_key
+    CREATE INDEX IF NOT EXISTS texte_version_lien_cidtext_reverse_key
+    ON texte_version_lien (cidtexte, cible, typelien)
+  `
+
+  await db`
+    CREATE INDEX IF NOT EXISTS texte_version_lien_id_reverse_key
     ON texte_version_lien (id, cible, typelien)
   `
 

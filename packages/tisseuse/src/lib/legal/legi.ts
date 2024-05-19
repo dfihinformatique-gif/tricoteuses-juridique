@@ -93,12 +93,12 @@ export type LegiArticleTexteNature = (typeof allLegiArticleTexteNatures)[number]
 
 /// Table des matières (TM)
 export interface LegiArticleTm {
-  TITRE_TM: {
+  TITRE_TM: Array<{
     "#text": string
     "@debut": string
     "@fin": string
     "@id": string
-  }
+  }>
   TM?: LegiArticleTm
 }
 

@@ -153,6 +153,7 @@ async function fetchHtmlPage(url: string): Promise<string> {
     const response = await fetch(url)
     if (!response.ok) {
       if (retriesCount === 0) {
+        console.warn(`Error while retrieving HTML page at ${url}`)
         console.warn(response.status, response.statusText)
         console.warn(JSON.stringify(response.headers, null, 2))
         console.warn(await response.text())
@@ -160,6 +161,7 @@ async function fetchHtmlPage(url: string): Promise<string> {
       if (retriesCount < 10) {
         await sleep(30)
         console.info("Retrying…")
+        continue
       } else {
         throw new Error(`Retrieval of HTML page at <${url}> failed`)
       }
@@ -167,6 +169,7 @@ async function fetchHtmlPage(url: string): Promise<string> {
     const html = await response.text()
     if (html.includes("Request unsuccessful. Incapsula incident ID:")) {
       if (retriesCount === 0) {
+        console.warn(`Error while retrieving HTML page at ${url}`)
         console.warn(response.status, response.statusText)
         console.warn(JSON.stringify(response.headers, null, 2))
         console.warn(html)
@@ -174,6 +177,7 @@ async function fetchHtmlPage(url: string): Promise<string> {
       if (retriesCount < 10) {
         await sleep(30)
         console.info("Retrying…")
+        continue
       } else {
         throw new Error(`Retrieval of HTML page at <${url}> failed`)
       }

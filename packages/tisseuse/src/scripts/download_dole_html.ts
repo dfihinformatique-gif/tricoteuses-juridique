@@ -67,7 +67,10 @@ async function downloadDoleHtml(
         break iterXmlFiles
       }
 
-      if (dossierLegislatif.CONTENU.ECHEANCIER !== undefined) {
+      if (
+        dossierLegislatif.CONTENU.ECHEANCIER !== undefined ||
+        dossierLegislatif.CONTENU.CONTENU_DOSSIER_5 !== undefined
+      ) {
         if (!silent && verbose) {
           console.log(
             `Retrieving échéancier of dossier législatif ${dossierLegislatif.META.META_COMMUN.ID}…`,
@@ -80,7 +83,9 @@ async function downloadDoleHtml(
         ).window
         const echeancierA = [
           ...dossierLegislatifDocument.querySelectorAll("a.marker").values(),
-        ].filter((aElement) => aElement.innerHTML.trim() === "Echeancier")[0]
+        ].filter((aElement) =>
+          ["Echeancier", "Echéancier"].includes(aElement.innerHTML.trim()),
+        )[0]
         if (echeancierA === undefined) {
           if (!silent) {
             console.warn(
@@ -98,9 +103,11 @@ async function downloadDoleHtml(
           }
           continue
         }
-        const echeancierHtml = await fetchHtmlPage(
-          new URL(echeancierRelativeUrl, dossierLegislatifUrl).toString(),
-        )
+        const echeancierUrl = new URL(
+          echeancierRelativeUrl,
+          dossierLegislatifUrl,
+        ).toString()
+        const echeancierHtml = await fetchHtmlPage(echeancierUrl)
         const { document: echeancierDocument } = new JSDOM(echeancierHtml)
           .window
         const echeancierTable = echeancierDocument.querySelector(
@@ -115,6 +122,16 @@ async function downloadDoleHtml(
           continue
         }
 
+        await fs.writeJson(
+          path.join(
+            echeanciersHtmlDir,
+            `${dossierLegislatif.META.META_COMMUN.ID}_echeancier.json`,
+          ),
+          {
+            legifranceUrl: echeancierUrl,
+          },
+          { encoding: "utf-8", spaces: 2 },
+        )
         await fs.writeFile(
           path.join(
             echeanciersHtmlDir,
@@ -137,7 +154,7 @@ async function downloadDoleHtml(
   await $`git add .`
   if ((await $`git diff --quiet --staged`.exitCode) !== 0) {
     changed = true
-    const message = `Récupération des tables des échéanciers - ${new Date().toISOString()}`
+    const message = `Récupération des infos en HTML des échéanciers - ${new Date().toISOString()}`
     await $`git commit -m ${message} --quiet`
     if (push) {
       await $`git push`

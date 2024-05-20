@@ -390,10 +390,9 @@ export function summarizeLegalObject(
         return undefined
       }
       const today = new Date().toISOString().split("T")[0]
-      return `${sectionTa.TITRE_TA} — ${bestItemForDate(
-        sectionTa.CONTEXTE.TEXTE.TITRE_TXT,
-        today,
-      )?.["#text"]}`
+      return `${sectionTa.TITRE_TA} — ${
+        bestItemForDate(sectionTa.CONTEXTE.TEXTE.TITRE_TXT, today)?.["#text"]
+      }`
     }
     case "texte_version": {
       const texteVersion = value as TexteVersion | undefined

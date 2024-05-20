@@ -84,7 +84,7 @@ async function downloadDoleHtml(
         if (echeancierA === undefined) {
           if (!silent) {
             console.warn(
-              `Dossier législatif ${dossierLegislatif.META.META_COMMUN.ID} has no échéancier.`,
+              `Dossier législatif ${dossierLegislatif.META.META_COMMUN.ID} has no échéancier button.`,
             )
           }
           continue
@@ -93,7 +93,7 @@ async function downloadDoleHtml(
         if (echeancierRelativeUrl === null) {
           if (!silent) {
             console.warn(
-              `Dossier législatif ${dossierLegislatif.META.META_COMMUN.ID} has no échéancier.`,
+              `Dossier législatif ${dossierLegislatif.META.META_COMMUN.ID} has no échéancier URL.`,
             )
           }
           continue
@@ -109,7 +109,7 @@ async function downloadDoleHtml(
         if (echeancierTable === null) {
           if (!silent) {
             console.warn(
-              `Échéancier of dossier législatif ${dossierLegislatif.META.META_COMMUN.ID} has no table².`,
+              `Échéancier of dossier législatif ${dossierLegislatif.META.META_COMMUN.ID} has no table.`,
             )
           }
           continue

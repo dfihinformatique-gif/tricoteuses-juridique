@@ -164,7 +164,21 @@ async function fetchHtmlPage(url: string): Promise<string> {
         throw new Error(`Retrieval of HTML page at <${url}> failed`)
       }
     }
-    return await response.text()
+    const html = await response.text()
+    if (html.includes("Request unsuccessful. Incapsula incident ID:")) {
+      if (retriesCount === 0) {
+        console.warn(response.status, response.statusText)
+        console.warn(JSON.stringify(response.headers, null, 2))
+        console.warn(html)
+      }
+      if (retriesCount < 10) {
+        await sleep(30)
+        console.info("Retrying…")
+      } else {
+        throw new Error(`Retrieval of HTML page at <${url}> failed`)
+      }
+    }
+    return html
   }
 }
 

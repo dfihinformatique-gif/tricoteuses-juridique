@@ -1,5 +1,4 @@
 import { auditChain, auditRequire, strictAudit } from "@auditors/core"
-import assert from "assert"
 import { XMLParser } from "fast-xml-parser"
 import he from "he"
 
@@ -33,8 +32,14 @@ export function parseDossierLegislatif(
       switch (key) {
         case "?xml": {
           const xmlHeader = element as XmlHeader
-          assert.strictEqual(xmlHeader["@encoding"], "UTF-8", filePath)
-          assert.strictEqual(xmlHeader["@version"], "1.0", filePath)
+          if (
+            xmlHeader["@encoding"] !== "UTF-8" ||
+            xmlHeader["@version"] !== "1.0"
+          ) {
+            throw new Error(
+              `Unexpected XML header for ${filePath}: ${JSON.stringify(xmlHeader)}`,
+            )
+          }
           break
         }
         case "DOSSIER_LEGISLATIF": {
@@ -42,15 +47,16 @@ export function parseDossierLegislatif(
             auditDossierLegislatif,
             auditRequire,
           )(strictAudit, element) as [DossierLegislatif, unknown]
-          assert.strictEqual(
-            error,
-            null,
-            `Unexpected format for DOSSIER_LEGISLATIF:\n${JSON.stringify(
-              dossierLegislatif,
-              null,
-              2,
-            )}\nError:\n${JSON.stringify(error, null, 2)}`,
-          )
+          if (error !== null) {
+            throw new Error(
+              `Unexpected format for DOSSIER_LEGISLATIF:\n${JSON.stringify(
+                dossierLegislatif,
+                null,
+                2,
+              )}\nError:\n${JSON.stringify(error, null, 2)}`,
+            )
+          }
+
           return dossierLegislatif
         }
         default: {

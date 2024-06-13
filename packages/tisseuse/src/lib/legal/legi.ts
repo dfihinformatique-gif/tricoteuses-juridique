@@ -601,10 +601,12 @@ export const allLegiTexteVersionLienTypes = [
   "ANNULE", // 2
   "APPLICATION", // 9114
   "CITATION", // 271999
+  "CODIFIE",
   "CODIFICATION", // 10433
   "CONCORDANCE", // 79
   "CONCORDE", // 9
   "CREATION", // 1711
+  "CREE",
   "HISTO", // 22
   "PILOTE_SUIVEUR", // Added 2023-09
   "MODIFICATION", // 2116

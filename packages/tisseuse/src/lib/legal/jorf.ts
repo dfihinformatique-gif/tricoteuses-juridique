@@ -328,6 +328,7 @@ export interface JorfTexteVersion {
   SM?: {
     CONTENU: string // HTML
   }
+  // Travaux préparatoires
   TP?: {
     CONTENU: string // HTML
   }

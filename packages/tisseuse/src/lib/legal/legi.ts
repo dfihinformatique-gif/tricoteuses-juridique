@@ -308,6 +308,7 @@ export interface LegiTexteVersion {
   SIGNATAIRES?: {
     CONTENU: string // HTML
   }
+  // Travaux préparatoires
   TP?: {
     CONTENU: string // HTML
   }

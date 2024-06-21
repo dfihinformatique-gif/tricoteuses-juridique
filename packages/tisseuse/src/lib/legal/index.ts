@@ -465,6 +465,7 @@ export interface TexteVersion {
   SM?: {
     CONTENU: string
   }
+  // Travaux préparatoires
   TP?: {
     CONTENU: string
   }

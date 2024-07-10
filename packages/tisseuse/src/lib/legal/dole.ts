@@ -84,6 +84,7 @@ export interface EcheancierLigne {
 export const allDossierLegislatifTypes = [
   "LOI_PUBLIEE",
   "PROJET_LOI",
+  "PROJET_ORDONNANCE",
   "PROPOSITION_LOI",
   "ORDONNANCE_PUBLIEE",
 ] as const

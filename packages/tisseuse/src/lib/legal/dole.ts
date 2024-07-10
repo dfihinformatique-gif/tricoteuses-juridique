@@ -48,7 +48,7 @@ export interface DossierLegislatif {
       ID_TEXTE_3?: string // Always starts with JORFTEXT when present
       ID_TEXTE_4?: string // Always starts with JORFTEXT when present
       ID_TEXTE_5?: string // Always starts with JORFTEXT when present
-      LEGISLATURE: {
+      LEGISLATURE?: {
         DATE_DEBUT: string
         DATE_FIN: string
         LIBELLE: string

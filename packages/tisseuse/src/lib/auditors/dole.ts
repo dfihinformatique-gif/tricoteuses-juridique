@@ -321,7 +321,7 @@ function auditLegislature(
     return audit.unexpectedType(dataUnknown, "object")
   }
 
-  const data = { ...dataUnknown }
+  const data: { [key: string]: unknown } = { ...dataUnknown }
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
@@ -332,8 +332,9 @@ function auditLegislature(
       true,
       errors,
       remainingKeys,
+      auditTrimString,
+      auditEmptyToNull,
       auditDateIso8601String,
-      auditRequire,
     )
   }
   audit.attribute(
@@ -344,7 +345,6 @@ function auditLegislature(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditRequire,
   )
   audit.attribute(
     data,
@@ -352,9 +352,28 @@ function auditLegislature(
     true,
     errors,
     remainingKeys,
-    auditInteger,
-    auditRequire,
+    auditSwitch(auditInteger, [
+      auditTrimString,
+      auditEmptyToNull,
+      auditNullish,
+    ]),
   )
+
+  if (
+    Object.keys(errors).length === 0 &&
+    data.DATE_DEBUT == null &&
+    data.DATE_FIN == null &&
+    data.LIBELLE == null &&
+    data.NUMERO == null
+  ) {
+    return [null, null]
+  }
+
+  for (const key of ["DATE_DEBUT", "DATE_FIN", "LIBELLE", "NUMERO"]) {
+    if (errors[key] !== undefined) {
+      audit.attribute(data, key, true, errors, remainingKeys, auditRequire)
+    }
+  }
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }
@@ -627,7 +646,6 @@ function auditMetaDossierLegislatif(
     errors,
     remainingKeys,
     auditLegislature,
-    auditRequire,
   )
   audit.attribute(
     data,

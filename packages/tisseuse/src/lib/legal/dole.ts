@@ -55,14 +55,12 @@ export interface DossierLegislatif {
         NUMERO: number
       }
       TITRE: string
-      TYPE?:
-        | "LOI_PUBLIEE"
-        | "PROJET_LOI"
-        | "PROPOSITION_LOI"
-        | "ORDONNANCE_PUBLIEE"
+      TYPE?: DossierLegislatifType
     }
   }
 }
+
+export type DossierLegislatifType = (typeof allDossierLegislatifTypes)[number]
 
 export interface Echeancier {
   "@derniere_maj"?: string
@@ -82,3 +80,10 @@ export interface EcheancierLigne {
   NUMERO_ORDRE?: string
   OBJET?: string
 }
+
+export const allDossierLegislatifTypes = [
+  "LOI_PUBLIEE",
+  "PROJET_LOI",
+  "PROPOSITION_LOI",
+  "ORDONNANCE_PUBLIEE",
+] as const

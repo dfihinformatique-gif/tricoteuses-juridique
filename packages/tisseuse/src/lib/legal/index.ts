@@ -1,10 +1,15 @@
 import type { MenuItem } from "@tricoteuses/explorer-tools"
 
 import type { DossierLegislatif } from "./dole"
-
 import type { Jo } from "./jorf"
 
-export type { DossierLegislatif, Echeancier, EcheancierLigne } from "./dole"
+export {
+  allDossierLegislatifTypes,
+  type DossierLegislatif,
+  type DossierLegislatifType,
+  type Echeancier,
+  type EcheancierLigne,
+} from "./dole"
 export {
   allJoNatures,
   allJoOrigines,

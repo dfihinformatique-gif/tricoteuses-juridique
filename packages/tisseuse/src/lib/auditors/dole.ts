@@ -15,6 +15,8 @@ import {
   type Audit,
 } from "@auditors/core"
 
+import { allDossierLegislatifTypes } from "$lib/legal/dole"
+
 function auditArborescence(
   audit: Audit,
   dataUnknown: unknown,
@@ -645,12 +647,7 @@ function auditMetaDossierLegislatif(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions([
-      "LOI_PUBLIEE",
-      "PROJET_LOI",
-      "PROPOSITION_LOI",
-      "ORDONNANCE_PUBLIEE",
-    ]),
+    auditOptions(allDossierLegislatifTypes),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)

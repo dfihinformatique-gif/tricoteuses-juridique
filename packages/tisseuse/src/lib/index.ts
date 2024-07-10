@@ -9,6 +9,7 @@ export {
 } from "./aggregates"
 
 export {
+  allDossierLegislatifTypes,
   allJoNatures,
   allJoOrigines,
   allJorfArticleEtats,
@@ -55,6 +56,7 @@ export {
   allLegiTexteVersionOrigines,
   allSens,
   type DossierLegislatif,
+  type DossierLegislatifType,
   type Echeancier,
   type EcheancierLigne,
   type Jo,

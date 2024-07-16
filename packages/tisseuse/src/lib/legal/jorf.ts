@@ -654,6 +654,7 @@ export const allJorfTexteVersionLienNatures = [
   "ACCORD PROFESSIONNEL", // 4
   "Accord professionnel", // 56
   "Accord régional", // 2
+  "Accord territorial",
   "ACCORD_FONCTION_PUBLIQUE", // 12
   "Accord-cadre interbranches", // 2
   "ACCORD-CADRE", // 20

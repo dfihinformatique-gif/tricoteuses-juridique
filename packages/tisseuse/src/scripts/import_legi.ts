@@ -170,6 +170,13 @@ async function importLegi(
 
     const filePath = path.join(dataDir, relativePath)
     if (!filePath.endsWith(".xml")) {
+      if (
+        filePath.includes("/eli/") &&
+        (await fs.lstat(filePath)).isSymbolicLink()
+      ) {
+        // Ignore ELI symbolic links, because the name of the link is present in TexteVersion.
+        continue
+      }
       console.info(`Skipping non XML file at ${filePath}`)
       continue
     }

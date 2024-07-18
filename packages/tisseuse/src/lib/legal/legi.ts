@@ -570,6 +570,7 @@ export const allLegiTexteVersionEtats = [
 ] as const
 
 export const allLegiTexteVersionLienNatures = [
+  "ACCORD_FONCTION_PUBLIQUE",
   "ARRETE", // 24259
   "ARRETEEURO", // 4
   "AVENANT", // 3

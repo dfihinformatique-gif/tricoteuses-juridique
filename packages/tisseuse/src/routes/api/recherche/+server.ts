@@ -73,13 +73,14 @@ export const GET: RequestHandler = async ({ url }) => {
   const aggregator = new Aggregator(follow)
   let id: string | undefined = undefined
   if (q !== undefined) {
+    // https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000048727355
     // https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006308296/
     // https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006308296/1983-12-30/
     // https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006308296/1984-12-30/
     // https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000036456533
     // https://www.legifrance.gouv.fr/loda/article_lc/LEGIARTI000036456533/2018-01-01
     // https://www.legifrance.gouv.fr/loda/id/LEGIARTI000006317314/1983-12-30
-    id = q.match(/LEGIARTI\d+/)?.[0]
+    id = q.match(/(JORF|LEGI)ARTI\d{12}/)?.[0]
     if (id != null) {
       let article = (
         await db<{ data: JorfArticle | LegiArticle }[]>`

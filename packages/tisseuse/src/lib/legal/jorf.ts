@@ -626,6 +626,7 @@ export const allJorfTexteVersionLienNatures = [
   "ACCORD CADRE NATIONAL",
   "ACCORD COLLECTIF",
   "Accord collectif", // 6
+  "Accord collectif interbranche",
   "Accord collectif national sectoriel", // 7
   "Accord collectif national", // 50
   "ACCORD COLLECTIF NATIONAL", // 57

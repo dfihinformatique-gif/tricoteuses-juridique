@@ -1,5 +1,5 @@
 <script lang="ts">
-  import "../app.postcss"
+  import "../app.css"
 
   import { NavBar } from "@tricoteuses/explorer-tools"
   // import NavBar from "@tricoteuses/explorer-tools/components/NavBar.svelte"

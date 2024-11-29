@@ -104,6 +104,8 @@ export interface LegiArticleTm {
 
 export type LegiArticleType = (typeof allLegiArticleTypes)[number]
 
+// Section Texte Article
+// Correspond à un niveau d'une table des matières
 export interface LegiSectionTa {
   COMMENTAIRE?: string
   CONTEXTE: {
@@ -128,27 +130,17 @@ export interface LegiSectionTa {
     }
   }
   ID: string
-  STRUCTURE_TA?: Array<{
-    LIEN_ART?: Array<{
-      "@debut": string
-      "@etat"?: LegiSectionTaLienArtEtat
-      "@fin": string
-      "@id": string
-      "@num"?: string
-      "@origine": LegiSectionTaLienArtOrigine
-    }>
-    LIEN_SECTION_TA?: Array<{
-      "#text"?: string
-      "@cid": string
-      "@debut": string
-      "@etat"?: LegiSectionTaLienSectionTaEtat
-      "@fin": string
-      "@id": string
-      "@niv": number
-      "@url": string
-    }>
-  }>
-  TITRE_TA?: string
+  STRUCTURE_TA?: LegiSectionTaStructure
+  TITRE_TA?: string // Titre de la section (peut contenir des sauts de lignes à remplacer par des espaces)
+}
+
+export interface LegiSectionTaLienArt {
+  "@debut": string
+  "@etat"?: LegiSectionTaLienArtEtat
+  "@fin": string
+  "@id": string
+  "@num"?: string
+  "@origine": LegiSectionTaLienArtOrigine
 }
 
 export type LegiSectionTaLienArtEtat =
@@ -157,8 +149,26 @@ export type LegiSectionTaLienArtEtat =
 export type LegiSectionTaLienArtOrigine =
   (typeof allLegiSectionTaLienArtOrigines)[number]
 
+export interface LegiSectionTaLienSectionTa {
+  "#text"?: string
+  "@cid": string
+  "@debut": string
+  "@etat"?: LegiSectionTaLienSectionTaEtat
+  "@fin": string
+  "@id": string
+  "@niv": number
+  "@url": string
+}
+
 export type LegiSectionTaLienSectionTaEtat =
   (typeof allLegiSectionTaLienSectionTaEtats)[number]
+
+// Structure d'une Section Texte Article
+// Lien vers les sous-niveaux (articles ou Sections Texte Article) d'un niveau de table des matières
+export interface LegiSectionTaStructure {
+  LIEN_ART?: LegiSectionTaLienArt[]
+  LIEN_SECTION_TA?: LegiSectionTaLienSectionTa[]
+}
 
 export type LegiSectionTaTexteNature =
   (typeof allLegiSectionTaTexteNatures)[number]
@@ -201,27 +211,7 @@ export interface LegiTextelr {
       }
     }
   }
-  STRUCT?: {
-    LIEN_ART?: Array<{
-      "@debut": string
-      "@etat"?: LegiTextelrLienArtEtat
-      "@fin": string
-      "@id": string
-      // "@nature"?: undefined
-      "@num"?: string
-      "@origine": LegiTextelrLienArtOrigine
-    }>
-    LIEN_SECTION_TA?: Array<{
-      "#text": string
-      "@cid": string
-      "@debut": string
-      "@etat"?: LegiTextelrLienSectionTaEtat
-      "@fin": string
-      "@id": string
-      "@niv": number
-      "@url": string
-    }>
-  }
+  STRUCT?: LegiTextelrStructure
   VERSIONS: {
     VERSION: Array<{
       "@etat"?: LegiTextelrEtat
@@ -237,10 +227,31 @@ export interface LegiTextelr {
 
 export type LegiTextelrEtat = (typeof allLegiTextelrEtats)[number]
 
+export interface LegiTextelrLienArt {
+  "@debut": string
+  "@etat"?: LegiTextelrLienArtEtat
+  "@fin": string
+  "@id": string
+  // "@nature"?: undefined
+  "@num"?: string
+  "@origine": LegiTextelrLienArtOrigine
+}
+
 export type LegiTextelrLienArtEtat = (typeof allLegiTextelrLienArtEtats)[number]
 
 export type LegiTextelrLienArtOrigine =
   (typeof allLegiTextelrLienArtOrigines)[number]
+
+export interface LegiTextelrLienSectionTa {
+  "#text": string // Titre de la section
+  "@cid": string // ID de la Section Texte Article que la Section Texte Article a modifée ou égal à @id si pas de modification
+  "@debut": string // Date de début
+  "@etat"?: LegiTextelrLienSectionTaEtat
+  "@fin": string // Date de fin
+  "@id": string // ID de la Section Texte Article
+  "@niv": number // Niveau de profondeur de la section dans l'arborescence
+  "@url": string // Chemin du fichier XML de la Section Texte Article dans l'archive
+}
 
 export type LegiTextelrLienSectionTaEtat =
   (typeof allLegiTextelrLienSectionTaEtats)[number]
@@ -248,6 +259,13 @@ export type LegiTextelrLienSectionTaEtat =
 export type LegiTextelrNature = (typeof allLegiTextelrNatures)[number]
 
 export type LegiTextelrOrigine = (typeof allLegiTextelrOrigines)[number]
+
+// Structure du LegiTextelr
+// Premier niveau de table des matières
+export interface LegiTextelrStructure {
+  LIEN_ART?: LegiTextelrLienArt[]
+  LIEN_SECTION_TA?: LegiTextelrLienSectionTa[]
+}
 
 export interface LegiTexteVersion {
   ABRO?: {

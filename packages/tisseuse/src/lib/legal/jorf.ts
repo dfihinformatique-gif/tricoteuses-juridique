@@ -117,6 +117,8 @@ export interface JorfArticleTm {
 
 export type JorfArticleType = (typeof allJorfArticleTypes)[number]
 
+// Section Texte Article
+// Correspond à un niveau d'une table des matières
 export interface JorfSectionTa {
   ID: string
   COMMENTAIRE?: string
@@ -142,26 +144,16 @@ export interface JorfSectionTa {
     }
   }
   TITRE_TA?: string
-  STRUCTURE_TA?: Array<{
-    LIEN_ART?: Array<{
-      "@debut": string
-      "@etat"?: JorfSectionTaLienArtEtat
-      "@fin": string
-      "@id": string
-      "@num"?: string
-      "@origine"?: JorfSectionTaLienArtOrigine
-    }>
-    LIEN_SECTION_TA?: Array<{
-      "#text"?: string
-      "@cid": string
-      "@debut": string
-      // "@etat"?: JorfSectionTaLienSectionTaEtat
-      "@fin": string
-      "@id": string
-      "@niv": number
-      "@url": string
-    }>
-  }>
+  STRUCTURE_TA?: JorfSectionTaStructure
+}
+
+export interface JorfSectionTaLienArt {
+  "@debut": string
+  "@etat"?: JorfSectionTaLienArtEtat
+  "@fin": string
+  "@id": string
+  "@num"?: string
+  "@origine"?: JorfSectionTaLienArtOrigine
 }
 
 export type JorfSectionTaLienArtEtat =
@@ -170,8 +162,26 @@ export type JorfSectionTaLienArtEtat =
 export type JorfSectionTaLienArtOrigine =
   (typeof allJorfSectionTaLienArtOrigines)[number]
 
+export interface JorfSectionTaLienSectionTa {
+  "#text"?: string
+  "@cid": string
+  "@debut": string
+  // "@etat"?: JorfSectionTaLienSectionTaEtat
+  "@fin": string
+  "@id": string
+  "@niv": number
+  "@url": string
+}
+
 export type JorfSectionTaLienSectionTaEtat =
   (typeof allJorfSectionTaLienSectionTaEtats)[number]
+
+// Structure d'une Section Texte Article
+// Lien vers les sous-niveaux (articles ou Sections Texte Article) d'un niveau de table des matières
+export interface JorfSectionTaStructure {
+  LIEN_ART?: JorfSectionTaLienArt[]
+  LIEN_SECTION_TA?: JorfSectionTaLienSectionTa[]
+}
 
 export type JorfSectionTaTexteNature =
   (typeof allJorfSectionTaTexteNatures)[number]
@@ -214,27 +224,7 @@ export interface JorfTextelr {
       }
     }
   }
-  STRUCT?: {
-    LIEN_ART?: Array<{
-      "@debut": string
-      "@etat"?: JorfTextelrLienArtEtat
-      "@fin": string
-      "@id": string
-      // "@nature"?: undefined
-      "@num"?: string
-      "@origine"?: JorfTextelrLienArtOrigine
-    }>
-    LIEN_SECTION_TA?: Array<{
-      "#text"?: string
-      "@cid": string
-      "@debut": string
-      // "@etat"?: undefined
-      "@fin": string
-      "@id": string
-      "@niv": number
-      "@url": string
-    }>
-  }
+  STRUCT?: JorfTextelrStructure
   VERSIONS: {
     VERSION: Array<{
       "@etat"?: JorfTextelrEtat
@@ -250,6 +240,16 @@ export interface JorfTextelr {
 
 export type JorfTextelrEtat = (typeof allJorfTextelrEtats)[number]
 
+export interface JorfTextelrLienArt {
+  "@debut": string
+  "@etat"?: JorfTextelrLienArtEtat
+  "@fin": string
+  "@id": string
+  // "@nature"?: undefined
+  "@num"?: string
+  "@origine"?: JorfTextelrLienArtOrigine
+}
+
 export type JorfTextelrLienArtEtat = (typeof allJorfTextelrLienArtEtats)[number]
 
 export type JorfTextelrLienArtNature =
@@ -262,6 +262,23 @@ export type JorfTextelrNature = (typeof allJorfTextelrNatures)[number]
 
 export type JorfTextelrOrigine = (typeof allJorfTextelrOrigines)[number]
 
+export interface JorfTextelrLienSectionTa {
+  "#text"?: string
+  "@cid": string
+  "@debut": string
+  // "@etat"?: undefined
+  "@fin": string
+  "@id": string
+  "@niv": number
+  "@url": string
+}
+
+// Structure du JorfTextelr
+// Premier niveau de table des matières
+export interface JorfTextelrStructure {
+  LIEN_ART?: JorfTextelrLienArt[]
+  LIEN_SECTION_TA?: JorfTextelrLienSectionTa[]
+}
 export interface JorfTexteVersion {
   ABRO?: {
     CONTENU: string // HTML

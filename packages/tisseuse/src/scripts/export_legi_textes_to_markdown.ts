@@ -21,21 +21,57 @@ import { db } from "$lib/server/databases"
 
 interface Context {
   articleById: Record<string, JorfArticle | LegiArticle>
-  causeIdById: Record<string, string>
+  articlesModificateursIdsById: Record<string, Set<string>>
   legiTexteInternalIds: Set<string>
   sectionTaById: Record<string, LegiSectionTa>
   textelrById: Record<string, JorfTextelr | LegiTextelr>
+  textesModificateursIdsById: Record<string, Set<string>>
   texteVersionIdByArticleId: Record<string, string>
-  texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion>
+  texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
 }
 
-function addCause(context: Context, causedId: string, causeId: string) {
-  // const existingCauseId = context.causeIdById[causedId]
-  // if (existingCauseId !== undefined) {
-  //   assert.strictEqual(existingCauseId, causeId)
-  // } else {
-  context.causeIdById[causedId] = causeId
-  // }
+async function addArticleModificateurId(
+  context: Context,
+  modifiedId: string,
+  articleModificateurId: string,
+): Promise<void> {
+  let articlesModificateursIds =
+    context.articlesModificateursIdsById[modifiedId]
+  if (articlesModificateursIds === undefined) {
+    articlesModificateursIds = context.articlesModificateursIdsById[
+      modifiedId
+    ] = new Set()
+  } else if (articlesModificateursIds.has(articleModificateurId)) {
+    return
+  }
+  articlesModificateursIds.add(articleModificateurId)
+  const articleModificateur = await getOrLoadArticle(
+    context,
+    articleModificateurId,
+  )
+  const texteModificateurId = articleModificateur.CONTEXTE.TEXTE["@cid"]
+  if (texteModificateurId !== undefined) {
+    await addTexteModificateurId(context, modifiedId, texteModificateurId)
+  }
+}
+
+async function addTexteModificateurId(
+  context: Context,
+  modifiedId: string,
+  texteModificateurId: string,
+): Promise<void> {
+  let textesModificateursIds = context.textesModificateursIdsById[modifiedId]
+  if (textesModificateursIds === undefined) {
+    textesModificateursIds = context.textesModificateursIdsById[modifiedId] =
+      new Set()
+  } else if (textesModificateursIds.has(texteModificateurId)) {
+    return
+  }
+  textesModificateursIds.add(texteModificateurId)
+  const texteVersionModificateur = await getOrLoadTexteVersion(
+    context,
+    texteModificateurId,
+  )
 }
 
 async function exportLegiArticle(
@@ -67,7 +103,11 @@ async function exportLegiArticle(
       (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
       (articleLien.typelien === "ABROGE" && !articleLien.cible)
     ) {
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       // stopCauseFound = true
     } else if (
       articleLien.typelien === "CITATION" ||
@@ -85,11 +125,19 @@ async function exportLegiArticle(
       (articleLien.typelien === "CONCORDE" && !articleLien.cible)
     ) {
       // L'article est créé par le déplacement d'un article existant dans une loi.
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       startCauseFound = true
     } else if (articleLien.typelien === "CONCORDE" && articleLien.cible) {
       // L'article est déplacé ailleurs.
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       // stopCauseFound = true
     } else if (
       (articleLien.typelien === "CREATION" && articleLien.cible) ||
@@ -97,27 +145,47 @@ async function exportLegiArticle(
       (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
       (articleLien.typelien === "MODIFIE" && !articleLien.cible)
     ) {
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       startCauseFound = true
     } else if (articleLien.typelien === "CREATION" && !articleLien.cible) {
       // Quand un article est TRANSFERE cela s'accompation de la
       // CREATION d'un autre article.
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       // stopCauseFound = true
     } else if (
       (articleLien.typelien === "DEPLACE" && !articleLien.cible) ||
       (articleLien.typelien === "DEPLACEMENT" && articleLien.cible)
     ) {
       // L'article est créé par le déplacement d'un article existant.
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       startCauseFound = true
     } else if (articleLien.typelien === "TRANSFERE" && !articleLien.cible) {
       // L'article est transféré ailleurs.
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       // stopCauseFound = true
     } else if (articleLien.typelien === "TRANSFERT" && articleLien.cible) {
       // L'article provient d'un transfert.
-      addCause(context, articleLien.id, articleLien.article_id)
+      await addArticleModificateurId(
+        context,
+        articleLien.id,
+        articleLien.article_id,
+      )
       startCauseFound = true
     } else {
       throw new Error(
@@ -142,7 +210,11 @@ async function exportLegiArticle(
       (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible)
     ) {
-      addCause(context, texteVersionLien.id, texteVersionLien.texte_version_id)
+      await addTexteModificateurId(
+        context,
+        texteVersionLien.id,
+        texteVersionLien.texte_version_id,
+      )
       // stopCauseFound = true
     } else if (
       texteVersionLien.typelien === "CITATION" ||
@@ -157,7 +229,11 @@ async function exportLegiArticle(
       texteVersionLien.cible
     ) {
       // L'article est créé par le déplacement d'un article existant dans une loi.
-      addCause(context, texteVersionLien.id, texteVersionLien.texte_version_id)
+      await addTexteModificateurId(
+        context,
+        texteVersionLien.id,
+        texteVersionLien.texte_version_id,
+      )
       startCauseFound = true
     } else if (
       (texteVersionLien.typelien === "CREATION" && texteVersionLien.cible) ||
@@ -167,14 +243,22 @@ async function exportLegiArticle(
       //  || (texteVersionLien.typelien === "MODIFIE" && !texteVersionLien.cible)
       (texteVersionLien.typelien === "RECTIFICATION" && texteVersionLien.cible)
     ) {
-      addCause(context, texteVersionLien.id, texteVersionLien.texte_version_id)
+      await addTexteModificateurId(
+        context,
+        texteVersionLien.id,
+        texteVersionLien.texte_version_id,
+      )
       startCauseFound = true
     } else if (
       texteVersionLien.typelien === "TRANSFERT" &&
       texteVersionLien.cible
     ) {
       // L'article provient d'un transfert.
-      addCause(context, texteVersionLien.id, texteVersionLien.texte_version_id)
+      await addTexteModificateurId(
+        context,
+        texteVersionLien.id,
+        texteVersionLien.texte_version_id,
+      )
       startCauseFound = true
     } else {
       throw new Error(
@@ -186,6 +270,10 @@ async function exportLegiArticle(
   const articleLiens = article.LIENS?.LIEN
   if (articleLiens !== undefined) {
     for (const articleLien of articleLiens) {
+      if (articleLien["@cidtexte"] === undefined) {
+        // Ignore link because it has no potential "texte modificateur".
+        continue
+      }
       if (articleLien["@id"]! in context.legiTexteInternalIds) {
         // Ignore internal links because a LEGI texte can't modify itself.
         continue
@@ -202,7 +290,11 @@ async function exportLegiArticle(
         (articleLien["@typelien"] === "ANNULATION" &&
           articleLien["@sens"] === "source")
       ) {
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         // stopCauseFound = true
       } else if (
         articleLien["@typelien"] === "CITATION" ||
@@ -230,14 +322,22 @@ async function exportLegiArticle(
           articleLien["@sens"] === "cible")
       ) {
         // L'article est créé par le déplacement d'un article existant dans une loi.
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         startCauseFound = true
       } else if (
         articleLien["@typelien"] === "CONCORDE" &&
         articleLien["@sens"] === "source"
       ) {
         // L'article est déplacé aiileurs.
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         // stopCauseFound = true
       } else if (
         (articleLien["@typelien"] === "CREATION" &&
@@ -249,7 +349,11 @@ async function exportLegiArticle(
         (articleLien["@typelien"] === "MODIFIE" &&
           articleLien["@sens"] === "cible")
       ) {
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         startCauseFound = true
       } else if (
         articleLien["@typelien"] === "CREATION" &&
@@ -257,7 +361,11 @@ async function exportLegiArticle(
       ) {
         // Quand un article est TRANSFERE cela s'accompation de la
         // CREATION d'un autre article.
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         // stopCauseFound = true
       } else if (
         (articleLien["@typelien"] === "DEPLACE" &&
@@ -266,27 +374,43 @@ async function exportLegiArticle(
           articleLien["@sens"] === "source")
       ) {
         // L'article est créé par le déplacement d'un article existant.
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         startCauseFound = true
       } else if (
         articleLien["@typelien"] === "RECTIFICATION" &&
         articleLien["@sens"] === "source"
       ) {
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         startCauseFound = true
       } else if (
         articleLien["@typelien"] === "TRANSFERE" &&
         articleLien["@sens"] === "cible"
       ) {
         // L'article est transféré ailleurs.
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         // stopCauseFound = true
       } else if (
         articleLien["@typelien"] === "TRANSFERT" &&
         articleLien["@sens"] === "source"
       ) {
         // L'article provient d'un transfert.
-        addCause(context, article.META.META_COMMUN.ID, articleLien["@id"]!)
+        await addTexteModificateurId(
+          context,
+          article.META.META_COMMUN.ID,
+          articleLien["@cidtexte"],
+        )
         startCauseFound = true
       } else {
         throw new Error(
@@ -303,22 +427,18 @@ async function exportLegiTexteToMarkdown(
 ): Promise<void> {
   const context: Context = {
     articleById: {},
-    causeIdById: {},
+    articlesModificateursIdsById: {},
     legiTexteInternalIds: new Set(),
     sectionTaById: {},
     textelrById: {},
+    textesModificateursIdsById: {},
     texteVersionIdByArticleId: {},
     texteVersionById: {},
   }
   context.legiTexteInternalIds.add(legiTexteId)
 
-  const texteVersion = (
-    await db<{ data: LegiTexteVersion }[]>`
-    SELECT data FROM texte_version WHERE id = ${legiTexteId}
-  `
-  )[0]?.data
-  assert.notStrictEqual(texteVersion, undefined)
-  context.texteVersionById[legiTexteId] = texteVersion
+  const texteVersion = await getOrLoadTexteVersion(context, legiTexteId)
+  assert.notStrictEqual(texteVersion, null)
 
   const textelr = (
     await db<{ data: LegiTextelr }[]>`
@@ -411,6 +531,86 @@ async function exportLegiTexteToMarkdown(
       }
     }
   }
+
+  const textesModificateursIds = new Set<string>()
+  for (const textesModificateursForId of Object.values(
+    context.textesModificateursIdsById,
+  )) {
+    for (const texteModificateurId of textesModificateursForId) {
+      textesModificateursIds.add(texteModificateurId)
+    }
+  }
+
+  const textesModificateursIdByDate: Record<string, string[]> = {}
+  for (const texteModificateurId of textesModificateursIds) {
+    const texteVersionModificateur = await getOrLoadTexteVersion(
+      context,
+      texteModificateurId,
+    )
+    if (texteVersionModificateur === null) {
+      continue
+    }
+    const date =
+      texteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
+    let textesModificateursId = textesModificateursIdByDate[date]
+    if (textesModificateursId === undefined) {
+      textesModificateursId = textesModificateursIdByDate[date] = []
+    }
+    textesModificateursId.push(texteModificateurId)
+  }
+
+  for (const [date, textesModificateursId] of Object.entries(
+    textesModificateursIdByDate,
+  ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
+    console.log(date)
+    for (const texteModificateurId of textesModificateursId.toSorted()) {
+      const texteModificateur = await getOrLoadTexteVersion(
+        context,
+        texteModificateurId,
+      )
+      console.log(
+        `  ${texteModificateurId} ${texteModificateur?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}`,
+      )
+    }
+  }
+}
+
+async function getOrLoadArticle(
+  context: Context,
+  articleId: string,
+): Promise<JorfArticle | LegiArticle> {
+  let article = context.articleById[articleId]
+  if (article === undefined) {
+    article = (
+      await db<{ data: JorfArticle | LegiArticle }[]>`
+          SELECT data FROM article WHERE id = ${articleId}
+        `
+    )[0]?.data
+    assert.notStrictEqual(article, undefined)
+    context.articleById[articleId] = article
+  }
+  return article
+}
+
+async function getOrLoadTexteVersion(
+  context: Context,
+  texteId: string,
+): Promise<JorfTexteVersion | LegiTexteVersion | null> {
+  let texteVersion: JorfTexteVersion | LegiTexteVersion | null =
+    context.texteVersionById[texteId]
+  if (texteVersion === undefined) {
+    texteVersion = (
+      await db<{ data: JorfTexteVersion | LegiTexteVersion }[]>`
+          SELECT data FROM texte_version WHERE id = ${texteId}
+        `
+    )[0]?.data
+    if (texteVersion === undefined) {
+      console.warn(`Texte ${texteId} not found in table texte_version`)
+      texteVersion = null
+    }
+    context.texteVersionById[texteId] = texteVersion
+  }
+  return texteVersion
 }
 
 async function* walkStructureTree(
@@ -449,23 +649,6 @@ async function* walkStructureTree(
       }
     }
   }
-}
-
-async function getOrLoadArticle(
-  context: Context,
-  articleId: string,
-): Promise<JorfArticle | LegiArticle> {
-  let article = context.articleById[articleId]
-  if (article === undefined) {
-    article = (
-      await db<{ data: LegiArticle }[]>`
-          SELECT data FROM article WHERE id = ${articleId}
-        `
-    )[0]?.data
-    assert.notStrictEqual(article, undefined)
-    context.articleById[articleId] = article
-  }
-  return article
 }
 
 sade("export_legi_texte_to_markdown <legiTexteId> <targetDir>", true)

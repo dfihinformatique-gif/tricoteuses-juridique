@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from "$app/stores"
+  import * as Tabs from "$lib/components/ui/tabs"
   import { menuItemsFromLegalId } from "$lib/legal"
 
   export let id: string | undefined | null
@@ -10,11 +11,15 @@
 </script>
 
 {#if items !== undefined}
-  <div class="tabs">
-    {#each items as { href, label }}
-      <a class="tab tab-lifted" class:tab-active={href === pathname} {href}
-        >{label}</a
-      >
-    {/each}
-  </div>
+  <Tabs.Root value={pathname}>
+    <Tabs.List>
+      {#each items as { href, label }}
+        <Tabs.Trigger value={href!}>
+          {#snippet child({ props })}
+            <a {href} {...props}>{label}</a>
+          {/snippet}
+        </Tabs.Trigger>
+      {/each}
+    </Tabs.List>
+  </Tabs.Root>
 {/if}

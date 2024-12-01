@@ -11,7 +11,7 @@
     summaryMenu={appMenu}
     title={$page.data.appTitle}
   >
-    <h1 class="text-5xl font-bold">
+    <h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
       {$page.data.appTitle}
       Légifrance
     </h1>

@@ -14,7 +14,9 @@
 </script>
 
 <header class="prose my-6 max-w-full">
-  <h1>ARTICLE</h1>
+  <h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
+    ARTICLE
+  </h1>
 </header>
 
 <!-- <form action={$page.url.pathname} class="mx-auto max-w-sm" method="get">

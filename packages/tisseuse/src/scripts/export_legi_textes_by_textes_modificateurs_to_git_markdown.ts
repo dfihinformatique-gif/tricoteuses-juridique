@@ -1,12 +1,7 @@
 import assert from "assert"
-import fs from "fs-extra"
 import sade from "sade"
 
-import type {
-  JorfArticle,
-  JorfTextelr,
-  JorfTexteVersion,
-} from "$lib/legal/jorf"
+import type { JorfArticle, JorfTexteVersion } from "$lib/legal/jorf"
 import type {
   LegiArticle,
   LegiSectionTa,
@@ -19,59 +14,159 @@ import type {
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 import { db } from "$lib/server/databases"
 
+type Action = "CREATE" | "DELETE"
+
 interface Context {
   articleById: Record<string, JorfArticle | LegiArticle>
-  articlesModificateursIdsById: Record<string, Set<string>>
+  infosArticleModificateurById: Record<
+    string,
+    Record<Action, string | undefined>
+  >
+  infosTexteModificateurById: Record<string, Record<Action, string | undefined>>
   legiTexteInternalIds: Set<string>
   sectionTaById: Record<string, LegiSectionTa>
-  textelrById: Record<string, JorfTextelr | LegiTextelr>
-  textesModificateursIdsById: Record<string, Set<string>>
-  texteVersionIdByArticleId: Record<string, string>
+  texteManquantById: Record<string, TexteManquant>
   texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
+}
+
+interface TexteManquant {
+  date: string
 }
 
 async function addArticleModificateurId(
   context: Context,
-  modifiedId: string,
   articleModificateurId: string,
+  action: Action,
+  modifiedId: string,
+  modifiedDateDebut: string,
+  modifiedDateFin: string,
 ): Promise<void> {
-  let articlesModificateursIds =
-    context.articlesModificateursIdsById[modifiedId]
-  if (articlesModificateursIds === undefined) {
-    articlesModificateursIds = context.articlesModificateursIdsById[
-      modifiedId
-    ] = new Set()
-  } else if (articlesModificateursIds.has(articleModificateurId)) {
-    return
-  }
-  articlesModificateursIds.add(articleModificateurId)
   const articleModificateur = await getOrLoadArticle(
     context,
     articleModificateurId,
   )
+  const articleModificateurDateSignature =
+    articleModificateur.CONTEXTE.TEXTE["@date_signature"]
+  if (articleModificateurDateSignature === undefined) {
+    throw new Error(
+      `Article modificateur ${articleModificateurId} of ${modifiedId} has no CONTEXTE.TEXTE["@date_signature"]`,
+    )
+  }
+  if (
+    action === "CREATE" &&
+    articleModificateurDateSignature > modifiedDateDebut
+  ) {
+    console.warn(
+      `Ignoring article créateur ${articleModificateurId} because its date signature ${articleModificateurDateSignature} doesn't match date début ${modifiedDateDebut} of ${modifiedId}`,
+    )
+    return
+  }
+  if (
+    action === "DELETE" &&
+    articleModificateurDateSignature > modifiedDateFin
+  ) {
+    console.warn(
+      `Ignoring article suppresseur ${articleModificateurId} because its date signature ${articleModificateurDateSignature} doesn't match date fin ${modifiedDateFin} of ${modifiedId}`,
+    )
+    return
+  }
+
+  let infosArticleModificateur =
+    context.infosArticleModificateurById[modifiedId]
+  if (infosArticleModificateur === undefined) {
+    infosArticleModificateur = context.infosArticleModificateurById[
+      modifiedId
+    ] = { CREATE: undefined, DELETE: undefined }
+  }
+  const existingArticleModificateurId = infosArticleModificateur[action]
+  if (existingArticleModificateurId === undefined) {
+    infosArticleModificateur[action] = articleModificateurId
+  } else if (existingArticleModificateurId !== articleModificateurId) {
+    const existingArticleModificateur = await getOrLoadArticle(
+      context,
+      existingArticleModificateurId,
+    )
+    if (
+      existingArticleModificateur.CONTEXTE.TEXTE["@date_signature"]! <
+      articleModificateurDateSignature
+    ) {
+      infosArticleModificateur[action] = articleModificateurId
+    }
+  }
+
   const texteModificateurId = articleModificateur.CONTEXTE.TEXTE["@cid"]
   if (texteModificateurId !== undefined) {
-    await addTexteModificateurId(context, modifiedId, texteModificateurId)
+    await addTexteModificateurId(
+      context,
+      texteModificateurId,
+      action,
+      modifiedId,
+      modifiedDateDebut,
+      modifiedDateFin,
+    )
   }
 }
 
 async function addTexteModificateurId(
   context: Context,
-  modifiedId: string,
   texteModificateurId: string,
+  action: Action,
+  modifiedId: string,
+  modifiedDateDebut: string,
+  modifiedDateFin: string,
 ): Promise<void> {
-  let textesModificateursIds = context.textesModificateursIdsById[modifiedId]
-  if (textesModificateursIds === undefined) {
-    textesModificateursIds = context.textesModificateursIdsById[modifiedId] =
-      new Set()
-  } else if (textesModificateursIds.has(texteModificateurId)) {
-    return
-  }
-  textesModificateursIds.add(texteModificateurId)
   const texteVersionModificateur = await getOrLoadTexteVersion(
     context,
     texteModificateurId,
   )
+  if (texteVersionModificateur === null) {
+    return
+  }
+  const texteModificateurDateSignature =
+    texteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
+  if (texteModificateurDateSignature === undefined) {
+    throw new Error(
+      `Texte modificateur ${texteModificateurId} of ${modifiedId} has no META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE`,
+    )
+  }
+  if (
+    action === "CREATE" &&
+    texteModificateurDateSignature > modifiedDateDebut
+  ) {
+    console.warn(
+      `Ignoring texte créateur ${texteModificateurId} because its date signature ${texteModificateurDateSignature} doesn't match date début ${modifiedDateDebut} of ${modifiedId}`,
+    )
+    return
+  }
+  if (action === "DELETE" && texteModificateurDateSignature > modifiedDateFin) {
+    console.warn(
+      `Ignoring texte suppresseur ${texteModificateurId} because its date signature ${texteModificateurDateSignature} doesn't match date fin ${modifiedDateFin} of ${modifiedId}`,
+    )
+    return
+  }
+
+  let infosTexteModificateur = context.infosTexteModificateurById[modifiedId]
+  if (infosTexteModificateur === undefined) {
+    infosTexteModificateur = context.infosTexteModificateurById[modifiedId] = {
+      CREATE: undefined,
+      DELETE: undefined,
+    }
+  }
+  const existingTexteModificateurId = infosTexteModificateur[action]
+  if (existingTexteModificateurId === undefined) {
+    infosTexteModificateur[action] = texteModificateurId
+  } else if (existingTexteModificateurId !== texteModificateurId) {
+    const existingTexteVersionModificateur = (await getOrLoadTexteVersion(
+      context,
+      existingTexteModificateurId,
+    ))!
+    if (
+      existingTexteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE
+        .DATE_TEXTE! < texteModificateurDateSignature
+    ) {
+      infosTexteModificateur[action] = texteModificateurId
+    }
+  }
 }
 
 async function exportLegiArticle(
@@ -81,11 +176,12 @@ async function exportLegiArticle(
   lienArticle: LegiSectionTaLienArt,
   article: LegiArticle,
 ): Promise<void> {
+  const articleId = article.META.META_COMMUN.ID
+  const articleDateDebut = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
+  const articleDateFin = article.META.META_SPEC.META_ARTICLE.DATE_FIN
   console.log(
     `${lienArticle["@id"]} ${"  ".repeat(depth)}Article ${lienArticle["@num"]} (${lienArticle["@debut"]} — ${lienArticle["@fin"] === "2999-01-01" ? "…" : lienArticle["@fin"]}, ${lienArticle["@etat"]})`,
   )
-
-  let startCauseFound = false
 
   for (const articleLien of await db<ArticleLienDb[]>`
         SELECT * FROM article_lien WHERE id = ${lienArticle["@id"]}
@@ -105,10 +201,12 @@ async function exportLegiArticle(
     ) {
       await addArticleModificateurId(
         context,
-        articleLien.id,
         articleLien.article_id,
+        "DELETE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      // stopCauseFound = true
     } else if (
       articleLien.typelien === "CITATION" ||
       (articleLien.typelien === "CODIFICATION" && articleLien.cible) ||
@@ -119,26 +217,31 @@ async function exportLegiArticle(
     ) {
       // Ignore link.
     } else if (
-      (articleLien.typelien === "CONCORDANCE" &&
-        !articleLien.cible) /* le sens est étrange ?  Ignorer ce lien ? */ ||
       (articleLien.typelien === "CONCORDANCE" && articleLien.cible) ||
       (articleLien.typelien === "CONCORDE" && !articleLien.cible)
     ) {
       // L'article est créé par le déplacement d'un article existant dans une loi.
       await addArticleModificateurId(
         context,
-        articleLien.id,
         articleLien.article_id,
+        "CREATE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      startCauseFound = true
-    } else if (articleLien.typelien === "CONCORDE" && articleLien.cible) {
+    } else if (
+      (articleLien.typelien === "CONCORDANCE" && !articleLien.cible) ||
+      (articleLien.typelien === "CONCORDE" && articleLien.cible)
+    ) {
       // L'article est déplacé ailleurs.
       await addArticleModificateurId(
         context,
-        articleLien.id,
         articleLien.article_id,
+        "DELETE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      // stopCauseFound = true
     } else if (
       (articleLien.typelien === "CREATION" && articleLien.cible) ||
       (articleLien.typelien === "CREE" && !articleLien.cible) ||
@@ -147,19 +250,15 @@ async function exportLegiArticle(
     ) {
       await addArticleModificateurId(
         context,
-        articleLien.id,
         articleLien.article_id,
+        "CREATE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      startCauseFound = true
     } else if (articleLien.typelien === "CREATION" && !articleLien.cible) {
-      // Quand un article est TRANSFERE cela s'accompation de la
-      // CREATION d'un autre article.
-      await addArticleModificateurId(
-        context,
-        articleLien.id,
-        articleLien.article_id,
-      )
-      // stopCauseFound = true
+      // It seems to be an error.
+      // Ignore link.
     } else if (
       (articleLien.typelien === "DEPLACE" && !articleLien.cible) ||
       (articleLien.typelien === "DEPLACEMENT" && articleLien.cible)
@@ -167,26 +266,32 @@ async function exportLegiArticle(
       // L'article est créé par le déplacement d'un article existant.
       await addArticleModificateurId(
         context,
-        articleLien.id,
         articleLien.article_id,
+        "CREATE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      startCauseFound = true
     } else if (articleLien.typelien === "TRANSFERE" && !articleLien.cible) {
       // L'article est transféré ailleurs.
       await addArticleModificateurId(
         context,
-        articleLien.id,
         articleLien.article_id,
+        "DELETE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      // stopCauseFound = true
     } else if (articleLien.typelien === "TRANSFERT" && articleLien.cible) {
       // L'article provient d'un transfert.
       await addArticleModificateurId(
         context,
-        articleLien.id,
         articleLien.article_id,
+        "CREATE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      startCauseFound = true
     } else {
       throw new Error(
         `Unexpected article_lien to article ${lienArticle["@id"]}: typelien=${articleLien.typelien}, cible=${articleLien.cible}`,
@@ -212,10 +317,12 @@ async function exportLegiArticle(
     ) {
       await addTexteModificateurId(
         context,
-        texteVersionLien.id,
         texteVersionLien.texte_version_id,
+        "DELETE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      // stopCauseFound = true
     } else if (
       texteVersionLien.typelien === "CITATION" ||
       (texteVersionLien.typelien === "CODIFICATION" &&
@@ -231,24 +338,26 @@ async function exportLegiArticle(
       // L'article est créé par le déplacement d'un article existant dans une loi.
       await addTexteModificateurId(
         context,
-        texteVersionLien.id,
         texteVersionLien.texte_version_id,
+        "CREATE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      startCauseFound = true
     } else if (
       (texteVersionLien.typelien === "CREATION" && texteVersionLien.cible) ||
-      // || (texteVersionLien.typelien === "CREE" && !texteVersionLien.cible)
       (texteVersionLien.typelien === "MODIFICATION" &&
         texteVersionLien.cible) ||
-      //  || (texteVersionLien.typelien === "MODIFIE" && !texteVersionLien.cible)
       (texteVersionLien.typelien === "RECTIFICATION" && texteVersionLien.cible)
     ) {
       await addTexteModificateurId(
         context,
-        texteVersionLien.id,
         texteVersionLien.texte_version_id,
+        "CREATE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      startCauseFound = true
     } else if (
       texteVersionLien.typelien === "TRANSFERT" &&
       texteVersionLien.cible
@@ -256,10 +365,12 @@ async function exportLegiArticle(
       // L'article provient d'un transfert.
       await addTexteModificateurId(
         context,
-        texteVersionLien.id,
         texteVersionLien.texte_version_id,
+        "CREATE",
+        articleId,
+        articleDateDebut,
+        articleDateFin,
       )
-      startCauseFound = true
     } else {
       throw new Error(
         `Unexpected texte_version_lien to article ${lienArticle["@id"]}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
@@ -292,10 +403,12 @@ async function exportLegiArticle(
       ) {
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "DELETE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        // stopCauseFound = true
       } else if (
         articleLien["@typelien"] === "CITATION" ||
         (articleLien["@typelien"] === "CODIFICATION" &&
@@ -314,9 +427,6 @@ async function exportLegiArticle(
         // Ignore link.
       } else if (
         (articleLien["@typelien"] === "CONCORDANCE" &&
-          articleLien["@sens"] ===
-            "cible") /* Le sens est étrange ? Ignorer ce lien ? */ ||
-        (articleLien["@typelien"] === "CONCORDANCE" &&
           articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "CONCORDE" &&
           articleLien["@sens"] === "cible")
@@ -324,21 +434,27 @@ async function exportLegiArticle(
         // L'article est créé par le déplacement d'un article existant dans une loi.
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "CREATE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        startCauseFound = true
       } else if (
-        articleLien["@typelien"] === "CONCORDE" &&
-        articleLien["@sens"] === "source"
+        (articleLien["@typelien"] === "CONCORDANCE" &&
+          articleLien["@sens"] === "cible") ||
+        (articleLien["@typelien"] === "CONCORDE" &&
+          articleLien["@sens"] === "source")
       ) {
         // L'article est déplacé aiileurs.
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "DELETE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        // stopCauseFound = true
       } else if (
         (articleLien["@typelien"] === "CREATION" &&
           articleLien["@sens"] === "source") ||
@@ -351,22 +467,18 @@ async function exportLegiArticle(
       ) {
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "CREATE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        startCauseFound = true
       } else if (
         articleLien["@typelien"] === "CREATION" &&
         articleLien["@sens"] === "cible"
       ) {
-        // Quand un article est TRANSFERE cela s'accompation de la
-        // CREATION d'un autre article.
-        await addTexteModificateurId(
-          context,
-          article.META.META_COMMUN.ID,
-          articleLien["@cidtexte"],
-        )
-        // stopCauseFound = true
+        // It seems to be an error.
+        // Ignore link.
       } else if (
         (articleLien["@typelien"] === "DEPLACE" &&
           articleLien["@sens"] === "cible") ||
@@ -376,20 +488,24 @@ async function exportLegiArticle(
         // L'article est créé par le déplacement d'un article existant.
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "CREATE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        startCauseFound = true
       } else if (
         articleLien["@typelien"] === "RECTIFICATION" &&
         articleLien["@sens"] === "source"
       ) {
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "CREATE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        startCauseFound = true
       } else if (
         articleLien["@typelien"] === "TRANSFERE" &&
         articleLien["@sens"] === "cible"
@@ -397,10 +513,12 @@ async function exportLegiArticle(
         // L'article est transféré ailleurs.
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "DELETE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        // stopCauseFound = true
       } else if (
         articleLien["@typelien"] === "TRANSFERT" &&
         articleLien["@sens"] === "source"
@@ -408,14 +526,168 @@ async function exportLegiArticle(
         // L'article provient d'un transfert.
         await addTexteModificateurId(
           context,
-          article.META.META_COMMUN.ID,
           articleLien["@cidtexte"],
+          "CREATE",
+          articleId,
+          articleDateDebut,
+          articleDateFin,
         )
-        startCauseFound = true
       } else {
         throw new Error(
-          `Unexpected LIEN in article ${article.META.META_COMMUN.ID}: @typelien=${articleLien["@typelien"]}, @sens=${articleLien["@sens"]}`,
+          `Unexpected LIEN in article ${articleId}: @typelien=${articleLien["@typelien"]}, @sens=${articleLien["@sens"]}`,
         )
+      }
+    }
+  }
+
+  // If article has no texte créateur at all, then create a fake one.
+  let infosTexteModificateur = context.infosTexteModificateurById[articleId]
+  if (infosTexteModificateur === undefined) {
+    infosTexteModificateur = context.infosTexteModificateurById[articleId] = {
+      CREATE: undefined,
+      DELETE: undefined,
+    }
+  }
+  if (infosTexteModificateur.CREATE === undefined) {
+    const texteManquantId = `ZZZZ TEXTE MANQUANT ${articleDateDebut}`
+    let texteManquant = context.texteManquantById[texteManquantId]
+    if (texteManquant === undefined) {
+      texteManquant = context.texteManquantById[texteManquantId] = {
+        date: articleDateDebut,
+      }
+    }
+  }
+}
+
+async function exportLegiSectionTa(
+  context: Context,
+  legiTexteId: string,
+  depth: number,
+  lienSectionTa: LegiSectionTaLienSectionTa,
+  sectionTa: LegiSectionTa,
+): Promise<void> {
+  const sectionTaId = sectionTa.ID
+  const sectionTaDateDebut = lienSectionTa["@debut"]
+  const sectionTaDateFin = lienSectionTa["@fin"]
+  console.log(
+    `${sectionTa.ID} ${"  ".repeat(depth)}${sectionTa.TITRE_TA?.replace(/\s+/g, " ") ?? sectionTa.ID} (${sectionTaDateDebut} — ${sectionTaDateFin === "2999-01-01" ? "…" : lienSectionTa["@fin"]}, ${lienSectionTa["@etat"]})`,
+  )
+
+  for (const articleLien of await db<ArticleLienDb[]>`
+    SELECT * FROM article_lien WHERE id = ${lienSectionTa["@id"]}
+  `) {
+    assert.strictEqual(articleLien.cidtexte, legiTexteId)
+    if (articleLien.article_id in context.legiTexteInternalIds) {
+      // Ignore internal links because a LEGI texte can't modify itself.
+      continue
+    }
+
+    console.log(
+      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
+    )
+    if (
+      (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
+      (articleLien.typelien === "ABROGE" && !articleLien.cible)
+    ) {
+      await addArticleModificateurId(
+        context,
+        articleLien.article_id,
+        "DELETE",
+        sectionTaId,
+        sectionTaDateDebut,
+        sectionTaDateFin,
+      )
+    } else if (articleLien.typelien === "CITATION" && !articleLien.cible) {
+      // Ignore link.
+    } else if (
+      (articleLien.typelien === "CREE" && !articleLien.cible) ||
+      (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
+      (articleLien.typelien === "MODIFIE" && !articleLien.cible)
+    ) {
+      await addArticleModificateurId(
+        context,
+        articleLien.article_id,
+        "CREATE",
+        sectionTaId,
+        sectionTaDateDebut,
+        sectionTaDateFin,
+      )
+    } else if (articleLien.typelien === "DEPLACE" && !articleLien.cible) {
+      // L'article est créé par le déplacement d'un article existant.
+      await addArticleModificateurId(
+        context,
+        articleLien.article_id,
+        "CREATE",
+        sectionTaId,
+        sectionTaDateDebut,
+        sectionTaDateFin,
+      )
+    } else {
+      throw new Error(
+        `Unexpected article_lien to Section Texte Article ${lienSectionTa["@id"]}: typelien=${articleLien.typelien}, cible=${articleLien.cible}`,
+      )
+    }
+  }
+
+  for (const texteVersionLien of await db<TexteVersionLienDb[]>`
+    SELECT * FROM texte_version_lien WHERE id = ${lienSectionTa["@id"]}
+  `) {
+    assert.strictEqual(texteVersionLien.cidtexte, legiTexteId)
+    if (texteVersionLien.texte_version_id in context.legiTexteInternalIds) {
+      // Ignore internal links because a LEGI texte can't modify itself.
+      continue
+    }
+
+    console.log(
+      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
+    )
+    if (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible) {
+      await addTexteModificateurId(
+        context,
+        texteVersionLien.texte_version_id,
+        "DELETE",
+        sectionTaId,
+        sectionTaDateDebut,
+        sectionTaDateFin,
+      )
+    } else if (
+      texteVersionLien.typelien === "CITATION" &&
+      !texteVersionLien.cible
+    ) {
+      // Ignore link.
+    } else if (
+      texteVersionLien.typelien === "RECTIFICATION" &&
+      texteVersionLien.cible
+    ) {
+      await addTexteModificateurId(
+        context,
+        texteVersionLien.texte_version_id,
+        "CREATE",
+        sectionTaId,
+        sectionTaDateDebut,
+        sectionTaDateFin,
+      )
+    } else {
+      throw new Error(
+        `Unexpected texte_version_lien to Section Texte Article ${lienSectionTa["@id"]}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
+      )
+    }
+  }
+
+  // If article has no texte créateur at all, then create a fake one.
+  let infosTexteModificateur = context.infosTexteModificateurById[sectionTaId]
+  if (infosTexteModificateur === undefined) {
+    infosTexteModificateur = context.infosTexteModificateurById[sectionTaId] = {
+      CREATE: undefined,
+      DELETE: undefined,
+    }
+  }
+  if (infosTexteModificateur.CREATE === undefined) {
+    const texteManquantId = `ZZZZ TEXTE MANQUANT ${sectionTaDateDebut}`
+    let texteManquant = context.texteManquantById[texteManquantId]
+    if (texteManquant === undefined) {
+      texteManquant = context.texteManquantById[texteManquantId] = {
+        date: sectionTaDateDebut,
       }
     }
   }
@@ -427,17 +699,18 @@ async function exportLegiTexteToMarkdown(
 ): Promise<void> {
   const context: Context = {
     articleById: {},
-    articlesModificateursIdsById: {},
+    infosArticleModificateurById: {},
+    infosTexteModificateurById: {},
     legiTexteInternalIds: new Set(),
     sectionTaById: {},
-    textelrById: {},
-    textesModificateursIdsById: {},
-    texteVersionIdByArticleId: {},
+    texteManquantById: {},
     texteVersionById: {},
   }
   context.legiTexteInternalIds.add(legiTexteId)
 
-  const texteVersion = await getOrLoadTexteVersion(context, legiTexteId)
+  const texteVersion = (await getOrLoadTexteVersion(context, legiTexteId)) as
+    | JorfTexteVersion
+    | LegiTexteVersion
   assert.notStrictEqual(texteVersion, null)
 
   const textelr = (
@@ -446,7 +719,6 @@ async function exportLegiTexteToMarkdown(
   `
   )[0]?.data
   assert.notStrictEqual(textelr, undefined)
-  context.textelrById[legiTexteId] = textelr
 
   const meta = texteVersion.META
   const metaTexteVersion = meta.META_SPEC.META_TEXTE_VERSION
@@ -493,26 +765,13 @@ async function exportLegiTexteToMarkdown(
     parentsSectionTa,
     sectionTa,
   } of walkStructureTree(context, textelrStructure as LegiSectionTaStructure)) {
-    console.log(
-      `${sectionTa.ID} ${"  ".repeat(parentsSectionTa.length + 1)}${sectionTa.TITRE_TA?.replace(/\s+/g, " ") ?? sectionTa.ID} (${lienSectionTa["@debut"]} — ${lienSectionTa["@fin"] === "2999-01-01" ? "…" : lienSectionTa["@fin"]}, ${lienSectionTa["@etat"]})`,
+    await exportLegiSectionTa(
+      context,
+      legiTexteId,
+      parentsSectionTa.length + 1,
+      lienSectionTa,
+      sectionTa,
     )
-
-    for (const articleLien of await db<ArticleLienDb[]>`
-      SELECT * FROM article_lien WHERE id = ${lienSectionTa["@id"]}
-    `) {
-      assert.strictEqual(articleLien.cidtexte, legiTexteId)
-      console.log(
-        `${" ".repeat(20)} ${"  ".repeat(parentsSectionTa.length + 1)}  ${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
-      )
-    }
-    for (const texteVersionLien of await db<TexteVersionLienDb[]>`
-      SELECT * FROM texte_version_lien WHERE id = ${lienSectionTa["@id"]}
-    `) {
-      assert.strictEqual(texteVersionLien.cidtexte, legiTexteId)
-      console.log(
-        `${" ".repeat(20)} ${"  ".repeat(parentsSectionTa.length + 1)}  ${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
-      )
-    }
 
     const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
     if (liensArticles !== undefined) {
@@ -533,25 +792,36 @@ async function exportLegiTexteToMarkdown(
   }
 
   const textesModificateursIds = new Set<string>()
-  for (const textesModificateursForId of Object.values(
-    context.textesModificateursIdsById,
+  for (const infosTexteModificateur of Object.values(
+    context.infosTexteModificateurById,
   )) {
-    for (const texteModificateurId of textesModificateursForId) {
-      textesModificateursIds.add(texteModificateurId)
+    if (infosTexteModificateur.CREATE !== undefined) {
+      textesModificateursIds.add(infosTexteModificateur.CREATE)
+    }
+    if (infosTexteModificateur.DELETE !== undefined) {
+      textesModificateursIds.add(infosTexteModificateur.DELETE)
     }
   }
 
   const textesModificateursIdByDate: Record<string, string[]> = {}
   for (const texteModificateurId of textesModificateursIds) {
-    const texteVersionModificateur = await getOrLoadTexteVersion(
-      context,
-      texteModificateurId,
-    )
-    if (texteVersionModificateur === null) {
-      continue
+    let date: string
+    let texteVersionModificateur:
+      | JorfTexteVersion
+      | LegiTexteVersion
+      | TexteManquant = context.texteManquantById[
+      texteModificateurId
+    ] as TexteManquant
+    if (texteVersionModificateur === undefined) {
+      texteVersionModificateur = (await getOrLoadTexteVersion(
+        context,
+        texteModificateurId,
+      )) as JorfTexteVersion | LegiTexteVersion
+      date =
+        texteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
+    } else {
+      date = texteVersionModificateur.date
     }
-    const date =
-      texteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
     let textesModificateursId = textesModificateursIdByDate[date]
     if (textesModificateursId === undefined) {
       textesModificateursId = textesModificateursIdByDate[date] = []
@@ -564,13 +834,23 @@ async function exportLegiTexteToMarkdown(
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
     console.log(date)
     for (const texteModificateurId of textesModificateursId.toSorted()) {
-      const texteModificateur = await getOrLoadTexteVersion(
-        context,
-        texteModificateurId,
-      )
-      console.log(
-        `  ${texteModificateurId} ${texteModificateur?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}`,
-      )
+      let texteVersionModificateur:
+        | JorfTexteVersion
+        | LegiTexteVersion
+        | TexteManquant = context.texteManquantById[
+        texteModificateurId
+      ] as TexteManquant
+      if (texteVersionModificateur === undefined) {
+        texteVersionModificateur = (await getOrLoadTexteVersion(
+          context,
+          texteModificateurId,
+        )) as JorfTexteVersion | LegiTexteVersion
+        console.log(
+          `  ${texteModificateurId} ${texteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}`,
+        )
+      } else {
+        console.log(`  ${texteModificateurId} !!! Texte non trouvé !!!`)
+      }
     }
   }
 }
@@ -583,8 +863,8 @@ async function getOrLoadArticle(
   if (article === undefined) {
     article = (
       await db<{ data: JorfArticle | LegiArticle }[]>`
-          SELECT data FROM article WHERE id = ${articleId}
-        `
+        SELECT data FROM article WHERE id = ${articleId}
+      `
     )[0]?.data
     assert.notStrictEqual(article, undefined)
     context.articleById[articleId] = article

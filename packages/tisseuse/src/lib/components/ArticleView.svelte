@@ -24,7 +24,7 @@
   </svelte:element>
 {/if}
 
-{@html article.BLOC_TEXTUEL.CONTENU}
+{@html article.BLOC_TEXTUEL?.CONTENU}
 
 {#if ciblesCreation.length > 0}
   <ul>

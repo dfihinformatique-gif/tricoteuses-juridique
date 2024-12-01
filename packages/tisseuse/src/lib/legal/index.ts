@@ -151,7 +151,7 @@ export interface Article {
   VERSIONS: {
     VERSION: ArticleVersion | ArticleVersion[]
   }
-  BLOC_TEXTUEL: {
+  BLOC_TEXTUEL?: {
     CONTENU: string // HTML
   }
 }

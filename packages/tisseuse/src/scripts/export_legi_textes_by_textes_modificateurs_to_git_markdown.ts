@@ -1,4 +1,8 @@
 import assert from "assert"
+import dedent from "dedent-js"
+import fs from "fs-extra"
+import git from "isomorphic-git"
+import path from "path"
 import sade from "sade"
 
 import type { JorfArticle, JorfTexteVersion } from "$lib/legal/jorf"
@@ -13,11 +17,13 @@ import type {
 } from "$lib/legal/legi"
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 import { db } from "$lib/server/databases"
+import { slugify } from "$lib/strings"
 
 type Action = "CREATE" | "DELETE"
 
 interface Context {
   articleById: Record<string, JorfArticle | LegiArticle>
+  currentInternalIds: Set<string>
   infosArticleModificateurById: Record<
     string,
     Record<Action, string | undefined>
@@ -25,6 +31,7 @@ interface Context {
   infosTexteModificateurById: Record<string, Record<Action, string | undefined>>
   legiTexteInternalIds: Set<string>
   sectionTaById: Record<string, LegiSectionTa>
+  targetDir: string
   texteManquantById: Record<string, TexteManquant>
   texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
 }
@@ -699,10 +706,12 @@ async function exportLegiTexteToMarkdown(
 ): Promise<void> {
   const context: Context = {
     articleById: {},
+    currentInternalIds: new Set(),
     infosArticleModificateurById: {},
     infosTexteModificateurById: {},
     legiTexteInternalIds: new Set(),
     sectionTaById: {},
+    targetDir,
     texteManquantById: {},
     texteVersionById: {},
   }
@@ -791,6 +800,8 @@ async function exportLegiTexteToMarkdown(
     }
   }
 
+  // Sort of textes modificateurs by date
+
   const textesModificateursIds = new Set<string>()
   for (const infosTexteModificateur of Object.values(
     context.infosTexteModificateurById,
@@ -829,6 +840,45 @@ async function exportLegiTexteToMarkdown(
     textesModificateursId.push(texteModificateurId)
   }
 
+  // Generation of Git repository
+
+  await fs.remove(targetDir)
+  await fs.mkdir(targetDir, { recursive: true })
+  await git.init({
+    defaultBranch: "main",
+    dir: targetDir,
+    fs,
+  })
+
+  const codeTitle =
+    texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
+    texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+    texteVersion.META.META_COMMUN.ID
+  const codeDirName = slugify(codeTitle, "_")
+  const codeRepositoryRelativeDir = codeDirName
+  await fs.writeFile(
+    path.join(targetDir, "README.md"),
+    dedent`
+      # Codes juridiques en Git et Markdown
+
+      - [${codeTitle}](${codeDirName})
+    `,
+  )
+  await git.add({
+    dir: targetDir,
+    filepath: "README.md",
+    fs,
+  })
+  await git.commit({
+    dir: targetDir,
+    fs,
+    author: {
+      email: "codes_juridiques@tricoteuses.fr",
+      name: "République française",
+    },
+    message: "Création du README.md",
+  })
+
   for (const [date, textesModificateursId] of Object.entries(
     textesModificateursIdByDate,
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
@@ -840,16 +890,180 @@ async function exportLegiTexteToMarkdown(
         | TexteManquant = context.texteManquantById[
         texteModificateurId
       ] as TexteManquant
+      let texteModificateurTitle: string
       if (texteVersionModificateur === undefined) {
         texteVersionModificateur = (await getOrLoadTexteVersion(
           context,
           texteModificateurId,
         )) as JorfTexteVersion | LegiTexteVersion
-        console.log(
-          `  ${texteModificateurId} ${texteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}`,
-        )
+        texteModificateurTitle =
+          texteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
+            .TITREFULL ??
+          texteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+          texteVersionModificateur.META.META_COMMUN.ID
       } else {
-        console.log(`  ${texteModificateurId} !!! Texte non trouvé !!!`)
+        texteModificateurTitle = "!!! Texte non trouvé !!!"
+      }
+      console.log(`  ${texteModificateurId} ${texteModificateurTitle}`)
+
+      await generateGitDirectory(
+        context,
+        2,
+        codeTitle,
+        liensArticles,
+        textelrStructure?.LIEN_SECTION_TA,
+        codeRepositoryRelativeDir,
+        texteModificateurId,
+      )
+      await git.commit({
+        dir: targetDir,
+        fs,
+        author: {
+          email: "codes_juridiques@tricoteuses.fr",
+          name: "République française",
+        },
+        message: texteModificateurTitle,
+      })
+    }
+  }
+}
+
+async function generateGitDirectory(
+  context: Context,
+  depth: number,
+  title: string,
+  liensArticles: LegiSectionTaLienArt[] | undefined,
+  liensSectionTa: LegiSectionTaLienSectionTa[] | undefined,
+  repositoryRelativeDir: string,
+  texteModificateurId: string,
+) {
+  await fs.ensureDir(path.join(context.targetDir, repositoryRelativeDir))
+  const readmeLinks: Array<{ href: string; title: string }> = []
+
+  if (liensArticles !== undefined) {
+    for (const lienArticle of liensArticles) {
+      const articleId = lienArticle["@id"]
+      const article = (await getOrLoadArticle(
+        context,
+        articleId,
+      )) as LegiArticle
+      const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
+      const articleFilename = `${slugify(articleTitle, "_")}.md`
+      const articleRepositoryRelativeFilePath = path.join(
+        repositoryRelativeDir,
+        articleFilename,
+      )
+      const infosTextModificateur =
+        context.infosTexteModificateurById[articleId]
+      if (context.currentInternalIds.has(articleId)) {
+        if (infosTextModificateur.DELETE === texteModificateurId) {
+          await fs.remove(
+            path.join(context.targetDir, articleRepositoryRelativeFilePath),
+          )
+          context.currentInternalIds.delete(articleId)
+          continue
+        }
+      } else {
+        if (infosTextModificateur.CREATE === texteModificateurId) {
+          context.currentInternalIds.add(articleId)
+        } else {
+          continue
+        }
+      }
+      await fs.writeFile(
+        path.join(context.targetDir, articleRepositoryRelativeFilePath),
+        dedent`
+          ###### ${articleTitle}
+
+          ${article.BLOC_TEXTUEL?.CONTENU}
+        `,
+      )
+      await git.add({
+        dir: context.targetDir,
+        filepath: articleRepositoryRelativeFilePath,
+        fs,
+      })
+      readmeLinks.push({ href: articleFilename, title: articleTitle })
+    }
+  }
+
+  if (liensSectionTa !== undefined) {
+    for (const lienSectionTa of liensSectionTa) {
+      const sectionTaId = lienSectionTa["@id"]
+      const sectionTa = (await getOrLoadSectionTa(
+        context,
+        sectionTaId,
+      )) as LegiSectionTa
+      const sectionTaTitle =
+        sectionTa.TITRE_TA?.split(":")[0].trim() ?? sectionTaId
+      const sectionTaDirName = slugify(sectionTaTitle, "_")
+      const sectionTaRepositoryRelativeDir = path.join(
+        repositoryRelativeDir,
+        sectionTaDirName,
+      )
+      const infosTextModificateur =
+        context.infosTexteModificateurById[sectionTaId]
+      if (context.currentInternalIds.has(sectionTaId)) {
+        if (infosTextModificateur.DELETE === texteModificateurId) {
+          await fs.remove(
+            path.join(context.targetDir, sectionTaRepositoryRelativeDir),
+          )
+          context.currentInternalIds.delete(sectionTaId)
+          continue
+        }
+      } else {
+        if (infosTextModificateur.CREATE === texteModificateurId) {
+          context.currentInternalIds.add(sectionTaId)
+        } else {
+          continue
+        }
+      }
+      readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
+    }
+  }
+
+  const readmeRepositoryRelativeFilePath = path.join(
+    repositoryRelativeDir,
+    "README.md",
+  )
+  await fs.writeFile(
+    path.join(context.targetDir, readmeRepositoryRelativeFilePath),
+    dedent`
+      ${"#".repeat(Math.min(depth, 6))} ${title}
+
+      ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
+    `,
+  )
+  await git.add({
+    dir: context.targetDir,
+    filepath: readmeRepositoryRelativeFilePath,
+    fs,
+  })
+
+  if (liensSectionTa !== undefined) {
+    for (const lienSectionTa of liensSectionTa) {
+      const sectionTaId = lienSectionTa["@id"]
+      if (context.currentInternalIds.has(sectionTaId)) {
+        const sectionTa = (await getOrLoadSectionTa(
+          context,
+          sectionTaId,
+        )) as LegiSectionTa
+        const sectionTaTitle =
+          sectionTa.TITRE_TA?.split(":")[0].trim() ?? sectionTaId
+        const sectionTaDirName = slugify(sectionTaTitle, "_")
+        const sectionTaRepositoryRelativeDir = path.join(
+          repositoryRelativeDir,
+          sectionTaDirName,
+        )
+        await generateGitDirectory(
+          context,
+          depth + 1,
+          sectionTaTitle,
+          sectionTa?.STRUCTURE_TA?.LIEN_ART,
+          sectionTa?.STRUCTURE_TA?.LIEN_SECTION_TA,
+          sectionTaRepositoryRelativeDir,
+          texteModificateurId,
+        )
       }
     }
   }
@@ -870,6 +1084,23 @@ async function getOrLoadArticle(
     context.articleById[articleId] = article
   }
   return article
+}
+
+async function getOrLoadSectionTa(
+  context: Context,
+  sectionTaId: string,
+): Promise<LegiSectionTa> {
+  let sectionTa = context.sectionTaById[sectionTaId]
+  if (sectionTa === undefined) {
+    sectionTa = (
+      await db<{ data: LegiSectionTa }[]>`
+        SELECT data FROM section_ta WHERE id = ${sectionTaId}
+      `
+    )[0]?.data
+    assert.notStrictEqual(sectionTa, undefined)
+    context.sectionTaById[sectionTaId] = sectionTa
+  }
+  return sectionTa
 }
 
 async function getOrLoadTexteVersion(
@@ -908,17 +1139,11 @@ async function* walkStructureTree(
   const liensSectionTa = structure?.LIEN_SECTION_TA
   if (liensSectionTa !== undefined) {
     for (const lienSectionTa of liensSectionTa) {
-      let childSectionTa = context.sectionTaById[lienSectionTa["@id"]]
-      if (childSectionTa === undefined) {
-        childSectionTa = (
-          await db<{ data: LegiSectionTa }[]>`
-            SELECT data FROM section_ta WHERE id = ${lienSectionTa["@id"]}
-        `
-        )[0]?.data
-        assert.notStrictEqual(childSectionTa, undefined)
-        context.sectionTaById[lienSectionTa["@id"]] = childSectionTa
-        context.legiTexteInternalIds.add(lienSectionTa["@id"])
-      }
+      const childSectionTa = await getOrLoadSectionTa(
+        context,
+        lienSectionTa["@id"],
+      )
+      context.legiTexteInternalIds.add(lienSectionTa["@id"])
       yield { lienSectionTa, parentsSectionTa, sectionTa: childSectionTa }
       const childStructure = childSectionTa.STRUCTURE_TA
       if (childStructure !== undefined) {

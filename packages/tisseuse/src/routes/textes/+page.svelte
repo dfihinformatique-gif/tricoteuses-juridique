@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import searchIcon from "@iconify-icons/codicon/search"
   import { TreeView } from "augmented-data-viewer"
 
   import { page } from "$app/stores"
@@ -35,7 +34,7 @@
   )
 </script>
 
-<header class="prose my-6 max-w-full">
+<header class="my-6 max-w-full">
   <h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
     Codes, lois et règlements
   </h1>

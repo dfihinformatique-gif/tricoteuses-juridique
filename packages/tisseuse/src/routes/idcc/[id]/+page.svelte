@@ -12,7 +12,7 @@
   $: summary = summarizeLegalObject({ key: "idcc" }, "idcc", idcc)
 </script>
 
-<header class="prose my-6 max-w-full">
+<header class="my-6 max-w-full">
   <h2
     class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0"
   >

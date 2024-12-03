@@ -1,5 +1,5 @@
 <script lang="ts">
-  import errorIcon from "@iconify-icons/codicon/error"
+  import { CircleX } from "lucide-svelte"
 
   import { realErrorFromError } from "./errors"
   import ErrorValue from "./ErrorValue.svelte"
@@ -13,7 +13,7 @@
 {#if realError !== error || (!hideError && realError != null)}
   <div class="alert alert-error">
     <div class="flex-1">
-      <iconify-icon class="mr-1" icon={errorIcon} />
+      <CircleX class="mr-1" />
       <ErrorValue bind:error frame={false} {hideError} />
     </div>
   </div>

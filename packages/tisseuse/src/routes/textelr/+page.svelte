@@ -1,5 +1,4 @@
 <script lang="ts">
-  // import searchIcon from "@iconify-icons/codicon/search"
   import { TreeView } from "augmented-data-viewer"
 
   // import { page } from "$app/stores"
@@ -13,7 +12,7 @@
   $: ({ textelr: textelrArray } = data)
 </script>
 
-<header class="prose my-6 max-w-full">
+<header class="my-6 max-w-full">
   <h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
     TEXTELR
   </h1>
@@ -29,7 +28,7 @@
         bind:value={q}
       />
       <button class="btn btn-square" type="submit">
-        <iconify-icon icon={searchIcon} />
+        <Search />
       </button>
     </div>
   </div>

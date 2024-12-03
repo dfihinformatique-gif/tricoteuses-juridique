@@ -1,5 +1,5 @@
-import arrowRight from "@iconify-icons/codicon/arrow-small-right"
 import type { Access, Summarizer, Summary } from "augmented-data-viewer"
+import { MoveRight } from "lucide-svelte"
 
 import {
   type Article,

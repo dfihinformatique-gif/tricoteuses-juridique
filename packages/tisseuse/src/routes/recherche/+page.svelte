@@ -1,6 +1,6 @@
 <script lang="ts">
-  import searchIcon from "@iconify-icons/codicon/search"
   import { TreeView } from "augmented-data-viewer"
+  import { Search } from "lucide-svelte"
 
   import { page } from "$app/stores"
   // import Pagination from "$lib/components/Pagination.svelte"
@@ -15,7 +15,7 @@
   $: article = id === undefined ? undefined : data.article?.[id]
 </script>
 
-<header class="prose my-6 max-w-full">
+<header class="my-6 max-w-full">
   <h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
     Recherche
   </h1>
@@ -31,7 +31,7 @@
         bind:value={q}
       />
       <button class="btn btn-square" type="submit">
-        <iconify-icon icon={searchIcon} />
+        <Search />
       </button>
     </div>
   </div>

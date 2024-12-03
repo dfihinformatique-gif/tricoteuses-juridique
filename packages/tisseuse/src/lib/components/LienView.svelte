@@ -1,7 +1,5 @@
 <script lang="ts">
-  import dash from "@iconify-icons/codicon/dash"
-  import triangleDown from "@iconify-icons/codicon/triangle-down"
-  import triangleRight from "@iconify-icons/codicon/triangle-right"
+  import { Minus, Triangle } from "lucide-svelte"
 
   import type { Aggregate } from "$lib/aggregates"
   import ArticleView from "$lib/components/ArticleView.svelte"
@@ -66,8 +64,10 @@
     class="inline-flex align-top"
     on:click|stopPropagation={toggle}
     on:keyup|stopPropagation={toggle}
+    role="button"
+    tabindex="-1"
   >
-    <iconify-icon class="mt-1 inline-block shrink-0" icon={dash} inline />
+    <Minus class="mr-1 mt-0.5 w-3 flex-none shrink-0" />
     <a class="link-hover link-primary link" href={pathnameFromLegalId(id)}>
       {lien["#text"]}
     </a>
@@ -77,20 +77,22 @@
     class="inline-flex cursor-pointer align-top"
     on:click|stopPropagation={toggle}
     on:keyup|stopPropagation={toggle}
+    role="button"
+    tabindex="-1"
   >
-    <iconify-icon
-      class="mt-1 inline-block shrink-0"
-      icon={open ? triangleDown : triangleRight}
-      inline
+    <Triangle
+      class="mr-1 mt-0.5 w-3 flex-none"
+      fill="currentColor"
+      transform="rotate({open ? 180 : 90})"
     />
     {lien["#text"]}
   </div>
   {#if open}
-    <div class="ml-2 border-l-4 pl-2">
+    <div
+      class="ml-2 border-l-4 pl-2"
       <svelte:component
-        this={componentAndProperties.component}
-        {...componentAndProperties.properties}
-      />
-    </div>
+      this={componentAndProperties.component}
+      {...componentAndProperties.properties}
+    ></div>
   {/if}
 {/if}

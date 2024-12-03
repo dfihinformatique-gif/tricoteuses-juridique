@@ -3,7 +3,6 @@
 
   import { NavBar } from "@tricoteuses/explorer-tools"
   // import NavBar from "@tricoteuses/explorer-tools/components/NavBar.svelte"
-  import "iconify-icon"
 
   import { page } from "$app/stores"
   import { appMenu } from "$lib/legal"

@@ -66,7 +66,7 @@ export class Aggregator {
 
     if (this.follow.has("STRUCTURE_TA.LIEN_ART.@id")) {
       for (const lien of iterArrayOrSingleton(
-        sectionTa.STRUCTURE_TA.LIEN_ART,
+        sectionTa.STRUCTURE_TA?.LIEN_ART,
       )) {
         this.requestId(lien["@id"])
       }
@@ -74,7 +74,7 @@ export class Aggregator {
 
     if (this.follow.has("STRUCTURE_TA.LIEN_SECTION_TA.@id")) {
       for (const lien of iterArrayOrSingleton(
-        sectionTa.STRUCTURE_TA.LIEN_SECTION_TA,
+        sectionTa.STRUCTURE_TA?.LIEN_SECTION_TA,
       )) {
         this.requestId(lien["@id"])
       }

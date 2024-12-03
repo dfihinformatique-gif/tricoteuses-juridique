@@ -418,7 +418,7 @@ export interface SectionTa {
   ID: string
   CONTEXTE: Contexte
   TITRE_TA: string
-  STRUCTURE_TA: {
+  STRUCTURE_TA?: {
     LIEN_ART?: LienArt | LienArt[]
     LIEN_SECTION_TA?: LienSectionTa | LienSectionTa[]
   }

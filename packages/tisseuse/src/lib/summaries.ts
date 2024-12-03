@@ -29,6 +29,7 @@ import {
   type TmLienTxt,
   type VersionsWrapper,
 } from "$lib/legal"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 
 export const summarizeAggregateProperties: Summarizer = (access, value) => {
   for (const summarizer of [
@@ -45,6 +46,69 @@ export const summarizeAggregateProperties: Summarizer = (access, value) => {
     if (summary !== undefined) {
       return summary
     }
+  }
+  return undefined
+}
+
+export const summarizeArticleLienDb: Summarizer = (access, value) => {
+  const articleLien = value as ArticleLienDb | undefined
+  if (articleLien === undefined) {
+    return undefined
+  }
+  return {
+    items: [
+      {
+        content: `Article ${articleLien.article_id}`,
+        href: pathnameFromLegalId(articleLien.article_id) as string,
+        type: "link",
+      },
+      ` ${articleLien.typelien} ${articleLien.cible ? "CIBLE" : "SOURCE"} `,
+      articleLien.cidtexte === null
+        ? `cidtexte : null`
+        : {
+            content: `cidtexte : ${articleLien.cidtexte}`,
+            href: pathnameFromLegalId(articleLien.cidtexte) as string,
+            type: "link",
+          },
+      ", id : ",
+      {
+        content: articleLien.id,
+        href: pathnameFromLegalId(articleLien.id) as string,
+        type: "link",
+      },
+    ],
+    type: "concatenation",
+  }
+}
+
+export const summarizeArticleLienDbProperties: Summarizer = (access, value) => {
+  if (
+    access?.key === "article_lien" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of article by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
+    return summarizeArticleLienDb(access, value)
+  }
+  if (
+    access?.access?.key === "article_lien" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
+    return summarizeArticleLienDb(access, value)
+  }
+
+  if (access?.key === "article_id") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (access?.key === "cidtexte") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (access?.key === "id") {
+    return summarizeLegalIdToLink(access, value)
   }
   return undefined
 }
@@ -317,7 +381,7 @@ export function summarizeLegalIdToValueArrowLink(
             content: JSON.stringify(value),
             type: "raw_data",
           },
-          { class: "mx-1 mt-1", icon: arrowRight, inline: true, type: "icon" },
+          { class: "mr-1 mt-0.5 w-3 flex-none", icon: MoveRight, type: "icon" },
           uidLinkSummary,
         ],
         type: "concatenation",
@@ -472,7 +536,7 @@ export const summarizeLienArtId: Summarizer = (access, value) => {
         content: JSON.stringify(lienArt["@id"]),
         type: "raw_data",
       },
-      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      { class: "mr-1 mt-0.5 w-3 flex-none", icon: MoveRight, type: "icon" },
       summarizeLienArt(access, lienArt) as Summary,
     ],
     type: "concatenation",
@@ -494,7 +558,7 @@ export const summarizeLienId: Summarizer = (access, value) => {
         content: JSON.stringify(lien["@id"]),
         type: "raw_data",
       },
-      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      { class: "mr-1 mt-0.5 w-3 flex-none", icon: MoveRight, type: "icon" },
       {
         content: lien["#text"],
         href: pathname,
@@ -528,7 +592,7 @@ export const summarizeLienSectionTaId: Summarizer = (access, value) => {
         content: JSON.stringify(lienSectionTa["@id"]),
         type: "raw_data",
       },
-      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      { class: "mr-1 mt-0.5 w-3 flex-none", icon: MoveRight, type: "icon" },
       summarizeLienSectionTa(access, lienSectionTa) as Summary,
     ],
     type: "concatenation",
@@ -708,6 +772,72 @@ export const summarizeTextelrProperties: Summarizer = (access, value) => {
   return undefined
 }
 
+export const summarizeTexteVersionLienDb: Summarizer = (access, value) => {
+  const texteVersionLien = value as TexteVersionLienDb | undefined
+  if (texteVersionLien === undefined) {
+    return undefined
+  }
+  return {
+    items: [
+      {
+        content: `TexteVersion ${texteVersionLien.texte_version_id}`,
+        href: pathnameFromLegalId(texteVersionLien.texte_version_id) as string,
+        type: "link",
+      },
+      ` ${texteVersionLien.typelien} ${texteVersionLien.cible ? "CIBLE" : "SOURCE"} `,
+      texteVersionLien.cidtexte === null
+        ? `cidtexte : null`
+        : {
+            content: `cidtexte : ${texteVersionLien.cidtexte}`,
+            href: pathnameFromLegalId(texteVersionLien.cidtexte) as string,
+            type: "link",
+          },
+      ", id : ",
+      {
+        content: texteVersionLien.id,
+        href: pathnameFromLegalId(texteVersionLien.id) as string,
+        type: "link",
+      },
+    ],
+    type: "concatenation",
+  }
+}
+
+export const summarizeTexteVersionLienDbProperties: Summarizer = (
+  access,
+  value,
+) => {
+  if (
+    access?.key === "texte_version_lien" &&
+    (value === undefined ||
+      // Ensure that value is not a dictionary of TexteVersion by id.
+      Object.keys(value as { [key: string]: unknown }).some(
+        (key) => key.match(/^[A-Z]{8}\d{12}$/) === null,
+      ))
+  ) {
+    return summarizeTexteVersionLienDb(access, value)
+  }
+  if (
+    access?.access?.key === "texte_version_lien" &&
+    (Array.isArray(access.parent) ||
+      (typeof access?.key === "string" &&
+        access.key.match(/^[A-Z]{8}\d{12}$/) !== null))
+  ) {
+    return summarizeTexteVersionLienDb(access, value)
+  }
+
+  if (access?.key === "texte_version_id") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (access?.key === "cidtexte") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (access?.key === "id") {
+    return summarizeLegalIdToLink(access, value)
+  }
+  return undefined
+}
+
 export const summarizeTexteVersionProperties: Summarizer = (access, value) => {
   if (
     access?.key === "texte_version" &&
@@ -754,7 +884,7 @@ export const summarizeTitreTmId: Summarizer = (access, value) => {
         content: JSON.stringify(titreTm["@id"]),
         type: "raw_data",
       },
-      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      { class: "mr-1 mt-0.5 w-3 flex-none", icon: MoveRight, type: "icon" },
       {
         content: titreTm["#text"],
         href: pathname,
@@ -780,7 +910,7 @@ export const summarizeTitreTxtIdTxt: Summarizer = (access, value) => {
         content: JSON.stringify(titreTxt["@id_txt"]),
         type: "raw_data",
       },
-      { class: "mt-1 mx-1", icon: arrowRight, inline: true, type: "icon" },
+      { class: "mr-1 mt-0.5 w-3 flex-none", icon: MoveRight, type: "icon" },
       {
         content: titreTxt["#text"],
         href: pathname,

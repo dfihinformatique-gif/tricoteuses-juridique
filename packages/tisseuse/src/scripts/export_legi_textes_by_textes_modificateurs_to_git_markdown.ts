@@ -635,7 +635,13 @@ async function registerLegiArticleModifiers(
     )
     if (
       (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
-      (articleLien.typelien === "ABROGE" && !articleLien.cible)
+      (articleLien.typelien === "ABROGE" && !articleLien.cible) ||
+      (articleLien.typelien === "CONCORDANCE" && !articleLien.cible) ||
+      (articleLien.typelien === "CONCORDE" && articleLien.cible) ||
+      (articleLien.typelien === "DISJOINT" && !articleLien.cible) ||
+      (articleLien.typelien === "DISJONCTION" && articleLien.cible) ||
+      (articleLien.typelien === "PERIME" && !articleLien.cible) ||
+      (articleLien.typelien === "TRANSFERE" && !articleLien.cible)
     ) {
       await addArticleModificateurId(
         context,
@@ -647,61 +653,27 @@ async function registerLegiArticleModifiers(
       )
     } else if (
       articleLien.typelien === "CITATION" ||
-      (articleLien.typelien === "SPEC_APPLI" && articleLien.cible) ||
+      (articleLien.typelien === "HISTO" && articleLien.cible) ||
+      (articleLien.typelien === "PEREMPTION" && articleLien.cible) ||
       (articleLien.typelien === "PILOTE_SUIVEUR" && !articleLien.cible) ||
-      (articleLien.typelien === "TXT_ASSOCIE" && !articleLien.cible) ||
+      (articleLien.typelien === "SPEC_APPLI" && articleLien.cible) ||
+      articleLien.typelien === "TXT_ASSOCIE" ||
       articleLien.typelien === "TXT_SOURCE"
     ) {
       // Ignore link.
     } else if (
       (articleLien.typelien === "CODIFICATION" && articleLien.cible) ||
       (articleLien.typelien === "CREATION" && articleLien.cible) ||
-      (articleLien.typelien === "CREE" && !articleLien.cible) ||
-      (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
-      (articleLien.typelien === "MODIFIE" && !articleLien.cible)
-    ) {
-      await addArticleModificateurId(
-        context,
-        articleLien.article_id,
-        "CREATE",
-        articleId,
-        articleDateDebut,
-        articleDateFin,
-      )
-    } else if (
       (articleLien.typelien === "CONCORDANCE" && articleLien.cible) ||
-      (articleLien.typelien === "CONCORDE" && !articleLien.cible)
-    ) {
-      // L'article est créé par le déplacement d'un article existant dans une loi.
-      await addArticleModificateurId(
-        context,
-        articleLien.article_id,
-        "CREATE",
-        articleId,
-        articleDateDebut,
-        articleDateFin,
-      )
-    } else if (
-      (articleLien.typelien === "CONCORDANCE" && !articleLien.cible) ||
-      (articleLien.typelien === "CONCORDE" && articleLien.cible)
-    ) {
-      // L'article est déplacé ailleurs.
-      await addArticleModificateurId(
-        context,
-        articleLien.article_id,
-        "DELETE",
-        articleId,
-        articleDateDebut,
-        articleDateFin,
-      )
-    } else if (articleLien.typelien === "CREATION" && !articleLien.cible) {
-      // It seems to be an error.
-      // Ignore link.
-    } else if (
+      (articleLien.typelien === "CONCORDE" && !articleLien.cible) ||
+      (articleLien.typelien === "CREE" && !articleLien.cible) ||
       (articleLien.typelien === "DEPLACE" && !articleLien.cible) ||
-      (articleLien.typelien === "DEPLACEMENT" && articleLien.cible)
+      (articleLien.typelien === "DEPLACEMENT" && articleLien.cible) ||
+      (articleLien.typelien === "DISJOINT" && articleLien.cible) ||
+      (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
+      (articleLien.typelien === "MODIFIE" && !articleLien.cible) ||
+      (articleLien.typelien === "TRANSFERT" && articleLien.cible)
     ) {
-      // L'article est créé par le déplacement d'un article existant.
       await addArticleModificateurId(
         context,
         articleLien.article_id,
@@ -710,26 +682,12 @@ async function registerLegiArticleModifiers(
         articleDateDebut,
         articleDateFin,
       )
-    } else if (articleLien.typelien === "TRANSFERE" && !articleLien.cible) {
-      // L'article est transféré ailleurs.
-      await addArticleModificateurId(
-        context,
-        articleLien.article_id,
-        "DELETE",
-        articleId,
-        articleDateDebut,
-        articleDateFin,
-      )
-    } else if (articleLien.typelien === "TRANSFERT" && articleLien.cible) {
-      // L'article provient d'un transfert.
-      await addArticleModificateurId(
-        context,
-        articleLien.article_id,
-        "CREATE",
-        articleId,
-        articleDateDebut,
-        articleDateFin,
-      )
+    } else if (
+      (articleLien.typelien === "CREATION" && !articleLien.cible) ||
+      (articleLien.typelien === "MODIFICATION" && !articleLien.cible)
+    ) {
+      // It seems to be errors.
+      // Ignore link.
     } else {
       throw new Error(
         `Unexpected article_lien to article ${lienArticle["@id"]}: typelien=${articleLien.typelien}, cible=${articleLien.cible}`,
@@ -763,44 +721,25 @@ async function registerLegiArticleModifiers(
       )
     } else if (
       texteVersionLien.typelien === "CITATION" ||
+      (texteVersionLien.typelien === "HISTO" && texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "PEREMPTION" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "SPEC_APPLI" && texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "TXT_ASSOCIE" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "TXT_SOURCE" && !texteVersionLien.cible)
     ) {
       // Ignore link.
     } else if (
       (texteVersionLien.typelien === "CODIFICATION" &&
         texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "CONCORDANCE" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "CREATION" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "MODIFICATION" &&
         texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "RECTIFICATION" && texteVersionLien.cible)
+      (texteVersionLien.typelien === "MODIFIE" && !texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "RECTIFICATION" &&
+        texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "TRANSFERT" && texteVersionLien.cible)
     ) {
-      await addTexteModificateurId(
-        context,
-        texteVersionLien.texte_version_id,
-        "CREATE",
-        articleId,
-        articleDateDebut,
-        articleDateFin,
-      )
-    } else if (
-      texteVersionLien.typelien === "CONCORDANCE" &&
-      texteVersionLien.cible
-    ) {
-      // L'article est créé par le déplacement d'un article existant dans une loi.
-      await addTexteModificateurId(
-        context,
-        texteVersionLien.texte_version_id,
-        "CREATE",
-        articleId,
-        articleDateDebut,
-        articleDateFin,
-      )
-    } else if (
-      texteVersionLien.typelien === "TRANSFERT" &&
-      texteVersionLien.cible
-    ) {
-      // L'article provient d'un transfert.
       await addTexteModificateurId(
         context,
         texteVersionLien.texte_version_id,
@@ -837,7 +776,19 @@ async function registerLegiArticleModifiers(
         (articleLien["@typelien"] === "ABROGE" &&
           articleLien["@sens"] === "cible") ||
         (articleLien["@typelien"] === "ANNULATION" &&
-          articleLien["@sens"] === "source")
+          articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "CONCORDANCE" &&
+          articleLien["@sens"] === "cible") ||
+        (articleLien["@typelien"] === "CONCORDE" &&
+          articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "DISJOINT" &&
+          articleLien["@sens"] === "cible") ||
+        (articleLien["@typelien"] === "DISJONCTION" &&
+          articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "PERIME" &&
+          articleLien["@sens"] === "cible") ||
+        (articleLien["@typelien"] === "TRANSFERE" &&
+          articleLien["@sens"] === "cible")
       ) {
         await addTexteModificateurId(
           context,
@@ -850,63 +801,47 @@ async function registerLegiArticleModifiers(
       } else if (
         articleLien["@typelien"] === "CITATION" ||
         (articleLien["@typelien"] === "HISTO" &&
-          articleLien["@sens"] ===
-            "source") /* Au moins sur un exemple, le lien est vide à part ces 2 champs */ ||
+          articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "PEREMPTION" &&
+          articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "PILOTE_SUIVEUR" &&
           articleLien["@sens"] === "cible") ||
         (articleLien["@typelien"] === "SPEC_APPLI" &&
           articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "TXT_ASSOCIE" &&
-          articleLien["@sens"] === "cible") ||
+        articleLien["@typelien"] === "TXT_ASSOCIE" ||
         articleLien["@typelien"] === "TXT_SOURCE"
       ) {
         // Ignore link.
       } else if (
         (articleLien["@typelien"] === "CODIFICATION" &&
           articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "CONCORDANCE" &&
+          articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "CONCORDE" &&
+          articleLien["@sens"] === "cible") ||
         (articleLien["@typelien"] === "CREATION" &&
           articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "CREE" &&
           articleLien["@sens"] === "cible") ||
+        (articleLien["@typelien"] === "DEPLACE" &&
+          articleLien["@sens"] === "cible") ||
+        (articleLien["@typelien"] === "DEPLACEMENT" &&
+          articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "DISJOINT" &&
+          articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "MODIFICATION" &&
           articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "MODIFIE" &&
-          articleLien["@sens"] === "cible")
-      ) {
-        await addTexteModificateurId(
-          context,
-          articleLien["@cidtexte"],
-          "CREATE",
-          articleId,
-          articleDateDebut,
-          articleDateFin,
-        )
-      } else if (
-        (articleLien["@typelien"] === "CONCORDANCE" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "CONCORDE" &&
-          articleLien["@sens"] === "cible")
-      ) {
-        // L'article est créé par le déplacement d'un article existant dans une loi.
-        await addTexteModificateurId(
-          context,
-          articleLien["@cidtexte"],
-          "CREATE",
-          articleId,
-          articleDateDebut,
-          articleDateFin,
-        )
-      } else if (
-        (articleLien["@typelien"] === "CONCORDANCE" &&
           articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "CONCORDE" &&
+        (articleLien["@typelien"] === "RECTIFICATION" &&
+          articleLien["@sens"] === "source") ||
+        (articleLien["@typelien"] === "TRANSFERT" &&
           articleLien["@sens"] === "source")
       ) {
-        // L'article est déplacé aiileurs.
         await addTexteModificateurId(
           context,
           articleLien["@cidtexte"],
-          "DELETE",
+          "CREATE",
           articleId,
           articleDateDebut,
           articleDateFin,
@@ -917,59 +852,6 @@ async function registerLegiArticleModifiers(
       ) {
         // It seems to be an error.
         // Ignore link.
-      } else if (
-        (articleLien["@typelien"] === "DEPLACE" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "DEPLACEMENT" &&
-          articleLien["@sens"] === "source")
-      ) {
-        // L'article est créé par le déplacement d'un article existant.
-        await addTexteModificateurId(
-          context,
-          articleLien["@cidtexte"],
-          "CREATE",
-          articleId,
-          articleDateDebut,
-          articleDateFin,
-        )
-      } else if (
-        articleLien["@typelien"] === "RECTIFICATION" &&
-        articleLien["@sens"] === "source"
-      ) {
-        await addTexteModificateurId(
-          context,
-          articleLien["@cidtexte"],
-          "CREATE",
-          articleId,
-          articleDateDebut,
-          articleDateFin,
-        )
-      } else if (
-        articleLien["@typelien"] === "TRANSFERE" &&
-        articleLien["@sens"] === "cible"
-      ) {
-        // L'article est transféré ailleurs.
-        await addTexteModificateurId(
-          context,
-          articleLien["@cidtexte"],
-          "DELETE",
-          articleId,
-          articleDateDebut,
-          articleDateFin,
-        )
-      } else if (
-        articleLien["@typelien"] === "TRANSFERT" &&
-        articleLien["@sens"] === "source"
-      ) {
-        // L'article provient d'un transfert.
-        await addTexteModificateurId(
-          context,
-          articleLien["@cidtexte"],
-          "CREATE",
-          articleId,
-          articleDateDebut,
-          articleDateFin,
-        )
       } else {
         throw new Error(
           `Unexpected LIEN in article ${articleId}: @typelien=${articleLien["@typelien"]}, @sens=${articleLien["@sens"]}`,
@@ -1026,7 +908,8 @@ async function registerLegiSectionTaModifiers(
     )
     if (
       (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
-      (articleLien.typelien === "ABROGE" && !articleLien.cible)
+      (articleLien.typelien === "ABROGE" && !articleLien.cible) ||
+      (articleLien.typelien === "TRANSFERE" && !articleLien.cible)
     ) {
       await addArticleModificateurId(
         context,
@@ -1036,23 +919,18 @@ async function registerLegiSectionTaModifiers(
         sectionTaDateDebut,
         sectionTaDateFin,
       )
-    } else if (articleLien.typelien === "CITATION" && !articleLien.cible) {
+    } else if (
+      (articleLien.typelien === "CITATION" && !articleLien.cible) ||
+      (articleLien.typelien === "PEREMPTION" && articleLien.cible)
+    ) {
       // Ignore link.
     } else if (
+      (articleLien.typelien === "CREATION" && articleLien.cible) ||
       (articleLien.typelien === "CREE" && !articleLien.cible) ||
+      (articleLien.typelien === "DEPLACE" && !articleLien.cible) ||
       (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
       (articleLien.typelien === "MODIFIE" && !articleLien.cible)
     ) {
-      await addArticleModificateurId(
-        context,
-        articleLien.article_id,
-        "CREATE",
-        sectionTaId,
-        sectionTaDateDebut,
-        sectionTaDateFin,
-      )
-    } else if (articleLien.typelien === "DEPLACE" && !articleLien.cible) {
-      // L'article est créé par le déplacement d'un article existant.
       await addArticleModificateurId(
         context,
         articleLien.article_id,

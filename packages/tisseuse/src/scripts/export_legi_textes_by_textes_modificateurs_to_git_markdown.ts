@@ -413,6 +413,7 @@ async function exportLegiTexteToMarkdown(
 async function generateGitDirectory(
   context: Context,
   depth: number,
+  id: string,
   title: string,
   liensArticles: LegiSectionTaLienArt[] | undefined,
   liensSectionTa: LegiSectionTaLienSectionTa[] | undefined,
@@ -455,6 +456,10 @@ async function generateGitDirectory(
       await fs.writeFile(
         path.join(context.targetDir, articleRepositoryRelativeFilePath),
         dedent`
+          ---
+          ID: ${articleId}
+          ---
+
           ###### ${articleTitle}
 
           ${article.BLOC_TEXTUEL?.CONTENU}
@@ -510,6 +515,10 @@ async function generateGitDirectory(
   await fs.writeFile(
     path.join(context.targetDir, readmeRepositoryRelativeFilePath),
     dedent`
+      ---
+      ID: ${id}
+      ---
+
       ${"#".repeat(Math.min(depth, 6))} ${title}
 
       ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
@@ -541,6 +550,7 @@ async function generateGitDirectory(
         await generateGitDirectory(
           context,
           depth + 1,
+          sectionTaId,
           sectionTaTitle,
           sectionTa?.STRUCTURE_TA?.LIEN_ART,
           sectionTa?.STRUCTURE_TA?.LIEN_SECTION_TA,

@@ -431,7 +431,14 @@ async function generateGitDirectory(
         articleId,
       )) as LegiArticle
       const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
-      const articleFilename = `${slugify(articleTitle, "_")}.md`
+      let articleSlug = slugify(articleTitle, "_")
+      if (articleSlug.length > 252) {
+        articleSlug = articleSlug.slice(0, 251)
+        if (articleSlug.at(-1) !== "_") {
+          articleSlug += "_"
+        }
+      }
+      const articleFilename = `${articleSlug}.md`
       const articleRepositoryRelativeFilePath = path.join(
         repositoryRelativeDir,
         articleFilename,
@@ -482,7 +489,14 @@ async function generateGitDirectory(
         sectionTaId,
       )) as LegiSectionTa
       const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
-      const sectionTaDirName = slugify(sectionTaTitle.split(":")[0].trim(), "_")
+      let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
+      if (sectionTaSlug.length > 255) {
+        sectionTaSlug = sectionTaSlug.slice(0, 254)
+        if (sectionTaSlug.at(-1) !== "_") {
+          sectionTaSlug += "_"
+        }
+      }
+      const sectionTaDirName = sectionTaSlug
       const sectionTaRepositoryRelativeDir = path.join(
         repositoryRelativeDir,
         sectionTaDirName,
@@ -539,10 +553,14 @@ async function generateGitDirectory(
           sectionTaId,
         )) as LegiSectionTa
         const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
-        const sectionTaDirName = slugify(
-          sectionTaTitle.split(":")[0].trim(),
-          "_",
-        )
+        let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
+        if (sectionTaSlug.length > 255) {
+          sectionTaSlug = sectionTaSlug.slice(0, 254)
+          if (sectionTaSlug.at(-1) !== "_") {
+            sectionTaSlug += "_"
+          }
+        }
+        const sectionTaDirName = sectionTaSlug
         const sectionTaRepositoryRelativeDir = path.join(
           repositoryRelativeDir,
           sectionTaDirName,

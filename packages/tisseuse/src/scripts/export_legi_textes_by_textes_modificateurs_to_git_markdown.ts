@@ -344,7 +344,7 @@ async function exportLegiTexteToMarkdown(
       # Codes juridiques français en Git et Markdown
 
       - [${codeTitle}](${codeDirName})
-    `,
+    ` + "\n",
   )
   await git.add({
     dir: targetDir,
@@ -463,7 +463,7 @@ async function generateGitDirectory(
           ###### ${articleTitle}
 
           ${article.BLOC_TEXTUEL?.CONTENU}
-        `,
+        ` + "\n",
       )
       await git.add({
         dir: context.targetDir,
@@ -522,7 +522,7 @@ async function generateGitDirectory(
       ${"#".repeat(Math.min(depth, 6))} ${title}
 
       ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
-    `,
+    ` + "\n",
   )
   await git.add({
     dir: context.targetDir,

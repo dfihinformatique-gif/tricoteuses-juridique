@@ -25,16 +25,20 @@ interface Context {
   articleById: Record<string, JorfArticle | LegiArticle>
   articleModificateurIdByActionById: Record<
     string,
-    Record<Action, string | undefined>
+    Partial<Record<Action, string>>
   >
   currentInternalIds: Set<string>
+  idsByActionByTexteMoficateurId: Record<
+    string,
+    Partial<Record<Action, Set<string>>>
+  >
   legiTexteInternalIds: Set<string>
   sectionTaById: Record<string, LegiSectionTa>
   targetDir: string
   texteManquantById: Record<string, TexteManquant>
   texteModificateurIdByActionById: Record<
     string,
-    Record<Action, string | undefined>
+    Partial<Record<Action, string>>
   >
   texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
 }
@@ -81,13 +85,8 @@ async function addArticleModificateurId(
     return
   }
 
-  let articleModificateurIdByAction =
-    context.articleModificateurIdByActionById[modifiedId]
-  if (articleModificateurIdByAction === undefined) {
-    articleModificateurIdByAction = context.articleModificateurIdByActionById[
-      modifiedId
-    ] = { CREATE: undefined, DELETE: undefined }
-  }
+  const articleModificateurIdByAction =
+    (context.articleModificateurIdByActionById[modifiedId] ??= {})
   const existingArticleModificateurId = articleModificateurIdByAction[action]
   if (existingArticleModificateurId === undefined) {
     articleModificateurIdByAction[action] = articleModificateurId
@@ -155,19 +154,15 @@ async function addTexteModificateurId(
     return
   }
 
-  let texteModificateurIdByAction =
-    context.texteModificateurIdByActionById[modifiedId]
-  if (texteModificateurIdByAction === undefined) {
-    texteModificateurIdByAction = context.texteModificateurIdByActionById[
-      modifiedId
-    ] = {
-      CREATE: undefined,
-      DELETE: undefined,
-    }
-  }
+  const texteModificateurIdByAction = (context.texteModificateurIdByActionById[
+    modifiedId
+  ] ??= {})
   const existingTexteModificateurId = texteModificateurIdByAction[action]
   if (existingTexteModificateurId === undefined) {
     texteModificateurIdByAction[action] = texteModificateurId
+    ;((context.idsByActionByTexteMoficateurId[texteModificateurId] ??= {})[
+      action
+    ] ??= new Set()).add(modifiedId)
   } else if (existingTexteModificateurId !== texteModificateurId) {
     const existingTexteVersionModificateur = (await getOrLoadTexteVersion(
       context,
@@ -178,6 +173,9 @@ async function addTexteModificateurId(
         .DATE_TEXTE! < texteModificateurDateSignature
     ) {
       texteModificateurIdByAction[action] = texteModificateurId
+      ;((context.idsByActionByTexteMoficateurId[texteModificateurId] ??= {})[
+        action
+      ] ??= new Set()).add(modifiedId)
     }
   }
 }
@@ -190,6 +188,7 @@ async function exportLegiTexteToMarkdown(
     articleById: {},
     articleModificateurIdByActionById: {},
     currentInternalIds: new Set(),
+    idsByActionByTexteMoficateurId: {},
     legiTexteInternalIds: new Set(),
     sectionTaById: {},
     targetDir,
@@ -219,7 +218,7 @@ async function exportLegiTexteToMarkdown(
 
   // First Pass: Register IDs of internal objects
 
-  const textelrStructure = textelr.STRUCT
+  const { STRUCT: textelrStructure } = textelr
   const liensArticles = textelrStructure?.LIEN_ART
   if (liensArticles !== undefined) {
     for (const lienArticle of liensArticles) {
@@ -343,7 +342,6 @@ async function exportLegiTexteToMarkdown(
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
     texteVersion.META.META_COMMUN.ID
   const codeDirName = slugify(codeTitle, "_")
-  const codeRepositoryRelativeDir = codeDirName
   await fs.writeFile(
     path.join(targetDir, "README.md"),
     dedent`
@@ -372,6 +370,7 @@ async function exportLegiTexteToMarkdown(
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
     console.log(date)
     for (const texteModificateurId of textesModificateursId.toSorted()) {
+      const t1 = performance.now()
       let texteVersionModificateur:
         | JorfTexteVersion
         | LegiTexteVersion
@@ -393,16 +392,28 @@ async function exportLegiTexteToMarkdown(
         texteModificateurTitle = `!!! Texte non trouvé ${date} !!!`
       }
       console.log(`  ${texteModificateurId} ${texteModificateurTitle}`)
+      const idsByAction =
+        context.idsByActionByTexteMoficateurId[texteModificateurId]
+      if (idsByAction.DELETE !== undefined) {
+        console.log(
+          `    DELETE: ${[...idsByAction.DELETE].toSorted().join(", ")}`,
+        )
+      }
+      if (idsByAction.CREATE !== undefined) {
+        console.log(
+          `    CREATE: ${[...idsByAction.CREATE].toSorted().join(", ")}`,
+        )
+      }
+      const t2 = performance.now()
 
-      await generateGitDirectory(
+      await generateTexteGitDirectory(
         context,
         2,
-        codeTitle,
-        liensArticles,
-        textelrStructure?.LIEN_SECTION_TA,
-        codeRepositoryRelativeDir,
+        textelr,
+        texteVersion as LegiTexteVersion,
         texteModificateurId,
       )
+      const t3 = performance.now()
       await git.commit({
         dir: targetDir,
         fs,
@@ -412,23 +423,37 @@ async function exportLegiTexteToMarkdown(
         },
         message: texteModificateurTitle,
       })
+      const t4 = performance.now()
+      console.log(`Durations: ${t2 - t1} ${t3 - t2} ${t4 - t3}`)
     }
   }
 }
 
-async function generateGitDirectory(
+async function generateSectionTaGitDirectory(
   context: Context,
   depth: number,
-  id: string,
-  title: string,
-  liensArticles: LegiSectionTaLienArt[] | undefined,
-  liensSectionTa: LegiSectionTaLienSectionTa[] | undefined,
-  repositoryRelativeDir: string,
+  lienSectionTa: LegiSectionTaLienSectionTa,
+  sectionTa: LegiSectionTa,
+  parentRepositoryRelativeDir: string,
   texteModificateurId: string,
 ) {
+  const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTa.ID
+  let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
+  if (sectionTaSlug.length > 255) {
+    sectionTaSlug = sectionTaSlug.slice(0, 254)
+    if (sectionTaSlug.at(-1) !== "_") {
+      sectionTaSlug += "_"
+    }
+  }
+  const sectionTaDirName = sectionTaSlug
+  const repositoryRelativeDir = path.join(
+    parentRepositoryRelativeDir,
+    sectionTaDirName,
+  )
   await fs.ensureDir(path.join(context.targetDir, repositoryRelativeDir))
   const readmeLinks: Array<{ href: string; title: string }> = []
 
+  const liensArticles = sectionTa.STRUCTURE_TA?.LIEN_ART
   if (liensArticles !== undefined) {
     for (const lienArticle of liensArticles) {
       const articleId = lienArticle["@id"]
@@ -470,7 +495,18 @@ async function generateGitDirectory(
         path.join(context.targetDir, articleRepositoryRelativeFilePath),
         dedent`
           ---
-          ID: ${articleId}
+          ${[
+            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
+            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
+            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+            ["Identifiant", articleId],
+            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
+            // TODO: Mettre l'URL dans le Git Tricoteuses
+            ["URL", article.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}
           ---
 
           ###### ${articleTitle}
@@ -487,6 +523,7 @@ async function generateGitDirectory(
     }
   }
 
+  const liensSectionTa = sectionTa.STRUCTURE_TA?.LIEN_SECTION_TA
   if (liensSectionTa !== undefined) {
     for (const lienSectionTa of liensSectionTa) {
       const sectionTaId = lienSectionTa["@id"]
@@ -536,10 +573,21 @@ async function generateGitDirectory(
     path.join(context.targetDir, readmeRepositoryRelativeFilePath),
     dedent`
       ---
-      ID: ${id}
+      ${[
+        ["Commentaire", sectionTa.COMMENTAIRE],
+        ["État", lienSectionTa["@etat"]],
+        ["Date de début", lienSectionTa["@debut"]],
+        ["Date de fin", lienSectionTa["@fin"]],
+        ["Identifiant", sectionTa.ID],
+        // TODO: Mettre l'URL dans le Git Tricoteuses
+        ["URL", lienSectionTa["@url"]],
+      ]
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n")}
       ---
 
-      ${"#".repeat(Math.min(depth, 6))} ${title}
+      ${"#".repeat(Math.min(depth, 6))} ${sectionTa.TITRE_TA ?? sectionTa.ID}
 
       ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
     ` + "\n",
@@ -558,27 +606,207 @@ async function generateGitDirectory(
           context,
           sectionTaId,
         )) as LegiSectionTa
-        const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
-        let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
-        if (sectionTaSlug.length > 255) {
-          sectionTaSlug = sectionTaSlug.slice(0, 254)
-          if (sectionTaSlug.at(-1) !== "_") {
-            sectionTaSlug += "_"
-          }
-        }
-        const sectionTaDirName = sectionTaSlug
-        const sectionTaRepositoryRelativeDir = path.join(
-          repositoryRelativeDir,
-          sectionTaDirName,
-        )
-        await generateGitDirectory(
+        await generateSectionTaGitDirectory(
           context,
           depth + 1,
+          lienSectionTa,
+          sectionTa,
+          repositoryRelativeDir,
+          texteModificateurId,
+        )
+      }
+    }
+  }
+}
+
+async function generateTexteGitDirectory(
+  context: Context,
+  depth: number,
+  textelr: LegiTextelr,
+  texteVersion: LegiTexteVersion,
+  texteModificateurId: string,
+) {
+  const texteTitle =
+    texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
+    texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+    texteVersion.META.META_COMMUN.ID
+  const texteDirName = slugify(texteTitle, "_")
+  const repositoryRelativeDir = texteDirName
+  await fs.ensureDir(path.join(context.targetDir, repositoryRelativeDir))
+  const readmeLinks: Array<{ href: string; title: string }> = []
+
+  const { STRUCT: textelrStructure } = textelr
+  const liensArticles = textelrStructure?.LIEN_ART
+  if (liensArticles !== undefined) {
+    for (const lienArticle of liensArticles) {
+      const articleId = lienArticle["@id"]
+      const article = (await getOrLoadArticle(
+        context,
+        articleId,
+      )) as LegiArticle
+      const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
+      let articleSlug = slugify(articleTitle, "_")
+      if (articleSlug.length > 252) {
+        articleSlug = articleSlug.slice(0, 251)
+        if (articleSlug.at(-1) !== "_") {
+          articleSlug += "_"
+        }
+      }
+      const articleFilename = `${articleSlug}.md`
+      const articleRepositoryRelativeFilePath = path.join(
+        repositoryRelativeDir,
+        articleFilename,
+      )
+      const texteModificateurIdByAction =
+        context.texteModificateurIdByActionById[articleId]
+      if (context.currentInternalIds.has(articleId)) {
+        if (texteModificateurIdByAction.DELETE === texteModificateurId) {
+          await fs.remove(
+            path.join(context.targetDir, articleRepositoryRelativeFilePath),
+          )
+          context.currentInternalIds.delete(articleId)
+          continue
+        }
+      } else {
+        if (texteModificateurIdByAction.CREATE === texteModificateurId) {
+          context.currentInternalIds.add(articleId)
+        } else {
+          continue
+        }
+      }
+      await fs.writeFile(
+        path.join(context.targetDir, articleRepositoryRelativeFilePath),
+        dedent`
+          ---
+          ${[
+            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
+            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
+            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+            ["Identifiant", articleId],
+            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
+            // TODO: Mettre l'URL dans le Git Tricoteuses
+            ["URL", article.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}
+          ---
+
+          ###### ${articleTitle}
+
+          ${article.BLOC_TEXTUEL?.CONTENU}
+        ` + "\n",
+      )
+      await git.add({
+        dir: context.targetDir,
+        filepath: articleRepositoryRelativeFilePath,
+        fs,
+      })
+      readmeLinks.push({ href: articleFilename, title: articleTitle })
+    }
+  }
+
+  const liensSectionTa = textelrStructure?.LIEN_SECTION_TA
+  if (liensSectionTa !== undefined) {
+    for (const lienSectionTa of liensSectionTa) {
+      const sectionTaId = lienSectionTa["@id"]
+      const sectionTa = (await getOrLoadSectionTa(
+        context,
+        sectionTaId,
+      )) as LegiSectionTa
+      const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
+      let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
+      if (sectionTaSlug.length > 255) {
+        sectionTaSlug = sectionTaSlug.slice(0, 254)
+        if (sectionTaSlug.at(-1) !== "_") {
+          sectionTaSlug += "_"
+        }
+      }
+      const sectionTaDirName = sectionTaSlug
+      const sectionTaRepositoryRelativeDir = path.join(
+        repositoryRelativeDir,
+        sectionTaDirName,
+      )
+      const texteModificateurIdByAction =
+        context.texteModificateurIdByActionById[sectionTaId]
+      if (context.currentInternalIds.has(sectionTaId)) {
+        if (texteModificateurIdByAction.DELETE === texteModificateurId) {
+          await fs.remove(
+            path.join(context.targetDir, sectionTaRepositoryRelativeDir),
+          )
+          context.currentInternalIds.delete(sectionTaId)
+          continue
+        }
+      } else {
+        if (texteModificateurIdByAction.CREATE === texteModificateurId) {
+          context.currentInternalIds.add(sectionTaId)
+        } else {
+          continue
+        }
+      }
+      readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
+    }
+  }
+
+  const readmeRepositoryRelativeFilePath = path.join(
+    repositoryRelativeDir,
+    "README.md",
+  )
+  await fs.writeFile(
+    path.join(context.targetDir, readmeRepositoryRelativeFilePath),
+    dedent`
+      ---
+      ${[
+        ["État", texteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT],
+        ["Nature", texteVersion.META.META_COMMUN.NATURE],
+        [
+          "Date de début",
+          texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT,
+        ],
+        [
+          "Date de fin",
+          texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_FIN,
+        ],
+        ["Identifiant", texteVersion.META.META_COMMUN.ID],
+        ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
+        ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
+        // TODO: Mettre l'URL dans le Git Tricoteuses
+        ["URL", texteVersion.META.META_COMMUN.URL],
+      ]
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n")}
+      ---
+
+      ${"#".repeat(Math.min(depth, 6))} ${
+        texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
+        texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+        texteVersion.META.META_COMMUN.ID
+      }
+
+      ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
+    ` + "\n",
+  )
+  await git.add({
+    dir: context.targetDir,
+    filepath: readmeRepositoryRelativeFilePath,
+    fs,
+  })
+
+  if (liensSectionTa !== undefined) {
+    for (const lienSectionTa of liensSectionTa) {
+      const sectionTaId = lienSectionTa["@id"]
+      if (context.currentInternalIds.has(sectionTaId)) {
+        const sectionTa = (await getOrLoadSectionTa(
+          context,
           sectionTaId,
-          sectionTaTitle,
-          sectionTa?.STRUCTURE_TA?.LIEN_ART,
-          sectionTa?.STRUCTURE_TA?.LIEN_SECTION_TA,
-          sectionTaRepositoryRelativeDir,
+        )) as LegiSectionTa
+        await generateSectionTaGitDirectory(
+          context,
+          depth + 1,
+          lienSectionTa,
+          sectionTa,
+          repositoryRelativeDir,
           texteModificateurId,
         )
       }
@@ -895,25 +1123,17 @@ async function registerLegiArticleModifiers(
   }
 
   // If article has no texte créateur at all, then create a fake one.
-  let texteModificateurIdByAction =
-    context.texteModificateurIdByActionById[articleId]
-  if (texteModificateurIdByAction === undefined) {
-    texteModificateurIdByAction = context.texteModificateurIdByActionById[
-      articleId
-    ] = {
-      CREATE: undefined,
-      DELETE: undefined,
-    }
-  }
+  const texteModificateurIdByAction = (context.texteModificateurIdByActionById[
+    articleId
+  ] ??= {})
   if (texteModificateurIdByAction.CREATE === undefined) {
     const texteManquantId = `ZZZZ TEXTE MANQUANT ${articleDateDebut}`
-    let texteManquant = context.texteManquantById[texteManquantId]
-    if (texteManquant === undefined) {
-      texteManquant = context.texteManquantById[texteManquantId] = {
-        date: articleDateDebut,
-      }
+    context.texteManquantById[texteManquantId] ??= {
+      date: articleDateDebut,
     }
     texteModificateurIdByAction.CREATE = texteManquantId
+    ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
+      {}).CREATE ??= new Set()).add(articleId)
   }
 }
 
@@ -1028,26 +1248,18 @@ async function registerLegiSectionTaModifiers(
     }
   }
 
-  // If article has no texte créateur at all, then create a fake one.
-  let texteModificateurIdByAction =
-    context.texteModificateurIdByActionById[sectionTaId]
-  if (texteModificateurIdByAction === undefined) {
-    texteModificateurIdByAction = context.texteModificateurIdByActionById[
-      sectionTaId
-    ] = {
-      CREATE: undefined,
-      DELETE: undefined,
-    }
-  }
+  // If article has no texte créateur at all, then use a fake one.
+  const texteModificateurIdByAction = (context.texteModificateurIdByActionById[
+    sectionTaId
+  ] ??= {})
   if (texteModificateurIdByAction.CREATE === undefined) {
     const texteManquantId = `ZZZZ TEXTE MANQUANT ${sectionTaDateDebut}`
-    let texteManquant = context.texteManquantById[texteManquantId]
-    if (texteManquant === undefined) {
-      texteManquant = context.texteManquantById[texteManquantId] = {
-        date: sectionTaDateDebut,
-      }
+    context.texteManquantById[texteManquantId] ??= {
+      date: sectionTaDateDebut,
     }
     texteModificateurIdByAction.CREATE = texteManquantId
+    ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
+      {}).CREATE ??= new Set()).add(sectionTaId)
   }
 }
 

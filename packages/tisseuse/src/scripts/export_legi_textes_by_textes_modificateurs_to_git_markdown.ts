@@ -23,16 +23,19 @@ type Action = "CREATE" | "DELETE"
 
 interface Context {
   articleById: Record<string, JorfArticle | LegiArticle>
-  currentInternalIds: Set<string>
-  infosArticleModificateurById: Record<
+  articleModificateurIdByActionById: Record<
     string,
     Record<Action, string | undefined>
   >
-  infosTexteModificateurById: Record<string, Record<Action, string | undefined>>
+  currentInternalIds: Set<string>
   legiTexteInternalIds: Set<string>
   sectionTaById: Record<string, LegiSectionTa>
   targetDir: string
   texteManquantById: Record<string, TexteManquant>
+  texteModificateurIdByActionById: Record<
+    string,
+    Record<Action, string | undefined>
+  >
   texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
 }
 
@@ -78,16 +81,16 @@ async function addArticleModificateurId(
     return
   }
 
-  let infosArticleModificateur =
-    context.infosArticleModificateurById[modifiedId]
-  if (infosArticleModificateur === undefined) {
-    infosArticleModificateur = context.infosArticleModificateurById[
+  let articleModificateurIdByAction =
+    context.articleModificateurIdByActionById[modifiedId]
+  if (articleModificateurIdByAction === undefined) {
+    articleModificateurIdByAction = context.articleModificateurIdByActionById[
       modifiedId
     ] = { CREATE: undefined, DELETE: undefined }
   }
-  const existingArticleModificateurId = infosArticleModificateur[action]
+  const existingArticleModificateurId = articleModificateurIdByAction[action]
   if (existingArticleModificateurId === undefined) {
-    infosArticleModificateur[action] = articleModificateurId
+    articleModificateurIdByAction[action] = articleModificateurId
   } else if (existingArticleModificateurId !== articleModificateurId) {
     const existingArticleModificateur = await getOrLoadArticle(
       context,
@@ -97,7 +100,7 @@ async function addArticleModificateurId(
       existingArticleModificateur.CONTEXTE.TEXTE["@date_signature"]! <
       articleModificateurDateSignature
     ) {
-      infosArticleModificateur[action] = articleModificateurId
+      articleModificateurIdByAction[action] = articleModificateurId
     }
   }
 
@@ -152,16 +155,19 @@ async function addTexteModificateurId(
     return
   }
 
-  let infosTexteModificateur = context.infosTexteModificateurById[modifiedId]
-  if (infosTexteModificateur === undefined) {
-    infosTexteModificateur = context.infosTexteModificateurById[modifiedId] = {
+  let texteModificateurIdByAction =
+    context.texteModificateurIdByActionById[modifiedId]
+  if (texteModificateurIdByAction === undefined) {
+    texteModificateurIdByAction = context.texteModificateurIdByActionById[
+      modifiedId
+    ] = {
       CREATE: undefined,
       DELETE: undefined,
     }
   }
-  const existingTexteModificateurId = infosTexteModificateur[action]
+  const existingTexteModificateurId = texteModificateurIdByAction[action]
   if (existingTexteModificateurId === undefined) {
-    infosTexteModificateur[action] = texteModificateurId
+    texteModificateurIdByAction[action] = texteModificateurId
   } else if (existingTexteModificateurId !== texteModificateurId) {
     const existingTexteVersionModificateur = (await getOrLoadTexteVersion(
       context,
@@ -171,7 +177,7 @@ async function addTexteModificateurId(
       existingTexteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE
         .DATE_TEXTE! < texteModificateurDateSignature
     ) {
-      infosTexteModificateur[action] = texteModificateurId
+      texteModificateurIdByAction[action] = texteModificateurId
     }
   }
 }
@@ -182,13 +188,13 @@ async function exportLegiTexteToMarkdown(
 ): Promise<void> {
   const context: Context = {
     articleById: {},
+    articleModificateurIdByActionById: {},
     currentInternalIds: new Set(),
-    infosArticleModificateurById: {},
-    infosTexteModificateurById: {},
     legiTexteInternalIds: new Set(),
     sectionTaById: {},
     targetDir,
     texteManquantById: {},
+    texteModificateurIdByActionById: {},
     texteVersionById: {},
   }
   context.legiTexteInternalIds.add(legiTexteId)
@@ -285,14 +291,14 @@ async function exportLegiTexteToMarkdown(
   // Sort of textes modificateurs by date
 
   const textesModificateursIds = new Set<string>()
-  for (const infosTexteModificateur of Object.values(
-    context.infosTexteModificateurById,
+  for (const texteModificateurIdByAction of Object.values(
+    context.texteModificateurIdByActionById,
   )) {
-    if (infosTexteModificateur.CREATE !== undefined) {
-      textesModificateursIds.add(infosTexteModificateur.CREATE)
+    if (texteModificateurIdByAction.CREATE !== undefined) {
+      textesModificateursIds.add(texteModificateurIdByAction.CREATE)
     }
-    if (infosTexteModificateur.DELETE !== undefined) {
-      textesModificateursIds.add(infosTexteModificateur.DELETE)
+    if (texteModificateurIdByAction.DELETE !== undefined) {
+      textesModificateursIds.add(texteModificateurIdByAction.DELETE)
     }
   }
 
@@ -443,10 +449,10 @@ async function generateGitDirectory(
         repositoryRelativeDir,
         articleFilename,
       )
-      const infosTextModificateur =
-        context.infosTexteModificateurById[articleId]
+      const texteModificateurIdByAction =
+        context.texteModificateurIdByActionById[articleId]
       if (context.currentInternalIds.has(articleId)) {
-        if (infosTextModificateur.DELETE === texteModificateurId) {
+        if (texteModificateurIdByAction.DELETE === texteModificateurId) {
           await fs.remove(
             path.join(context.targetDir, articleRepositoryRelativeFilePath),
           )
@@ -454,7 +460,7 @@ async function generateGitDirectory(
           continue
         }
       } else {
-        if (infosTextModificateur.CREATE === texteModificateurId) {
+        if (texteModificateurIdByAction.CREATE === texteModificateurId) {
           context.currentInternalIds.add(articleId)
         } else {
           continue
@@ -501,10 +507,10 @@ async function generateGitDirectory(
         repositoryRelativeDir,
         sectionTaDirName,
       )
-      const infosTextModificateur =
-        context.infosTexteModificateurById[sectionTaId]
+      const texteModificateurIdByAction =
+        context.texteModificateurIdByActionById[sectionTaId]
       if (context.currentInternalIds.has(sectionTaId)) {
-        if (infosTextModificateur.DELETE === texteModificateurId) {
+        if (texteModificateurIdByAction.DELETE === texteModificateurId) {
           await fs.remove(
             path.join(context.targetDir, sectionTaRepositoryRelativeDir),
           )
@@ -512,7 +518,7 @@ async function generateGitDirectory(
           continue
         }
       } else {
-        if (infosTextModificateur.CREATE === texteModificateurId) {
+        if (texteModificateurIdByAction.CREATE === texteModificateurId) {
           context.currentInternalIds.add(sectionTaId)
         } else {
           continue
@@ -889,14 +895,17 @@ async function registerLegiArticleModifiers(
   }
 
   // If article has no texte créateur at all, then create a fake one.
-  let infosTexteModificateur = context.infosTexteModificateurById[articleId]
-  if (infosTexteModificateur === undefined) {
-    infosTexteModificateur = context.infosTexteModificateurById[articleId] = {
+  let texteModificateurIdByAction =
+    context.texteModificateurIdByActionById[articleId]
+  if (texteModificateurIdByAction === undefined) {
+    texteModificateurIdByAction = context.texteModificateurIdByActionById[
+      articleId
+    ] = {
       CREATE: undefined,
       DELETE: undefined,
     }
   }
-  if (infosTexteModificateur.CREATE === undefined) {
+  if (texteModificateurIdByAction.CREATE === undefined) {
     const texteManquantId = `ZZZZ TEXTE MANQUANT ${articleDateDebut}`
     let texteManquant = context.texteManquantById[texteManquantId]
     if (texteManquant === undefined) {
@@ -904,7 +913,7 @@ async function registerLegiArticleModifiers(
         date: articleDateDebut,
       }
     }
-    infosTexteModificateur.CREATE = texteManquantId
+    texteModificateurIdByAction.CREATE = texteManquantId
   }
 }
 
@@ -1020,14 +1029,17 @@ async function registerLegiSectionTaModifiers(
   }
 
   // If article has no texte créateur at all, then create a fake one.
-  let infosTexteModificateur = context.infosTexteModificateurById[sectionTaId]
-  if (infosTexteModificateur === undefined) {
-    infosTexteModificateur = context.infosTexteModificateurById[sectionTaId] = {
+  let texteModificateurIdByAction =
+    context.texteModificateurIdByActionById[sectionTaId]
+  if (texteModificateurIdByAction === undefined) {
+    texteModificateurIdByAction = context.texteModificateurIdByActionById[
+      sectionTaId
+    ] = {
       CREATE: undefined,
       DELETE: undefined,
     }
   }
-  if (infosTexteModificateur.CREATE === undefined) {
+  if (texteModificateurIdByAction.CREATE === undefined) {
     const texteManquantId = `ZZZZ TEXTE MANQUANT ${sectionTaDateDebut}`
     let texteManquant = context.texteManquantById[texteManquantId]
     if (texteManquant === undefined) {
@@ -1035,7 +1047,7 @@ async function registerLegiSectionTaModifiers(
         date: sectionTaDateDebut,
       }
     }
-    infosTexteModificateur.CREATE = texteManquantId
+    texteModificateurIdByAction.CREATE = texteManquantId
   }
 }
 

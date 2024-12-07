@@ -642,6 +642,11 @@ export function menuItemsFromLegalId(
     return undefined
   }
   switch (rootType) {
+    case "article":
+      return [
+        { href: `/articles/${id}`, label: "Présentation" },
+        { href: `/article/${id}`, label: "ARTICLE" },
+      ]
     case "texte_version":
       return [
         { href: `/textes/${id}`, label: "Présentation" },

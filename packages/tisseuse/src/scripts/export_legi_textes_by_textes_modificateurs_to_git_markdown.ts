@@ -803,6 +803,16 @@ async function generateTexteGitDirectory(
     }
   }
 
+  const readmeBlocks = [
+    `${"#".repeat(Math.min(depth, 6))} ${
+      texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
+      texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+      texteVersion.META.META_COMMUN.ID
+    }`,
+    texteVersion.VISAS?.CONTENU,
+    readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
+    texteVersion.SIGNATAIRES?.CONTENU,
+  ].filter((block) => block != null)
   const readmeRepositoryRelativeFilePath = path.join(
     repositoryRelativeDir,
     "README.md",
@@ -833,13 +843,7 @@ async function generateTexteGitDirectory(
         .join("\n")}
       ---
 
-      ${"#".repeat(Math.min(depth, 6))} ${
-        texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
-        texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
-        texteVersion.META.META_COMMUN.ID
-      }
-
-      ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
+      ${readmeBlocks.join("\n\n")}
     ` + "\n",
   )
   await git.add({

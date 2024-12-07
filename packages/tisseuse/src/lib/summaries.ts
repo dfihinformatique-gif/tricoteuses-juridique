@@ -859,11 +859,33 @@ export const summarizeTexteVersionProperties: Summarizer = (access, value) => {
     return summarizeLegalObjectToLink(access, "texte_version", value)
   }
 
+  if (
+    access?.key === "@cidtexte" &&
+    (access?.access?.key === "LIEN" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN"))
+  ) {
+    return summarizeLegalIdToLink(access, value)
+  }
+  if (
+    access?.key === "@id" &&
+    (access?.access?.key === "LIEN" ||
+      (typeof access?.access?.key === "number" &&
+        access?.access?.access?.key === "LIEN"))
+  ) {
+    return summarizeLienId(access.access, access.parent)
+  }
   if (access?.key === "CID") {
     return summarizeLegalIdToLink(access, value)
   }
   if (access?.key === "CONTENU") {
     return { content: value as string, type: "html" }
+  }
+  if (
+    (access?.key === "LIEN" && !Array.isArray(value)) ||
+    (typeof access?.key === "number" && access?.access?.key === "LIEN")
+  ) {
+    return summarizeLien(access, value)
   }
 
   return undefined

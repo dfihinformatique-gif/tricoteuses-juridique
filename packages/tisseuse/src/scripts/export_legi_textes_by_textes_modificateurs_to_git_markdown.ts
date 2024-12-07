@@ -332,6 +332,65 @@ async function exportLegiTexteToMarkdown(
     fs,
   })
 
+  // Generate main LICENSE.md file.
+  await fs.writeFile(
+    path.join(targetDir, "LICENSE.md"),
+    dedent`
+      # Codes juridiques français en Git et Markdown
+
+      ## LICENCE
+
+      TODO
+
+      Si cette licence ne vous convient pas, vous ne pouvez pas utiliser les données et documents de ce dépôt.
+      Par contre, vous pouvez utiliser les données originales Légifrance (cf ci-dessous).
+
+      ## Conditions de réutilisation des données originales du site Légifrance
+
+      Les données originales sont produites par la [Direction de l'information légale et administrative (Dila)](https://dila.premier-ministre.gouv.fr/).
+      Elles sont réutilisables gratuitement sous [licence ouverte v2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+
+      Les réutilisateurs s’obligent à mentionner :
+      - la paternité des données (DILA) ;
+      - les URL d’accès longues de téléchargement :
+        * https://echanges.dila.gouv.fr/OPENDATA/JORF/
+        * https://echanges.dila.gouv.fr/OPENDATA/LEGI/
+      - le nom du fichier téléchargé ainsi que la date du fichier : dernières versions des fichiers des répertoires énumérés ci-dessus.
+
+      Plus d'informations sur les données, provenant du site de la Dila :
+      - https://echanges.dila.gouv.fr/OPENDATA/JORF/DILA_JORF_Presentation_20170824.pdf
+      - https://echanges.dila.gouv.fr/OPENDATA/LEGI/DILA_LEGI_Presentation_20170824.pdf
+
+      ## Avertissement — Données à caractère personnel
+
+      Dans le cadre de leurs missions de service public, les administrations
+      produisent ou reçoivent des informations publiques qui peuvent être
+      réutilisées par toute personne physique ou morale à d’autres fins que celles
+      de la mission de service public.
+
+      Lorsque ces informations contiennent des données à caractère personnel,
+      c’est-à-dire des éléments qui permettent d’identifier, directement ou
+      indirectement, une personne physique, leur réutilisation est étroitement
+      encadrée par l’article L322-2 du code des relations entre le public et
+      l’administration.
+
+      Cet article prévoit que la réutilisation d’une information publique contenant
+      des données à caractère personnel est subordonnée au respect de la loi n°
+      78-17 du 6 janvier 1978, dite « Informatique et libertés ». Il en résulte
+      notamment que lorsque les données personnelles que cette information
+      publique contient ont, préalablement à leur diffusion, fait l’objet d’une
+      anonymisation totale ou partielle, conformément à des dispositions légales ou
+      aux recommandations de la Commission nationale de l’informatique et des
+      libertés (CNIL), la réutilisation ne peut avoir pour objet ou pour effet de
+      réidentifier les personnes concernées.
+    ` + "\n",
+  )
+  await git.add({
+    dir: targetDir,
+    filepath: "LICENSE.md",
+    fs,
+  })
+  // Generate main README.md file.
   const codeTitle =
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
@@ -350,6 +409,7 @@ async function exportLegiTexteToMarkdown(
     filepath: "README.md",
     fs,
   })
+  // First commit of repository
   await git.commit({
     dir: targetDir,
     fs,
@@ -357,7 +417,7 @@ async function exportLegiTexteToMarkdown(
       email: "codes_juridiques@tricoteuses.fr",
       name: "République française",
     },
-    message: "Création du README.md",
+    message: "Création du dépôt Git",
   })
 
   for (const [date, textesModificateursId] of Object.entries(

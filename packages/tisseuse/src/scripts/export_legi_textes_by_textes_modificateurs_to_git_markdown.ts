@@ -32,6 +32,7 @@ interface Context {
     string,
     Partial<Record<Action, Set<string>>>
   >
+  legiTexteCid: string
   legiTexteInternalIds: Set<string>
   sectionTaById: Record<string, LegiSectionTa>
   targetDir: string
@@ -189,19 +190,22 @@ async function exportLegiTexteToMarkdown(
     articleModificateurIdByActionById: {},
     currentInternalIds: new Set(),
     idsByActionByTexteMoficateurId: {},
-    legiTexteInternalIds: new Set(),
+    legiTexteCid: legiTexteId, // Temporary value, overrided below
+    legiTexteInternalIds: new Set([legiTexteId]),
     sectionTaById: {},
     targetDir,
     texteManquantById: {},
     texteModificateurIdByActionById: {},
     texteVersionById: {},
   }
-  context.legiTexteInternalIds.add(legiTexteId)
-
   const texteVersion = (await getOrLoadTexteVersion(context, legiTexteId)) as
     | JorfTexteVersion
     | LegiTexteVersion
   assert.notStrictEqual(texteVersion, null)
+  const meta = texteVersion.META
+  // Most of the times the CID of a LEGI text is its ID.
+  // But for the Constitution, for example, the CID is the ID of the JORF text.
+  context.legiTexteCid = meta.META_SPEC.META_TEXTE_CHRONICLE.CID
 
   const textelr = (
     await db<{ data: LegiTextelr }[]>`
@@ -210,7 +214,6 @@ async function exportLegiTexteToMarkdown(
   )[0]?.data
   assert.notStrictEqual(textelr, undefined)
 
-  const meta = texteVersion.META
   const metaTexteVersion = meta.META_SPEC.META_TEXTE_VERSION
   console.log(
     `${meta.META_COMMUN.ID} ${metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE ?? meta.META_COMMUN.ID} (${metaTexteVersion.DATE_DEBUT ?? ""} — ${metaTexteVersion.DATE_FIN === "2999-01-01" ? "…" : (metaTexteVersion.DATE_FIN ?? "")}, ${metaTexteVersion.ETAT})`,
@@ -246,13 +249,7 @@ async function exportLegiTexteToMarkdown(
         context,
         lienArticle["@id"],
       )) as LegiArticle
-      await registerLegiArticleModifiers(
-        context,
-        legiTexteId,
-        0,
-        lienArticle,
-        article,
-      )
+      await registerLegiArticleModifiers(context, 0, lienArticle, article)
     }
   }
 
@@ -263,7 +260,6 @@ async function exportLegiTexteToMarkdown(
   } of walkStructureTree(context, textelrStructure as LegiSectionTaStructure)) {
     await registerLegiSectionTaModifiers(
       context,
-      legiTexteId,
       parentsSectionTa.length + 1,
       lienSectionTa,
       sectionTa,
@@ -278,7 +274,6 @@ async function exportLegiTexteToMarkdown(
         )) as LegiArticle
         await registerLegiArticleModifiers(
           context,
-          legiTexteId,
           parentsSectionTa.length + 2,
           lienArticle,
           article,
@@ -871,7 +866,6 @@ async function getOrLoadTexteVersion(
 
 async function registerLegiArticleModifiers(
   context: Context,
-  legiTexteId: string,
   depth: number,
   lienArticle: LegiSectionTaLienArt,
   article: LegiArticle,
@@ -886,7 +880,7 @@ async function registerLegiArticleModifiers(
   for (const articleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id = ${lienArticle["@id"]}
   `) {
-    assert.strictEqual(articleLien.cidtexte, legiTexteId)
+    assert.strictEqual(articleLien.cidtexte, context.legiTexteCid)
     if (articleLien.article_id in context.legiTexteInternalIds) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
@@ -960,7 +954,7 @@ async function registerLegiArticleModifiers(
   for (const texteVersionLien of await db<TexteVersionLienDb[]>`
     SELECT * FROM texte_version_lien WHERE id = ${lienArticle["@id"]}
   `) {
-    assert.strictEqual(texteVersionLien.cidtexte, legiTexteId)
+    assert.strictEqual(texteVersionLien.cidtexte, context.legiTexteCid)
     if (texteVersionLien.texte_version_id in context.legiTexteInternalIds) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
@@ -1139,7 +1133,6 @@ async function registerLegiArticleModifiers(
 
 async function registerLegiSectionTaModifiers(
   context: Context,
-  legiTexteId: string,
   depth: number,
   lienSectionTa: LegiSectionTaLienSectionTa,
   sectionTa: LegiSectionTa,
@@ -1154,7 +1147,7 @@ async function registerLegiSectionTaModifiers(
   for (const articleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id = ${lienSectionTa["@id"]}
   `) {
-    assert.strictEqual(articleLien.cidtexte, legiTexteId)
+    assert.strictEqual(articleLien.cidtexte, context.legiTexteCid)
     if (articleLien.article_id in context.legiTexteInternalIds) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
@@ -1206,7 +1199,7 @@ async function registerLegiSectionTaModifiers(
   for (const texteVersionLien of await db<TexteVersionLienDb[]>`
     SELECT * FROM texte_version_lien WHERE id = ${lienSectionTa["@id"]}
   `) {
-    assert.strictEqual(texteVersionLien.cidtexte, legiTexteId)
+    assert.strictEqual(texteVersionLien.cidtexte, context.legiTexteCid)
     if (texteVersionLien.texte_version_id in context.legiTexteInternalIds) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue

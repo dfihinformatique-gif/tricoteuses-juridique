@@ -447,11 +447,12 @@ async function exportLegiTexteToMarkdown(
           texteModificateurId,
         )) as JorfTexteVersion | LegiTexteVersion
         assert.notStrictEqual(texteVersionModificateur, null)
-        texteModificateurTitle =
+        texteModificateurTitle = (
           texteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
             .TITREFULL ??
           texteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
           texteVersionModificateur.META.META_COMMUN.ID
+        ).replace(/\s+\(\d+\)$/, "")
       } else {
         texteModificateurTitle = `!!! Texte non trouvé ${date} !!!`
       }

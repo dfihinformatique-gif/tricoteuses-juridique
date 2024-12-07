@@ -1290,6 +1290,18 @@ async function registerLegiArticleModifiers(
     }
   }
 
+  // If article belongs directly to a text published in JORF then this JORF text is its texte créateur.
+  if (article.CONTEXTE.TEXTE["@cid"]?.startsWith("JORFTEXT")) {
+    await addTexteModificateurId(
+      context,
+      article.CONTEXTE.TEXTE["@cid"],
+      "CREATE",
+      articleId,
+      articleDateDebut,
+      articleDateFin,
+    )
+  }
+
   // If article has no texte créateur at all, then create a fake one.
   const texteModificateurIdByAction = (context.texteModificateurIdByActionById[
     articleId
@@ -1415,7 +1427,19 @@ async function registerLegiSectionTaModifiers(
     }
   }
 
-  // If article has no texte créateur at all, then use a fake one.
+  // If Section Texte Article belongs directly to a text published in JORF then this JORF text is its texte créateur.
+  if (sectionTa.CONTEXTE.TEXTE["@cid"].startsWith("JORFTEXT")) {
+    await addTexteModificateurId(
+      context,
+      sectionTa.CONTEXTE.TEXTE["@cid"],
+      "CREATE",
+      sectionTaId,
+      sectionTaDateDebut,
+      sectionTaDateFin,
+    )
+  }
+
+  // If Section Texte Article has no texte créateur at all, then use a fake one.
   const texteModificateurIdByAction = (context.texteModificateurIdByActionById[
     sectionTaId
   ] ??= {})

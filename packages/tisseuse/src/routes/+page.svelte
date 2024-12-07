@@ -18,7 +18,7 @@
     <p class="py-6">
       Un site et des API pour permettre aux développeurs d'utiliser plus
       facilement les <a
-        class="link-hover link-primary link"
+        class="text-blue-500 underline hover:decoration-2"
         href="https://www.dila.premier-ministre.gouv.fr/repertoire-des-informations-publiques/les-donnees-juridiques"
         >données publiques légales de la <abbr
           title="Direction de l'information légale et administrative">DILA</abbr
@@ -26,7 +26,7 @@
       >
       diffusées sur
       <a
-        class="link-hover link-primary link"
+        class="text-blue-500 underline hover:decoration-2"
         href="https://www.legifrance.gouv.fr/">Légifrance</a
       >
     </p>

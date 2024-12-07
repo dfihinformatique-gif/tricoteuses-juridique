@@ -68,7 +68,10 @@
     tabindex="-1"
   >
     <Minus class="mr-1 mt-0.5 w-3 flex-none shrink-0" />
-    <a class="link-hover link-primary link" href={pathnameFromLegalId(id)}>
+    <a
+      class="text-blue-500 underline hover:decoration-2"
+      href={pathnameFromLegalId(id)}
+    >
       {lien["#text"]}
     </a>
   </div>

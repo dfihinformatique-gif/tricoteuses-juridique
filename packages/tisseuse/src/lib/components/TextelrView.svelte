@@ -24,7 +24,7 @@
     {#each [...iterArrayOrSingleton(textelr.STRUCT.LIEN_ART)] as lienArt}
       <li class="inline after:content-[',_'] after:last:content-['']">
         <a
-          class="link-hover link-primary link"
+          class="text-blue-500 underline hover:decoration-2"
           href={pathnameFromLegalId(lienArt["@id"])}
         >
           Article {lienArt["@num"]}

@@ -5,7 +5,11 @@ import git from "isomorphic-git"
 import path from "path"
 import sade from "sade"
 
-import type { JorfArticle, JorfTexteVersion } from "$lib/legal/jorf"
+import type {
+  JorfArticle,
+  JorfTextelr,
+  JorfTexteVersion,
+} from "$lib/legal/jorf"
 import type {
   LegiArticle,
   LegiSectionTa,
@@ -37,6 +41,7 @@ interface Context {
   sectionTaById: Record<string, LegiSectionTa>
   targetDir: string
   texteManquantById: Record<string, TexteManquant>
+  textelrById: Record<string, JorfTextelr | LegiTextelr | null>
   texteModificateurIdByActionById: Record<
     string,
     Partial<Record<Action, string>>
@@ -194,10 +199,15 @@ async function exportLegiTexteToMarkdown(
     legiTexteInternalIds: new Set([legiTexteId]),
     sectionTaById: {},
     targetDir,
+    textelrById: {},
     texteManquantById: {},
     texteModificateurIdByActionById: {},
     texteVersionById: {},
   }
+  const textelr = (await getOrLoadTextelr(context, legiTexteId)) as
+    | JorfTextelr
+    | LegiTextelr
+  assert.notStrictEqual(textelr, null)
   const texteVersion = (await getOrLoadTexteVersion(context, legiTexteId)) as
     | JorfTexteVersion
     | LegiTexteVersion
@@ -206,13 +216,6 @@ async function exportLegiTexteToMarkdown(
   // Most of the times the CID of a LEGI text is its ID.
   // But for the Constitution, for example, the CID is the ID of the JORF text.
   context.legiTexteCid = meta.META_SPEC.META_TEXTE_CHRONICLE.CID
-
-  const textelr = (
-    await db<{ data: LegiTextelr }[]>`
-    SELECT data FROM textelr WHERE id = ${legiTexteId}
-  `
-  )[0]?.data
-  assert.notStrictEqual(textelr, undefined)
 
   const metaTexteVersion = meta.META_SPEC.META_TEXTE_VERSION
   console.log(
@@ -249,7 +252,12 @@ async function exportLegiTexteToMarkdown(
         context,
         lienArticle["@id"],
       )) as LegiArticle
-      await registerLegiArticleModifiers(context, 0, lienArticle, article)
+      await registerLegiArticleModifiers(
+        context,
+        0,
+        lienArticle as LegiSectionTaLienArt,
+        article,
+      )
     }
   }
 
@@ -438,6 +446,7 @@ async function exportLegiTexteToMarkdown(
           context,
           texteModificateurId,
         )) as JorfTexteVersion | LegiTexteVersion
+        assert.notStrictEqual(texteVersionModificateur, null)
         texteModificateurTitle =
           texteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
             .TITREFULL ??
@@ -464,11 +473,90 @@ async function exportLegiTexteToMarkdown(
       await generateTexteGitDirectory(
         context,
         2,
-        textelr,
+        textelr as LegiTextelr,
         texteVersion as LegiTexteVersion,
         texteModificateurId,
       )
       const t3 = performance.now()
+
+      let messageLines: string | undefined = undefined
+      if (texteModificateurId.startsWith("JORFTEXT")) {
+        const jorfTexteVersionModificateur =
+          texteVersionModificateur as JorfTexteVersion
+        messageLines = [
+          [
+            "Autorité",
+            jorfTexteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
+              .AUTORITE,
+          ],
+          [
+            "Ministère",
+            jorfTexteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
+              .MINISTERE,
+          ],
+          ["Nature", jorfTexteVersionModificateur.META.META_COMMUN.NATURE],
+          [
+            "Date de début",
+            jorfTexteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
+              .DATE_DEBUT,
+          ],
+          [
+            "Date de fin",
+            jorfTexteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
+              .DATE_FIN,
+          ],
+          ["Identifiant", jorfTexteVersionModificateur.META.META_COMMUN.ID],
+          [
+            "NOR",
+            jorfTexteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE
+              .NOR,
+          ],
+          [
+            "Ancien identifiant",
+            jorfTexteVersionModificateur.META.META_COMMUN.ANCIEN_ID,
+          ],
+          // TODO: Mettre l'URL dans le Git Tricoteuses
+          ["URL", jorfTexteVersionModificateur.META.META_COMMUN.URL],
+        ]
+          .filter(([, value]) => value !== undefined)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n")
+      } else if (texteModificateurId.startsWith("LEGITEXT")) {
+        const legiTexteVersionModificateur =
+          texteVersionModificateur as LegiTexteVersion
+        messageLines = [
+          [
+            "État",
+            legiTexteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION.ETAT,
+          ],
+          ["Nature", legiTexteVersionModificateur.META.META_COMMUN.NATURE],
+          [
+            "Date de début",
+            legiTexteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
+              .DATE_DEBUT,
+          ],
+          [
+            "Date de fin",
+            legiTexteVersionModificateur.META.META_SPEC.META_TEXTE_VERSION
+              .DATE_FIN,
+          ],
+          ["Identifiant", legiTexteVersionModificateur.META.META_COMMUN.ID],
+          [
+            "NOR",
+            legiTexteVersionModificateur.META.META_SPEC.META_TEXTE_CHRONICLE
+              .NOR,
+          ],
+          [
+            "Ancien identifiant",
+            legiTexteVersionModificateur.META.META_COMMUN.ANCIEN_ID,
+          ],
+          // TODO: Mettre l'URL dans le Git Tricoteuses
+          ["URL", legiTexteVersionModificateur.META.META_COMMUN.URL],
+        ]
+          .filter(([, value]) => value !== undefined)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n")
+      }
       await git.commit({
         dir: targetDir,
         fs,
@@ -476,7 +564,9 @@ async function exportLegiTexteToMarkdown(
           email: "codes_juridiques@tricoteuses.fr",
           name: "République française",
         },
-        message: texteModificateurTitle,
+        message: [texteModificateurTitle, messageLines]
+          .filter((block) => block !== undefined)
+          .join("\n\n"),
       })
       const t4 = performance.now()
       console.log(`Durations: ${t2 - t1} ${t3 - t2} ${t4 - t3}`)
@@ -905,6 +995,26 @@ async function getOrLoadSectionTa(
     context.sectionTaById[sectionTaId] = sectionTa
   }
   return sectionTa
+}
+
+async function getOrLoadTextelr(
+  context: Context,
+  texteId: string,
+): Promise<JorfTextelr | LegiTextelr | null> {
+  let textelr: JorfTextelr | LegiTextelr | null = context.textelrById[texteId]
+  if (textelr === undefined) {
+    textelr = (
+      await db<{ data: JorfTextelr | LegiTextelr }[]>`
+          SELECT data FROM textelr WHERE id = ${texteId}
+        `
+    )[0]?.data
+    if (textelr === undefined) {
+      console.warn(`Texte ${texteId} not found in table textelr`)
+      textelr = null
+    }
+    context.textelrById[texteId] = textelr
+  }
+  return textelr
 }
 
 async function getOrLoadTexteVersion(

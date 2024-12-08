@@ -263,12 +263,14 @@ async function exportLegiTexteToMarkdown(
 
   for await (const {
     lienSectionTa,
+    liensSectionTa,
     parentsSectionTa,
     sectionTa,
   } of walkStructureTree(context, textelrStructure as LegiSectionTaStructure)) {
     await registerLegiSectionTaModifiers(
       context,
       parentsSectionTa.length + 1,
+      liensSectionTa,
       lienSectionTa,
       sectionTa,
     )
@@ -1113,6 +1115,22 @@ async function registerLegiArticleModifiers(
         articleDateDebut,
         articleDateFin,
       )
+      // Delete another version of the same article that existed before the newly created one.
+      for (const articleVersion of article.VERSIONS.VERSION) {
+        if (articleVersion.LIEN_ART["@id"] === articleId) {
+          continue
+        }
+        if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+          await addArticleModificateurId(
+            context,
+            articleLien.article_id,
+            "DELETE",
+            articleVersion.LIEN_ART["@id"],
+            articleVersion.LIEN_ART["@debut"],
+            articleVersion.LIEN_ART["@fin"],
+          )
+        }
+      }
     } else if (
       (articleLien.typelien === "CREATION" && !articleLien.cible) ||
       (articleLien.typelien === "MODIFICATION" && !articleLien.cible)
@@ -1179,6 +1197,22 @@ async function registerLegiArticleModifiers(
         articleDateDebut,
         articleDateFin,
       )
+      // Delete another version of the same article that existed before the newly created one.
+      for (const articleVersion of article.VERSIONS.VERSION) {
+        if (articleVersion.LIEN_ART["@id"] === articleId) {
+          continue
+        }
+        if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+          await addTexteModificateurId(
+            context,
+            texteVersionLien.texte_version_id,
+            "DELETE",
+            articleVersion.LIEN_ART["@id"],
+            articleVersion.LIEN_ART["@debut"],
+            articleVersion.LIEN_ART["@fin"],
+          )
+        }
+      }
     } else {
       throw new Error(
         `Unexpected texte_version_lien to article ${lienArticle["@id"]}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
@@ -1277,6 +1311,22 @@ async function registerLegiArticleModifiers(
           articleDateDebut,
           articleDateFin,
         )
+        // Delete another version of the same article that existed before the newly created one.
+        for (const articleVersion of article.VERSIONS.VERSION) {
+          if (articleVersion.LIEN_ART["@id"] === articleId) {
+            continue
+          }
+          if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+            await addTexteModificateurId(
+              context,
+              articleLien["@cidtexte"],
+              "DELETE",
+              articleVersion.LIEN_ART["@id"],
+              articleVersion.LIEN_ART["@debut"],
+              articleVersion.LIEN_ART["@fin"],
+            )
+          }
+        }
       } else if (
         articleLien["@typelien"] === "CREATION" &&
         articleLien["@sens"] === "cible"
@@ -1301,6 +1351,22 @@ async function registerLegiArticleModifiers(
       articleDateDebut,
       articleDateFin,
     )
+    // Delete another version of the same article that existed before the newly created one.
+    for (const articleVersion of article.VERSIONS.VERSION) {
+      if (articleVersion.LIEN_ART["@id"] === articleId) {
+        continue
+      }
+      if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+        await addTexteModificateurId(
+          context,
+          article.CONTEXTE.TEXTE["@cid"],
+          "DELETE",
+          articleVersion.LIEN_ART["@id"],
+          articleVersion.LIEN_ART["@debut"],
+          articleVersion.LIEN_ART["@fin"],
+        )
+      }
+    }
   }
 
   // If article has no texte créateur at all, then create a fake one.
@@ -1315,12 +1381,30 @@ async function registerLegiArticleModifiers(
     texteModificateurIdByAction.CREATE = texteManquantId
     ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
       {}).CREATE ??= new Set()).add(articleId)
+    // Delete another version of the same article that existed before the newly created one.
+    for (const articleVersion of article.VERSIONS.VERSION) {
+      if (articleVersion.LIEN_ART["@id"] === articleId) {
+        continue
+      }
+      if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+        const texteModificateurIdByAction =
+          (context.texteModificateurIdByActionById[
+            articleVersion.LIEN_ART["@id"]
+          ] ??= {})
+        if (texteModificateurIdByAction.DELETE === undefined) {
+          texteModificateurIdByAction.DELETE = texteManquantId
+          ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
+            {}).DELETE ??= new Set()).add(articleVersion.LIEN_ART["@id"])
+        }
+      }
+    }
   }
 }
 
 async function registerLegiSectionTaModifiers(
   context: Context,
   depth: number,
+  liensSectionTa: LegiSectionTaLienSectionTa[],
   lienSectionTa: LegiSectionTaLienSectionTa,
   sectionTa: LegiSectionTa,
 ): Promise<void> {
@@ -1376,6 +1460,26 @@ async function registerLegiSectionTaModifiers(
         sectionTaDateDebut,
         sectionTaDateFin,
       )
+      // Delete another version of the same article that existed before the newly created one.
+      for (const otherLienSectionTa of liensSectionTa) {
+        if (otherLienSectionTa["@id"] === sectionTaId) {
+          continue
+        }
+        if (
+          otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
+          otherLienSectionTa["@fin"] === sectionTaDateDebut
+        ) {
+          // The other sectionTa is the old version of the sectionTa.
+          await addArticleModificateurId(
+            context,
+            articleLien.article_id,
+            "DELETE",
+            otherLienSectionTa["@id"],
+            otherLienSectionTa["@debut"],
+            otherLienSectionTa["@fin"],
+          )
+        }
+      }
     } else {
       throw new Error(
         `Unexpected article_lien to Section Texte Article ${lienSectionTa["@id"]}: typelien=${articleLien.typelien}, cible=${articleLien.cible}`,
@@ -1421,6 +1525,26 @@ async function registerLegiSectionTaModifiers(
         sectionTaDateDebut,
         sectionTaDateFin,
       )
+      // Delete another version of the same article that existed before the newly created one.
+      for (const otherLienSectionTa of liensSectionTa) {
+        if (otherLienSectionTa["@id"] === sectionTaId) {
+          continue
+        }
+        if (
+          otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
+          otherLienSectionTa["@fin"] === sectionTaDateDebut
+        ) {
+          // The other sectionTa is the old version of the sectionTa.
+          await addArticleModificateurId(
+            context,
+            texteVersionLien.texte_version_id,
+            "DELETE",
+            otherLienSectionTa["@id"],
+            otherLienSectionTa["@debut"],
+            otherLienSectionTa["@fin"],
+          )
+        }
+      }
     } else {
       throw new Error(
         `Unexpected texte_version_lien to Section Texte Article ${lienSectionTa["@id"]}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
@@ -1438,6 +1562,26 @@ async function registerLegiSectionTaModifiers(
       sectionTaDateDebut,
       sectionTaDateFin,
     )
+    // Delete another version of the same article that existed before the newly created one.
+    for (const otherLienSectionTa of liensSectionTa) {
+      if (otherLienSectionTa["@id"] === sectionTaId) {
+        continue
+      }
+      if (
+        otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
+        otherLienSectionTa["@fin"] === sectionTaDateDebut
+      ) {
+        // The other sectionTa is the old version of the sectionTa.
+        await addArticleModificateurId(
+          context,
+          sectionTa.CONTEXTE.TEXTE["@cid"],
+          "DELETE",
+          otherLienSectionTa["@id"],
+          otherLienSectionTa["@debut"],
+          otherLienSectionTa["@fin"],
+        )
+      }
+    }
   }
 
   // If Section Texte Article has no texte créateur at all, then use a fake one.
@@ -1452,6 +1596,27 @@ async function registerLegiSectionTaModifiers(
     texteModificateurIdByAction.CREATE = texteManquantId
     ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
       {}).CREATE ??= new Set()).add(sectionTaId)
+    // Delete another version of the same article that existed before the newly created one.
+    for (const otherLienSectionTa of liensSectionTa) {
+      if (otherLienSectionTa["@id"] === sectionTaId) {
+        continue
+      }
+      if (
+        otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
+        otherLienSectionTa["@fin"] === sectionTaDateDebut
+      ) {
+        // The other sectionTa is the old version of the sectionTa.
+        const texteModificateurIdByAction =
+          (context.texteModificateurIdByActionById[
+            otherLienSectionTa["@id"]
+          ] ??= {})
+        if (texteModificateurIdByAction.DELETE === undefined) {
+          texteModificateurIdByAction.DELETE = texteManquantId
+          ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
+            {}).DELETE ??= new Set()).add(otherLienSectionTa["@id"])
+        }
+      }
+    }
   }
 }
 
@@ -1462,6 +1627,7 @@ async function* walkStructureTree(
 ): AsyncGenerator<
   {
     lienSectionTa: LegiSectionTaLienSectionTa
+    liensSectionTa: LegiSectionTaLienSectionTa[]
     parentsSectionTa: LegiSectionTa[]
     sectionTa: LegiSectionTa
   },
@@ -1475,7 +1641,12 @@ async function* walkStructureTree(
         lienSectionTa["@id"],
       )
       context.legiTexteInternalIds.add(lienSectionTa["@id"])
-      yield { lienSectionTa, parentsSectionTa, sectionTa: childSectionTa }
+      yield {
+        lienSectionTa,
+        liensSectionTa,
+        parentsSectionTa,
+        sectionTa: childSectionTa,
+      }
       const childStructure = childSectionTa.STRUCTURE_TA
       if (childStructure !== undefined) {
         yield* walkStructureTree(context, childStructure, [

@@ -342,6 +342,7 @@ export interface JorfTexteVersion {
   SIGNATAIRES?: {
     CONTENU: string // HTML
   }
+  // Résumé/abstract du texte (summary ???)
   SM?: {
     CONTENU: string // HTML
   }

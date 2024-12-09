@@ -292,7 +292,7 @@ async function exportLegiTexteToMarkdown(
     }
   }
 
-  // Sort of textes modificateurs by date
+  // Sort textes modificateurs by date
 
   const textesModificateursIds = new Set<string>()
   for (const texteModificateurIdByAction of Object.values(
@@ -346,7 +346,9 @@ async function exportLegiTexteToMarkdown(
   await fs.writeFile(
     path.join(targetDir, "LICENSE.md"),
     dedent`
-      # Codes juridiques français en Git et Markdown
+      # Codes juridiques français sous Git
+
+      **Avertissement** : Ce projet est en cours de développement. **Il contient forcément des erreurs !**
 
       ## LICENCE
 
@@ -409,7 +411,9 @@ async function exportLegiTexteToMarkdown(
   await fs.writeFile(
     path.join(targetDir, "README.md"),
     dedent`
-      # Codes juridiques français en Git et Markdown
+      # Codes juridiques français sous Git
+
+      **Avertissement** : Ce projet est en cours de développement. **Il contient forcément des erreurs !**
 
       - [${codeTitle}](${codeDirName})
     ` + "\n",
@@ -483,6 +487,7 @@ async function exportLegiTexteToMarkdown(
       const t3 = performance.now()
 
       let messageLines: string | undefined = undefined
+      let summary: string | undefined = undefined
       if (texteModificateurId.startsWith("JORFTEXT")) {
         const jorfTexteVersionModificateur =
           texteVersionModificateur as JorfTexteVersion
@@ -524,6 +529,7 @@ async function exportLegiTexteToMarkdown(
           .filter(([, value]) => value !== undefined)
           .map(([key, value]) => `${key}: ${value}`)
           .join("\n")
+        summary = jorfTexteVersionModificateur.SM?.CONTENU
       } else if (texteModificateurId.startsWith("LEGITEXT")) {
         const legiTexteVersionModificateur =
           texteVersionModificateur as LegiTexteVersion
@@ -567,7 +573,7 @@ async function exportLegiTexteToMarkdown(
           email: "codes_juridiques@tricoteuses.fr",
           name: "République française",
         },
-        message: [texteModificateurTitle, messageLines]
+        message: [texteModificateurTitle, summary, messageLines]
           .filter((block) => block !== undefined)
           .join("\n\n"),
       })

@@ -1563,7 +1563,7 @@ async function registerLegiArticleModifiers(
     } else {
       // If article belongs directly to a text published in JORF but at a later date than the JORF text,
       // then if article has no creating text, consider that it has been created by a modifying text having the same start
-      // date as the article.
+      // date as the article when such a text exists.
       const modifyingTextIdByAction = (context.modifyingTextIdByActionById[
         articleId
       ] ??= {})
@@ -1835,6 +1835,92 @@ async function registerLegiSectionTaModifiers(
           otherLienSectionTa["@debut"],
           otherLienSectionTa["@fin"],
         )
+      }
+    }
+  }
+
+  if (sectionTa.CONTEXTE.TEXTE["@cid"].startsWith("JORFTEXT")) {
+    if (sectionTaDateDebut === sectionTa.CONTEXTE.TEXTE["@date_publi"]) {
+      // If Section Texte Article belongs directly to a text published in JORF at the same date, then this JORF text is its creating text.
+      await addModifyingTextId(
+        context,
+        sectionTa.CONTEXTE.TEXTE["@cid"],
+        "CREATE",
+        sectionTaId,
+        sectionTaDateDebut,
+        sectionTaDateFin,
+      )
+      // Delete another version of the same sectionTa that existed before the newly created one.
+      for (const otherLienSectionTa of liensSectionTa) {
+        if (otherLienSectionTa["@id"] === sectionTaId) {
+          continue
+        }
+        if (
+          otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
+          otherLienSectionTa["@fin"] === sectionTaDateDebut
+        ) {
+          // The other sectionTa is the old version of the sectionTa.
+          await addModifyingTextId(
+            context,
+            sectionTa.CONTEXTE.TEXTE["@cid"],
+            "DELETE",
+            otherLienSectionTa["@id"],
+            otherLienSectionTa["@debut"],
+            otherLienSectionTa["@fin"],
+          )
+        }
+      }
+    } else {
+      // If Section Texte Article belongs directly to a text published in JORF but at a later date than the JORF text,
+      // then if it has no creating text, consider that it has been created by a modifying text having the same start
+      // date as the Section Texte Article when such a text exists.
+      const modifyingTextIdByAction = (context.modifyingTextIdByActionById[
+        sectionTaId
+      ] ??= {})
+      if (modifyingTextIdByAction.CREATE === undefined) {
+        const consolidatedTextModifyingTextsIds =
+          context.consolidatedTextModifyingTextsIdsByActionByDate[
+            sectionTaDateDebut
+          ]?.CREATE
+        if (consolidatedTextModifyingTextsIds !== undefined) {
+          if (consolidatedTextModifyingTextsIds.size === 1) {
+            const modifyingTextId = [...consolidatedTextModifyingTextsIds][0]
+            await addModifyingTextId(
+              context,
+              modifyingTextId,
+              "CREATE",
+              sectionTaId,
+              sectionTaDateDebut,
+              sectionTaDateFin,
+            )
+            // Delete another version of the same sectionTa that existed before the newly created one.
+            for (const otherLienSectionTa of liensSectionTa) {
+              if (otherLienSectionTa["@id"] === sectionTaId) {
+                continue
+              }
+              if (
+                otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
+                otherLienSectionTa["@fin"] === sectionTaDateDebut
+              ) {
+                // The other sectionTa is the old version of the sectionTa.
+                await addModifyingTextId(
+                  context,
+                  sectionTa.CONTEXTE.TEXTE["@cid"],
+                  "DELETE",
+                  otherLienSectionTa["@id"],
+                  otherLienSectionTa["@debut"],
+                  otherLienSectionTa["@fin"],
+                )
+              }
+            }
+          } else {
+            console.log(
+              `Can't attach modifying article ${sectionTaId} to a modifying text`,
+              `because there are several possibilities at the date ${sectionTaDateDebut}:`,
+              `${[...consolidatedTextModifyingTextsIds].join(", ")}`,
+            )
+          }
+        }
       }
     }
   }

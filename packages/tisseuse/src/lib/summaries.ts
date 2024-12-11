@@ -406,27 +406,33 @@ export function summarizeLegalObject(
       ]
       return {
         items: [
-          `Article ${metaArticle.NUM} ${metaArticle.TYPE} ${metaArticle.ETAT}, en vigueur`,
-          ...(metaArticle.DATE_FIN === "2999-01-01"
-            ? ([
-                " depuis le ",
-                {
-                  value: metaArticle.DATE_DEBUT,
-                  type: "date",
-                },
-              ] as Summary[])
-            : ([
-                " du ",
-                {
-                  value: metaArticle.DATE_DEBUT,
-                  type: "date",
-                },
-                " au ",
-                {
-                  value: metaArticle.DATE_FIN,
-                  type: "date",
-                },
-              ] as Summary[])),
+          `Article${[metaArticle.NUM, metaArticle.TYPE, metaArticle.ETAT]
+            .filter((value) => value !== undefined)
+            .map((value) => ` ${value}`)
+            .join("")}, en vigueur`,
+          ...(metaArticle.DATE_DEBUT === "2999-01-01" &&
+          metaArticle.DATE_FIN === "2999-01-01"
+            ? []
+            : metaArticle.DATE_FIN === "2999-01-01"
+              ? ([
+                  " depuis le ",
+                  {
+                    value: metaArticle.DATE_DEBUT,
+                    type: "date",
+                  },
+                ] as Summary[])
+              : ([
+                  " du ",
+                  {
+                    value: metaArticle.DATE_DEBUT,
+                    type: "date",
+                  },
+                  " au ",
+                  {
+                    value: metaArticle.DATE_FIN,
+                    type: "date",
+                  },
+                ] as Summary[])),
           ...(titreTexte === undefined ? [] : [" (", titreTexte, ")"]),
         ],
         type: "concatenation",

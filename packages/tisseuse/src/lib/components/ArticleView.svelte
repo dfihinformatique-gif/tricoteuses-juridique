@@ -19,7 +19,10 @@
 </script>
 
 {#if summary !== undefined}
-  <svelte:element this={`h${Math.min(level, 6)}`} class="text-lg font-bold">
+  <svelte:element
+    this={`h${Math.min(level, 6)}`}
+    class="my-4 text-lg font-bold"
+  >
     <SummaryView {summary} />
   </svelte:element>
 {/if}

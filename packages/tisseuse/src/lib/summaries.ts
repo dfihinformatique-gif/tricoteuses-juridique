@@ -409,20 +409,20 @@ export function summarizeLegalObject(
           `Article${[metaArticle.NUM, metaArticle.TYPE, metaArticle.ETAT]
             .filter((value) => value !== undefined)
             .map((value) => ` ${value}`)
-            .join("")}, en vigueur`,
+            .join("")}`,
           ...(metaArticle.DATE_DEBUT === "2999-01-01" &&
           metaArticle.DATE_FIN === "2999-01-01"
             ? []
             : metaArticle.DATE_FIN === "2999-01-01"
               ? ([
-                  " depuis le ",
+                  ", en vigueur depuis le ",
                   {
                     value: metaArticle.DATE_DEBUT,
                     type: "date",
                   },
                 ] as Summary[])
               : ([
-                  " du ",
+                  ", en vigueur du ",
                   {
                     value: metaArticle.DATE_DEBUT,
                     type: "date",

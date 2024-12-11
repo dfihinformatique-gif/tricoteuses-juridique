@@ -342,7 +342,6 @@ async function exportConsolidatedTextToGit(
     consolidatedTextelr,
     consolidatedTexteVersion,
   )
-  debugger
 
   if (liensArticles !== undefined) {
     for (const lienArticle of liensArticles) {

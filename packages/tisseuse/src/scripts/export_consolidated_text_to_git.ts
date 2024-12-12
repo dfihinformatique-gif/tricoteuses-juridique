@@ -7,19 +7,24 @@ import sade from "sade"
 
 import type {
   JorfArticle,
+  JorfArticleTm,
   JorfSectionTa,
+  JorfSectionTaLienArt,
   JorfSectionTaLienSectionTa,
   JorfSectionTaStructure,
   JorfTextelr,
+  JorfTextelrLienArt,
   JorfTexteVersion,
 } from "$lib/legal/jorf"
 import type {
   LegiArticle,
+  LegiArticleTm,
   LegiSectionTa,
   LegiSectionTaLienArt,
   LegiSectionTaLienSectionTa,
   LegiSectionTaStructure,
   LegiTextelr,
+  LegiTextelrLienArt,
   LegiTexteVersion,
 } from "$lib/legal/legi"
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
@@ -57,8 +62,99 @@ interface Context {
   texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
 }
 
+interface NodeBase {
+  children?: SectionTaNode[]
+}
+
+interface SectionTaNode extends NodeBase {
+  liensArticles?: Array<JorfSectionTaLienArt | LegiSectionTaLienArt>
+  titreTm: {
+    "#text"?: string
+    "@debut": string
+    "@fin": string
+    "@id": string // ID of a SectionTa
+  }
+}
+
+interface TextelrNode extends NodeBase {
+  liensArticles?: Array<JorfTextelrLienArt | LegiTextelrLienArt>
+}
+
 interface TexteManquant {
   date: string
+}
+
+async function addArticleToTree(
+  context: Context,
+  tree: TextelrNode,
+  encounteredArticlesIds: Set<string>,
+  lienArticle:
+    | JorfTextelrLienArt
+    | LegiTextelrLienArt
+    | JorfSectionTaLienArt
+    | LegiSectionTaLienArt,
+): Promise<void> {
+  if (encounteredArticlesIds.has(lienArticle["@id"])) {
+    return
+  }
+  encounteredArticlesIds.add(lienArticle["@id"])
+  const article = await getOrLoadArticle(context, lienArticle["@id"])
+  await addArticleToTreeNode(
+    context,
+    tree,
+    article.CONTEXTE.TEXTE.TM,
+    lienArticle,
+    article,
+  )
+}
+
+async function addArticleToTreeNode(
+  context: Context,
+  node: SectionTaNode | TextelrNode,
+  tm: JorfArticleTm | LegiArticleTm | undefined,
+  lienArticle:
+    | JorfTextelrLienArt
+    | LegiTextelrLienArt
+    | JorfSectionTaLienArt
+    | LegiSectionTaLienArt,
+  article: JorfArticle | LegiArticle,
+): Promise<void> {
+  if (tm === undefined) {
+    // Article is directly in textelr.
+    const liensArticles = (node.liensArticles ??= [])
+    liensArticles.push(lienArticle as JorfTextelrLienArt | LegiTextelrLienArt)
+  } else {
+    let foundTitreTm: SectionTaNode["titreTm"]
+    if (Array.isArray(tm.TITRE_TM)) {
+      // LegiArticleTm
+      const sortedTitreTmArray = tm.TITRE_TM.toSorted((titreTm1, titreTm2) =>
+        titreTm1["@debut"].localeCompare(titreTm2["@debut"]),
+      )
+      if (lienArticle["@debut"] < sortedTitreTmArray[0]["@debut"]) {
+        // Assume that the @debut of the first TITRE_TM is wrong.
+        foundTitreTm = sortedTitreTmArray[0]
+      } else if (lienArticle["@debut"] >= sortedTitreTmArray.at(-1)!["@fin"]) {
+        // Assume that the @fin of the last TITRE_TM is wrong.
+        foundTitreTm = sortedTitreTmArray.at(-1)!
+      } else {
+        foundTitreTm = sortedTitreTmArray.find(
+          (titreTm) => lienArticle["@debut"] < titreTm["@fin"],
+        )!
+      }
+    } else {
+      // JorfArticleTm
+      foundTitreTm = tm.TITRE_TM
+    }
+    const children = (node.children ??= [])
+    const lastChild = children.at(-1)
+    if (foundTitreTm["@id"] === lastChild?.titreTm["@id"]) {
+      addArticleToTreeNode(context, lastChild, tm.TM, lienArticle, article)
+    } else {
+      const newChild: SectionTaNode = { titreTm: foundTitreTm }
+      children.push(newChild)
+      addArticleToTreeNode(context, newChild, tm.TM, lienArticle, article)
+    }
+  }
 }
 
 async function addModifyingArticleId(
@@ -79,6 +175,7 @@ async function addModifyingArticleId(
   }
   if (
     action === "CREATE" &&
+    modifyingArticleDateSignature !== "2999-01-01" &&
     modifyingArticleDateSignature > modifiedDateDebut
   ) {
     console.warn(
@@ -86,7 +183,11 @@ async function addModifyingArticleId(
     )
     return
   }
-  if (action === "DELETE" && modifyingArticleDateSignature > modifiedDateFin) {
+  if (
+    action === "DELETE" &&
+    modifyingArticleDateSignature !== "2999-01-01" &&
+    modifyingArticleDateSignature > modifiedDateFin
+  ) {
     console.warn(
       `Ignoring article suppresseur ${modifyingArticleId} because its date signature ${modifyingArticleDateSignature} doesn't match date fin ${modifiedDateFin} of ${modifiedId}`,
     )
@@ -162,13 +263,21 @@ async function addModifyingTextId(
       (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
     consolidatedTextModifyingTextsIds.add(modifyingTextId)
   } else {
-    if (action === "CREATE" && modifyingTextDateSignature > modifiedDateDebut) {
+    if (
+      action === "CREATE" &&
+      modifyingTextDateSignature !== "2999-01-01" &&
+      modifyingTextDateSignature > modifiedDateDebut
+    ) {
       console.warn(
         `Ignoring creating text ${modifyingTextId} because its date signature ${modifyingTextDateSignature} doesn't match date début ${modifiedDateDebut} of ${modifiedId}`,
       )
       return
     }
-    if (action === "DELETE" && modifyingTextDateSignature > modifiedDateFin) {
+    if (
+      action === "DELETE" &&
+      modifyingTextDateSignature !== "2999-01-01" &&
+      modifyingTextDateSignature > modifiedDateFin
+    ) {
       console.warn(
         `Ignoring texte suppresseur ${modifyingTextId} because its date signature ${modifyingTextDateSignature} doesn't match date fin ${modifiedDateFin} of ${modifiedId}`,
       )
@@ -358,23 +467,10 @@ async function exportConsolidatedTextToGit(
     }
   }
 
-  for await (const {
-    lienSectionTa,
-    liensSectionTa,
-    parentsSectionTa,
-    sectionTa,
-  } of walkStructureTree(
+  for await (const { parentsSectionTa, sectionTa } of walkStructureTree(
     context,
     consolidatedTextelrStructure as LegiSectionTaStructure,
   )) {
-    await registerLegiSectionTaModifiers(
-      context,
-      parentsSectionTa.length + 1,
-      liensSectionTa,
-      lienSectionTa,
-      sectionTa as LegiSectionTa,
-    )
-
     const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
     if (liensArticles !== undefined) {
       for (const lienArticle of liensArticles) {
@@ -542,7 +638,8 @@ async function exportConsolidatedTextToGit(
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
     console.log(date)
     for (const modifyingTextId of modifyingTextsId.toSorted()) {
-      const t1 = performance.now()
+      // Generate tree of SectionTa & articles at this date
+      const t0 = performance.now()
       let modifyingTexteVersion:
         | JorfTexteVersion
         | LegiTexteVersion
@@ -580,17 +677,91 @@ async function exportConsolidatedTextToGit(
           `    CREATE: ${[...idsByAction.CREATE].toSorted().join(", ")}`,
         )
       }
-      const t2 = performance.now()
 
+      const t1 = performance.now()
+      const encounteredArticlesIds = new Set<string>()
+      const tree: TextelrNode = {}
+      if (liensArticles !== undefined) {
+        for (const action of ["DELETE", "CREATE"] as Action[]) {
+          for (const lienArticle of liensArticles) {
+            const articleId = lienArticle["@id"]
+            const modifyingTextIdByAction =
+              context.modifyingTextIdByActionById[articleId]
+            if (context.currentInternalIds.has(articleId)) {
+              if (modifyingTextIdByAction.DELETE === modifyingTextId) {
+                if (action === "DELETE") {
+                  context.currentInternalIds.delete(articleId)
+                }
+                continue
+              }
+            } else if (modifyingTextIdByAction.CREATE === modifyingTextId) {
+              if (action === "CREATE") {
+                context.currentInternalIds.add(articleId)
+              }
+            } else {
+              continue
+            }
+            if (action === "DELETE") {
+              continue
+            }
+            await addArticleToTree(
+              context,
+              tree,
+              encounteredArticlesIds,
+              lienArticle,
+            )
+          }
+        }
+      }
+      for await (const { sectionTa } of walkStructureTree(
+        context,
+        consolidatedTextelrStructure as LegiSectionTaStructure,
+      )) {
+        const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
+        if (liensArticles !== undefined) {
+          for (const action of ["DELETE", "CREATE"] as Action[]) {
+            for (const lienArticle of liensArticles) {
+              const articleId = lienArticle["@id"]
+              const modifyingTextIdByAction =
+                context.modifyingTextIdByActionById[articleId]
+              if (context.currentInternalIds.has(articleId)) {
+                if (modifyingTextIdByAction.DELETE === modifyingTextId) {
+                  if (action === "DELETE") {
+                    context.currentInternalIds.delete(articleId)
+                  }
+                  continue
+                }
+              } else if (modifyingTextIdByAction.CREATE === modifyingTextId) {
+                if (action === "CREATE") {
+                  context.currentInternalIds.add(articleId)
+                }
+              } else {
+                continue
+              }
+              if (action === "DELETE") {
+                continue
+              }
+              await addArticleToTree(
+                context,
+                tree,
+                encounteredArticlesIds,
+                lienArticle,
+              )
+            }
+          }
+        }
+      }
+
+      const t2 = performance.now()
       await generateTextGitDirectory(
         context,
         2,
-        consolidatedTextelr as LegiTextelr,
+        tree,
         consolidatedTexteVersion as LegiTexteVersion,
         modifyingTextId,
       )
-      const t3 = performance.now()
 
+      const t3 = performance.now()
       let messageLines: string | undefined = undefined
       let summary: string | undefined = undefined
       if (modifyingTextId.startsWith("JORFTEXT")) {
@@ -680,8 +851,9 @@ async function exportConsolidatedTextToGit(
           .filter((block) => block !== undefined)
           .join("\n\n"),
       })
+
       const t4 = performance.now()
-      console.log(`Durations: ${t2 - t1} ${t3 - t2} ${t4 - t3}`)
+      console.log(`Durations: ${t1 - t0} ${t2 - t1} ${t3 - t2} ${t4 - t3}`)
     }
   }
 }
@@ -689,7 +861,7 @@ async function exportConsolidatedTextToGit(
 async function generateSectionTaGitDirectory(
   context: Context,
   depth: number,
-  lienSectionTa: LegiSectionTaLienSectionTa,
+  sectionTaNode: SectionTaNode,
   sectionTa: LegiSectionTa,
   parentRepositoryRelativeDir: string,
   modifyingTextId: string,
@@ -710,58 +882,29 @@ async function generateSectionTaGitDirectory(
   await fs.ensureDir(path.join(context.targetDir, repositoryRelativeDir))
   const readmeLinks: Array<{ href: string; title: string }> = []
 
-  const liensArticles = sectionTa.STRUCTURE_TA?.LIEN_ART
-  if (liensArticles !== undefined) {
-    for (const action of ["DELETE", "CREATE"] as Action[]) {
-      for (const lienArticle of liensArticles) {
-        const articleId = lienArticle["@id"]
-        const article = (await getOrLoadArticle(
-          context,
-          articleId,
-        )) as LegiArticle
-        const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
-        let articleSlug = slugify(articleTitle, "_")
-        if (articleSlug.length > 252) {
-          articleSlug = articleSlug.slice(0, 251)
-          if (articleSlug.at(-1) !== "_") {
-            articleSlug += "_"
-          }
+  if (sectionTaNode.liensArticles !== undefined) {
+    for (const lienArticle of sectionTaNode.liensArticles) {
+      const articleId = lienArticle["@id"]
+      const article = (await getOrLoadArticle(
+        context,
+        articleId,
+      )) as LegiArticle
+      const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
+      let articleSlug = slugify(articleTitle, "_")
+      if (articleSlug.length > 252) {
+        articleSlug = articleSlug.slice(0, 251)
+        if (articleSlug.at(-1) !== "_") {
+          articleSlug += "_"
         }
-        const articleFilename = `${articleSlug}.md`
-        const articleRepositoryRelativeFilePath = path.join(
-          repositoryRelativeDir,
-          articleFilename,
-        )
-        const modifyingTextIdByAction =
-          context.modifyingTextIdByActionById[articleId]
-        if (context.currentInternalIds.has(articleId)) {
-          if (modifyingTextIdByAction.DELETE === modifyingTextId) {
-            if (action === "DELETE") {
-              await git.remove({
-                dir: context.targetDir,
-                filepath: articleRepositoryRelativeFilePath,
-                fs,
-              })
-              await fs.remove(
-                path.join(context.targetDir, articleRepositoryRelativeFilePath),
-              )
-              context.currentInternalIds.delete(articleId)
-            }
-            continue
-          }
-        } else if (modifyingTextIdByAction.CREATE === modifyingTextId) {
-          if (action === "CREATE") {
-            context.currentInternalIds.add(articleId)
-          }
-        } else {
-          continue
-        }
-        if (action === "DELETE") {
-          continue
-        }
-        await fs.writeFile(
-          path.join(context.targetDir, articleRepositoryRelativeFilePath),
-          dedent`
+      }
+      const articleFilename = `${articleSlug}.md`
+      const articleRepositoryRelativeFilePath = path.join(
+        repositoryRelativeDir,
+        articleFilename,
+      )
+      await fs.writeFile(
+        path.join(context.targetDir, articleRepositoryRelativeFilePath),
+        dedent`
             ---
             ${[
               ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
@@ -781,79 +924,42 @@ async function generateSectionTaGitDirectory(
 
             ${article.BLOC_TEXTUEL?.CONTENU}
           ` + "\n",
-        )
-        await git.add({
-          dir: context.targetDir,
-          filepath: articleRepositoryRelativeFilePath,
-          fs,
-        })
-        readmeLinks.push({ href: articleFilename, title: articleTitle })
-      }
+      )
+      await git.add({
+        dir: context.targetDir,
+        filepath: articleRepositoryRelativeFilePath,
+        fs,
+      })
+      readmeLinks.push({ href: articleFilename, title: articleTitle })
     }
   }
 
-  const liensSectionTa = sectionTa.STRUCTURE_TA?.LIEN_SECTION_TA
-  if (liensSectionTa !== undefined) {
-    for (const action of ["DELETE", "CREATE"] as Action[]) {
-      for (const lienSectionTa of liensSectionTa) {
-        const sectionTaId = lienSectionTa["@id"]
-        const sectionTa = (await getOrLoadSectionTa(
-          context,
-          sectionTaId,
-        )) as LegiSectionTa
-        const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
-        let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
-        if (sectionTaSlug.length > 255) {
-          sectionTaSlug = sectionTaSlug.slice(0, 254)
-          if (sectionTaSlug.at(-1) !== "_") {
-            sectionTaSlug += "_"
-          }
+  if (sectionTaNode.children !== undefined) {
+    for (const child of sectionTaNode.children) {
+      const sectionTaId = child.titreTm["@id"]
+      const sectionTa = (await getOrLoadSectionTa(
+        context,
+        sectionTaId,
+      )) as LegiSectionTa
+      const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
+      let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
+      if (sectionTaSlug.length > 255) {
+        sectionTaSlug = sectionTaSlug.slice(0, 254)
+        if (sectionTaSlug.at(-1) !== "_") {
+          sectionTaSlug += "_"
         }
-        const sectionTaDirName = sectionTaSlug
-        const sectionTaRepositoryRelativeDir = path.join(
-          repositoryRelativeDir,
-          sectionTaDirName,
-        )
-        const modifyingTextIdByAction =
-          context.modifyingTextIdByActionById[sectionTaId]
-        if (context.currentInternalIds.has(sectionTaId)) {
-          if (modifyingTextIdByAction.DELETE === modifyingTextId) {
-            if (action === "DELETE") {
-              for (const repositoryRelativeFilePath of await git.listFiles({
-                dir: context.targetDir,
-                fs,
-              })) {
-                if (
-                  repositoryRelativeFilePath.startsWith(
-                    sectionTaRepositoryRelativeDir + path.sep,
-                  )
-                ) {
-                  await git.remove({
-                    dir: context.targetDir,
-                    filepath: repositoryRelativeFilePath,
-                    fs,
-                  })
-                }
-              }
-              await fs.remove(
-                path.join(context.targetDir, sectionTaRepositoryRelativeDir),
-              )
-              context.currentInternalIds.delete(sectionTaId)
-            }
-            continue
-          }
-        } else if (modifyingTextIdByAction.CREATE === modifyingTextId) {
-          if (action === "CREATE") {
-            context.currentInternalIds.add(sectionTaId)
-          }
-        } else {
-          continue
-        }
-        if (action === "DELETE") {
-          continue
-        }
-        readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
       }
+      const sectionTaDirName = sectionTaSlug
+      readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
+
+      await generateSectionTaGitDirectory(
+        context,
+        depth + 1,
+        child,
+        sectionTa,
+        repositoryRelativeDir,
+        modifyingTextId,
+      )
     }
   }
 
@@ -867,12 +973,12 @@ async function generateSectionTaGitDirectory(
       ---
       ${[
         ["Commentaire", sectionTa.COMMENTAIRE],
-        ["État", lienSectionTa["@etat"]],
-        ["Date de début", lienSectionTa["@debut"]],
-        ["Date de fin", lienSectionTa["@fin"]],
+        // ["État", lienSectionTa["@etat"]],
+        ["Date de début", sectionTaNode.titreTm["@debut"]],
+        ["Date de fin", sectionTaNode.titreTm["@fin"]],
         ["Identifiant", sectionTa.ID],
         // TODO: Mettre l'URL dans le Git Tricoteuses
-        ["URL", lienSectionTa["@url"]],
+        // ["URL", lienSectionTa["@url"]],
       ]
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)
@@ -889,32 +995,12 @@ async function generateSectionTaGitDirectory(
     filepath: readmeRepositoryRelativeFilePath,
     fs,
   })
-
-  if (liensSectionTa !== undefined) {
-    for (const lienSectionTa of liensSectionTa) {
-      const sectionTaId = lienSectionTa["@id"]
-      if (context.currentInternalIds.has(sectionTaId)) {
-        const sectionTa = (await getOrLoadSectionTa(
-          context,
-          sectionTaId,
-        )) as LegiSectionTa
-        await generateSectionTaGitDirectory(
-          context,
-          depth + 1,
-          lienSectionTa,
-          sectionTa,
-          repositoryRelativeDir,
-          modifyingTextId,
-        )
-      }
-    }
-  }
 }
 
 async function generateTextGitDirectory(
   context: Context,
   depth: number,
-  textelr: LegiTextelr,
+  tree: TextelrNode,
   texteVersion: LegiTexteVersion,
   modifyingTextId: string,
 ) {
@@ -927,62 +1013,34 @@ async function generateTextGitDirectory(
     .trim()
   const texteDirName = slugify(texteTitle, "_")
   const repositoryRelativeDir = texteDirName
-  await fs.ensureDir(path.join(context.targetDir, repositoryRelativeDir))
+  const repositoryDir = path.join(context.targetDir, repositoryRelativeDir)
+  await fs.remove(repositoryDir)
+  await fs.ensureDir(repositoryDir)
   const readmeLinks: Array<{ href: string; title: string }> = []
 
-  const { STRUCT: textelrStructure } = textelr
-  const liensArticles = textelrStructure?.LIEN_ART
-  if (liensArticles !== undefined) {
-    for (const action of ["DELETE", "CREATE"] as Action[]) {
-      for (const lienArticle of liensArticles) {
-        const articleId = lienArticle["@id"]
-        const article = (await getOrLoadArticle(
-          context,
-          articleId,
-        )) as LegiArticle
-        const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
-        let articleSlug = slugify(articleTitle, "_")
-        if (articleSlug.length > 252) {
-          articleSlug = articleSlug.slice(0, 251)
-          if (articleSlug.at(-1) !== "_") {
-            articleSlug += "_"
-          }
+  if (tree.liensArticles !== undefined) {
+    for (const lienArticle of tree.liensArticles) {
+      const articleId = lienArticle["@id"]
+      const article = (await getOrLoadArticle(
+        context,
+        articleId,
+      )) as LegiArticle
+      const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
+      let articleSlug = slugify(articleTitle, "_")
+      if (articleSlug.length > 252) {
+        articleSlug = articleSlug.slice(0, 251)
+        if (articleSlug.at(-1) !== "_") {
+          articleSlug += "_"
         }
-        const articleFilename = `${articleSlug}.md`
-        const articleRepositoryRelativeFilePath = path.join(
-          repositoryRelativeDir,
-          articleFilename,
-        )
-        const modifyingTextIdByAction =
-          context.modifyingTextIdByActionById[articleId]
-        if (context.currentInternalIds.has(articleId)) {
-          if (modifyingTextIdByAction.DELETE === modifyingTextId) {
-            if (action === "DELETE") {
-              await git.remove({
-                dir: context.targetDir,
-                filepath: articleRepositoryRelativeFilePath,
-                fs,
-              })
-              await fs.remove(
-                path.join(context.targetDir, articleRepositoryRelativeFilePath),
-              )
-              context.currentInternalIds.delete(articleId)
-            }
-            continue
-          }
-        } else if (modifyingTextIdByAction.CREATE === modifyingTextId) {
-          if (action === "CREATE") {
-            context.currentInternalIds.add(articleId)
-          }
-        } else {
-          continue
-        }
-        if (action === "DELETE") {
-          continue
-        }
-        await fs.writeFile(
-          path.join(context.targetDir, articleRepositoryRelativeFilePath),
-          dedent`
+      }
+      const articleFilename = `${articleSlug}.md`
+      const articleRepositoryRelativeFilePath = path.join(
+        repositoryRelativeDir,
+        articleFilename,
+      )
+      await fs.writeFile(
+        path.join(context.targetDir, articleRepositoryRelativeFilePath),
+        dedent`
             ---
             ${[
               ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
@@ -1002,79 +1060,42 @@ async function generateTextGitDirectory(
 
             ${article.BLOC_TEXTUEL?.CONTENU.replaceAll("<<", "«").replaceAll(">>", "»")}
           ` + "\n",
-        )
-        await git.add({
-          dir: context.targetDir,
-          filepath: articleRepositoryRelativeFilePath,
-          fs,
-        })
-        readmeLinks.push({ href: articleFilename, title: articleTitle })
-      }
+      )
+      await git.add({
+        dir: context.targetDir,
+        filepath: articleRepositoryRelativeFilePath,
+        fs,
+      })
+      readmeLinks.push({ href: articleFilename, title: articleTitle })
     }
   }
 
-  const liensSectionTa = textelrStructure?.LIEN_SECTION_TA
-  if (liensSectionTa !== undefined) {
-    for (const action of ["DELETE", "CREATE"] as Action[]) {
-      for (const lienSectionTa of liensSectionTa) {
-        const sectionTaId = lienSectionTa["@id"]
-        const sectionTa = (await getOrLoadSectionTa(
-          context,
-          sectionTaId,
-        )) as LegiSectionTa
-        const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
-        let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
-        if (sectionTaSlug.length > 255) {
-          sectionTaSlug = sectionTaSlug.slice(0, 254)
-          if (sectionTaSlug.at(-1) !== "_") {
-            sectionTaSlug += "_"
-          }
+  if (tree.children !== undefined) {
+    for (const child of tree.children) {
+      const sectionTaId = child.titreTm["@id"]
+      const sectionTa = (await getOrLoadSectionTa(
+        context,
+        sectionTaId,
+      )) as LegiSectionTa
+      const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTaId
+      let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
+      if (sectionTaSlug.length > 255) {
+        sectionTaSlug = sectionTaSlug.slice(0, 254)
+        if (sectionTaSlug.at(-1) !== "_") {
+          sectionTaSlug += "_"
         }
-        const sectionTaDirName = sectionTaSlug
-        const sectionTaRepositoryRelativeDir = path.join(
-          repositoryRelativeDir,
-          sectionTaDirName,
-        )
-        const modifyingTextIdByAction =
-          context.modifyingTextIdByActionById[sectionTaId]
-        if (context.currentInternalIds.has(sectionTaId)) {
-          if (modifyingTextIdByAction.DELETE === modifyingTextId) {
-            if (action === "DELETE") {
-              for (const repositoryRelativeFilePath of await git.listFiles({
-                dir: context.targetDir,
-                fs,
-              })) {
-                if (
-                  repositoryRelativeFilePath.startsWith(
-                    sectionTaRepositoryRelativeDir + path.sep,
-                  )
-                ) {
-                  await git.remove({
-                    dir: context.targetDir,
-                    filepath: repositoryRelativeFilePath,
-                    fs,
-                  })
-                }
-              }
-              await fs.remove(
-                path.join(context.targetDir, sectionTaRepositoryRelativeDir),
-              )
-              context.currentInternalIds.delete(sectionTaId)
-            }
-            continue
-          }
-        } else if (modifyingTextIdByAction.CREATE === modifyingTextId) {
-          if (action === "CREATE") {
-            context.currentInternalIds.add(sectionTaId)
-          }
-        } else {
-          continue
-        }
-        if (action === "DELETE") {
-          continue
-        }
-        readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
       }
+      const sectionTaDirName = sectionTaSlug
+      readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
+
+      await generateSectionTaGitDirectory(
+        context,
+        depth + 1,
+        child,
+        sectionTa,
+        repositoryRelativeDir,
+        modifyingTextId,
+      )
     }
   }
 
@@ -1122,26 +1143,6 @@ async function generateTextGitDirectory(
     filepath: readmeRepositoryRelativeFilePath,
     fs,
   })
-
-  if (liensSectionTa !== undefined) {
-    for (const lienSectionTa of liensSectionTa) {
-      const sectionTaId = lienSectionTa["@id"]
-      if (context.currentInternalIds.has(sectionTaId)) {
-        const sectionTa = (await getOrLoadSectionTa(
-          context,
-          sectionTaId,
-        )) as LegiSectionTa
-        await generateSectionTaGitDirectory(
-          context,
-          depth + 1,
-          lienSectionTa,
-          sectionTa,
-          repositoryRelativeDir,
-          modifyingTextId,
-        )
-      }
-    }
-  }
 }
 
 async function getOrLoadArticle(
@@ -1636,324 +1637,6 @@ async function registerLegiArticleModifiers(
           modifyingTextIdByAction.DELETE = texteManquantId
           ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
             {}).DELETE ??= new Set()).add(articleVersion.LIEN_ART["@id"])
-        }
-      }
-    }
-  }
-}
-
-async function registerLegiSectionTaModifiers(
-  context: Context,
-  depth: number,
-  liensSectionTa: LegiSectionTaLienSectionTa[],
-  lienSectionTa: LegiSectionTaLienSectionTa,
-  sectionTa: LegiSectionTa,
-): Promise<void> {
-  const sectionTaId = sectionTa.ID
-  const sectionTaIds = [
-    sectionTaId,
-    context.jorfCreatorIdById[sectionTaId],
-  ].filter((id) => id !== undefined)
-  const sectionTaDateDebut = lienSectionTa["@debut"]
-  const sectionTaDateFin = lienSectionTa["@fin"]
-  console.log(
-    `${sectionTa.ID} ${"  ".repeat(depth)}${sectionTa.TITRE_TA?.replace(/\s+/g, " ") ?? sectionTa.ID} (${sectionTaDateDebut} — ${sectionTaDateFin === "2999-01-01" ? "…" : lienSectionTa["@fin"]}, ${lienSectionTa["@etat"]})`,
-  )
-
-  for (const articleLien of await db<ArticleLienDb[]>`
-    SELECT * FROM article_lien WHERE id IN ${db(sectionTaIds)}
-  `) {
-    if (articleLien.article_id in context.consolidatedTextInternalIds) {
-      // Ignore internal links because a LEGI texte can't modify itself.
-      continue
-    }
-
-    console.log(
-      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
-    )
-    assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
-    assert(articleLien.article_id.startsWith("LEGIARTI"))
-    if (
-      (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
-      (articleLien.typelien === "ABROGE" && !articleLien.cible) ||
-      (articleLien.typelien === "TRANSFERE" && !articleLien.cible)
-    ) {
-      await addModifyingArticleId(
-        context,
-        articleLien.article_id,
-        "DELETE",
-        sectionTaId,
-        sectionTaDateDebut,
-        sectionTaDateFin,
-      )
-    } else if (
-      (articleLien.typelien === "CITATION" && !articleLien.cible) ||
-      (articleLien.typelien === "PEREMPTION" && articleLien.cible)
-    ) {
-      // Ignore link.
-    } else if (
-      (articleLien.typelien === "CREATION" && articleLien.cible) ||
-      (articleLien.typelien === "CREE" && !articleLien.cible) ||
-      (articleLien.typelien === "DEPLACE" && !articleLien.cible) ||
-      (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
-      (articleLien.typelien === "MODIFIE" && !articleLien.cible)
-    ) {
-      await addModifyingArticleId(
-        context,
-        articleLien.article_id,
-        "CREATE",
-        sectionTaId,
-        sectionTaDateDebut,
-        sectionTaDateFin,
-      )
-      // Delete another version of the same article that existed before the newly created one.
-      for (const otherLienSectionTa of liensSectionTa) {
-        if (otherLienSectionTa["@id"] === sectionTaId) {
-          continue
-        }
-        if (
-          otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
-          otherLienSectionTa["@fin"] === sectionTaDateDebut
-        ) {
-          // The other sectionTa is the old version of the sectionTa.
-          await addModifyingArticleId(
-            context,
-            articleLien.article_id,
-            "DELETE",
-            otherLienSectionTa["@id"],
-            otherLienSectionTa["@debut"],
-            otherLienSectionTa["@fin"],
-          )
-        }
-      }
-    } else {
-      throw new Error(
-        `Unexpected article_lien to Section Texte Article ${articleLien.id}: typelien=${articleLien.typelien}, cible=${articleLien.cible}`,
-      )
-    }
-  }
-
-  for (const texteVersionLien of await db<TexteVersionLienDb[]>`
-    SELECT * FROM texte_version_lien WHERE id IN ${db(sectionTaIds)}
-  `) {
-    if (
-      texteVersionLien.texte_version_id in context.consolidatedTextInternalIds
-    ) {
-      // Ignore internal links because a LEGI texte can't modify itself.
-      continue
-    }
-
-    console.log(
-      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
-    )
-    assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
-    assert(
-      texteVersionLien.texte_version_id.startsWith("JORFTEXT") ||
-        texteVersionLien.texte_version_id.startsWith("LEGITEXT"),
-    )
-    if (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible) {
-      await addModifyingTextId(
-        context,
-        texteVersionLien.texte_version_id,
-        "DELETE",
-        sectionTaId,
-        sectionTaDateDebut,
-        sectionTaDateFin,
-      )
-    } else if (
-      texteVersionLien.typelien === "CITATION" &&
-      !texteVersionLien.cible
-    ) {
-      // Ignore link.
-    } else if (
-      texteVersionLien.typelien === "RECTIFICATION" &&
-      texteVersionLien.cible
-    ) {
-      await addModifyingTextId(
-        context,
-        texteVersionLien.texte_version_id,
-        "CREATE",
-        sectionTaId,
-        sectionTaDateDebut,
-        sectionTaDateFin,
-      )
-      // Delete another version of the same article that existed before the newly created one.
-      for (const otherLienSectionTa of liensSectionTa) {
-        if (otherLienSectionTa["@id"] === sectionTaId) {
-          continue
-        }
-        if (
-          otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
-          otherLienSectionTa["@fin"] === sectionTaDateDebut
-        ) {
-          // The other sectionTa is the old version of the sectionTa.
-          await addModifyingTextId(
-            context,
-            texteVersionLien.texte_version_id,
-            "DELETE",
-            otherLienSectionTa["@id"],
-            otherLienSectionTa["@debut"],
-            otherLienSectionTa["@fin"],
-          )
-        }
-      }
-    } else {
-      throw new Error(
-        `Unexpected texte_version_lien to Section Texte Article ${texteVersionLien.id}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
-      )
-    }
-  }
-
-  // If Section Texte Article belongs directly to a text published in JORF then this JORF text is its creating text.
-  if (
-    sectionTa.CONTEXTE.TEXTE["@cid"].startsWith("JORFTEXT") &&
-    sectionTaDateDebut === sectionTa.CONTEXTE.TEXTE["@date_publi"]
-  ) {
-    await addModifyingTextId(
-      context,
-      sectionTa.CONTEXTE.TEXTE["@cid"],
-      "CREATE",
-      sectionTaId,
-      sectionTaDateDebut,
-      sectionTaDateFin,
-    )
-    // Delete another version of the same article that existed before the newly created one.
-    for (const otherLienSectionTa of liensSectionTa) {
-      if (otherLienSectionTa["@id"] === sectionTaId) {
-        continue
-      }
-      if (
-        otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
-        otherLienSectionTa["@fin"] === sectionTaDateDebut
-      ) {
-        // The other sectionTa is the old version of the sectionTa.
-        await addModifyingTextId(
-          context,
-          sectionTa.CONTEXTE.TEXTE["@cid"],
-          "DELETE",
-          otherLienSectionTa["@id"],
-          otherLienSectionTa["@debut"],
-          otherLienSectionTa["@fin"],
-        )
-      }
-    }
-  }
-
-  if (sectionTa.CONTEXTE.TEXTE["@cid"].startsWith("JORFTEXT")) {
-    if (sectionTaDateDebut === sectionTa.CONTEXTE.TEXTE["@date_publi"]) {
-      // If Section Texte Article belongs directly to a text published in JORF at the same date, then this JORF text is its creating text.
-      await addModifyingTextId(
-        context,
-        sectionTa.CONTEXTE.TEXTE["@cid"],
-        "CREATE",
-        sectionTaId,
-        sectionTaDateDebut,
-        sectionTaDateFin,
-      )
-      // Delete another version of the same sectionTa that existed before the newly created one.
-      for (const otherLienSectionTa of liensSectionTa) {
-        if (otherLienSectionTa["@id"] === sectionTaId) {
-          continue
-        }
-        if (
-          otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
-          otherLienSectionTa["@fin"] === sectionTaDateDebut
-        ) {
-          // The other sectionTa is the old version of the sectionTa.
-          await addModifyingTextId(
-            context,
-            sectionTa.CONTEXTE.TEXTE["@cid"],
-            "DELETE",
-            otherLienSectionTa["@id"],
-            otherLienSectionTa["@debut"],
-            otherLienSectionTa["@fin"],
-          )
-        }
-      }
-    } else {
-      // If Section Texte Article belongs directly to a text published in JORF but at a later date than the JORF text,
-      // then if it has no creating text, consider that it has been created by a modifying text having the same start
-      // date as the Section Texte Article when such a text exists.
-      const modifyingTextIdByAction = (context.modifyingTextIdByActionById[
-        sectionTaId
-      ] ??= {})
-      if (modifyingTextIdByAction.CREATE === undefined) {
-        const consolidatedTextModifyingTextsIds =
-          context.consolidatedTextModifyingTextsIdsByActionByDate[
-            sectionTaDateDebut
-          ]?.CREATE
-        if (consolidatedTextModifyingTextsIds !== undefined) {
-          if (consolidatedTextModifyingTextsIds.size === 1) {
-            const modifyingTextId = [...consolidatedTextModifyingTextsIds][0]
-            await addModifyingTextId(
-              context,
-              modifyingTextId,
-              "CREATE",
-              sectionTaId,
-              sectionTaDateDebut,
-              sectionTaDateFin,
-            )
-            // Delete another version of the same sectionTa that existed before the newly created one.
-            for (const otherLienSectionTa of liensSectionTa) {
-              if (otherLienSectionTa["@id"] === sectionTaId) {
-                continue
-              }
-              if (
-                otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
-                otherLienSectionTa["@fin"] === sectionTaDateDebut
-              ) {
-                // The other sectionTa is the old version of the sectionTa.
-                await addModifyingTextId(
-                  context,
-                  sectionTa.CONTEXTE.TEXTE["@cid"],
-                  "DELETE",
-                  otherLienSectionTa["@id"],
-                  otherLienSectionTa["@debut"],
-                  otherLienSectionTa["@fin"],
-                )
-              }
-            }
-          } else {
-            console.log(
-              `Can't attach modifying article ${sectionTaId} to a modifying text`,
-              `because there are several possibilities at the date ${sectionTaDateDebut}:`,
-              `${[...consolidatedTextModifyingTextsIds].join(", ")}`,
-            )
-          }
-        }
-      }
-    }
-  }
-
-  // If Section Texte Article has no creating text at all, then use a fake one.
-  const modifyingTextIdByAction = (context.modifyingTextIdByActionById[
-    sectionTaId
-  ] ??= {})
-  if (modifyingTextIdByAction.CREATE === undefined) {
-    const texteManquantId = `ZZZZ TEXTE MANQUANT ${sectionTaDateDebut}`
-    context.texteManquantById[texteManquantId] ??= {
-      date: sectionTaDateDebut,
-    }
-    modifyingTextIdByAction.CREATE = texteManquantId
-    ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
-      {}).CREATE ??= new Set()).add(sectionTaId)
-    // Delete another version of the same article that existed before the newly created one.
-    for (const otherLienSectionTa of liensSectionTa) {
-      if (otherLienSectionTa["@id"] === sectionTaId) {
-        continue
-      }
-      if (
-        otherLienSectionTa["@cid"] === lienSectionTa["@cid"] &&
-        otherLienSectionTa["@fin"] === sectionTaDateDebut
-      ) {
-        // The other sectionTa is the old version of the sectionTa.
-        const modifyingTextIdByAction = (context.modifyingTextIdByActionById[
-          otherLienSectionTa["@id"]
-        ] ??= {})
-        if (modifyingTextIdByAction.DELETE === undefined) {
-          modifyingTextIdByAction.DELETE = texteManquantId
-          ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=
-            {}).DELETE ??= new Set()).add(otherLienSectionTa["@id"])
         }
       }
     }

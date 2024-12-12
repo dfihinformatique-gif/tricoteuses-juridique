@@ -85,6 +85,10 @@ interface TexteManquant {
   date: string
 }
 
+const minDateObject = new Date("1971-01-01")
+const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)
+const oneDay = 24 * 60 * 60 // hours * minutes * seconds
+
 async function addArticleToTree(
   context: Context,
   tree: TextelrNode,
@@ -841,12 +845,29 @@ async function exportConsolidatedTextToGit(
           .map(([key, value]) => `${key}: ${value}`)
           .join("\n")
       }
+      const dateObject = new Date(date)
+      let timestamp = Math.floor(dateObject.getTime() / 1000)
+      if (timestamp < minDateTimestamp) {
+        const diffDays = Math.round(
+          Math.abs((minDateTimestamp - timestamp) / oneDay),
+        )
+        timestamp = minDateTimestamp - diffDays
+      }
+      const timezoneOffset = 0
       await git.commit({
         dir: targetDir,
         fs,
         author: {
           email: "codes_juridiques@tricoteuses.fr",
           name: "République française",
+          timestamp,
+          timezoneOffset,
+        },
+        committer: {
+          email: "codes_juridiques@tricoteuses.fr",
+          name: "République française",
+          timestamp,
+          timezoneOffset,
         },
         message: [modifyingTextTitle, summary, messageLines]
           .filter((block) => block !== undefined)

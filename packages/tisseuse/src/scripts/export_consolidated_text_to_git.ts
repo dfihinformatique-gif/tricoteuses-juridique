@@ -30,6 +30,7 @@ import type {
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 import { db } from "$lib/server/databases"
 import { slugify } from "$lib/strings"
+import { walkDir } from "$lib/server/file_systems"
 
 type Action = "CREATE" | "DELETE"
 
@@ -865,6 +866,7 @@ async function generateSectionTaGitDirectory(
   sectionTa: LegiSectionTa,
   parentRepositoryRelativeDir: string,
   modifyingTextId: string,
+  obsoleteRepositoryRelativeFilesPaths: Set<string>,
 ) {
   const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTa.ID
   let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
@@ -930,6 +932,9 @@ async function generateSectionTaGitDirectory(
         filepath: articleRepositoryRelativeFilePath,
         fs,
       })
+      obsoleteRepositoryRelativeFilesPaths.delete(
+        articleRepositoryRelativeFilePath,
+      )
       readmeLinks.push({ href: articleFilename, title: articleTitle })
     }
   }
@@ -959,6 +964,7 @@ async function generateSectionTaGitDirectory(
         sectionTa,
         repositoryRelativeDir,
         modifyingTextId,
+        obsoleteRepositoryRelativeFilesPaths,
       )
     }
   }
@@ -995,6 +1001,7 @@ async function generateSectionTaGitDirectory(
     filepath: readmeRepositoryRelativeFilePath,
     fs,
   })
+  obsoleteRepositoryRelativeFilesPaths.delete(readmeRepositoryRelativeFilePath)
 }
 
 async function generateTextGitDirectory(
@@ -1014,8 +1021,13 @@ async function generateTextGitDirectory(
   const texteDirName = slugify(texteTitle, "_")
   const repositoryRelativeDir = texteDirName
   const repositoryDir = path.join(context.targetDir, repositoryRelativeDir)
-  await fs.remove(repositoryDir)
   await fs.ensureDir(repositoryDir)
+  const obsoleteRepositoryRelativeFilesPaths = new Set(
+    walkDir(context.targetDir, [repositoryRelativeDir]).map(
+      (repositoryRelativeFileSplitPath) =>
+        path.join(...repositoryRelativeFileSplitPath),
+    ),
+  )
   const readmeLinks: Array<{ href: string; title: string }> = []
 
   if (tree.liensArticles !== undefined) {
@@ -1066,6 +1078,9 @@ async function generateTextGitDirectory(
         filepath: articleRepositoryRelativeFilePath,
         fs,
       })
+      obsoleteRepositoryRelativeFilesPaths.delete(
+        articleRepositoryRelativeFilePath,
+      )
       readmeLinks.push({ href: articleFilename, title: articleTitle })
     }
   }
@@ -1095,6 +1110,7 @@ async function generateTextGitDirectory(
         sectionTa,
         repositoryRelativeDir,
         modifyingTextId,
+        obsoleteRepositoryRelativeFilesPaths,
       )
     }
   }
@@ -1143,6 +1159,29 @@ async function generateTextGitDirectory(
     filepath: readmeRepositoryRelativeFilePath,
     fs,
   })
+  obsoleteRepositoryRelativeFilesPaths.delete(readmeRepositoryRelativeFilePath)
+
+  // Delete obsolete files and directories.
+  for (const obsoleteRepositoryRelativeFilePath of obsoleteRepositoryRelativeFilesPaths) {
+    await fs.remove(
+      path.join(context.targetDir, obsoleteRepositoryRelativeFilePath),
+    )
+    await git.remove({
+      dir: context.targetDir,
+      filepath: obsoleteRepositoryRelativeFilePath,
+      fs,
+    })
+    if (
+      obsoleteRepositoryRelativeFilePath === "README.md" ||
+      obsoleteRepositoryRelativeFilePath.endsWith("/README.md")
+    ) {
+      await fs.remove(
+        path.dirname(
+          path.join(context.targetDir, obsoleteRepositoryRelativeFilePath),
+        ),
+      )
+    }
+  }
 }
 
 async function getOrLoadArticle(

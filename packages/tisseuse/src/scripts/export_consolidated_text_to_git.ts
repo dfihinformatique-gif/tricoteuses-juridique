@@ -3,6 +3,7 @@ import dedent from "dedent-js"
 import fs from "fs-extra"
 import git from "isomorphic-git"
 import path from "path"
+import * as prettier from "prettier"
 import sade from "sade"
 
 import type {
@@ -319,6 +320,18 @@ async function addModifyingTextId(
   }
 }
 
+async function cleanHtmlFragment(
+  fragment: string | undefined,
+): Promise<string | undefined> {
+  return fragment === undefined
+    ? undefined
+    : await prettier.format(
+        fragment.replaceAll("<<", "«").replaceAll(">>", "»"),
+        {
+          parser: "html",
+        },
+      )
+}
 async function exportConsolidatedTextToGit(
   consolidatedTextId: string,
   targetDir: string,
@@ -803,13 +816,16 @@ async function exportConsolidatedTextToGit(
             "Ancien identifiant",
             jorfModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
           ],
-          // TODO: Mettre l'URL dans le Git Tricoteuses
+          // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
           ["URL", jorfModifyingTexteVersion.META.META_COMMUN.URL],
         ]
           .filter(([, value]) => value !== undefined)
           .map(([key, value]) => `${key}: ${value}`)
           .join("\n")
-        summary = jorfModifyingTexteVersion.SM?.CONTENU
+        summary = jorfModifyingTexteVersion.SM?.CONTENU?.replace(
+          /<br\s*\/>/gi,
+          "\n",
+        )
       } else if (modifyingTextId.startsWith("LEGITEXT")) {
         const legiModifyingTexteVersion =
           modifyingTexteVersion as LegiTexteVersion
@@ -945,7 +961,7 @@ async function generateSectionTaGitDirectory(
 
             ###### ${articleTitle}
 
-            ${article.BLOC_TEXTUEL?.CONTENU}
+            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
           ` + "\n",
       )
       await git.add({
@@ -1091,7 +1107,7 @@ async function generateTextGitDirectory(
 
             ###### ${articleTitle}
 
-            ${article.BLOC_TEXTUEL?.CONTENU.replaceAll("<<", "«").replaceAll(">>", "»")}
+            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
           ` + "\n",
       )
       await git.add({
@@ -1138,9 +1154,9 @@ async function generateTextGitDirectory(
 
   const readmeBlocks = [
     `${"#".repeat(Math.min(depth, 6))} ${texteTitle}`,
-    texteVersion.VISAS?.CONTENU,
+    await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
     readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
-    texteVersion.SIGNATAIRES?.CONTENU,
+    await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
   ].filter((block) => block != null)
   const readmeRepositoryRelativeFilePath = path.join(
     repositoryRelativeDir,
@@ -1164,7 +1180,7 @@ async function generateTextGitDirectory(
         ["Identifiant", texteVersion.META.META_COMMUN.ID],
         ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
         ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-        // TODO: Mettre l'URL dans le Git Tricoteuses
+        // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
         ["URL", texteVersion.META.META_COMMUN.URL],
       ]
         .filter(([, value]) => value !== undefined)

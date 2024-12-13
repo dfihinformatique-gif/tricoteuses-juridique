@@ -556,34 +556,40 @@ async function exportConsolidatedTextToGit(
     fs,
   })
 
-  // Generate main LICENSE.md file.
+  // Generate main LICENCE.md file.
   await fs.writeFile(
-    path.join(targetDir, "LICENSE.md"),
+    path.join(targetDir, "LICENCE.md"),
     dedent`
-      # Codes juridiques français sous Git
+      # Textes juridiques consolidés français sous Git
 
-      **Avertissement** : Ce projet est en cours de développement. **Il contient forcément des erreurs !**
+      **Avertissement** : Ce projet est en cours de développement. **Il peut contenir des erreurs** !
+      En cas de doute, nous vous invitons à vous référer au site [Légifrance](https://www.legifrance.gouv.fr/).
 
-      ## LICENCE
+      ## Droit d'auteur
 
-      TODO
-
-      Si cette licence ne vous convient pas, vous ne pouvez pas utiliser les données et documents de ce dépôt.
-      Par contre, vous pouvez utiliser les données originales Légifrance (cf ci-dessous).
+      Les textes de ce dépôt sont disponibles sous une licence TODO,  qui s'ajoute aux
+      conditions de réutilisation des données originales du site Légifrance, produites par
+      la Direction de l'information légale et administrative (Dila).
 
       ## Conditions de réutilisation des données originales du site Légifrance
 
-      Les données originales sont produites par la [Direction de l'information légale et administrative (Dila)](https://dila.premier-ministre.gouv.fr/).
+      Les données originales sont produites par la
+      [Direction de l'information légale et administrative (Dila)](https://dila.premier-ministre.gouv.fr/).
       Elles sont réutilisables gratuitement sous [licence ouverte v2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 
       Les réutilisateurs s’obligent à mentionner :
+
       - la paternité des données (DILA) ;
+
       - les URL d’accès longues de téléchargement :
-        * https://echanges.dila.gouv.fr/OPENDATA/JORF/
-        * https://echanges.dila.gouv.fr/OPENDATA/LEGI/
+
+        - https://echanges.dila.gouv.fr/OPENDATA/JORF/
+        - https://echanges.dila.gouv.fr/OPENDATA/LEGI/
+
       - le nom du fichier téléchargé ainsi que la date du fichier : dernières versions des fichiers des répertoires énumérés ci-dessus.
 
       Plus d'informations sur les données, provenant du site de la Dila :
+
       - https://echanges.dila.gouv.fr/OPENDATA/JORF/DILA_JORF_Presentation_20170824.pdf
       - https://echanges.dila.gouv.fr/OPENDATA/LEGI/DILA_LEGI_Presentation_20170824.pdf
 
@@ -613,7 +619,7 @@ async function exportConsolidatedTextToGit(
   )
   await git.add({
     dir: targetDir,
-    filepath: "LICENSE.md",
+    filepath: "LICENCE.md",
     fs,
   })
   // Generate main README.md file.
@@ -628,7 +634,7 @@ async function exportConsolidatedTextToGit(
   await fs.writeFile(
     path.join(targetDir, "README.md"),
     dedent`
-      # Codes juridiques français sous Git
+      # Textes juridiques consolidés français sous Git
 
       **Avertissement** : Ce projet est en cours de développement. **Il contient forcément des erreurs !**
 
@@ -645,8 +651,8 @@ async function exportConsolidatedTextToGit(
     dir: targetDir,
     fs,
     author: {
-      email: "codes_juridiques@tricoteuses.fr",
-      name: "République française",
+      email: "tricoteuses@tricoteuses.fr",
+      name: "Tricoteuses",
     },
     message: "Création du dépôt Git",
   })

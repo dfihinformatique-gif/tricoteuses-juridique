@@ -39,7 +39,7 @@ interface Context {
   articleById: Record<string, JorfArticle | LegiArticle>
   consolidatedTextCid: string
   consolidatedTextInternalIds: Set<string>
-  consolidatedTextModifyingTextsIdsByActionByDate: Record<
+  consolidatedTextModifyingTextsIdsByActionByPublicationDate: Record<
     string,
     Partial<Record<Action, Set<string>>>
   >
@@ -83,7 +83,7 @@ interface TextelrNode extends NodeBase {
 }
 
 interface TexteManquant {
-  date: string
+  publicationDate: string
 }
 
 const minDateObject = new Date("1971-01-01")
@@ -93,6 +93,7 @@ const oneDay = 24 * 60 * 60 // hours * minutes * seconds
 async function addArticleToTree(
   context: Context,
   tree: TextelrNode,
+  publicationDate: string,
   encounteredArticlesIds: Set<string>,
   lienArticle:
     | JorfTextelrLienArt
@@ -108,6 +109,7 @@ async function addArticleToTree(
   await addArticleToTreeNode(
     context,
     tree,
+    publicationDate,
     article.CONTEXTE.TEXTE.TM,
     lienArticle,
     article,
@@ -117,6 +119,7 @@ async function addArticleToTree(
 async function addArticleToTreeNode(
   context: Context,
   node: SectionTaNode | TextelrNode,
+  publicationDate: string,
   tm: JorfArticleTm | LegiArticleTm | undefined,
   lienArticle:
     | JorfTextelrLienArt
@@ -136,15 +139,15 @@ async function addArticleToTreeNode(
       const sortedTitreTmArray = tm.TITRE_TM.toSorted((titreTm1, titreTm2) =>
         titreTm1["@debut"].localeCompare(titreTm2["@debut"]),
       )
-      if (lienArticle["@debut"] < sortedTitreTmArray[0]["@debut"]) {
+      if (publicationDate < sortedTitreTmArray[0]["@debut"]) {
         // Assume that the @debut of the first TITRE_TM is wrong.
         foundTitreTm = sortedTitreTmArray[0]
-      } else if (lienArticle["@debut"] >= sortedTitreTmArray.at(-1)!["@fin"]) {
+      } else if (publicationDate >= sortedTitreTmArray.at(-1)!["@fin"]) {
         // Assume that the @fin of the last TITRE_TM is wrong.
         foundTitreTm = sortedTitreTmArray.at(-1)!
       } else {
         foundTitreTm = sortedTitreTmArray.find(
-          (titreTm) => lienArticle["@debut"] < titreTm["@fin"],
+          (titreTm) => publicationDate < titreTm["@fin"],
         )!
       }
     } else {
@@ -154,11 +157,25 @@ async function addArticleToTreeNode(
     const children = (node.children ??= [])
     const lastChild = children.at(-1)
     if (foundTitreTm["@id"] === lastChild?.titreTm["@id"]) {
-      addArticleToTreeNode(context, lastChild, tm.TM, lienArticle, article)
+      addArticleToTreeNode(
+        context,
+        lastChild,
+        publicationDate,
+        tm.TM,
+        lienArticle,
+        article,
+      )
     } else {
       const newChild: SectionTaNode = { titreTm: foundTitreTm }
       children.push(newChild)
-      addArticleToTreeNode(context, newChild, tm.TM, lienArticle, article)
+      addArticleToTreeNode(
+        context,
+        newChild,
+        publicationDate,
+        tm.TM,
+        lienArticle,
+        article,
+      )
     }
   }
 }
@@ -172,30 +189,30 @@ async function addModifyingArticleId(
   modifiedDateFin: string,
 ): Promise<void> {
   const modifyingArticle = await getOrLoadArticle(context, modifyingArticleId)
-  const modifyingArticleDateSignature =
-    modifyingArticle.CONTEXTE.TEXTE["@date_signature"]
-  if (modifyingArticleDateSignature === undefined) {
+  const modifyingArticlePublicationDate =
+    modifyingArticle.CONTEXTE.TEXTE["@date_publi"]
+  if (modifyingArticlePublicationDate === undefined) {
     throw new Error(
-      `Article modificateur ${modifyingArticleId} of ${modifiedId} has no CONTEXTE.TEXTE["@date_signature"]`,
+      `Article modificateur ${modifyingArticleId} of ${modifiedId} has no CONTEXTE.TEXTE["@date_publi"]`,
     )
   }
   if (
     action === "CREATE" &&
-    modifyingArticleDateSignature !== "2999-01-01" &&
-    modifyingArticleDateSignature > modifiedDateDebut
+    modifyingArticlePublicationDate !== "2999-01-01" &&
+    modifyingArticlePublicationDate > modifiedDateDebut
   ) {
     console.warn(
-      `Ignoring article créateur ${modifyingArticleId} because its date signature ${modifyingArticleDateSignature} doesn't match date début ${modifiedDateDebut} of ${modifiedId}`,
+      `Ignoring article créateur ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match start date ${modifiedDateDebut} of ${modifiedId}`,
     )
     return
   }
   if (
     action === "DELETE" &&
-    modifyingArticleDateSignature !== "2999-01-01" &&
-    modifyingArticleDateSignature > modifiedDateFin
+    modifyingArticlePublicationDate !== "2999-01-01" &&
+    modifyingArticlePublicationDate > modifiedDateFin
   ) {
     console.warn(
-      `Ignoring article suppresseur ${modifyingArticleId} because its date signature ${modifyingArticleDateSignature} doesn't match date fin ${modifiedDateFin} of ${modifiedId}`,
+      `Ignoring article suppresseur ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match end date ${modifiedDateFin} of ${modifiedId}`,
     )
     return
   }
@@ -215,8 +232,8 @@ async function addModifyingArticleId(
         existingModifyingArticleId,
       )
       if (
-        existingModifyingArticle.CONTEXTE.TEXTE["@date_signature"]! <
-        modifyingArticleDateSignature
+        existingModifyingArticle.CONTEXTE.TEXTE["@date_publi"]! <
+        modifyingArticlePublicationDate
       ) {
         modifyingArticleIdByAction[action] = modifyingArticleId
       }
@@ -251,41 +268,43 @@ async function addModifyingTextId(
   if (modifyingTexteVersion === null) {
     return
   }
-  const modifyingTextDateSignature =
-    modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
-  if (modifyingTextDateSignature === undefined) {
+  const modifyingTextPublicationDate =
+    modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
+  if (modifyingTextPublicationDate === undefined) {
     throw new Error(
-      `Texte modificateur ${modifyingTextId} of ${modifiedId} has no META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE`,
+      `Texte modificateur ${modifyingTextId} of ${modifiedId} has no META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI`,
     )
   }
 
   if (modifiedId.startsWith("JORFTEXT") || modifiedId.startsWith("LEGITEXT")) {
     // A consolidated text doesn't change. Only its content changes.
-    const date =
+    const publicationDate =
       modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
     const consolidatedTextModifyingTextsIdsByAction =
-      (context.consolidatedTextModifyingTextsIdsByActionByDate[date] ??= {})
+      (context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
+        publicationDate
+      ] ??= {})
     const consolidatedTextModifyingTextsIds =
       (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
     consolidatedTextModifyingTextsIds.add(modifyingTextId)
   } else {
     if (
       action === "CREATE" &&
-      modifyingTextDateSignature !== "2999-01-01" &&
-      modifyingTextDateSignature > modifiedDateDebut
+      modifyingTextPublicationDate !== "2999-01-01" &&
+      modifyingTextPublicationDate > modifiedDateDebut
     ) {
       console.warn(
-        `Ignoring creating text ${modifyingTextId} because its date signature ${modifyingTextDateSignature} doesn't match date début ${modifiedDateDebut} of ${modifiedId}`,
+        `Ignoring creating text ${modifyingTextId} because its publication date ${modifyingTextPublicationDate} doesn't match start date ${modifiedDateDebut} of ${modifiedId}`,
       )
       return
     }
     if (
       action === "DELETE" &&
-      modifyingTextDateSignature !== "2999-01-01" &&
-      modifyingTextDateSignature > modifiedDateFin
+      modifyingTextPublicationDate !== "2999-01-01" &&
+      modifyingTextPublicationDate > modifiedDateFin
     ) {
       console.warn(
-        `Ignoring texte suppresseur ${modifyingTextId} because its date signature ${modifyingTextDateSignature} doesn't match date fin ${modifiedDateFin} of ${modifiedId}`,
+        `Ignoring texte suppresseur ${modifyingTextId} because its publication date ${modifyingTextPublicationDate} doesn't match end date ${modifiedDateFin} of ${modifiedId}`,
       )
       return
     }
@@ -309,7 +328,7 @@ async function addModifyingTextId(
       ))!
       if (
         existingModifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE
-          .DATE_TEXTE! < modifyingTextDateSignature
+          .DATE_PUBLI! < modifyingTextPublicationDate
       ) {
         modifyingTextIdByAction[action] = modifyingTextId
         ;((context.idsByActionByTexteMoficateurId[modifyingTextId] ??= {})[
@@ -340,7 +359,7 @@ async function exportConsolidatedTextToGit(
     articleById: {},
     consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
     consolidatedTextInternalIds: new Set([consolidatedTextId]),
-    consolidatedTextModifyingTextsIdsByActionByDate: {},
+    consolidatedTextModifyingTextsIdsByActionByPublicationDate: {},
     currentInternalIds: new Set(),
     idsByActionByTexteMoficateurId: {},
     jorfCreatorIdById: {},
@@ -520,29 +539,28 @@ async function exportConsolidatedTextToGit(
     }
   }
 
-  const modifyingTextsIdByDate: Record<string, string[]> = {}
+  const modifyingTextsIdByPublicationDate: Record<string, string[]> = {}
   for (const modifyingTextId of modifyingTextsIds) {
-    let date: string
     let modifyingTexteVersion:
       | JorfTexteVersion
       | LegiTexteVersion
       | TexteManquant = context.texteManquantById[
       modifyingTextId
     ] as TexteManquant
+    let publicationDate: string
     if (modifyingTexteVersion === undefined) {
       modifyingTexteVersion = (await getOrLoadTexteVersion(
         context,
         modifyingTextId,
       )) as JorfTexteVersion | LegiTexteVersion
-      date =
-        modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
+      publicationDate =
+        modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
     } else {
-      date = modifyingTexteVersion.date
+      publicationDate = modifyingTexteVersion.publicationDate
     }
-    let modifyingTextsId = modifyingTextsIdByDate[date]
-    if (modifyingTextsId === undefined) {
-      modifyingTextsId = modifyingTextsIdByDate[date] = []
-    }
+    const modifyingTextsId = (modifyingTextsIdByPublicationDate[
+      publicationDate
+    ] ??= [])
     modifyingTextsId.push(modifyingTextId)
   }
 
@@ -659,10 +677,10 @@ async function exportConsolidatedTextToGit(
     message: "Création du dépôt Git",
   })
 
-  for (const [date, modifyingTextsId] of Object.entries(
-    modifyingTextsIdByDate,
+  for (const [publicationDate, modifyingTextsId] of Object.entries(
+    modifyingTextsIdByPublicationDate,
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
-    console.log(date)
+    console.log(publicationDate)
     for (const modifyingTextId of modifyingTextsId.toSorted()) {
       // Generate tree of SectionTa & articles at this date
       const t0 = performance.now()
@@ -688,7 +706,7 @@ async function exportConsolidatedTextToGit(
           .trim()
           .replace(/\s+\(\d+\)$/, "")
       } else {
-        modifyingTextTitle = `!!! Texte non trouvé ${date} !!!`
+        modifyingTextTitle = `!!! Texte non trouvé ${publicationDate} !!!`
       }
       console.log(`  ${modifyingTextId} ${modifyingTextTitle}`)
       const idsByAction =
@@ -733,6 +751,7 @@ async function exportConsolidatedTextToGit(
             await addArticleToTree(
               context,
               tree,
+              publicationDate,
               encounteredArticlesIds,
               lienArticle,
             )
@@ -770,6 +789,7 @@ async function exportConsolidatedTextToGit(
               await addArticleToTree(
                 context,
                 tree,
+                publicationDate,
                 encounteredArticlesIds,
                 lienArticle,
               )
@@ -869,8 +889,7 @@ async function exportConsolidatedTextToGit(
           .map(([key, value]) => `${key}: ${value}`)
           .join("\n")
       }
-      const dateObject = new Date(date)
-      let timestamp = Math.floor(dateObject.getTime() / 1000)
+      let timestamp = Math.floor(new Date(publicationDate).getTime() / 1000)
       if (timestamp < minDateTimestamp) {
         const diffDays = Math.round(
           Math.abs((minDateTimestamp - timestamp) / oneDay),
@@ -1654,7 +1673,7 @@ async function registerLegiArticleModifiers(
       ] ??= {})
       if (modifyingTextIdByAction.CREATE === undefined) {
         const consolidatedTextModifyingTextsIds =
-          context.consolidatedTextModifyingTextsIdsByActionByDate[
+          context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
             articleDateDebut
           ]?.CREATE
         if (consolidatedTextModifyingTextsIds !== undefined) {
@@ -1703,7 +1722,7 @@ async function registerLegiArticleModifiers(
   if (modifyingTextIdByAction.CREATE === undefined) {
     const texteManquantId = `ZZZZ TEXTE MANQUANT ${articleDateDebut}`
     context.texteManquantById[texteManquantId] ??= {
-      date: articleDateDebut,
+      publicationDate: articleDateDebut,
     }
     modifyingTextIdByAction.CREATE = texteManquantId
     ;((context.idsByActionByTexteMoficateurId[texteManquantId] ??=

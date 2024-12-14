@@ -973,6 +973,7 @@ async function generateSectionTaGitDirectory(
         dedent`
             ---
             ${[
+              ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
               ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
               ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
               ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
@@ -1119,6 +1120,7 @@ async function generateTextGitDirectory(
         dedent`
             ---
             ${[
+              ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
               ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
               ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
               ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],

@@ -565,13 +565,11 @@ async function exportConsolidatedTextToGit(
       **Avertissement** : Ce projet est en cours de développement. **Il peut contenir des erreurs** !
       En cas de doute, nous vous invitons à vous référer au site [Légifrance](https://www.legifrance.gouv.fr/).
 
-      ## Droit d'auteur
+      ## Licence
 
-      Les textes de ce dépôt sont disponibles sous une licence TODO,  qui s'ajoute aux
-      conditions de réutilisation des données originales du site Légifrance, produites par
-      la Direction de l'information légale et administrative (Dila).
+      Ce dépôt est constitué d'éléments provenant du projet Tricoteuses et de données ouvertes (Open Data) mises à disposition sur le site Légifrance.
 
-      ## Conditions de réutilisation des données originales du site Légifrance
+      ### Conditions de réutilisation des données originales du site Légifrance
 
       Les données originales sont produites par la
       [Direction de l'information légale et administrative (Dila)](https://dila.premier-ministre.gouv.fr/).
@@ -592,6 +590,10 @@ async function exportConsolidatedTextToGit(
 
       - https://echanges.dila.gouv.fr/OPENDATA/JORF/DILA_JORF_Presentation_20170824.pdf
       - https://echanges.dila.gouv.fr/OPENDATA/LEGI/DILA_LEGI_Presentation_20170824.pdf
+
+      ### Éléments propres au projet Tricoteuses
+
+      Les élements propres au projet Tricoteuses sont placés sous licence [CC-BY-SA-4.0](https://www.creativecommons.org/licenses/by-sa/4.0/deed.fr)
 
       ## Avertissement — Données à caractère personnel
 

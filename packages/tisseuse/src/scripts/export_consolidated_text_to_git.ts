@@ -901,13 +901,13 @@ async function exportConsolidatedTextToGit(
         dir: targetDir,
         fs,
         author: {
-          email: "codes_juridiques@tricoteuses.fr",
+          email: "republique@tricoteuses.fr",
           name: "République française",
           timestamp,
           timezoneOffset,
         },
         committer: {
-          email: "codes_juridiques@tricoteuses.fr",
+          email: "republique@tricoteuses.fr",
           name: "République française",
           timestamp,
           timezoneOffset,

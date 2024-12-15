@@ -129,31 +129,87 @@ async function addArticleToTreeNode(
     | LegiSectionTaLienArt,
   article: JorfArticle | LegiArticle,
 ): Promise<void> {
+  const metaArticle = article.META.META_SPEC.META_ARTICLE
+  if ((metaArticle as LegiArticleMetaArticle).ETAT === "MODIFIE_MORT_NE") {
+    // Occurs for example when a part of a law is cancelled later by another text higher in
+    // the hierarchy of norms
+    return
+  }
   if (tm === undefined) {
     // Article is directly in textelr.
     const liensArticles = (node.liensArticles ??= [])
     liensArticles.push(lienArticle as JorfTextelrLienArt | LegiTextelrLienArt)
   } else {
-    let foundTitreTm: SectionTaNode["titreTm"]
-    if (Array.isArray(tm.TITRE_TM)) {
-      // LegiArticleTm
-      const sortedTitreTmArray = tm.TITRE_TM.toSorted((titreTm1, titreTm2) =>
-        titreTm1["@debut"].localeCompare(titreTm2["@debut"]),
-      )
-      if (publicationDate < sortedTitreTmArray[0]["@debut"]) {
-        // Assume that the @debut of the first TITRE_TM is wrong.
-        foundTitreTm = sortedTitreTmArray[0]
-      } else if (publicationDate >= sortedTitreTmArray.at(-1)!["@fin"]) {
-        // Assume that the @fin of the last TITRE_TM is wrong.
-        foundTitreTm = sortedTitreTmArray.at(-1)!
-      } else {
-        foundTitreTm = sortedTitreTmArray.find(
-          (titreTm) => publicationDate < titreTm["@fin"],
-        )!
+    const articleNumber = metaArticle.NUM ?? ""
+    const initialTextJorfId = article.CONTEXTE.TEXTE["@cid"]
+    let foundTitreTm: SectionTaNode["titreTm"] | undefined = undefined
+    if (initialTextJorfId === "JORFTEXT000000571356") {
+      // Constitution du 4 octobre 1958
+      if (
+        publicationDate >= "1992-06-26" &&
+        publicationDate < "1993-07-28" &&
+        articleNumber >= "88-1" &&
+        articleNumber <= "88-4"
+      ) {
+        foundTitreTm = {
+          "@id": "LEGISCTA000006095836",
+          "@debut": "1992-06-26",
+          "@fin": "1993-07-28",
+          "#text":
+            "Titre XIV : Des Communautés européennes et de l'Union européenne.",
+        }
+      } else if (
+        publicationDate >= "1993-07-28" &&
+        publicationDate < "2008-02-05" &&
+        articleNumber >= "88-1" &&
+        articleNumber <= "88-7"
+      ) {
+        foundTitreTm = {
+          "@id": "LEGISCTA000006095837",
+          "@debut": "1993-07-28",
+          "@fin": "2008-02-06",
+          "#text":
+            "Titre XV : Des Communautés européennes et de l'Union européenne",
+        }
+      } else if (
+        publicationDate >= "2008-02-05" &&
+        publicationDate < "2999-01-01" &&
+        articleNumber >= "88-1" &&
+        articleNumber <= "88-7"
+      ) {
+        foundTitreTm = {
+          "@id": "LEGISCTA000006095838",
+          "@debut": "2008-02-05",
+          "@fin": "2999-01-01",
+          "#text": "Titre XV : De l'Union européenne",
+        }
       }
-    } else {
-      // JorfArticleTm
-      foundTitreTm = tm.TITRE_TM
+    }
+    if (foundTitreTm === undefined) {
+      const startDate =
+        metaArticle.DATE_DEBUT > publicationDate
+          ? metaArticle.DATE_DEBUT
+          : publicationDate
+      if (Array.isArray(tm.TITRE_TM)) {
+        // LegiArticleTm
+        const sortedTitreTmArray = tm.TITRE_TM.toSorted((titreTm1, titreTm2) =>
+          titreTm1["@debut"].localeCompare(titreTm2["@debut"]),
+        )
+        if (startDate < sortedTitreTmArray[0]["@debut"]) {
+          // Assume that the @debut of the first TITRE_TM is wrong.
+          foundTitreTm = sortedTitreTmArray[0]
+        } else if (startDate >= sortedTitreTmArray.at(-1)!["@fin"]) {
+          // Assume that the @fin of the last TITRE_TM is wrong.
+          foundTitreTm = sortedTitreTmArray.at(-1)!
+        } else {
+          foundTitreTm = sortedTitreTmArray.find(
+            (titreTm) => startDate < titreTm["@fin"],
+          )!
+        }
+      } else {
+        // JorfArticleTm
+        foundTitreTm = tm.TITRE_TM
+      }
     }
     const children = (node.children ??= [])
     const lastChild = children.at(-1)

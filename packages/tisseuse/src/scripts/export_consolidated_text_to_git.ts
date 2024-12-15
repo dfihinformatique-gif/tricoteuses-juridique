@@ -19,6 +19,7 @@ import type {
 } from "$lib/legal/jorf"
 import type {
   LegiArticle,
+  LegiArticleMetaArticle,
   LegiArticleTm,
   LegiSectionTa,
   LegiSectionTaLienArt,

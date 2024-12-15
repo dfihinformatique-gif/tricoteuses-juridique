@@ -68,14 +68,7 @@ export interface JorfArticle {
       URL: string
     }
     META_SPEC: {
-      META_ARTICLE: {
-        DATE_DEBUT: string
-        DATE_FIN: string
-        /// Mots-clés
-        MCS_ART?: { MC: string[] }
-        NUM?: string
-        TYPE?: JorfArticleType
-      }
+      META_ARTICLE: JorfArticleMetaArticle
     }
   }
   VERSIONS: {
@@ -97,6 +90,15 @@ export type JorfArticleEtat = (typeof allJorfArticleEtats)[number]
 
 export type JorfArticleLienArticleOrigine =
   (typeof allJorfArticleLienArticleOrigines)[number]
+
+export interface JorfArticleMetaArticle {
+  DATE_DEBUT: string
+  DATE_FIN: string
+  /// Mots-clés
+  MCS_ART?: { MC: string[] }
+  NUM?: string
+  TYPE?: JorfArticleType
+}
 
 export type JorfArticleNature = (typeof allJorfArticleNatures)[number]
 

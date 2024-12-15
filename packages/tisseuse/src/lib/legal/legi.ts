@@ -37,13 +37,7 @@ export interface LegiArticle {
       URL: string
     }
     META_SPEC: {
-      META_ARTICLE: {
-        DATE_DEBUT: string
-        DATE_FIN: string
-        ETAT?: LegiArticleEtat
-        NUM?: string
-        TYPE?: LegiArticleType
-      }
+      META_ARTICLE: LegiArticleMetaArticle
     }
   }
   NOTA?: {
@@ -84,6 +78,14 @@ export type LegiArticleLienArticleOrigine =
 export type LegiArticleLienNature = (typeof allLegiArticleLienNatures)[number]
 
 export type LegiArticleLienType = (typeof allLegiArticleLienTypes)[number]
+
+export interface LegiArticleMetaArticle {
+  DATE_DEBUT: string
+  DATE_FIN: string
+  ETAT?: LegiArticleEtat
+  NUM?: string
+  TYPE?: LegiArticleType
+}
 
 export type LegiArticleNature = (typeof allLegiArticleNatures)[number]
 

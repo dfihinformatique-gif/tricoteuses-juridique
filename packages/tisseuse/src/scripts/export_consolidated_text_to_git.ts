@@ -618,7 +618,7 @@ async function exportConsolidatedTextToGit(
   })
 
   // Generate main LICENCE.md file.
-  await fs.writeFile(
+  await writeTextFileIfChanged(
     path.join(targetDir, "LICENCE.md"),
     dedent`
       # Textes juridiques consolidés français sous Git
@@ -694,7 +694,7 @@ async function exportConsolidatedTextToGit(
     .replace(/\s+/g, " ")
     .trim()
   const consolidatedTextDirName = slugify(consolidatedTextTitle, "_")
-  await fs.writeFile(
+  await writeTextFileIfChanged(
     path.join(targetDir, "README.md"),
     dedent`
       # Textes juridiques consolidés français sous Git
@@ -878,7 +878,7 @@ async function exportConsolidatedTextToGit(
       }
 
       const t2 = performance.now()
-      await generateTextGitDirectory(
+      const changedFilesCount = await generateTextGitDirectory(
         context,
         2,
         tree,
@@ -887,106 +887,108 @@ async function exportConsolidatedTextToGit(
       )
 
       const t3 = performance.now()
-      let messageLines: string | undefined = undefined
-      let summary: string | undefined = undefined
-      if (modifyingTextId.startsWith("JORFTEXT")) {
-        const jorfModifyingTexteVersion =
-          modifyingTexteVersion as JorfTexteVersion
-        messageLines = [
-          [
-            "Autorité",
-            jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-              .AUTORITE,
-          ],
-          [
-            "Ministère",
-            jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-              .MINISTERE,
-          ],
-          ["Nature", jorfModifyingTexteVersion.META.META_COMMUN.NATURE],
-          [
-            "Date de début",
-            jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-              .DATE_DEBUT,
-          ],
-          [
-            "Date de fin",
-            jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-              .DATE_FIN,
-          ],
-          ["Identifiant", jorfModifyingTexteVersion.META.META_COMMUN.ID],
-          [
-            "NOR",
-            jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR,
-          ],
-          [
-            "Ancien identifiant",
-            jorfModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
-          ],
-          // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-          ["URL", jorfModifyingTexteVersion.META.META_COMMUN.URL],
-        ]
-          .filter(([, value]) => value !== undefined)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join("\n")
-        summary = jorfModifyingTexteVersion.SM?.CONTENU?.replace(
-          /<br\s*\/>/gi,
-          "\n",
-        )
-      } else if (modifyingTextId.startsWith("LEGITEXT")) {
-        const legiModifyingTexteVersion =
-          modifyingTexteVersion as LegiTexteVersion
-        messageLines = [
-          [
-            "État",
-            legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT,
-          ],
-          ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
-          [
-            "Date de début",
-            legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-              .DATE_DEBUT,
-          ],
-          [
-            "Date de fin",
-            legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-              .DATE_FIN,
-          ],
-          ["Identifiant", legiModifyingTexteVersion.META.META_COMMUN.ID],
-          [
-            "NOR",
-            legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR,
-          ],
-          [
-            "Ancien identifiant",
-            legiModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
-          ],
-          // TODO: Mettre l'URL dans le Git Tricoteuses
-          ["URL", legiModifyingTexteVersion.META.META_COMMUN.URL],
-        ]
-          .filter(([, value]) => value !== undefined)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join("\n")
+      if (changedFilesCount > 0) {
+        let messageLines: string | undefined = undefined
+        let summary: string | undefined = undefined
+        if (modifyingTextId.startsWith("JORFTEXT")) {
+          const jorfModifyingTexteVersion =
+            modifyingTexteVersion as JorfTexteVersion
+          messageLines = [
+            [
+              "Autorité",
+              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                .AUTORITE,
+            ],
+            [
+              "Ministère",
+              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                .MINISTERE,
+            ],
+            ["Nature", jorfModifyingTexteVersion.META.META_COMMUN.NATURE],
+            [
+              "Date de début",
+              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                .DATE_DEBUT,
+            ],
+            [
+              "Date de fin",
+              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                .DATE_FIN,
+            ],
+            ["Identifiant", jorfModifyingTexteVersion.META.META_COMMUN.ID],
+            [
+              "NOR",
+              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR,
+            ],
+            [
+              "Ancien identifiant",
+              jorfModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
+            ],
+            // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
+            ["URL", jorfModifyingTexteVersion.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
+          summary = jorfModifyingTexteVersion.SM?.CONTENU?.replace(
+            /<br\s*\/>/gi,
+            "\n",
+          )
+        } else if (modifyingTextId.startsWith("LEGITEXT")) {
+          const legiModifyingTexteVersion =
+            modifyingTexteVersion as LegiTexteVersion
+          messageLines = [
+            [
+              "État",
+              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT,
+            ],
+            ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
+            [
+              "Date de début",
+              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                .DATE_DEBUT,
+            ],
+            [
+              "Date de fin",
+              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                .DATE_FIN,
+            ],
+            ["Identifiant", legiModifyingTexteVersion.META.META_COMMUN.ID],
+            [
+              "NOR",
+              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR,
+            ],
+            [
+              "Ancien identifiant",
+              legiModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
+            ],
+            // TODO: Mettre l'URL dans le Git Tricoteuses
+            ["URL", legiModifyingTexteVersion.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")
+        }
+        await git.commit({
+          dir: targetDir,
+          fs,
+          author: {
+            email: "republique@tricoteuses.fr",
+            name: "République française",
+            timestamp,
+            timezoneOffset,
+          },
+          committer: {
+            email: "republique@tricoteuses.fr",
+            name: "République française",
+            timestamp,
+            timezoneOffset,
+          },
+          message: [modifyingTextTitle, summary, messageLines]
+            .filter((block) => block !== undefined)
+            .join("\n\n"),
+        })
       }
-      await git.commit({
-        dir: targetDir,
-        fs,
-        author: {
-          email: "republique@tricoteuses.fr",
-          name: "République française",
-          timestamp,
-          timezoneOffset,
-        },
-        committer: {
-          email: "republique@tricoteuses.fr",
-          name: "République française",
-          timestamp,
-          timezoneOffset,
-        },
-        message: [modifyingTextTitle, summary, messageLines]
-          .filter((block) => block !== undefined)
-          .join("\n\n"),
-      })
 
       const t4 = performance.now()
       console.log(`Durations: ${t1 - t0} ${t2 - t1} ${t3 - t2} ${t4 - t3}`)
@@ -1002,7 +1004,8 @@ async function generateSectionTaGitDirectory(
   parentRepositoryRelativeDir: string,
   modifyingTextId: string,
   obsoleteRepositoryRelativeFilesPaths: Set<string>,
-) {
+): Promise<number> {
+  let changedFilesCount = 0
   const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTa.ID
   let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
   if (sectionTaSlug.length > 255) {
@@ -1039,7 +1042,7 @@ async function generateSectionTaGitDirectory(
         repositoryRelativeDir,
         articleFilename,
       )
-      await fs.writeFile(
+      const fileChanged = await writeTextFileIfChanged(
         path.join(context.targetDir, articleRepositoryRelativeFilePath),
         dedent`
             ---
@@ -1063,11 +1066,14 @@ async function generateSectionTaGitDirectory(
             ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
           ` + "\n",
       )
-      await git.add({
-        dir: context.targetDir,
-        filepath: articleRepositoryRelativeFilePath,
-        fs,
-      })
+      if (fileChanged) {
+        await git.add({
+          dir: context.targetDir,
+          filepath: articleRepositoryRelativeFilePath,
+          fs,
+        })
+        changedFilesCount++
+      }
       obsoleteRepositoryRelativeFilesPaths.delete(
         articleRepositoryRelativeFilePath,
       )
@@ -1093,7 +1099,7 @@ async function generateSectionTaGitDirectory(
       const sectionTaDirName = sectionTaSlug
       readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
 
-      await generateSectionTaGitDirectory(
+      changedFilesCount += await generateSectionTaGitDirectory(
         context,
         depth + 1,
         child,
@@ -1109,7 +1115,7 @@ async function generateSectionTaGitDirectory(
     repositoryRelativeDir,
     "README.md",
   )
-  await fs.writeFile(
+  const fileChanged = await writeTextFileIfChanged(
     path.join(context.targetDir, readmeRepositoryRelativeFilePath),
     dedent`
       ---
@@ -1132,12 +1138,17 @@ async function generateSectionTaGitDirectory(
       ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
     ` + "\n",
   )
-  await git.add({
-    dir: context.targetDir,
-    filepath: readmeRepositoryRelativeFilePath,
-    fs,
-  })
+  if (fileChanged) {
+    await git.add({
+      dir: context.targetDir,
+      filepath: readmeRepositoryRelativeFilePath,
+      fs,
+    })
+    changedFilesCount++
+  }
   obsoleteRepositoryRelativeFilesPaths.delete(readmeRepositoryRelativeFilePath)
+
+  return changedFilesCount
 }
 
 async function generateTextGitDirectory(
@@ -1146,7 +1157,8 @@ async function generateTextGitDirectory(
   tree: TextelrNode,
   texteVersion: LegiTexteVersion,
   modifyingTextId: string,
-) {
+): Promise<number> {
+  let changedFilesCount = 0
   const texteTitle = (
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
@@ -1186,7 +1198,7 @@ async function generateTextGitDirectory(
         repositoryRelativeDir,
         articleFilename,
       )
-      await fs.writeFile(
+      const fileChanged = await writeTextFileIfChanged(
         path.join(context.targetDir, articleRepositoryRelativeFilePath),
         dedent`
             ---
@@ -1210,11 +1222,14 @@ async function generateTextGitDirectory(
             ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
           ` + "\n",
       )
-      await git.add({
-        dir: context.targetDir,
-        filepath: articleRepositoryRelativeFilePath,
-        fs,
-      })
+      if (fileChanged) {
+        await git.add({
+          dir: context.targetDir,
+          filepath: articleRepositoryRelativeFilePath,
+          fs,
+        })
+        changedFilesCount++
+      }
       obsoleteRepositoryRelativeFilesPaths.delete(
         articleRepositoryRelativeFilePath,
       )
@@ -1240,7 +1255,7 @@ async function generateTextGitDirectory(
       const sectionTaDirName = sectionTaSlug
       readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
 
-      await generateSectionTaGitDirectory(
+      changedFilesCount += await generateSectionTaGitDirectory(
         context,
         depth + 1,
         child,
@@ -1262,7 +1277,7 @@ async function generateTextGitDirectory(
     repositoryRelativeDir,
     "README.md",
   )
-  await fs.writeFile(
+  const fileChanged = await writeTextFileIfChanged(
     path.join(context.targetDir, readmeRepositoryRelativeFilePath),
     dedent`
       ---
@@ -1291,11 +1306,14 @@ async function generateTextGitDirectory(
       ${readmeBlocks.join("\n\n")}
     ` + "\n",
   )
-  await git.add({
-    dir: context.targetDir,
-    filepath: readmeRepositoryRelativeFilePath,
-    fs,
-  })
+  if (fileChanged) {
+    await git.add({
+      dir: context.targetDir,
+      filepath: readmeRepositoryRelativeFilePath,
+      fs,
+    })
+    changedFilesCount++
+  }
   obsoleteRepositoryRelativeFilesPaths.delete(readmeRepositoryRelativeFilePath)
 
   // Delete obsolete files and directories.
@@ -1308,6 +1326,7 @@ async function generateTextGitDirectory(
       filepath: obsoleteRepositoryRelativeFilePath,
       fs,
     })
+    changedFilesCount++
     if (
       obsoleteRepositoryRelativeFilePath === "README.md" ||
       obsoleteRepositoryRelativeFilePath.endsWith("/README.md")
@@ -1319,6 +1338,8 @@ async function generateTextGitDirectory(
       )
     }
   }
+
+  return changedFilesCount
 }
 
 async function getOrLoadArticle(
@@ -2122,6 +2143,20 @@ async function* walkStructureTree(
       }
     }
   }
+}
+
+async function writeTextFileIfChanged(
+  filePath: string,
+  text: string,
+): Promise<boolean> {
+  if (await fs.pathExists(filePath)) {
+    const existingText = await fs.readFile(filePath, { encoding: "utf-8" })
+    if (text === existingText) {
+      return false
+    }
+  }
+  await fs.writeFile(filePath, text, { encoding: "utf-8" })
+  return true
 }
 
 sade("export_consolidated_text_to_git <consolidatedTextId> <targetDir>", true)

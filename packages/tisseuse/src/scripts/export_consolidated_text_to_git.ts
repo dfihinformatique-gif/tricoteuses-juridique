@@ -44,10 +44,10 @@ interface Context {
   >
   consolidatedTextCid: string
   consolidatedTextInternalIds: Set<string>
-  // consolidatedTextModifyingTextsIdsByActionByPublicationDate: Record<
-  //   string,
-  //   Partial<Record<Action, Set<string>>>
-  // >
+  consolidatedTextModifyingTextsIdsByActionByPublicationDate: Record<
+    string,
+    Partial<Record<Action, Set<string>>>
+  >
   // Current content of a text at a given date
   currentInternalIds: Set<string>
   hasModifyingTextIdByActionByConsolidatedId: Record<
@@ -338,18 +338,18 @@ async function addModifyingTextId(
 
   if (modifiedId.startsWith("JORFTEXT") || modifiedId.startsWith("LEGITEXT")) {
     // A consolidated text doesn't change. Only its content changes.
-    // const publicationDate =
-    //   modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
-    // const consolidatedTextModifyingTextsIdsByAction =
-    //   (context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
-    //     publicationDate
-    //   ] ??= {})
-    // const consolidatedTextModifyingTextsIds =
-    //   (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
-    // consolidatedTextModifyingTextsIds.add(modifyingTextId)
-    // ;(context.hasModifyingTextIdByActionByConsolidatedId[modifiedId] ??= {})[
-    //   action
-    // ] = true
+    const publicationDate =
+      modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
+    const consolidatedTextModifyingTextsIdsByAction =
+      (context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
+        publicationDate
+      ] ??= {})
+    const consolidatedTextModifyingTextsIds =
+      (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
+    consolidatedTextModifyingTextsIds.add(modifyingTextId)
+    ;(context.hasModifyingTextIdByActionByConsolidatedId[modifiedId] ??= {})[
+      action
+    ] = true
   } else {
     // Modified object is an article.
     if (action === "CREATE" && modifiedDateDebut !== "2999-01-01") {
@@ -391,7 +391,7 @@ async function exportConsolidatedTextToGit(
     consolidatedIdsByActionByModifyingTextIdByDate: {},
     consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
     consolidatedTextInternalIds: new Set([consolidatedTextId]),
-    // consolidatedTextModifyingTextsIdsByActionByPublicationDate: {},
+    consolidatedTextModifyingTextsIdsByActionByPublicationDate: {},
     currentInternalIds: new Set(),
     hasModifyingTextIdByActionByConsolidatedId: {},
     jorfCreatorIdByConsolidatedId: {},
@@ -567,45 +567,6 @@ async function exportConsolidatedTextToGit(
       }
     }
   }
-
-  // // Sort textes modificateurs by date
-
-  // const modifyingTextsIds = new Set<string>()
-  // for (const modifyingTextIdByAction of Object.values(
-  //   context.modifyingTextIdByActionById,
-  // )) {
-  //   if (modifyingTextIdByAction.CREATE !== undefined) {
-  //     modifyingTextsIds.add(modifyingTextIdByAction.CREATE)
-  //   }
-  //   if (modifyingTextIdByAction.DELETE !== undefined) {
-  //     modifyingTextsIds.add(modifyingTextIdByAction.DELETE)
-  //   }
-  // }
-
-  // const modifyingTextsIdByPublicationDate: Record<string, string[]> = {}
-  // for (const modifyingTextId of modifyingTextsIds) {
-  //   let modifyingTexteVersion:
-  //     | JorfTexteVersion
-  //     | LegiTexteVersion
-  //     | TexteManquant = context.texteManquantById[
-  //     modifyingTextId
-  //   ] as TexteManquant
-  //   let publicationDate: string
-  //   if (modifyingTexteVersion === undefined) {
-  //     modifyingTexteVersion = (await getOrLoadTexteVersion(
-  //       context,
-  //       modifyingTextId,
-  //     )) as JorfTexteVersion | LegiTexteVersion
-  //     publicationDate =
-  //       modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
-  //   } else {
-  //     publicationDate = modifyingTexteVersion.publicationDate
-  //   }
-  //   const modifyingTextsId = (modifyingTextsIdByPublicationDate[
-  //     publicationDate
-  //   ] ??= [])
-  //   modifyingTextsId.push(modifyingTextId)
-  // }
 
   // Generation of Git repository
 
@@ -1786,54 +1747,53 @@ async function registerLegiArticleModifiers(
           )
         }
       }
-      // } else {
-      //   // If article belongs directly to a text published in JORF but at a later date than the JORF text,
-      //   // then if article has no creating text, consider that it has been created by a modifying text having the same start
-      //   // date as the article when such a text exists.
-      //   const hasModifyingTextIdByAction = (context.hasModifyingTextIdByActionByConsolidatedId[
-      //     articleId
-      //   ] ??= {})
-      //   if (!hasModifyingTextIdByAction.CREATE) {
-      //     const consolidatedTextModifyingTextsIds =
-      //       context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
-      //         articleDateDebut
-      //       ]?.CREATE
-      //     if (consolidatedTextModifyingTextsIds !== undefined) {
-      //       if (consolidatedTextModifyingTextsIds.size === 1) {
-      //         const modifyingTextId = [...consolidatedTextModifyingTextsIds][0]
-      //         await addModifyingTextId(
-      //           context,
-      //           modifyingTextId,
-      //           "CREATE",
-      //           articleId,
-      //           articleDateDebut,
-      //           articleDateFin,
-      //         )
-      //         // Delete another version of the same article that existed before the newly created one.
-      //         for (const articleVersion of article.VERSIONS.VERSION) {
-      //           if (articleVersion.LIEN_ART["@id"] === articleId) {
-      //             continue
-      //           }
-      //           if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
-      //             await addModifyingTextId(
-      //               context,
-      //               modifyingTextId,
-      //               "DELETE",
-      //               articleVersion.LIEN_ART["@id"],
-      //               articleVersion.LIEN_ART["@debut"],
-      //               articleVersion.LIEN_ART["@fin"],
-      //             )
-      //           }
-      //         }
-      //       } else {
-      //         console.log(
-      //           `Can't attach modifying article ${articleId} to a modifying text`,
-      //           `because there are several possibilities at the date ${articleDateDebut}:`,
-      //           `${[...consolidatedTextModifyingTextsIds].join(", ")}`,
-      //         )
-      //       }
-      //     }
-      //   }
+    } else {
+      // If article belongs directly to a text published in JORF but at a later date than the JORF text,
+      // then if article has no creating text, consider that it has been created by a modifying text having the same start
+      // date as the article when such a text exists.
+      const hasModifyingTextIdByAction =
+        (context.hasModifyingTextIdByActionByConsolidatedId[articleId] ??= {})
+      if (!hasModifyingTextIdByAction.CREATE) {
+        const consolidatedTextModifyingTextsIds =
+          context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
+            articleDateDebut
+          ]?.CREATE
+        if (consolidatedTextModifyingTextsIds !== undefined) {
+          if (consolidatedTextModifyingTextsIds.size === 1) {
+            const modifyingTextId = [...consolidatedTextModifyingTextsIds][0]
+            await addModifyingTextId(
+              context,
+              modifyingTextId,
+              "CREATE",
+              articleId,
+              articleDateDebut,
+              articleDateFin,
+            )
+            // Delete another version of the same article that existed before the newly created one.
+            for (const articleVersion of article.VERSIONS.VERSION) {
+              if (articleVersion.LIEN_ART["@id"] === articleId) {
+                continue
+              }
+              if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+                await addModifyingTextId(
+                  context,
+                  modifyingTextId,
+                  "DELETE",
+                  articleVersion.LIEN_ART["@id"],
+                  articleVersion.LIEN_ART["@debut"],
+                  articleVersion.LIEN_ART["@fin"],
+                )
+              }
+            }
+          } else {
+            console.log(
+              `Can't attach modifying article ${articleId} to a modifying text`,
+              `because there are several possibilities at the date ${articleDateDebut}:`,
+              `${[...consolidatedTextModifyingTextsIds].join(", ")}`,
+            )
+          }
+        }
+      }
     }
   }
 

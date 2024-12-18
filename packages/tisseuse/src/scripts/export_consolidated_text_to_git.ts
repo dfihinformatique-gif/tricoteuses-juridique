@@ -1424,7 +1424,6 @@ async function registerLegiArticleModifiers(
   article: LegiArticle,
 ): Promise<void> {
   const articleId = article.META.META_COMMUN.ID
-  if (articleId === "LEGIARTI000049255019") debugger
   const articleIds = [
     articleId,
     context.jorfCreatorIdByConsolidatedId[articleId],

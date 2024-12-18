@@ -717,15 +717,38 @@ async function exportConsolidatedTextToGit(
     }
     modifyingTexteVersionArray.sort(
       (modifyingTexteVersion1, modifyingTexteVersion2) => {
-        const publicationDate1 =
-          (modifyingTexteVersion1 as TexteManquant).publicationDate ??
-          (modifyingTexteVersion1 as JorfTexteVersion | LegiTexteVersion).META
-            .META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
-        const publicationDate2 =
-          (modifyingTexteVersion2 as TexteManquant).publicationDate ??
-          (modifyingTexteVersion2 as JorfTexteVersion | LegiTexteVersion).META
-            .META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
-        return publicationDate1.localeCompare(publicationDate2)
+        if (
+          (modifyingTexteVersion1 as TexteManquant).publicationDate !==
+          undefined
+        ) {
+          return 1
+        }
+        if (
+          (modifyingTexteVersion2 as TexteManquant).publicationDate !==
+          undefined
+        ) {
+          return -1
+        }
+        const metaTexteChronicle1 = (
+          modifyingTexteVersion1 as JorfTexteVersion | LegiTexteVersion
+        ).META.META_SPEC.META_TEXTE_CHRONICLE
+        const publicationDate1 = metaTexteChronicle1.DATE_PUBLI
+        const metaTexteChronicle2 = (
+          modifyingTexteVersion2 as JorfTexteVersion | LegiTexteVersion
+        ).META.META_SPEC.META_TEXTE_CHRONICLE
+        const publicationDate2 = metaTexteChronicle2.DATE_PUBLI
+        if (publicationDate1 !== publicationDate2) {
+          return publicationDate1.localeCompare(publicationDate2)
+        }
+        const num1 = metaTexteChronicle1.NUM
+        if (num1 === undefined) {
+          return 1
+        }
+        const num2 = metaTexteChronicle2.NUM
+        if (num2 === undefined) {
+          return -1
+        }
+        return num1.localeCompare(num2)
       },
     )
     for (const modifyingTexteVersion of modifyingTexteVersionArray) {

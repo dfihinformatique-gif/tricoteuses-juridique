@@ -253,7 +253,7 @@ async function addModifyingArticleId(
     modifyingArticle.CONTEXTE.TEXTE["@date_publi"]
   if (modifyingArticlePublicationDate === undefined) {
     throw new Error(
-      `Article modificateur ${modifyingArticleId} of ${modifiedId} has no CONTEXTE.TEXTE["@date_publi"]`,
+      `Modifying article ${modifyingArticleId} of ${modifiedId} has no CONTEXTE.TEXTE["@date_publi"]`,
     )
   }
   // if (
@@ -262,7 +262,7 @@ async function addModifyingArticleId(
   //   modifyingArticlePublicationDate > modifiedDateDebut
   // ) {
   //   console.warn(
-  //     `Ignoring article créateur ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match start date ${modifiedDateDebut} of ${modifiedId}`,
+  //     `Ignoring creating article ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match start date ${modifiedDateDebut} of ${modifiedId}`,
   //   )
   //   return
   // }
@@ -272,7 +272,7 @@ async function addModifyingArticleId(
   //   modifyingArticlePublicationDate > modifiedDateFin
   // ) {
   //   console.warn(
-  //     `Ignoring article suppresseur ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match end date ${modifiedDateFin} of ${modifiedId}`,
+  //     `Ignoring deleting article ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match end date ${modifiedDateFin} of ${modifiedId}`,
   //   )
   //   return
   // }
@@ -332,7 +332,7 @@ async function addModifyingTextId(
     modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
   if (modifyingTextPublicationDate === undefined) {
     throw new Error(
-      `Texte modificateur ${modifyingTextId} of ${modifiedId} has no META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI`,
+      `Modifying text ${modifyingTextId} of ${modifiedId} has no META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI`,
     )
   }
 
@@ -1603,7 +1603,7 @@ async function registerLegiArticleModifiers(
   if (articleLiens !== undefined) {
     for (const articleLien of articleLiens) {
       if (articleLien["@cidtexte"] === undefined) {
-        // Ignore link because it has no potential "texte modificateur".
+        // Ignore link because it has no potential modifying text.
         continue
       }
       if (articleLien["@id"]! in context.consolidatedTextInternalIds) {
@@ -1993,7 +1993,7 @@ async function registerLegiTextModifiers(
     if (texteVersionLiens !== undefined) {
       for (const texteVersionLien of texteVersionLiens) {
         if (texteVersionLien["@cidtexte"] === undefined) {
-          // Ignore link because it has no potential "texte modificateur".
+          // Ignore link because it has no potential modifying text.
           continue
         }
         if (texteVersionLien["@id"]! in context.consolidatedTextInternalIds) {

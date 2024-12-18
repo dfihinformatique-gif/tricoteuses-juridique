@@ -724,12 +724,14 @@ async function exportConsolidatedTextToGit(
     context.consolidatedIdsByActionByModifyingTextIdByDate,
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
     console.log(date)
-    let timestamp = Math.floor(new Date(date).getTime() / 1000)
+    const dateObject = new Date(date)
+    const timezoneOffset = dateObject.getTimezoneOffset() // in minutes
+    let timestamp = Math.floor(dateObject.getTime() / 1000)
     if (timestamp < minDateTimestamp) {
       const diffDays = Math.round((minDateTimestamp - timestamp) / oneDay)
       timestamp = minDateTimestamp - diffDays
     }
-    const timezoneOffset = 0
+    timestamp += timezoneOffset * 60
 
     const modifyingTexteVersionArray: Array<
       JorfTexteVersion | LegiTexteVersion | TexteManquant

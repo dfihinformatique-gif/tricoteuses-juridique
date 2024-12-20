@@ -684,6 +684,14 @@ async function exportConsolidatedTextToGit(
     author: {
       email: "tricoteuses@tricoteuses.fr",
       name: "Tricoteuses",
+      timestamp: 0,
+      timezoneOffset: -60,
+    },
+    committer: {
+      email: "republique@tricoteuses.fr",
+      name: "République française",
+      timestamp: 0,
+      timezoneOffset: -60,
     },
     message: "Création du dépôt Git",
   })

@@ -1052,26 +1052,26 @@ async function generateSectionTaGitDirectory(
       const fileChanged = await writeTextFileIfChanged(
         path.join(context.targetDir, articleRepositoryRelativeFilePath),
         dedent`
-            ---
-            ${[
-              ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
-              ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-              ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-              ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
-              ["Identifiant", articleId],
-              ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
-              // TODO: Mettre l'URL dans le Git Tricoteuses
-              ["URL", article.META.META_COMMUN.URL],
-            ]
-              .filter(([, value]) => value !== undefined)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join("\n")}
-            ---
+          ---
+          ${[
+            ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
+            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
+            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
+            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+            ["Identifiant", articleId],
+            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
+            // TODO: Mettre l'URL dans le Git Tricoteuses
+            ["URL", article.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}
+          ---
 
-            ###### ${articleTitle}
+          ###### ${articleTitle}
 
-            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
-          ` + "\n",
+          ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
+        `,
       )
       if (fileChanged) {
         await git.add({
@@ -1208,26 +1208,26 @@ async function generateTextGitDirectory(
       const fileChanged = await writeTextFileIfChanged(
         path.join(context.targetDir, articleRepositoryRelativeFilePath),
         dedent`
-            ---
-            ${[
-              ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
-              ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-              ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-              ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
-              ["Identifiant", articleId],
-              ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
-              // TODO: Mettre l'URL dans le Git Tricoteuses
-              ["URL", article.META.META_COMMUN.URL],
-            ]
-              .filter(([, value]) => value !== undefined)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join("\n")}
-            ---
+          ---
+          ${[
+            ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
+            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
+            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
+            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+            ["Identifiant", articleId],
+            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
+            // TODO: Mettre l'URL dans le Git Tricoteuses
+            ["URL", article.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}
+          ---
 
-            ###### ${articleTitle}
+          ###### ${articleTitle}
 
-            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
-          ` + "\n",
+          ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
+        `,
       )
       if (fileChanged) {
         await git.add({

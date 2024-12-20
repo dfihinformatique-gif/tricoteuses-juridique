@@ -577,106 +577,86 @@ async function exportConsolidatedTextToGit(
 
   // Generation of Git repository
 
-  await fs.remove(targetDir)
-  await fs.mkdir(targetDir, { recursive: true })
+  const repositoryDir = targetDir
+  await fs.remove(repositoryDir)
+  await fs.mkdir(repositoryDir, { recursive: true })
   await git.init({
     defaultBranch: "main",
-    dir: targetDir,
+    dir: repositoryDir,
     fs,
   })
 
-  // Generate main LICENCE.md file.
+  // Generate LICENCE.md file.
+  const licenceRepositoryRelativeFilePath = "LICENCE.md"
   await writeTextFileIfChanged(
-    path.join(targetDir, "LICENCE.md"),
+    path.join(repositoryDir, licenceRepositoryRelativeFilePath),
     dedent`
-      # Textes juridiques consolidés français sous Git
+    # Textes juridiques consolidés français sous Git
 
-      **Avertissement** : Ce projet est en cours de développement. **Il peut contenir des erreurs** !
-      En cas de doute, nous vous invitons à vous référer au site [Légifrance](https://www.legifrance.gouv.fr/).
+    **Avertissement** : Ce projet est en cours de développement. **Il peut contenir des erreurs** !
+    En cas de doute, nous vous invitons à vous référer au site [Légifrance](https://www.legifrance.gouv.fr/).
 
-      ## Licence
+    ## Licence
 
-      Ce dépôt est constitué d'éléments provenant du projet Tricoteuses et de données ouvertes (Open Data) mises à disposition sur le site Légifrance.
+    Ce dépôt est constitué d'éléments provenant du projet [Tricoteuses](https://git.tricoteuses.fr/)
+    et de données ouvertes (Open Data) mises à disposition sur le site Légifrance.
 
-      ### Conditions de réutilisation des données originales du site Légifrance
+    ### Conditions de réutilisation des données originales du site Légifrance
 
-      Les données originales sont produites par la
-      [Direction de l'information légale et administrative (Dila)](https://dila.premier-ministre.gouv.fr/).
-      Elles sont réutilisables gratuitement sous [licence ouverte v2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+    Les données originales sont produites par la
+    [Direction de l'information légale et administrative (Dila)](https://dila.premier-ministre.gouv.fr/).
+    Elles sont réutilisables gratuitement sous [licence ouverte v2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 
-      Les réutilisateurs s’obligent à mentionner :
+    Les réutilisateurs s’obligent à mentionner :
 
-      - la paternité des données (DILA) ;
+    - la paternité des données (DILA) ;
 
-      - les URL d’accès longues de téléchargement :
+    - les URL d’accès longues de téléchargement :
 
-        - https://echanges.dila.gouv.fr/OPENDATA/JORF/
-        - https://echanges.dila.gouv.fr/OPENDATA/LEGI/
+      - https://echanges.dila.gouv.fr/OPENDATA/JORF/
+      - https://echanges.dila.gouv.fr/OPENDATA/LEGI/
 
-      - le nom du fichier téléchargé ainsi que la date du fichier : dernières versions des fichiers des répertoires énumérés ci-dessus.
+    - le nom du fichier téléchargé ainsi que la date du fichier : dernières versions des fichiers des répertoires énumérés ci-dessus.
 
-      Plus d'informations sur les données, provenant du site de la Dila :
+    Plus d'informations sur les données, provenant du site de la Dila :
 
-      - https://echanges.dila.gouv.fr/OPENDATA/JORF/DILA_JORF_Presentation_20170824.pdf
-      - https://echanges.dila.gouv.fr/OPENDATA/LEGI/DILA_LEGI_Presentation_20170824.pdf
+    - https://echanges.dila.gouv.fr/OPENDATA/JORF/DILA_JORF_Presentation_20170824.pdf
+    - https://echanges.dila.gouv.fr/OPENDATA/LEGI/DILA_LEGI_Presentation_20170824.pdf
 
-      ### Éléments propres au projet Tricoteuses
+    ### Éléments propres au projet Tricoteuses
 
-      Les élements propres au projet Tricoteuses sont placés sous licence [CC-BY-SA-4.0](https://www.creativecommons.org/licenses/by-sa/4.0/deed.fr)
+    Les élements propres au projet Tricoteuses sont placés sous licence [CC-BY-SA-4.0](https://www.creativecommons.org/licenses/by-sa/4.0/deed.fr)
 
-      ## Avertissement — Données à caractère personnel
+    ## Avertissement — Données à caractère personnel
 
-      Dans le cadre de leurs missions de service public, les administrations
-      produisent ou reçoivent des informations publiques qui peuvent être
-      réutilisées par toute personne physique ou morale à d’autres fins que celles
-      de la mission de service public.
+    Dans le cadre de leurs missions de service public, les administrations
+    produisent ou reçoivent des informations publiques qui peuvent être
+    réutilisées par toute personne physique ou morale à d’autres fins que celles
+    de la mission de service public.
 
-      Lorsque ces informations contiennent des données à caractère personnel,
-      c’est-à-dire des éléments qui permettent d’identifier, directement ou
-      indirectement, une personne physique, leur réutilisation est étroitement
-      encadrée par l’article L322-2 du code des relations entre le public et
-      l’administration.
+    Lorsque ces informations contiennent des données à caractère personnel,
+    c’est-à-dire des éléments qui permettent d’identifier, directement ou
+    indirectement, une personne physique, leur réutilisation est étroitement
+    encadrée par l’article L322-2 du code des relations entre le public et
+    l’administration.
 
-      Cet article prévoit que la réutilisation d’une information publique contenant
-      des données à caractère personnel est subordonnée au respect de la loi n°
-      78-17 du 6 janvier 1978, dite « Informatique et libertés ». Il en résulte
-      notamment que lorsque les données personnelles que cette information
-      publique contient ont, préalablement à leur diffusion, fait l’objet d’une
-      anonymisation totale ou partielle, conformément à des dispositions légales ou
-      aux recommandations de la Commission nationale de l’informatique et des
-      libertés (CNIL), la réutilisation ne peut avoir pour objet ou pour effet de
-      réidentifier les personnes concernées.
-    ` + "\n",
+    Cet article prévoit que la réutilisation d’une information publique contenant
+    des données à caractère personnel est subordonnée au respect de la loi n°
+    78-17 du 6 janvier 1978, dite « Informatique et libertés ». Il en résulte
+    notamment que lorsque les données personnelles que cette information
+    publique contient ont, préalablement à leur diffusion, fait l’objet d’une
+    anonymisation totale ou partielle, conformément à des dispositions légales ou
+    aux recommandations de la Commission nationale de l’informatique et des
+    libertés (CNIL), la réutilisation ne peut avoir pour objet ou pour effet de
+    réidentifier les personnes concernées.
+  ` + "\n",
   )
   await git.add({
-    dir: targetDir,
-    filepath: "LICENCE.md",
+    dir: repositoryDir,
+    filepath: licenceRepositoryRelativeFilePath,
     fs,
   })
-  // Generate main README.md file.
-  const consolidatedTextTitle = (
-    consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
-    consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
-    consolidatedTexteVersion.META.META_COMMUN.ID
-  )
-    .replace(/\s+/g, " ")
-    .trim()
-  const consolidatedTextDirName = slugify(consolidatedTextTitle, "_")
-  await writeTextFileIfChanged(
-    path.join(targetDir, "README.md"),
-    dedent`
-      # Textes juridiques consolidés français sous Git
 
-      **Avertissement** : Ce projet est en cours de développement. **Il contient forcément des erreurs !**
-
-      - [${consolidatedTextTitle}](${consolidatedTextDirName})
-    ` + "\n",
-  )
-  await git.add({
-    dir: targetDir,
-    filepath: "README.md",
-    fs,
-  })
   // First commit of repository
   await git.commit({
     dir: targetDir,
@@ -884,7 +864,7 @@ async function exportConsolidatedTextToGit(
       const t2 = performance.now()
       const changedFilesCount = await generateTextGitDirectory(
         context,
-        2,
+        1,
         tree,
         consolidatedTexteVersion as LegiTexteVersion,
         modifyingTextId,
@@ -1173,18 +1153,16 @@ async function generateTextGitDirectory(
   )
     .replace(/\s+/g, " ")
     .trim()
-  const texteDirName = slugify(texteTitle, "_")
-  const repositoryRelativeDir = texteDirName
-  const repositoryDir = path.join(context.targetDir, repositoryRelativeDir)
+  const repositoryDir = context.targetDir
   await fs.ensureDir(repositoryDir)
   const obsoleteRepositoryRelativeFilesPaths = new Set(
-    walkDir(context.targetDir, [repositoryRelativeDir]).map(
-      (repositoryRelativeFileSplitPath) =>
-        path.join(...repositoryRelativeFileSplitPath),
+    walkDir(repositoryDir).map((repositoryRelativeFileSplitPath) =>
+      path.join(...repositoryRelativeFileSplitPath),
     ),
   )
-  const readmeLinks: Array<{ href: string; title: string }> = []
+  obsoleteRepositoryRelativeFilesPaths.delete("LICENCE.md")
 
+  const readmeLinks: Array<{ href: string; title: string }> = []
   if (tree.liensArticles !== undefined) {
     for (const lienArticle of tree.liensArticles) {
       const articleId = lienArticle["@id"]
@@ -1201,12 +1179,9 @@ async function generateTextGitDirectory(
         }
       }
       const articleFilename = `${articleSlug}.md`
-      const articleRepositoryRelativeFilePath = path.join(
-        repositoryRelativeDir,
-        articleFilename,
-      )
+      const articleRepositoryRelativeFilePath = articleFilename
       const fileChanged = await writeTextFileIfChanged(
-        path.join(context.targetDir, articleRepositoryRelativeFilePath),
+        path.join(repositoryDir, articleRepositoryRelativeFilePath),
         dedent`
           ---
           ${[
@@ -1231,7 +1206,7 @@ async function generateTextGitDirectory(
       )
       if (fileChanged) {
         await git.add({
-          dir: context.targetDir,
+          dir: repositoryDir,
           filepath: articleRepositoryRelativeFilePath,
           fs,
         })
@@ -1267,7 +1242,7 @@ async function generateTextGitDirectory(
         depth + 1,
         child,
         sectionTa,
-        repositoryRelativeDir,
+        "",
         modifyingTextId,
         obsoleteRepositoryRelativeFilesPaths,
       )
@@ -1276,46 +1251,46 @@ async function generateTextGitDirectory(
 
   const readmeBlocks = [
     `${"#".repeat(Math.min(depth, 6))} ${texteTitle}`,
+    dedent`
+      **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://git.tricoteuses.fr/)
+      de conversion à git des textes juridiques consolidés français.
+      **Il peut contenir des erreurs !**
+    `,
     await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
     readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
     await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
   ].filter((block) => block != null)
-  const readmeRepositoryRelativeFilePath = path.join(
-    repositoryRelativeDir,
-    "README.md",
-  )
-  const fileChanged = await writeTextFileIfChanged(
-    path.join(context.targetDir, readmeRepositoryRelativeFilePath),
-    dedent`
-      ---
-      ${[
-        ["État", texteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT],
-        ["Nature", texteVersion.META.META_COMMUN.NATURE],
-        [
-          "Date de début",
-          texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT,
-        ],
-        [
-          "Date de fin",
-          texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_FIN,
-        ],
-        ["Identifiant", texteVersion.META.META_COMMUN.ID],
-        ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
-        ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-        // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-        ["URL", texteVersion.META.META_COMMUN.URL],
-      ]
-        .filter(([, value]) => value !== undefined)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join("\n")}
-      ---
+  const readmeRepositoryRelativeFilePath = "README.md"
 
-      ${readmeBlocks.join("\n\n")}
-    ` + "\n",
+  const fileChanged = await writeTextFileIfChanged(
+    path.join(repositoryDir, readmeRepositoryRelativeFilePath),
+    dedent`
+    ---
+    ${[
+      ["État", texteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT],
+      ["Nature", texteVersion.META.META_COMMUN.NATURE],
+      [
+        "Date de début",
+        texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT,
+      ],
+      ["Date de fin", texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_FIN],
+      ["Identifiant", texteVersion.META.META_COMMUN.ID],
+      ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
+      ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
+      // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
+      ["URL", texteVersion.META.META_COMMUN.URL],
+    ]
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join("\n")}
+    ---
+
+    ${readmeBlocks.join("\n\n")}
+  ` + "\n",
   )
   if (fileChanged) {
     await git.add({
-      dir: context.targetDir,
+      dir: repositoryDir,
       filepath: readmeRepositoryRelativeFilePath,
       fs,
     })
@@ -1326,10 +1301,10 @@ async function generateTextGitDirectory(
   // Delete obsolete files and directories.
   for (const obsoleteRepositoryRelativeFilePath of obsoleteRepositoryRelativeFilesPaths) {
     await fs.remove(
-      path.join(context.targetDir, obsoleteRepositoryRelativeFilePath),
+      path.join(repositoryDir, obsoleteRepositoryRelativeFilePath),
     )
     await git.remove({
-      dir: context.targetDir,
+      dir: repositoryDir,
       filepath: obsoleteRepositoryRelativeFilePath,
       fs,
     })
@@ -1340,7 +1315,7 @@ async function generateTextGitDirectory(
     ) {
       await fs.remove(
         path.dirname(
-          path.join(context.targetDir, obsoleteRepositoryRelativeFilePath),
+          path.join(repositoryDir, obsoleteRepositoryRelativeFilePath),
         ),
       )
     }

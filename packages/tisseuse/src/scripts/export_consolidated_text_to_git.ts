@@ -694,6 +694,7 @@ async function exportConsolidatedTextToGit(
     }
     timestamp += timezoneOffset * 60
 
+    // Sort modifying texts at current date.
     const modifyingTexteVersionArray: Array<
       JorfTexteVersion | LegiTexteVersion | TexteManquant
     > = []
@@ -751,7 +752,11 @@ async function exportConsolidatedTextToGit(
         return num1.localeCompare(num2)
       },
     )
-    for (const modifyingTexteVersion of modifyingTexteVersionArray) {
+
+    for (const [
+      modifyingTextIndex,
+      modifyingTexteVersion,
+    ] of modifyingTexteVersionArray.entries()) {
       const t0 = performance.now()
       let modifyingTextId: string
       let modifyingTextTitle: string
@@ -972,6 +977,9 @@ async function exportConsolidatedTextToGit(
             .filter((block) => block !== undefined)
             .join("\n\n"),
         })
+      }
+      if (modifyingTextIndex === modifyingTexteVersionArray.length - 1) {
+        await git.tag({ dir: targetDir, fs, ref: date })
       }
 
       const t4 = performance.now()

@@ -7,7 +7,7 @@
 
 <main>
   <Hero
-    contributeUrl="https://git.en-root.org/tricoteuses/tricoteuses-legal-explorer"
+    contributeUrl="https://git.tricoteuses.fr/logiciels/tricoteuses-legifrance"
     summaryMenu={appMenu}
     title={$page.data.appTitle}
   >

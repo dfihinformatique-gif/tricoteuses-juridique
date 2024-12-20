@@ -13,7 +13,7 @@
 </svelte:head>
 
 <NavBar
-  contributeUrl="https://git.en-root.org/tricoteuses/tricoteuses-legal-explorer"
+  contributeUrl="https://git.tricoteuses.fr/logiciels/tricoteuses-legifrance"
   leftMenu={appMenu}
   title={$page.data.appTitle}
   url={$page.url.origin}

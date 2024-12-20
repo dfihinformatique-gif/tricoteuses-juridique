@@ -375,7 +375,14 @@ async function cleanHtmlFragment(
   return fragment === undefined
     ? undefined
     : await prettier.format(
-        fragment.replaceAll("<<", "«").replaceAll(">>", "»"),
+        fragment
+          .replaceAll("<<", "«")
+          .replaceAll(">>", "»")
+          .replace(/<p>(.*?)<\/p>/gs, "$1<br />\n\n")
+          .replace(/\s*(<br\s*\/>\s*)+/gs, "<br />\n\n")
+          .replace(/^\s*(<br\s*\/>\s*)+/gs, "")
+          .replace(/\s*(<br\s*\/>\s*)+$/gs, "")
+          .trim(),
         {
           parser: "html",
         },

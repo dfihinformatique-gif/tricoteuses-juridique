@@ -36,8 +36,15 @@ import { walkDir } from "$lib/server/file_systems"
 
 type Action = "CREATE" | "DELETE"
 
+interface ArticleCache {
+  id: string
+  markdown: string
+  repositoryRelativeFilePath: string
+}
+
 interface Context {
   articleById: Record<string, JorfArticle | LegiArticle>
+  articleCacheByNumber: Record<string, ArticleCache>
   consolidatedIdsByActionByModifyingTextIdByDate: Record<
     string,
     Record<string, Partial<Record<Action, Set<string>>>>
@@ -395,6 +402,7 @@ async function exportConsolidatedTextToGit(
 ): Promise<void> {
   const context: Context = {
     articleById: {},
+    articleCacheByNumber: {},
     consolidatedIdsByActionByModifyingTextIdByDate: {},
     consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
     consolidatedTextInternalIds: new Set([consolidatedTextId]),
@@ -868,7 +876,7 @@ async function exportConsolidatedTextToGit(
       }
 
       const t2 = performance.now()
-      const changedFilesCount = await generateTextGitDirectory(
+      const changedFilesCount = await generateTextGit(
         context,
         1,
         tree,
@@ -989,7 +997,103 @@ async function exportConsolidatedTextToGit(
   }
 }
 
-async function generateSectionTaGitDirectory(
+async function generateLiensArticlesGit(
+  context: Context,
+  liensArticles: (JorfSectionTaLienArt | LegiSectionTaLienArt)[] | undefined,
+  repositoryRelativeDir: string,
+  obsoleteRepositoryRelativeFilesPaths: Set<string>,
+): Promise<{
+  changedFilesCount: number
+  readmeLinks: Array<{ href: string; title: string }>
+}> {
+  let changedFilesCount = 0
+  const readmeLinks: Array<{ href: string; title: string }> = []
+
+  if (liensArticles !== undefined) {
+    for (const lienArticle of liensArticles) {
+      const articleId = lienArticle["@id"]
+      const article = (await getOrLoadArticle(
+        context,
+        articleId,
+      )) as LegiArticle
+      const articleNumber = article.META.META_SPEC.META_ARTICLE.NUM
+      const articleTitle = `Article ${articleNumber ?? articleId}`
+      let articleSlug = slugify(articleTitle, "_")
+      if (articleSlug.length > 252) {
+        articleSlug = articleSlug.slice(0, 251)
+        if (articleSlug.at(-1) !== "_") {
+          articleSlug += "_"
+        }
+      }
+      const articleFilename = `${articleSlug}.md`
+      const articleRepositoryRelativeFilePath = path.join(
+        repositoryRelativeDir,
+        articleFilename,
+      )
+      const articleCache =
+        articleNumber === undefined
+          ? undefined
+          : context.articleCacheByNumber[articleNumber]
+      if (
+        articleCache === undefined ||
+        articleId !== articleCache.id ||
+        articleRepositoryRelativeFilePath !==
+          articleCache.repositoryRelativeFilePath
+      ) {
+        const articleMarkdown = dedent`
+            ---
+            ${[
+              ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
+              ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
+              ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
+              ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+              ["Identifiant", articleId],
+              ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
+              // TODO: Mettre l'URL dans le Git Tricoteuses
+              ["URL", article.META.META_COMMUN.URL],
+            ]
+              .filter(([, value]) => value !== undefined)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join("\n")}
+            ---
+
+            ###### ${articleTitle}
+
+            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
+          `
+        if (articleNumber !== undefined) {
+          context.articleCacheByNumber[articleNumber] = {
+            id: articleId,
+            markdown: articleMarkdown,
+            repositoryRelativeFilePath: articleRepositoryRelativeFilePath,
+          }
+        }
+        const fileChanged = await writeTextFileIfChanged(
+          path.join(context.targetDir, articleRepositoryRelativeFilePath),
+          articleMarkdown,
+        )
+        if (fileChanged) {
+          await git.add({
+            dir: context.targetDir,
+            filepath: articleRepositoryRelativeFilePath,
+            fs,
+          })
+          changedFilesCount++
+        }
+      }
+      obsoleteRepositoryRelativeFilesPaths.delete(
+        articleRepositoryRelativeFilePath,
+      )
+      readmeLinks.push({ href: articleFilename, title: articleTitle })
+    }
+  }
+  return {
+    changedFilesCount,
+    readmeLinks,
+  }
+}
+
+async function generateSectionTaGit(
   context: Context,
   depth: number,
   sectionTaNode: SectionTaNode,
@@ -998,7 +1102,6 @@ async function generateSectionTaGitDirectory(
   modifyingTextId: string,
   obsoleteRepositoryRelativeFilesPaths: Set<string>,
 ): Promise<number> {
-  let changedFilesCount = 0
   const sectionTaTitle = sectionTa.TITRE_TA ?? sectionTa.ID
   let sectionTaSlug = slugify(sectionTaTitle.split(":")[0].trim(), "_")
   if (sectionTaSlug.length > 255) {
@@ -1013,66 +1116,15 @@ async function generateSectionTaGitDirectory(
     sectionTaDirName,
   )
   await fs.ensureDir(path.join(context.targetDir, repositoryRelativeDir))
-  const readmeLinks: Array<{ href: string; title: string }> = []
 
-  if (sectionTaNode.liensArticles !== undefined) {
-    for (const lienArticle of sectionTaNode.liensArticles) {
-      const articleId = lienArticle["@id"]
-      const article = (await getOrLoadArticle(
-        context,
-        articleId,
-      )) as LegiArticle
-      const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
-      let articleSlug = slugify(articleTitle, "_")
-      if (articleSlug.length > 252) {
-        articleSlug = articleSlug.slice(0, 251)
-        if (articleSlug.at(-1) !== "_") {
-          articleSlug += "_"
-        }
-      }
-      const articleFilename = `${articleSlug}.md`
-      const articleRepositoryRelativeFilePath = path.join(
-        repositoryRelativeDir,
-        articleFilename,
-      )
-      const fileChanged = await writeTextFileIfChanged(
-        path.join(context.targetDir, articleRepositoryRelativeFilePath),
-        dedent`
-          ---
-          ${[
-            ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
-            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
-            ["Identifiant", articleId],
-            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
-            // TODO: Mettre l'URL dans le Git Tricoteuses
-            ["URL", article.META.META_COMMUN.URL],
-          ]
-            .filter(([, value]) => value !== undefined)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n")}
-          ---
-
-          ###### ${articleTitle}
-
-          ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
-        `,
-      )
-      if (fileChanged) {
-        await git.add({
-          dir: context.targetDir,
-          filepath: articleRepositoryRelativeFilePath,
-          fs,
-        })
-        changedFilesCount++
-      }
-      obsoleteRepositoryRelativeFilesPaths.delete(
-        articleRepositoryRelativeFilePath,
-      )
-      readmeLinks.push({ href: articleFilename, title: articleTitle })
-    }
-  }
+  const liensArticlesGitGeneration = await generateLiensArticlesGit(
+    context,
+    sectionTaNode.liensArticles,
+    repositoryRelativeDir,
+    obsoleteRepositoryRelativeFilesPaths,
+  )
+  let { changedFilesCount } = liensArticlesGitGeneration
+  const { readmeLinks } = liensArticlesGitGeneration
 
   if (sectionTaNode.children !== undefined) {
     for (const child of sectionTaNode.children) {
@@ -1092,7 +1144,7 @@ async function generateSectionTaGitDirectory(
       const sectionTaDirName = sectionTaSlug
       readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
 
-      changedFilesCount += await generateSectionTaGitDirectory(
+      changedFilesCount += await generateSectionTaGit(
         context,
         depth + 1,
         child,
@@ -1144,14 +1196,13 @@ async function generateSectionTaGitDirectory(
   return changedFilesCount
 }
 
-async function generateTextGitDirectory(
+async function generateTextGit(
   context: Context,
   depth: number,
   tree: TextelrNode,
   texteVersion: LegiTexteVersion,
   modifyingTextId: string,
 ): Promise<number> {
-  let changedFilesCount = 0
   const texteTitle = (
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
@@ -1168,62 +1219,14 @@ async function generateTextGitDirectory(
   )
   obsoleteRepositoryRelativeFilesPaths.delete("LICENCE.md")
 
-  const readmeLinks: Array<{ href: string; title: string }> = []
-  if (tree.liensArticles !== undefined) {
-    for (const lienArticle of tree.liensArticles) {
-      const articleId = lienArticle["@id"]
-      const article = (await getOrLoadArticle(
-        context,
-        articleId,
-      )) as LegiArticle
-      const articleTitle = `Article ${article.META.META_SPEC.META_ARTICLE.NUM ?? articleId}`
-      let articleSlug = slugify(articleTitle, "_")
-      if (articleSlug.length > 252) {
-        articleSlug = articleSlug.slice(0, 251)
-        if (articleSlug.at(-1) !== "_") {
-          articleSlug += "_"
-        }
-      }
-      const articleFilename = `${articleSlug}.md`
-      const articleRepositoryRelativeFilePath = articleFilename
-      const fileChanged = await writeTextFileIfChanged(
-        path.join(repositoryDir, articleRepositoryRelativeFilePath),
-        dedent`
-          ---
-          ${[
-            ["État", article.META.META_SPEC.META_ARTICLE.ETAT],
-            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
-            ["Identifiant", articleId],
-            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
-            // TODO: Mettre l'URL dans le Git Tricoteuses
-            ["URL", article.META.META_COMMUN.URL],
-          ]
-            .filter(([, value]) => value !== undefined)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n")}
-          ---
-
-          ###### ${articleTitle}
-
-          ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
-        `,
-      )
-      if (fileChanged) {
-        await git.add({
-          dir: repositoryDir,
-          filepath: articleRepositoryRelativeFilePath,
-          fs,
-        })
-        changedFilesCount++
-      }
-      obsoleteRepositoryRelativeFilesPaths.delete(
-        articleRepositoryRelativeFilePath,
-      )
-      readmeLinks.push({ href: articleFilename, title: articleTitle })
-    }
-  }
+  const liensArticlesGitGeneration = await generateLiensArticlesGit(
+    context,
+    tree.liensArticles,
+    "",
+    obsoleteRepositoryRelativeFilesPaths,
+  )
+  let { changedFilesCount } = liensArticlesGitGeneration
+  const { readmeLinks } = liensArticlesGitGeneration
 
   if (tree.children !== undefined) {
     for (const child of tree.children) {
@@ -1243,7 +1246,7 @@ async function generateTextGitDirectory(
       const sectionTaDirName = sectionTaSlug
       readmeLinks.push({ href: sectionTaDirName, title: sectionTaTitle })
 
-      changedFilesCount += await generateSectionTaGitDirectory(
+      changedFilesCount += await generateSectionTaGit(
         context,
         depth + 1,
         child,

@@ -593,19 +593,23 @@ async function exportConsolidatedTextToGit(
     dedent`
     # Textes juridiques consolidés français sous Git
 
-    **Avertissement** : Ce projet est en cours de développement. **Il peut contenir des erreurs** !
-    En cas de doute, nous vous invitons à vous référer au site [Légifrance](https://www.legifrance.gouv.fr/).
+    **Avertissement** : Ce projet est en cours de développement.
+    **Il peut contenir des erreurs** ! En cas de doute, nous vous invitons
+    à vous référer au site [Légifrance](https://www.legifrance.gouv.fr/).
 
     ## Licence
 
-    Ce dépôt est constitué d'éléments provenant du projet [Tricoteuses](https://git.tricoteuses.fr/)
+    Ce dépôt est constitué d'éléments provenant du projet
+    [Tricoteuses](https://git.tricoteuses.fr/)
     et de données ouvertes (Open Data) mises à disposition sur le site Légifrance.
 
     ### Conditions de réutilisation des données originales du site Légifrance
 
     Les données originales sont produites par la
-    [Direction de l'information légale et administrative (Dila)](https://dila.premier-ministre.gouv.fr/).
-    Elles sont réutilisables gratuitement sous [licence ouverte v2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
+    [Direction de l'information légale et administrative
+    (Dila)](https://dila.premier-ministre.gouv.fr/).
+    Elles sont réutilisables gratuitement sous
+    [licence ouverte v2.0](https://www.etalab.gouv.fr/licence-ouverte-open-licence/).
 
     Les réutilisateurs s'obligent à mentionner :
 
@@ -616,7 +620,8 @@ async function exportConsolidatedTextToGit(
       - https://echanges.dila.gouv.fr/OPENDATA/JORF/
       - https://echanges.dila.gouv.fr/OPENDATA/LEGI/
 
-    - le nom du fichier téléchargé ainsi que la date du fichier : dernières versions des fichiers des répertoires énumérés ci-dessus.
+    - le nom du fichier téléchargé ainsi que la date du fichier :
+      dernières versions des fichiers des répertoires énumérés ci-dessus.
 
     Plus d'informations sur les données, provenant du site de la Dila :
 
@@ -625,7 +630,8 @@ async function exportConsolidatedTextToGit(
 
     ### Éléments propres au projet Tricoteuses
 
-    Les élements propres au projet Tricoteuses sont placés sous licence [CC-BY-SA-4.0](https://www.creativecommons.org/licenses/by-sa/4.0/deed.fr)
+    Les élements propres au projet Tricoteuses sont placés sous licence
+    [CC-BY-SA-4.0](https://www.creativecommons.org/licenses/by-sa/4.0/deed.fr)
 
     ## Avertissement — Données à caractère personnel
 

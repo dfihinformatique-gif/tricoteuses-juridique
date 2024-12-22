@@ -136,6 +136,23 @@ export interface LegiSectionTa {
   TITRE_TA?: string // Titre de la section (peut contenir des sauts de lignes à remplacer par des espaces)
 }
 
+export interface LegiMetaTexteChronicle {
+  CID: string
+  DATE_PUBLI: string
+  DATE_TEXTE: string
+  DERNIERE_MODIFICATION: string
+  NOR?: string
+  NUM?: string
+  NUM_PARUTION?: number
+  NUM_SEQUENCE?: number
+  ORIGINE_PUBLI?: string
+  PAGE_DEB_PUBLI?: number
+  PAGE_FIN_PUBLI?: number
+  VERSIONS_A_VENIR?: {
+    VERSION_A_VENIR: string[]
+  }
+}
+
 export interface LegiSectionTaLienArt {
   "@debut": string
   "@etat"?: LegiSectionTaLienArtEtat
@@ -190,33 +207,18 @@ export interface LegiTextelr {
     META_COMMUN: {
       ANCIEN_ID?: string
       ID: string
-      NATURE?: LegiTextelrNature
-      ORIGINE: LegiTextelrOrigine
+      NATURE?: LegiTexteNature
+      ORIGINE: LegiTexteOrigine
       URL: string
     }
     META_SPEC: {
-      META_TEXTE_CHRONICLE: {
-        CID: string
-        DATE_PUBLI: string
-        DATE_TEXTE: string
-        DERNIERE_MODIFICATION: string
-        NOR?: string
-        NUM?: string
-        NUM_PARUTION?: number
-        NUM_SEQUENCE?: number
-        ORIGINE_PUBLI?: string
-        PAGE_DEB_PUBLI?: number
-        PAGE_FIN_PUBLI?: number
-        VERSIONS_A_VENIR?: {
-          VERSION_A_VENIR: string[]
-        }
-      }
+      META_TEXTE_CHRONICLE: LegiMetaTexteChronicle
     }
   }
   STRUCT?: LegiTextelrStructure
   VERSIONS: {
     VERSION: Array<{
-      "@etat"?: LegiTextelrEtat
+      "@etat"?: LegiTexteEtat
       LIEN_TXT: {
         "@debut": string
         "@fin": string
@@ -227,7 +229,7 @@ export interface LegiTextelr {
   }
 }
 
-export type LegiTextelrEtat = (typeof allLegiTextelrEtats)[number]
+export type LegiTexteEtat = (typeof allLegiTexteEtats)[number]
 
 export interface LegiTextelrLienArt {
   "@debut": string
@@ -258,9 +260,9 @@ export interface LegiTextelrLienSectionTa {
 export type LegiTextelrLienSectionTaEtat =
   (typeof allLegiTextelrLienSectionTaEtats)[number]
 
-export type LegiTextelrNature = (typeof allLegiTextelrNatures)[number]
+export type LegiTexteNature = (typeof allLegiTexteNatures)[number]
 
-export type LegiTextelrOrigine = (typeof allLegiTextelrOrigines)[number]
+export type LegiTexteOrigine = (typeof allLegiTexteOrigines)[number]
 
 // Structure du LegiTextelr
 // Premier niveau de table des matières
@@ -281,32 +283,17 @@ export interface LegiTexteVersion {
       }
       ID: string
       ID_ELI?: string
-      NATURE?: LegiTexteVersionNature
-      ORIGINE: LegiTexteVersionOrigine
+      NATURE?: LegiTexteNature
+      ORIGINE: LegiTexteOrigine
       URL: string
     }
     META_SPEC: {
-      META_TEXTE_CHRONICLE: {
-        CID: string
-        DATE_PUBLI: string
-        DATE_TEXTE: string
-        DERNIERE_MODIFICATION: string
-        NOR?: string
-        NUM?: string
-        NUM_PARUTION?: number
-        NUM_SEQUENCE?: number
-        ORIGINE_PUBLI?: string
-        PAGE_DEB_PUBLI?: number
-        PAGE_FIN_PUBLI?: number
-        VERSIONS_A_VENIR?: {
-          VERSION_A_VENIR: string[]
-        }
-      }
+      META_TEXTE_CHRONICLE: LegiMetaTexteChronicle
       META_TEXTE_VERSION: {
         AUTORITE?: string
         DATE_DEBUT?: string
         DATE_FIN?: string
-        ETAT?: LegiTexteVersionEtat
+        ETAT?: LegiTexteEtat
         LIENS?: {
           LIEN: Array<LegiTexteVersionLien>
         }
@@ -337,8 +324,6 @@ export interface LegiTexteVersion {
   }
 }
 
-export type LegiTexteVersionEtat = (typeof allLegiTexteVersionEtats)[number]
-
 export interface LegiTexteVersionLien {
   "#text"?: string
   "@cidtexte"?: string // Present if and only if @id is present
@@ -357,11 +342,6 @@ export type LegiTexteVersionLienNature =
 
 export type LegiTexteVersionLienType =
   (typeof allLegiTexteVersionLienTypes)[number]
-
-export type LegiTexteVersionNature = (typeof allLegiTexteVersionNatures)[number]
-
-export type LegiTexteVersionOrigine =
-  (typeof allLegiTexteVersionOrigines)[number]
 
 export const allLegiArticleEtats = [
   "ABROGE_DIFF", // 16233
@@ -521,7 +501,7 @@ export const allLegiSectionTaTexteNatures = [
   "ORDONNANCE", // 4639
 ] as const
 
-export const allLegiTextelrEtats = [
+export const allLegiTexteEtats = [
   "ABROGE_DIFF", // 1897
   "ABROGE", // 24375
   "ANNULE", // 210
@@ -558,11 +538,12 @@ export const allLegiTextelrLienSectionTaEtats = [
   "VIGUEUR", // 48481
 ] as const
 
-export const allLegiTextelrNatures = [
+export const allLegiTexteNatures = [
   "ACCORD_FONCTION_PUBLIQUE", // 4
   "ARRETE", // 77686
   "AVIS", // 12
   "CODE", // 114
+  "CIRCULAIRE",
   "CONSTITUTION", // 3
   "CONVENTION", // 1
   "DECISION", // 12
@@ -576,18 +557,7 @@ export const allLegiTextelrNatures = [
   "ORDONNANCE", // 1520
 ] as const
 
-export const allLegiTextelrOrigines = ["LEGI"] as const
-
-export const allLegiTexteVersionEtats = [
-  "ABROGE_DIFF", // 1712
-  "ABROGE", // 23360
-  "ANNULE", // 205
-  "MODIFIE_MORT_NE", // 36
-  "MODIFIE", // 3833
-  "PERIME", // 3601
-  "VIGUEUR_DIFF", // 2073
-  "VIGUEUR", // 101189
-] as const
+export const allLegiTexteOrigines = ["LEGI"] as const
 
 export const allLegiTexteVersionLienNatures = [
   "ACCORD_FONCTION_PUBLIQUE",
@@ -643,23 +613,3 @@ export const allLegiTexteVersionLienTypes = [
   "TXT_ASSOCIE", // 4469
   "TXT_SOURCE", // 19858
 ] as const
-
-export const allLegiTexteVersionNatures = [
-  "ACCORD_FONCTION_PUBLIQUE", // 4
-  "ARRETE", // 77680
-  "AVIS", // 12
-  "CODE", // 114
-  "CONSTITUTION", // 3
-  "CONVENTION", // 1
-  "DECISION", // 12
-  "DECLARATION", // 1
-  "DECRET_LOI", // 35
-  "DECRET", // 53030
-  "DELIBERATION", // 11
-  "LOI_CONSTIT", // 19
-  "LOI_ORGANIQUE", // 111
-  "LOI", // 3457
-  "ORDONNANCE", // 1520
-] as const
-
-export const allLegiTexteVersionOrigines = ["LEGI"] as const

@@ -15,13 +15,15 @@ import {
 } from "@auditors/core"
 
 import {
-  allLegiTextelrEtats,
+  allLegiTexteEtats,
   allLegiTextelrLienArtEtats,
   allLegiTextelrLienArtOrigines,
   allLegiTextelrLienSectionTaEtats,
-  allLegiTextelrNatures,
-  allLegiTextelrOrigines,
+  allLegiTexteNatures,
+  allLegiTexteOrigines,
 } from "$lib/legal"
+
+import { auditMetaTexteChronicle } from "./texte"
 
 export const legiTextelrStats: {
   countByEtat: { [etat: string]: number }
@@ -390,7 +392,7 @@ function auditMetaCommun(
     //     (legiTextelrStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
-    auditOptions(allLegiTextelrNatures),
+    auditOptions(allLegiTexteNatures),
   )
   audit.attribute(
     data,
@@ -405,7 +407,7 @@ function auditMetaCommun(
     //     (legiTextelrStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
     // }),
-    auditOptions(allLegiTextelrOrigines),
+    auditOptions(allLegiTexteOrigines),
     auditRequire,
   )
 
@@ -432,100 +434,6 @@ function auditMetaSpec(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditMetaTexteChronicle,
     auditRequire,
-  )
-
-  return audit.reduceRemaining(data, errors, remainingKeys)
-}
-
-function auditMetaTexteChronicle(
-  audit: Audit,
-  dataUnknown: unknown,
-): [unknown, unknown] {
-  if (dataUnknown == null) {
-    return [dataUnknown, null]
-  }
-  if (typeof dataUnknown !== "object") {
-    return audit.unexpectedType(dataUnknown, "object")
-  }
-
-  const data = { ...dataUnknown }
-  const errors: { [key: string]: unknown } = {}
-  const remainingKeys = new Set(Object.keys(data))
-
-  for (const key of ["CID"]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditTrimString,
-      auditEmptyToNull,
-      auditRequire,
-    )
-  }
-  for (const key of ["DATE_PUBLI", "DATE_TEXTE", "DERNIERE_MODIFICATION"]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditFunction((date) => date.replace(/^11992-12-27$/, "1992-12-27")),
-      auditDateIso8601String,
-      auditRequire,
-    )
-  }
-  for (const key of ["NOR", "NUM"]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditSwitch(
-        [auditNumber, auditFunction((num) => num.toString())],
-        [auditTrimString, auditEmptyToNull],
-      ),
-    )
-  }
-  for (const key of [
-    "NUM_PARUTION",
-    "NUM_SEQUENCE",
-    "PAGE_DEB_PUBLI",
-    "PAGE_FIN_PUBLI",
-  ]) {
-    audit.attribute(
-      data,
-      key,
-      true,
-      errors,
-      remainingKeys,
-      auditSwitch(
-        [auditNumber, auditInteger],
-        [auditTrimString, auditEmptyToNull, auditNullish],
-      ),
-    )
-  }
-  audit.attribute(
-    data,
-    "ORIGINE_PUBLI",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-  )
-  audit.attribute(
-    data,
-    "VERSIONS_A_VENIR",
-    true,
-    errors,
-    remainingKeys,
-    auditSwitch(
-      [auditTrimString, auditEmptyToNull, auditNullish],
-      auditVersionsAVenir,
-    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -590,7 +498,7 @@ function auditVersion(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     //     (legiTextelrStats.countByEtat[etat] ?? 0) + 1
     //   return etat
     // }),
-    auditOptions(allLegiTextelrEtats),
+    auditOptions(allLegiTexteEtats),
   )
   audit.attribute(
     data,
@@ -625,35 +533,6 @@ function auditVersions(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditFunction((version) => (Array.isArray(version) ? version : [version])),
     auditCleanArray(auditVersion, auditRequire),
-    auditRequire,
-  )
-
-  return audit.reduceRemaining(data, errors, remainingKeys)
-}
-
-function auditVersionsAVenir(
-  audit: Audit,
-  dataUnknown: unknown,
-): [unknown, unknown] {
-  if (dataUnknown == null) {
-    return [dataUnknown, null]
-  }
-  if (typeof dataUnknown !== "object") {
-    return audit.unexpectedType(dataUnknown, "object")
-  }
-
-  const data = { ...dataUnknown }
-  const errors: { [key: string]: unknown } = {}
-  const remainingKeys = new Set(Object.keys(data))
-
-  audit.attribute(
-    data,
-    "VERSION_A_VENIR",
-    true,
-    errors,
-    remainingKeys,
-    auditFunction((date) => (Array.isArray(date) ? date : [date])),
-    auditCleanArray(auditDateIso8601String, auditRequire),
     auditRequire,
   )
 

@@ -119,6 +119,19 @@ export interface JorfArticleTm {
 
 export type JorfArticleType = (typeof allJorfArticleTypes)[number]
 
+export interface JorfMetaTexteChronicle {
+  CID: string
+  DATE_PUBLI: string
+  DATE_TEXTE: string
+  NOR?: string
+  NUM?: string
+  NUM_PARUTION?: number
+  NUM_SEQUENCE?: number
+  ORIGINE_PUBLI?: string
+  PAGE_DEB_PUBLI?: number
+  PAGE_FIN_PUBLI?: number
+}
+
 // Section Texte Article
 // Correspond à un niveau d'une table des matières
 export interface JorfSectionTa {
@@ -207,23 +220,12 @@ export interface JorfTextelr {
       }
       ID: string
       ID_ELI?: string
-      NATURE?: JorfTextelrNature
-      ORIGINE: JorfTextelrOrigine
+      NATURE?: JorfTexteNature
+      ORIGINE: JorfTexteOrigine
       URL: string
     }
     META_SPEC: {
-      META_TEXTE_CHRONICLE: {
-        CID: string
-        DATE_PUBLI: string
-        DATE_TEXTE: string
-        NOR?: string
-        NUM?: string
-        NUM_PARUTION?: number
-        NUM_SEQUENCE?: number
-        ORIGINE_PUBLI?: string
-        PAGE_DEB_PUBLI?: number
-        PAGE_FIN_PUBLI?: number
-      }
+      META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
     }
   }
   STRUCT?: JorfTextelrStructure
@@ -260,9 +262,9 @@ export type JorfTextelrLienArtNature =
 export type JorfTextelrLienArtOrigine =
   (typeof allJorfTextelrLienArtOrigines)[number]
 
-export type JorfTextelrNature = (typeof allJorfTextelrNatures)[number]
+export type JorfTexteNature = (typeof allJorfTexteNatures)[number]
 
-export type JorfTextelrOrigine = (typeof allJorfTextelrOrigines)[number]
+export type JorfTexteOrigine = (typeof allJorfTexteOrigines)[number]
 
 export interface JorfTextelrLienSectionTa {
   "#text"?: string
@@ -302,23 +304,12 @@ export interface JorfTexteVersion {
       }
       ID: string
       ID_ELI?: string
-      NATURE?: JorfTexteVersionNature
-      ORIGINE: JorfTexteVersionOrigine
+      NATURE?: JorfTexteNature
+      ORIGINE: JorfTexteOrigine
       URL: string
     }
     META_SPEC: {
-      META_TEXTE_CHRONICLE: {
-        CID: string
-        DATE_PUBLI: string
-        DATE_TEXTE: string
-        NOR?: string
-        NUM?: string
-        NUM_PARUTION?: number
-        NUM_SEQUENCE?: number
-        ORIGINE_PUBLI?: string
-        PAGE_DEB_PUBLI?: number
-        PAGE_FIN_PUBLI?: number
-      }
+      META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
       META_TEXTE_VERSION: {
         AUTORITE?: string
         DATE_DEBUT: string
@@ -375,11 +366,6 @@ export type JorfTexteVersionLienNature =
 
 export type JorfTexteVersionLienType =
   (typeof allJorfTexteVersionLienTypes)[number]
-
-export type JorfTexteVersionNature = (typeof allJorfTexteVersionNatures)[number]
-
-export type JorfTexteVersionOrigine =
-  (typeof allJorfTexteVersionOrigines)[number]
 
 /// Table des matières (TM) d'un Journal officiel
 export interface JoTm {
@@ -546,7 +532,7 @@ export const allJorfTextelrLienArtNatures = [] as const
 
 export const allJorfTextelrLienArtOrigines = ["JORF"] as const
 
-export const allJorfTextelrNatures = [
+export const allJorfTexteNatures = [
   "ABROGATION", // 8
   "Accord multilatéral", // 1
   "ACCORD_FONCTION_PUBLIQUE", // 4
@@ -637,7 +623,7 @@ export const allJorfTextelrNatures = [
   "VOCABULAIRE", // 169
 ] as const
 
-export const allJorfTextelrOrigines = ["JORF"] as const
+export const allJorfTexteOrigines = ["JORF"] as const
 
 export const allJorfTexteVersionLienNatures = [
   "ABROGATION", // 5
@@ -824,96 +810,3 @@ export const allJorfTexteVersionLienTypes = [
   "TXT_ASSOCIE", // 11821
   "TXT_SOURCE", // 81350
 ] as const
-
-export const allJorfTexteVersionNatures = [
-  "ABROGATION", // 8
-  "Accord multilatéral", // 1
-  "ACCORD_FONCTION_PUBLIQUE", // 4
-  "ACCORD", // 46
-  "ACTE", // 3
-  "ADDITIF", // 131
-  "ANNEXE", // 1
-  "ANNONCES", // 756
-  "ARRANGEMENT", // 1
-  "ARRET", // 65
-  "ARRETE", // 615239
-  "ARRETEAVIS", // 1
-  "ARRETEEURO", // 14
-  "ARRETEURO", // 556
-  "ATTESTATION", // 1
-  "AVENANT", // 186
-  "AVIS", // 97999
-  "AVISEURO", // 4618
-  "CANDIDAT", // 2
-  "CHARTE", // 1
-  "CIRCULAIRE", // 3532
-  "CITATION", // 494
-  "CODE", // 58
-  "COMMUNIQUE", // 17
-  "COMPLEMENT", // 2
-  "COMPOSITION", // 9
-  "CONSTITUTION", // 4
-  "CONTRAT", // 2
-  "CONVENTION", // 151
-  "DATE", // 1
-  "DECISION_CC", // 96
-  "DECISION_EURO", // 550
-  "DECISION", // 67164
-  "DECLARATION", // 20
-  "DECLARATIONEURO", // 18
-  "DECRET_LOI", // 660
-  "DECRET", // 209363
-  "DELEGATION", // 1
-  "DELIBERATION", // 3993
-  "DELIBERATIONEURO", // 36
-  "DEUXIEME", // 5
-  "DIRECTIVE_EURO", // 4249
-  "DIRECTIVE", // 13
-  "DISPOSITIONS", // 1
-  "ELECTION", // 1
-  "ELECTIONDUPRESIDENTDELAREPUBLIQU", // 2
-  "EXEQUATUR", // 174
-  "INFORMATION", // 106
-  "INFORMATIONEURO", // 1
-  "INFORMATIONS_CESE", // 285
-  "INFORMATIONS_DIVERSES", // 524
-  "INFORMATIONS_PARLEMENTAIRES", // 6042
-  "INSTRUCTION", // 158
-  "INSTRUCTIONEURO", // 524
-  "LETTRE", // 13
-  "LETTREEURO", // 15
-  "LISTE", // 5552
-  "LOI_CONSTIT", // 12
-  "LOI_ORGANIQUE", // 105
-  "LOI_PROGRAMME", // 2
-  "LOI", // 12859
-  "MEMOIRE", // 63
-  "MESSAGE", // 2
-  "MODIFICATION", // 497
-  "NOTE", // 3
-  "OBSERVATION", // 288
-  "ORDONNANCE", // 3282
-  "PREMIER", // 1
-  "PROCLAMATION", // 3
-  "PROJET", // 3
-  "PROPOSITION", // 6
-  "PROTOCOLE", // 16
-  "PUBLICATION", // 2
-  "RAPPORT", // 1968
-  "RECOMMANDATION", // 126
-  "RECTIFICATIF", // 3
-  "REGLEMENT", // 902
-  "REGLEMENTEUROPEEN", // 571
-  "RELEVE", // 3
-  "REMISE", // 121
-  "RESULTATS", // 14479
-  "SAISINE", // 392
-  "SENATUS", // 2
-  "SUSPENSION", // 1
-  "TABLEAU", // 1092
-  "TRAITE", // 5
-  "TROISIEME", // 2
-  "VOCABULAIRE", // 169
-] as const
-
-export const allJorfTexteVersionOrigines = ["JORF"] as const

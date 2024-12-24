@@ -64,7 +64,7 @@ interface Context {
   // When a LEGI article, sectionTa or text has been created by the same JORF
   // article, sectionIa or text, ID of this JORF object
   jorfCreatorIdByConsolidatedId: Record<string, string>
-  modifyingArticleIdByActionById: Record<
+  modifyingArticleIdByActionByConsolidatedId: Record<
     string,
     Partial<Record<Action, string>>
   >
@@ -361,9 +361,8 @@ async function addModifyingArticleId(
   if (modifiedId.startsWith("LEGITEXT")) {
     // A consolidated text doesn't change. Only its content changes.
   } else {
-    const modifyingArticleIdByAction = (context.modifyingArticleIdByActionById[
-      modifiedId
-    ] ??= {})
+    const modifyingArticleIdByAction =
+      (context.modifyingArticleIdByActionByConsolidatedId[modifiedId] ??= {})
     const existingModifyingArticleId = modifyingArticleIdByAction[action]
     if (existingModifyingArticleId === undefined) {
       modifyingArticleIdByAction[action] = modifyingArticleId
@@ -453,21 +452,27 @@ async function addModifyingTextId(
 async function cleanHtmlFragment(
   fragment: string | undefined,
 ): Promise<string | undefined> {
-  return fragment === undefined
-    ? undefined
-    : await prettier.format(
-        fragment
-          .replaceAll("<<", "«")
-          .replaceAll(">>", "»")
-          .replace(/<p>(.*?)<\/p>/gs, "$1<br />\n\n")
-          .replace(/\s*(<br\s*\/>\s*)+/gs, "<br />\n\n")
-          .replace(/^\s*(<br\s*\/>\s*)+/gs, "")
-          .replace(/\s*(<br\s*\/>\s*)+$/gs, "")
-          .trim(),
-        {
-          parser: "html",
-        },
-      )
+  try {
+    return fragment === undefined
+      ? undefined
+      : await prettier.format(
+          fragment
+            .replaceAll("<<", "«")
+            .replaceAll(">>", "»")
+            .replace(/<p>(.*?)<\/p>/gs, "$1<br />\n\n")
+            .replace(/\s*(<br\s*\/>\s*)+/gs, "<br />\n\n")
+            .replace(/^\s*(<br\s*\/>\s*)+/gs, "")
+            .replace(/\s*(<br\s*\/>\s*)+$/gs, "")
+            .trim(),
+          {
+            parser: "html",
+          },
+        )
+  } catch (e) {
+    console.trace(`Cleanup of following text failed:\n${fragment}`)
+    console.error(e)
+    return fragment
+  }
 }
 
 async function exportConsolidatedTextToGit(
@@ -484,7 +489,7 @@ async function exportConsolidatedTextToGit(
     currentInternalIds: new Set(),
     hasModifyingTextIdByActionByConsolidatedId: {},
     jorfCreatorIdByConsolidatedId: {},
-    modifyingArticleIdByActionById: {},
+    modifyingArticleIdByActionByConsolidatedId: {},
     sectionTaById: {},
     targetDir,
     textelrById: {},

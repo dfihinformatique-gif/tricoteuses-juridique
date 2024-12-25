@@ -34,7 +34,7 @@ import { slugify } from "$lib/strings"
 import { walkDir } from "$lib/server/file_systems"
 import { sortArticlesNumbers } from "$lib/articles"
 
-type Action = "CREATE" | "DELETE"
+type Action = (typeof actions)[number]
 
 interface ArticleCache {
   id: string
@@ -57,7 +57,7 @@ interface Context {
   >
   // Current content of a text at a given date
   currentInternalIds: Set<string>
-  hasModifyingTextIdByActionByConsolidatedId: Record<
+  hasModifyingTextIdByActionByConsolidatedArticleId: Record<
     string,
     Partial<Record<Action, boolean>>
   >
@@ -68,6 +68,7 @@ interface Context {
     string,
     Partial<Record<Action, string>>
   >
+  modifyingTextsIdsByArticleActionDate: Record<string, Set<string>>
   sectionTaById: Record<string, LegiSectionTa>
   targetDir: string
   texteManquantById: Record<string, TexteManquant>
@@ -94,6 +95,7 @@ interface TexteManquant {
   publicationDate: string
 }
 
+const actions = ["CREATE", "DELETE"] as const
 const minDateObject = new Date("1971-01-01")
 const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)
 const oneDay = 24 * 60 * 60 // hours * minutes * seconds
@@ -253,71 +255,61 @@ async function addArticleToTreeNode(
   }
 }
 
-async function addLiensArticlesToCurrentArticles(
+async function addLienArticleToCurrentArticles(
   context: Context,
   consolidatedIdsByAction: Partial<Record<Action, Set<string>>>,
   currentArticleByNumber: Record<string, JorfArticle | LegiArticle>,
-  liensArticles:
-    | LegiTextelrLienArt[]
-    | JorfSectionTaLienArt[]
-    | LegiSectionTaLienArt[]
-    | undefined,
+  action: Action,
+  lienArticle: LegiTextelrLienArt | JorfSectionTaLienArt | LegiSectionTaLienArt,
 ): Promise<void> {
-  if (liensArticles !== undefined) {
-    for (const action of ["DELETE", "CREATE"] as Action[]) {
-      for (const lienArticle of liensArticles) {
-        const articleId = lienArticle["@id"]
-        if (context.currentInternalIds.has(articleId)) {
-          if (
-            action === "DELETE" &&
-            consolidatedIdsByAction.DELETE?.has(articleId)
-          ) {
-            context.currentInternalIds.delete(articleId)
-            continue
-          }
-        } else if (consolidatedIdsByAction.CREATE?.has(articleId)) {
-          if (action === "CREATE") {
-            context.currentInternalIds.add(articleId)
-          }
-        } else {
-          continue
-        }
-        if (action === "DELETE") {
-          continue
-        }
-        const article = await getOrLoadArticle(context, articleId)
-        const metaArticle = article.META.META_SPEC.META_ARTICLE
-        if (
-          (metaArticle as LegiArticleMetaArticle).ETAT === "MODIFIE_MORT_NE"
-        ) {
-          // Occurs for example when a part of a law is cancelled later by another text higher in
-          // the hierarchy of norms
-          continue
-        }
-        const articleNumber = metaArticle.NUM as string
-        if (articleNumber === undefined) {
-          throw new Error(`Article without number: ${articleId}`)
-        }
-        const existingArticle = currentArticleByNumber[articleNumber]
-        if (
-          existingArticle !== undefined &&
-          existingArticle.META.META_COMMUN.ID !== articleId
-        ) {
-          console.error(
-            `    Article number ${articleNumber} encountered twice ${existingArticle.META.META_COMMUN.ID} & ${articleId}`,
-          )
-          // Keep only the "best" article.
-          if (
-            existingArticle.META.META_SPEC.META_ARTICLE.DATE_DEBUT <
-            metaArticle.DATE_DEBUT
-          ) {
-            currentArticleByNumber[articleNumber] = article
-          }
-        } else {
-          currentArticleByNumber[articleNumber] = article
-        }
-      }
+  const articleId = lienArticle["@id"]
+  if (context.currentInternalIds.has(articleId)) {
+    if (action === "DELETE" && consolidatedIdsByAction.DELETE?.has(articleId)) {
+      context.currentInternalIds.delete(articleId)
+      return
     }
+  } else if (consolidatedIdsByAction.CREATE?.has(articleId)) {
+    if (action === "CREATE") {
+      context.currentInternalIds.add(articleId)
+    }
+  } else {
+    return
+  }
+  if (action === "DELETE") {
+    return
+  }
+  const article = await getOrLoadArticle(context, articleId)
+  const metaArticle = article.META.META_SPEC.META_ARTICLE
+  if ((metaArticle as LegiArticleMetaArticle).ETAT === "MODIFIE_MORT_NE") {
+    // Occurs for example when a part of a law is cancelled later by another text higher in
+    // the hierarchy of norms
+    return
+  }
+  if (metaArticle.DATE_DEBUT >= metaArticle.DATE_FIN) {
+    // Ignore articles with invalid interval of dates.
+    return
+  }
+  const articleNumber = metaArticle.NUM as string
+  if (articleNumber === undefined) {
+    throw new Error(`Article without number: ${articleId}`)
+  }
+  const existingArticle = currentArticleByNumber[articleNumber]
+  if (
+    existingArticle !== undefined &&
+    existingArticle.META.META_COMMUN.ID !== articleId
+  ) {
+    console.error(
+      `    Article number ${articleNumber} encountered twice ${existingArticle.META.META_COMMUN.ID} & ${articleId}`,
+    )
+    // Keep only the "best" article.
+    if (
+      existingArticle.META.META_SPEC.META_ARTICLE.DATE_DEBUT <
+      metaArticle.DATE_DEBUT
+    ) {
+      currentArticleByNumber[articleNumber] = article
+    }
+  } else {
+    currentArticleByNumber[articleNumber] = article
   }
 }
 
@@ -427,24 +419,26 @@ async function addModifyingTextId(
     const consolidatedTextModifyingTextsIds =
       (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
     consolidatedTextModifyingTextsIds.add(modifyingTextId)
-    ;(context.hasModifyingTextIdByActionByConsolidatedId[modifiedId] ??= {})[
-      action
-    ] = true
   } else {
     // Modified object is an article.
     if (action === "CREATE" && modifiedDateDebut !== "2999-01-01") {
       ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
         modifiedDateDebut
       ] ??= {})[modifyingTextId] ??= {}).CREATE ??= new Set()).add(modifiedId)
-      ;(context.hasModifyingTextIdByActionByConsolidatedId[modifiedId] ??=
-        {}).CREATE = true
-    }
-    if (action === "DELETE" && modifiedDateFin !== "2999-01-01") {
+      ;(context.hasModifyingTextIdByActionByConsolidatedArticleId[
+        modifiedId
+      ] ??= {}).CREATE = true
+      ;(context.modifyingTextsIdsByArticleActionDate[modifiedDateDebut] ??=
+        new Set()).add(modifyingTextId)
+    } else if (action === "DELETE" && modifiedDateFin !== "2999-01-01") {
       ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
         modifiedDateFin
       ] ??= {})[modifyingTextId] ??= {}).DELETE ??= new Set()).add(modifiedId)
-      ;(context.hasModifyingTextIdByActionByConsolidatedId[modifiedId] ??=
-        {}).DELETE = true
+      ;(context.hasModifyingTextIdByActionByConsolidatedArticleId[
+        modifiedId
+      ] ??= {}).DELETE = true
+      ;(context.modifyingTextsIdsByArticleActionDate[modifiedDateFin] ??=
+        new Set()).add(modifyingTextId)
     }
   }
 }
@@ -487,9 +481,10 @@ async function exportConsolidatedTextToGit(
     consolidatedTextInternalIds: new Set([consolidatedTextId]),
     consolidatedTextModifyingTextsIdsByActionByPublicationDate: {},
     currentInternalIds: new Set(),
-    hasModifyingTextIdByActionByConsolidatedId: {},
+    hasModifyingTextIdByActionByConsolidatedArticleId: {},
     jorfCreatorIdByConsolidatedId: {},
     modifyingArticleIdByActionByConsolidatedId: {},
+    modifyingTextsIdsByArticleActionDate: {},
     sectionTaById: {},
     targetDir,
     textelrById: {},
@@ -528,36 +523,17 @@ async function exportConsolidatedTextToGit(
       context,
       context.consolidatedTextCid,
     )) as JorfTextelr
-    const { STRUCT: jorfCreatorTextelrStructure } = jorfCreatorTextelr
-    const jorfCreatorLiensArticles = jorfCreatorTextelrStructure?.LIEN_ART
-    if (jorfCreatorLiensArticles !== undefined) {
-      for (const jorfCreatorLienArticle of jorfCreatorLiensArticles) {
-        // Note: In JORF text of 1958 Constitution (JORFTEXT000000571356), for example,
-        // `num` of articles are only present in LienArticle, not in (incomplete) articles
-        // themselves.
-        const articleNumber = jorfCreatorLienArticle["@num"]
-        if (articleNumber !== undefined) {
-          jorfCreatorArticleIdByNum[articleNumber] =
-            jorfCreatorLienArticle["@id"]
-        }
-      }
-    }
-
     // Note we currently ignore JORF SectionTAs and reference only their articles.
-    for await (const { sectionTa: jorfCreatorSectionTa } of walkStructureTree(
+    for await (const jorfCreatorLienArticle of walkTextelrLiensArticles(
       context,
-      jorfCreatorTextelrStructure as JorfSectionTaStructure,
+      jorfCreatorTextelr,
     )) {
-      const jorfCreatorLiensArticles =
-        jorfCreatorSectionTa?.STRUCTURE_TA?.LIEN_ART
-      if (jorfCreatorLiensArticles !== undefined) {
-        for (const jorfCreatorLienArticle of jorfCreatorLiensArticles) {
-          const articleNumber = jorfCreatorLienArticle["@num"]
-          if (articleNumber !== undefined) {
-            jorfCreatorArticleIdByNum[articleNumber] =
-              jorfCreatorLienArticle["@id"]
-          }
-        }
+      // Note: In JORF text of 1958 Constitution (JORFTEXT000000571356), for example,
+      // `num` of articles are only present in LienArticle, not in (incomplete) articles
+      // themselves.
+      const articleNumber = jorfCreatorLienArticle["@num"]
+      if (articleNumber !== undefined) {
+        jorfCreatorArticleIdByNum[articleNumber] = jorfCreatorLienArticle["@id"]
       }
     }
   }
@@ -571,48 +547,20 @@ async function exportConsolidatedTextToGit(
   // their JORF counterparts (when JORF articles exist they should have the
   // same content as their LEGI counterparts).
 
-  const { STRUCT: consolidatedTextelrStructure } = consolidatedTextelr
-  const liensArticles = consolidatedTextelrStructure?.LIEN_ART
-  if (liensArticles !== undefined) {
-    for (const lienArticle of liensArticles) {
-      const articleId = lienArticle["@id"]
-      context.consolidatedTextInternalIds.add(articleId)
-
-      if (
-        lienArticle["@debut"] === metaTexteChronicle.DATE_PUBLI &&
-        lienArticle["@num"] !== undefined
-      ) {
-        const jorfCreatorArticleId =
-          jorfCreatorArticleIdByNum[lienArticle["@num"]]
-        if (jorfCreatorArticleId !== undefined) {
-          context.jorfCreatorIdByConsolidatedId[articleId] =
-            jorfCreatorArticleId
-        }
-      }
-    }
-  }
-
-  for await (const { sectionTa } of walkStructureTree(
+  for await (const lienArticle of walkTextelrLiensArticles(
     context,
-    consolidatedTextelrStructure as LegiSectionTaStructure,
+    consolidatedTextelr,
   )) {
-    const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
-    if (liensArticles !== undefined) {
-      for (const lienArticle of liensArticles) {
-        const articleId = lienArticle["@id"]
-        context.consolidatedTextInternalIds.add(articleId)
-
-        if (
-          lienArticle["@debut"] === metaTexteChronicle.DATE_PUBLI &&
-          lienArticle["@num"] !== undefined
-        ) {
-          const jorfCreatorArticleId =
-            jorfCreatorArticleIdByNum[lienArticle["@num"]]
-          if (jorfCreatorArticleId !== undefined) {
-            context.jorfCreatorIdByConsolidatedId[articleId] =
-              jorfCreatorArticleId
-          }
-        }
+    const articleId = lienArticle["@id"]
+    context.consolidatedTextInternalIds.add(articleId)
+    if (
+      lienArticle["@debut"] === metaTexteChronicle.DATE_PUBLI &&
+      lienArticle["@num"] !== undefined
+    ) {
+      const jorfCreatorArticleId =
+        jorfCreatorArticleIdByNum[lienArticle["@num"]]
+      if (jorfCreatorArticleId !== undefined) {
+        context.jorfCreatorIdByConsolidatedId[articleId] = jorfCreatorArticleId
       }
     }
   }
@@ -621,37 +569,91 @@ async function exportConsolidatedTextToGit(
 
   await registerLegiTextModifiers(
     context,
-    0,
     consolidatedTextelr,
     consolidatedTexteVersion,
   )
 
-  if (liensArticles !== undefined) {
-    for (const lienArticle of liensArticles) {
-      const article = (await getOrLoadArticle(
-        context,
-        lienArticle["@id"],
-      )) as LegiArticle
-      await registerLegiArticleModifiers(context, 0, article)
-    }
+  for await (const lienArticle of walkTextelrLiensArticles(
+    context,
+    consolidatedTextelr,
+  )) {
+    const article = (await getOrLoadArticle(
+      context,
+      lienArticle["@id"],
+    )) as LegiArticle
+    await registerLegiArticleModifiers(context, article)
   }
 
-  for await (const { parentsSectionTa, sectionTa } of walkStructureTree(
+  // Associate modified articles without modifying text with a modifying text that modified other articles at the same date.
+  for await (const lienArticle of walkTextelrLiensArticles(
     context,
-    consolidatedTextelrStructure as LegiSectionTaStructure,
+    consolidatedTextelr,
   )) {
-    const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
-    if (liensArticles !== undefined) {
-      for (const lienArticle of liensArticles) {
-        const article = (await getOrLoadArticle(
+    const consolidatedArticleId = lienArticle["@id"]
+    const hasModifyingTextIdByAction =
+      context.hasModifyingTextIdByActionByConsolidatedArticleId[
+        consolidatedArticleId
+      ]
+    for (const action of actions) {
+      if (!hasModifyingTextIdByAction?.[action]) {
+        const consolidatedArticle = await getOrLoadArticle(
           context,
-          lienArticle["@id"],
-        )) as LegiArticle
-        await registerLegiArticleModifiers(
-          context,
-          parentsSectionTa.length + 2,
-          article,
+          consolidatedArticleId,
         )
+        const consolidatedArticleActionDate =
+          action === "CREATE"
+            ? consolidatedArticle.META.META_SPEC.META_ARTICLE.DATE_DEBUT
+            : consolidatedArticle.META.META_SPEC.META_ARTICLE.DATE_FIN
+        if (consolidatedArticleActionDate !== "2999-01-01") {
+          const modifyingTextsIds =
+            (context.modifyingTextsIdsByArticleActionDate[
+              consolidatedArticleActionDate
+            ] ??= new Set())
+          if (modifyingTextsIds.size === 0) {
+            // No modifying text can be associated with the modification of consolidated article
+            // => Create a fake one.
+            const texteManquantId = "ZZZZ TEXTE MANQUANT"
+            if (
+              context.consolidatedIdsByActionByModifyingTextIdByDate[
+                consolidatedArticleActionDate
+              ]?.[texteManquantId] === undefined
+            ) {
+              context.texteManquantById[texteManquantId] ??= {
+                publicationDate: consolidatedArticleActionDate,
+              }
+            }
+            modifyingTextsIds.add(texteManquantId)
+            ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
+              consolidatedArticleActionDate
+            ] ??= {})[texteManquantId] ??= {})[action] ??= new Set()).add(
+              consolidatedArticleId,
+            )
+          } else if (modifyingTextsIds.size === 1) {
+            // There is only one modifying text for this date => use it.
+            const modifyingTextId = modifyingTextsIds.values().next()
+              .value as string
+            ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
+              consolidatedArticleActionDate
+            ] ??= {})[modifyingTextId] ??= {})[action] ??= new Set()).add(
+              consolidatedArticleId,
+            )
+          } else {
+            // Several text modify different consolidated articles at this date.
+            // Try to find the best one.
+            // This could be:
+            // - one of the texts whose publication date is the nearest before this date
+            // - the text that modifies the most articles at this date
+            // …
+            // TODO: Improve heuristic.
+            const modifyingTextId = modifyingTextsIds.values().next()
+              .value as string
+            ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
+              consolidatedArticleActionDate
+            ] ??= {})[modifyingTextId] ??= {})[action] ??= new Set()).add(
+              consolidatedArticleId,
+            )
+          }
+        }
       }
     }
   }
@@ -879,22 +881,19 @@ async function exportConsolidatedTextToGit(
       const t1 = performance.now()
       const currentArticleByNumber: Record<string, JorfArticle | LegiArticle> =
         {}
-      await addLiensArticlesToCurrentArticles(
-        context,
-        consolidatedIdsByAction,
-        currentArticleByNumber,
-        liensArticles,
-      )
-      for await (const { sectionTa } of walkStructureTree(
-        context,
-        consolidatedTextelrStructure as LegiSectionTaStructure,
-      )) {
-        await addLiensArticlesToCurrentArticles(
+      for (const action of ["DELETE", "CREATE"] as Action[]) {
+        for await (const lienArticle of walkTextelrLiensArticles(
           context,
-          consolidatedIdsByAction,
-          currentArticleByNumber,
-          sectionTa?.STRUCTURE_TA?.LIEN_ART,
-        )
+          consolidatedTextelr,
+        )) {
+          await addLienArticleToCurrentArticles(
+            context,
+            consolidatedIdsByAction,
+            currentArticleByNumber,
+            action,
+            lienArticle,
+          )
+        }
       }
       const tree: TextelrNode = {}
       for (const [, article] of Object.entries(currentArticleByNumber).toSorted(
@@ -1411,7 +1410,6 @@ async function getOrLoadTexteVersion(
 
 async function registerLegiArticleModifiers(
   context: Context,
-  depth: number,
   article: LegiArticle,
 ): Promise<void> {
   const articleId = article.META.META_COMMUN.ID
@@ -1423,9 +1421,9 @@ async function registerLegiArticleModifiers(
   const metaArticle = articleMeta.META_SPEC.META_ARTICLE
   const articleDateDebut = metaArticle.DATE_DEBUT
   const articleDateFin = metaArticle.DATE_FIN
-  console.log(
-    `${articleMeta.META_COMMUN.ID} ${"  ".repeat(depth)}Article ${metaArticle.NUM} (${articleDateDebut} — ${articleDateFin === "2999-01-01" ? "…" : articleDateFin}, ${metaArticle.ETAT})`,
-  )
+  // console.log(
+  //   `${articleMeta.META_COMMUN.ID} ${"  ".repeat(depth)}Article ${metaArticle.NUM} (${articleDateDebut} — ${articleDateFin === "2999-01-01" ? "…" : articleDateFin}, ${metaArticle.ETAT})`,
+  // )
 
   // if (jorfCreatorId !== undefined) {
   //   await addModifyingArticleId(
@@ -1462,9 +1460,9 @@ async function registerLegiArticleModifiers(
       continue
     }
 
-    console.log(
-      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
-    )
+    // console.log(
+    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
+    // )
     assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
     assert(articleLien.article_id.startsWith("LEGIARTI"))
     if (
@@ -1555,9 +1553,9 @@ async function registerLegiArticleModifiers(
       continue
     }
 
-    console.log(
-      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
-    )
+    // console.log(
+    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
+    // )
     assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
     assert(
       texteVersionLien.texte_version_id.startsWith("JORFTEXT") ||
@@ -1643,9 +1641,9 @@ async function registerLegiArticleModifiers(
         continue
       }
 
-      console.log(
-        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${articleLien["@sens"]} typelien: ${articleLien["@typelien"]} ${articleLien["@cidtexte"]} ${articleLien["@id"]}${articleLien["@nortexte"] === undefined ? "" : ` ${articleLien["@nortexte"]}`}${articleLien["@num"] === undefined ? "" : ` ${articleLien["@num"]}`} ${articleLien["@naturetexte"]} du ${articleLien["@datesignatexte"]} : ${articleLien["#text"]}`,
-      )
+      // console.log(
+      //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${articleLien["@sens"]} typelien: ${articleLien["@typelien"]} ${articleLien["@cidtexte"]} ${articleLien["@id"]}${articleLien["@nortexte"] === undefined ? "" : ` ${articleLien["@nortexte"]}`}${articleLien["@num"] === undefined ? "" : ` ${articleLien["@num"]}`} ${articleLien["@naturetexte"]} du ${articleLien["@datesignatexte"]} : ${articleLien["#text"]}`,
+      // )
       if (
         (articleLien["@typelien"] === "ABROGATION" &&
           articleLien["@sens"] === "source") ||
@@ -1784,7 +1782,9 @@ async function registerLegiArticleModifiers(
       // then if article has no creating text, consider that it has been created by a modifying text having the same start
       // date as the article when such a text exists.
       const hasModifyingTextIdByAction =
-        (context.hasModifyingTextIdByActionByConsolidatedId[articleId] ??= {})
+        (context.hasModifyingTextIdByActionByConsolidatedArticleId[
+          articleId
+        ] ??= {})
       if (!hasModifyingTextIdByAction.CREATE) {
         const consolidatedTextModifyingTextsIds =
           context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
@@ -1829,50 +1829,12 @@ async function registerLegiArticleModifiers(
     }
   }
 
-  // If article still has no creating text at all, then create a fake one.
-  const hasModifyingTextIdByAction =
-    (context.hasModifyingTextIdByActionByConsolidatedId[articleId] ??= {})
-  if (!hasModifyingTextIdByAction.CREATE && articleDateDebut !== "2999-01-01") {
-    const texteManquantId = "ZZZZ TEXTE MANQUANT"
-    if (
-      context.consolidatedIdsByActionByModifyingTextIdByDate[
-        articleDateDebut
-      ]?.[texteManquantId] === undefined
-    ) {
-      context.texteManquantById[texteManquantId] ??= {
-        publicationDate: articleDateDebut,
-      }
-    }
-    hasModifyingTextIdByAction.CREATE = true
-    ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-      articleDateDebut
-    ] ??= {})[texteManquantId] ??= {}).CREATE ??= new Set()).add(articleId)
-    // Delete another version of the same article that existed before the newly created one.
-    for (const articleVersion of article.VERSIONS.VERSION) {
-      if (articleVersion.LIEN_ART["@id"] === articleId) {
-        continue
-      }
-      if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
-        const hasModifyingTextIdByAction =
-          (context.hasModifyingTextIdByActionByConsolidatedId[
-            articleVersion.LIEN_ART["@id"]
-          ] ??= {})
-        if (!hasModifyingTextIdByAction.DELETE) {
-          hasModifyingTextIdByAction.DELETE = true
-          ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-            articleVersion.LIEN_ART["@fin"]
-          ] ??= {})[texteManquantId] ??= {}).DELETE ??= new Set()).add(
-            articleVersion.LIEN_ART["@id"],
-          )
-        }
-      }
-    }
-  }
+  // If article still has no creating/deleting text, then do nothing yet.
+  // Another tentative to associate with modifying texts is done later.
 }
 
 async function registerLegiTextModifiers(
   context: Context,
-  depth: number,
   textelr: LegiTextelr,
   texteVersion: LegiTexteVersion,
 ): Promise<void> {
@@ -1886,9 +1848,9 @@ async function registerLegiTextModifiers(
     texteVersionMeta.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT
   const texteVersionDateFin =
     texteVersionMeta.META_SPEC.META_TEXTE_VERSION.DATE_FIN
-  console.log(
-    `${legiTextId} ${"  ".repeat(depth)} ${(texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITREFULL ?? texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITRE ?? texteVersionMeta.META_COMMUN.ID).replace(/\s+/g, " ").trim()}`,
-  )
+  // console.log(
+  //   `${legiTextId} ${"  ".repeat(depth)} ${(texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITREFULL ?? texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITRE ?? texteVersionMeta.META_COMMUN.ID).replace(/\s+/g, " ").trim()}`,
+  // )
 
   for (const articleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id IN ${db(textIds)}
@@ -1898,9 +1860,9 @@ async function registerLegiTextModifiers(
       continue
     }
 
-    console.log(
-      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
-    )
+    // console.log(
+    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
+    // )
     assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
     if (articleLien.typelien === "ABROGATION" && articleLien.cible) {
       await addModifyingArticleId(
@@ -1961,9 +1923,9 @@ async function registerLegiTextModifiers(
       continue
     }
 
-    console.log(
-      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
-    )
+    // console.log(
+    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
+    // )
     assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
     // if () {
     //   await addModifyingTextId(
@@ -2032,9 +1994,9 @@ async function registerLegiTextModifiers(
           continue
         }
 
-        console.log(
-          `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${texteVersionLien["@sens"]} typelien: ${texteVersionLien["@typelien"]} ${texteVersionLien["@cidtexte"]} ${texteVersionLien["@id"]}${texteVersionLien["@nortexte"] === undefined ? "" : ` ${texteVersionLien["@nortexte"]}`}${texteVersionLien["@num"] === undefined ? "" : ` ${texteVersionLien["@num"]}`} ${texteVersionLien["@naturetexte"]} du ${texteVersionLien["@datesignatexte"]} : ${texteVersionLien["#text"]}`,
-        )
+        // console.log(
+        //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${texteVersionLien["@sens"]} typelien: ${texteVersionLien["@typelien"]} ${texteVersionLien["@cidtexte"]} ${texteVersionLien["@id"]}${texteVersionLien["@nortexte"] === undefined ? "" : ` ${texteVersionLien["@nortexte"]}`}${texteVersionLien["@num"] === undefined ? "" : ` ${texteVersionLien["@num"]}`} ${texteVersionLien["@naturetexte"]} du ${texteVersionLien["@datesignatexte"]} : ${texteVersionLien["#text"]}`,
+        // )
         // if () {
         //   await addModifyingTextId(
         //     context,
@@ -2131,6 +2093,26 @@ async function* walkStructureTree(
           childSectionTa,
         ])
       }
+    }
+  }
+}
+
+async function* walkTextelrLiensArticles(
+  context: Context,
+  textelr: JorfTextelr | LegiTextelr,
+): AsyncGenerator<JorfSectionTaLienArt | LegiSectionTaLienArt> {
+  const structure = textelr.STRUCT
+  const liensArticles = structure?.LIEN_ART
+  if (liensArticles !== undefined) {
+    yield* liensArticles
+  }
+  for await (const { sectionTa } of walkStructureTree(
+    context,
+    structure as JorfSectionTaStructure | LegiSectionTaStructure,
+  )) {
+    const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
+    if (liensArticles !== undefined) {
+      yield* liensArticles
     }
   }
 }

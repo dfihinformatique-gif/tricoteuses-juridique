@@ -1,4 +1,10 @@
-const articleNumberRegExp = /^(PREAMBULE|[LR]?\d+)$/
+// A: Arrêté
+// D: Décret
+// L: Législatif
+// LO: Article créé par une loi organique
+// R: Règlemntaire
+const articleNumberRegExp =
+  /^préliminaire|PREAMBULE|((Annexe (à l')article )?([ADLR]|LO)?(1er|\d+))$/
 
 // TODO improve
 const numberBySemelBisTerEtc: Record<string, number> = {
@@ -81,18 +87,37 @@ const numberBySemelBisTerEtc: Record<string, number> = {
 const semelBisTerEtcRegExp =
   /^(?:un(?:de?)?|duo(?:de)?|ter|quater|quin|sex?|sept|octo|novo)?(?:dec|v[ei]c|tr[ei]c|quadrag|quinquag|sexag|septuag|octog|nonag)ies|semel|bis|ter|quater|(?:quinqu|sex|sept|oct|no[nv])ies$/
 
+function articleNumberSegmentToNumber(articleNumber: string): number {
+  return articleNumber === "PREAMBULE"
+    ? -2
+    : articleNumber === "préliminaire"
+      ? -1
+      : articleNumber[0] === "L"
+        ? articleNumber[1] === "O" // loi organique
+          ? parseInt(articleNumber.slice(2)) - 2_000_000
+          : parseInt(articleNumber.slice(1)) - 1_000_000 // législatif
+        : articleNumber[0] === "R" // règlementaire
+          ? parseInt(articleNumber.slice(1)) + 1_000_000
+          : articleNumber[0] === "D" // décret
+            ? parseInt(articleNumber.slice(1)) + 2_000_000
+            : articleNumber[0] === "A" // arrêté
+              ? parseInt(articleNumber.slice(1)) + 3_000_000
+              : parseInt(articleNumber)
+}
+
 function articleNumberSegmentToPriorityAndNumber(
   segment: string,
 ): [number, number] {
   for (const [priority, [regExp, numberExtractor]] of (
     [
-      [articleNumberRegExp, (s) => articleNumberToNumber(s)],
+      [articleNumberRegExp, (s) => articleNumberSegmentToNumber(s)],
       [
         /^[A-Z]$/,
         (s) =>
           [...s].reduce((sum, letter) => sum * 256 + letter.charCodeAt(0), 0),
       ],
       [semelBisTerEtcRegExp, (s) => numberBySemelBisTerEtc[s] ?? 9999],
+      [/^Annexe article$/, () => 1],
     ] as Array<[RegExp, (s: string) => number]>
   ).entries()) {
     if (regExp.test(segment)) {
@@ -102,21 +127,23 @@ function articleNumberSegmentToPriorityAndNumber(
   throw new Error(`Unexpected segment in article number: "${segment}"`)
 }
 
-function articleNumberToNumber(articleNumber: string): number {
-  return articleNumber === "PREAMBULE"
-    ? -1
-    : articleNumber[0] === "L"
-      ? parseInt(articleNumber.slice(1)) - 1_000_000
-      : articleNumber[0] === "R"
-        ? parseInt(articleNumber.slice(1)) + 1_000_000
-        : parseInt(articleNumber)
-}
-
 function splitArticleNumber(articleNumber: string): string[] {
+  let annexe = false
+  if (articleNumber.startsWith("Annexe à l'article ")) {
+    annexe = true
+    articleNumber = articleNumber.replace(/^Annexe à l'article /, "")
+  } else if (articleNumber.startsWith("Annexe article ")) {
+    annexe = true
+    articleNumber = articleNumber.replace(/^Annexe article /, "")
+  }
   const segments = articleNumber
     .trim()
     .split(/\s+|-/)
     .filter((segment) => segment !== "")
+    .map((segment) => segment.replace(/^1er$/, "1"))
+  if (annexe) {
+    segments.push("Annexe article")
+  }
   return segments.reduce((segments: string[], segment: string) => {
     if (/^[A-Z]{2,3}$/.test(segment)) {
       segments.push(...segment)

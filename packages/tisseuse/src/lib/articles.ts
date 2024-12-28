@@ -117,7 +117,7 @@ function articleNumberSegmentToPriorityAndNumber(
           [...s].reduce((sum, letter) => sum * 256 + letter.charCodeAt(0), 0),
       ],
       [semelBisTerEtcRegExp, (s) => numberBySemelBisTerEtc[s] ?? 9999],
-      [/^Annexe article$/, () => 1],
+      [/^Annexe/, () => 1],
     ] as Array<[RegExp, (s: string) => number]>
   ).entries()) {
     if (regExp.test(segment)) {
@@ -142,7 +142,7 @@ function splitArticleNumber(articleNumber: string): string[] {
     .filter((segment) => segment !== "")
     .map((segment) => segment.replace(/^1er$/, "1"))
   if (annexe) {
-    segments.push("Annexe article")
+    segments.push("Annexe")
   }
   return segments.reduce((segments: string[], segment: string) => {
     if (/^[A-Z]{2,3}$/.test(segment)) {

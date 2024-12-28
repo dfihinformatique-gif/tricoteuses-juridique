@@ -89,9 +89,9 @@ const semelBisTerEtcRegExp =
 
 function articleNumberSegmentToNumber(articleNumber: string): number {
   return articleNumber === "PREAMBULE"
-    ? -2
+    ? -4_000_000
     : articleNumber === "préliminaire"
-      ? -1
+      ? -3_000_000
       : articleNumber[0] === "L"
         ? articleNumber[1] === "O" // loi organique
           ? parseInt(articleNumber.slice(2)) - 2_000_000

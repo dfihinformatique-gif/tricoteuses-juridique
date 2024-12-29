@@ -229,7 +229,7 @@ export async function registerLegiArticleModifiers(
       articleLien.typelien === "CITATION" ||
       (articleLien.typelien === "HISTO" && articleLien.cible) ||
       (articleLien.typelien === "PEREMPTION" && articleLien.cible) ||
-      (articleLien.typelien === "PILOTE_SUIVEUR" && !articleLien.cible) ||
+      articleLien.typelien === "PILOTE_SUIVEUR" ||
       (articleLien.typelien === "SPEC_APPLI" && articleLien.cible) ||
       (articleLien.typelien === "SPEC_APPLI" && !articleLien.cible) || // LEGIARTI000006794309
       articleLien.typelien === "TXT_ASSOCIE" ||
@@ -423,8 +423,7 @@ export async function registerLegiArticleModifiers(
           articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "PEREMPTION" &&
           articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "PILOTE_SUIVEUR" &&
-          articleLien["@sens"] === "cible") ||
+        articleLien["@typelien"] === "PILOTE_SUIVEUR" ||
         (articleLien["@typelien"] === "SPEC_APPLI" &&
           articleLien["@sens"] === "source") ||
         articleLien["@typelien"] === "TXT_ASSOCIE" ||
@@ -450,6 +449,9 @@ export async function registerLegiArticleModifiers(
           articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "DISJOINT" &&
           articleLien["@sens"] === "source") ||
+        // Occurs for LEGIARTI000028043722
+        (articleLien["@typelien"] === "MODIFICATION" &&
+          articleLien["@sens"] === "cible") ||
         (articleLien["@typelien"] === "MODIFICATION" &&
           articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "MODIFIE" &&
@@ -629,7 +631,10 @@ export async function registerLegiTextModifiers(
       // Ignore link.
     } else if (
       (articleLien.typelien === "CONCORDANCE" && !articleLien.cible) ||
-      (articleLien.typelien === "CONCORDE" && !articleLien.cible)
+      (articleLien.typelien === "CONCORDE" && !articleLien.cible) ||
+      (articleLien.typelien === "CREE" && !articleLien.cible) ||
+      (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
+      (articleLien.typelien === "MODIFIE" && !articleLien.cible)
     ) {
       await addModifyingArticleId(
         context,
@@ -676,17 +681,16 @@ export async function registerLegiTextModifiers(
     //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
     // )
     assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
-    // if () {
-    //   await addModifyingTextId(
-    //     context,
-    //     texteVersionLien.texte_version_id,
-    //     "DELETE",
-    //     legiTextId,
-    //     texteVersionDateDebut ?? "2999-01-01",
-    //     texteVersionDateFin ?? "2999-01-01",
-    //   )
-    // } else
-    if (
+    if (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) {
+      await addModifyingTextId(
+        context,
+        texteVersionLien.texte_version_id,
+        "DELETE",
+        legiTextId,
+        texteVersionDateDebut ?? "2999-01-01",
+        texteVersionDateFin ?? "2999-01-01",
+      )
+    } else if (
       (texteVersionLien.typelien === "APPLICATION" &&
         !texteVersionLien.cible) ||
       texteVersionLien.typelien === "CITATION" ||

@@ -1,3 +1,5 @@
+import { toArabic } from "roman-numerals"
+
 // A: Arrêté
 // D: Décret
 // L: Législatif
@@ -107,24 +109,46 @@ function articleNumberSegmentToNumber(articleNumber: string): number {
 
 function articleNumberSegmentToPriorityAndNumber(
   segment: string,
+  index: number,
+  segments: string[],
 ): [number, number] {
   for (const [priority, [regExp, numberExtractor]] of (
     [
-      [articleNumberRegExp, (s) => articleNumberSegmentToNumber(s)],
+      [articleNumberRegExp, (segment) => articleNumberSegmentToNumber(segment)],
       [
         /^[A-Z]$/,
-        (s) =>
-          [...s].reduce((sum, letter) => sum * 256 + letter.charCodeAt(0), 0),
+        (segment) =>
+          [...segment].reduce(
+            (sum, letter) => sum * 256 + letter.charCodeAt(0),
+            0,
+          ),
       ],
-      [semelBisTerEtcRegExp, (s) => numberBySemelBisTerEtc[s] ?? 9999],
-      [/^Annexe/, () => 1],
-    ] as Array<[RegExp, (s: string) => number]>
+      [
+        semelBisTerEtcRegExp,
+        (segment) => numberBySemelBisTerEtc[segment] ?? 9999,
+      ],
+      // "Annexe" alone must be sorted after "Article 1 Annexe", "Annexe 1, art. 1"…
+      [/^Annexe/i, () => (segments.length > 1 ? 1 : null)],
+      [/^Tableau/i, () => 1],
+      [/^[IVX]+$/, (segment) => toArabic(segment)],
+      [/^Annexe/i, () => 1],
+    ] as Array<
+      [
+        RegExp,
+        (segment: string, index: number, segments: string[]) => number | null,
+      ]
+    >
   ).entries()) {
     if (regExp.test(segment)) {
-      return [priority, numberExtractor(segment)]
+      const extractedNumber = numberExtractor(segment, index, segments)
+      if (extractedNumber !== null) {
+        return [priority, extractedNumber]
+      }
     }
   }
-  throw new Error(`Unexpected segment in article number: "${segment}"`)
+  throw new Error(
+    `Unexpected segment "${segment}" in article number segments ${JSON.stringify(segments)}`,
+  )
 }
 
 function splitArticleNumber(articleNumber: string): string[] {
@@ -138,8 +162,12 @@ function splitArticleNumber(articleNumber: string): string[] {
   }
   const segments = articleNumber
     .trim()
-    .split(/\s+|-/)
-    .filter((segment) => segment !== "")
+    .split(/,?\s+|-/)
+    .filter(
+      (segment) =>
+        segment !== "" &&
+        !["à", "art.", "articles", "aux", "l'article", "n°"].includes(segment),
+    )
     .map((segment) => segment.replace(/^1er$/, "1"))
   if (annexe) {
     segments.push("Annexe")
@@ -173,10 +201,16 @@ export function sortArticlesNumbers(
       continue
     }
 
-    const [priority1, number1] =
-      articleNumberSegmentToPriorityAndNumber(segment1)
-    const [priority2, number2] =
-      articleNumberSegmentToPriorityAndNumber(segment2)
+    const [priority1, number1] = articleNumberSegmentToPriorityAndNumber(
+      segment1,
+      i,
+      segments1,
+    )
+    const [priority2, number2] = articleNumberSegmentToPriorityAndNumber(
+      segment2,
+      i,
+      segments2,
+    )
     if (priority1 !== priority2) {
       return priority1 - priority2
     }

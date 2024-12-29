@@ -1,10 +1,15 @@
+import assert from "assert"
 import path from "path"
 import sade from "sade"
+import { $, cd } from "zx"
 
 import type { LegiTexteVersion } from "$lib/legal/legi"
+import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
 import { generateConsolidatedTextGit } from "$lib/server/gitify/generators"
 import { slugify } from "$lib/strings"
+
+const { forgejo } = config
 
 async function exportCodesToGit(
   targetDir: string,
@@ -20,6 +25,7 @@ async function exportCodesToGit(
     silent?: boolean
   } = {},
 ): Promise<number> {
+  let exitCode = 0
   if (only !== undefined && typeof only === "string") {
     only = [only]
   }
@@ -41,20 +47,71 @@ async function exportCodesToGit(
         continue
       }
     }
+    if (
+      [
+        "LEGITEXT000006074068", // Code des pensions militaires d'invalidité et des victimes de la guerre
+        "LEGITEXT000006070302", // Code des pensions civiles et militaires de retraite
+        "LEGITEXT000006069565", // Code de la consommation
+      ].includes(codeId)
+    ) {
+      continue
+    }
     if (only !== undefined && !only.includes(codeId)) {
       continue
     }
 
-    const codeSlug = slugify(
+    const codeTitle =
       codeTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
-        codeTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
-        codeId,
-      "_",
-    )
-    await generateConsolidatedTextGit(codeId, path.join(targetDir, codeSlug))
+      codeTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+      codeId
+    const codeSlug = slugify(codeTitle, "_")
+    const codeRepositoryDir = path.join(targetDir, codeSlug)
+    const result = await generateConsolidatedTextGit(codeId, codeRepositoryDir)
+    if (result !== 0) {
+      if (exitCode === 0) {
+        exitCode = result
+      }
+      continue
+    }
+    if (push && forgejo !== undefined) {
+      const response = await fetch(
+        new URL(`/api/v1/repos/textes_consolides/${codeSlug}`, forgejo.url),
+        { headers: { Accept: "application/json" } },
+      )
+      if (response.status === 404) {
+        // Create respository.
+        const response = await fetch(
+          new URL(`/api/v1/orgs/textes_consolides/repos`, forgejo.url),
+          {
+            body: JSON.stringify(
+              {
+                default_branch: "main",
+                description: codeTitle,
+                name: codeSlug,
+              },
+              null,
+              2,
+            ),
+            headers: {
+              Accept: "application/json",
+              Authorization: `token ${forgejo.token}`,
+              "Content-Type": "application/json",
+            },
+            method: "POST",
+          },
+        )
+        assert(response.ok)
+      } else {
+        assert(response.ok)
+      }
+      cd(codeRepositoryDir)
+      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:textes_consolides/${codeSlug}.git`
+      await $`git remote add origin ${origin}`
+      await $`git push --force --tags --set-upstream origin main`
+    }
   }
 
-  return 0
+  return exitCode
 }
 
 sade("export_codes_to_git <targetDir>", true)

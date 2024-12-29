@@ -17,6 +17,12 @@ export interface Config {
     user: string
     password: string
   }
+  forgejo?: {
+    sshAccount: string
+    sshPort: number
+    token: string
+    url: string
+  }
   title: string
 }
 
@@ -35,6 +41,15 @@ const [config, error] = validateConfig({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
   },
+  forgejo:
+    process.env.FORGEJO_URL == null
+      ? undefined
+      : {
+          sshAccount: process.env.FORGEJO_SSH_ACCOUNT,
+          sshPort: process.env.FORGEJO_SSH_PORT,
+          token: process.env.FORGEJO_TOKEN,
+          url: process.env.FORGEJO_URL,
+        },
   title: process.env.TITLE,
 }) as [Config, unknown]
 if (error !== null) {

@@ -29,7 +29,7 @@ interface ArticleCache {
 }
 
 export interface Context {
-  articleById: Record<string, JorfArticle | LegiArticle>
+  articleById: Record<string, JorfArticle | LegiArticle | null>
   articleCacheByNumber: Record<string, ArticleCache>
   consolidatedIdsByActionByModifyingTextIdByDate: Record<
     string,
@@ -71,15 +71,18 @@ export const actions = ["CREATE", "DELETE"] as const
 export async function getOrLoadArticle(
   context: Context,
   articleId: string,
-): Promise<JorfArticle | LegiArticle> {
-  let article = context.articleById[articleId]
+): Promise<JorfArticle | LegiArticle | null> {
+  let article: JorfArticle | LegiArticle | null = context.articleById[articleId]
   if (article === undefined) {
     article = (
       await db<{ data: JorfArticle | LegiArticle }[]>`
         SELECT data FROM article WHERE id = ${articleId}
       `
     )[0]?.data
-    assert.notStrictEqual(article, undefined)
+    if (article === undefined) {
+      console.warn(`Article ${articleId} not found in table article`)
+      article = null
+    }
     context.articleById[articleId] = article
   }
   return article

@@ -70,6 +70,9 @@ async function addLienArticleToCurrentArticles(
     return
   }
   const article = await getOrLoadArticle(context, articleId)
+  if (article === null) {
+    return
+  }
   const metaArticle = article.META.META_SPEC.META_ARTICLE
   if ((metaArticle as LegiArticleMetaArticle).ETAT === "MODIFIE_MORT_NE") {
     // Occurs for example when a part of a law is cancelled later by another text higher in
@@ -82,7 +85,10 @@ async function addLienArticleToCurrentArticles(
   }
   const articleNumber = metaArticle.NUM as string
   if (articleNumber === undefined) {
-    throw new Error(`Article without number: ${articleId}`)
+    // TODO: Don't ignore articles without numbers => rework sort of articles.
+    // Example of article annexe without number : LEGIARTI000033818922
+    console.error(`Ignoring article without number: ${articleId}.`)
+    return
   }
   const existingArticle = currentArticleByNumber[articleNumber]
   if (
@@ -337,7 +343,9 @@ export async function generateConsolidatedTextGit(
       context,
       lienArticle["@id"],
     )) as LegiArticle
-    await registerLegiArticleModifiers(context, article)
+    if (article !== null) {
+      await registerLegiArticleModifiers(context, article)
+    }
   }
 
   // Associate modified articles without modifying text with a modifying text that modified other articles at the same date.
@@ -356,6 +364,9 @@ export async function generateConsolidatedTextGit(
           context,
           consolidatedArticleId,
         )
+        if (consolidatedArticle === null) {
+          continue
+        }
         const consolidatedArticleActionDate =
           action === "CREATE"
             ? consolidatedArticle.META.META_SPEC.META_ARTICLE.DATE_DEBUT

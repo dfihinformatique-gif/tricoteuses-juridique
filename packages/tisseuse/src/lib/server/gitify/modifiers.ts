@@ -26,6 +26,9 @@ async function addModifyingArticleId(
   modifiedDateFin: string,
 ): Promise<void> {
   const modifyingArticle = await getOrLoadArticle(context, modifyingArticleId)
+  if (modifyingArticle === null) {
+    return
+  }
   const modifyingArticlePublicationDate =
     modifyingArticle.CONTEXTE.TEXTE["@date_publi"]
   if (modifyingArticlePublicationDate === undefined) {
@@ -63,10 +66,10 @@ async function addModifyingArticleId(
     if (existingModifyingArticleId === undefined) {
       modifyingArticleIdByAction[action] = modifyingArticleId
     } else if (existingModifyingArticleId !== modifyingArticleId) {
-      const existingModifyingArticle = await getOrLoadArticle(
+      const existingModifyingArticle = (await getOrLoadArticle(
         context,
         existingModifyingArticleId,
-      )
+      ))!
       if (
         existingModifyingArticle.CONTEXTE.TEXTE["@date_publi"]! <
         modifyingArticlePublicationDate

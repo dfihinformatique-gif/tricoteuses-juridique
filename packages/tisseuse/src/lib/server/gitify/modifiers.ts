@@ -326,13 +326,14 @@ export async function registerLegiArticleModifiers(
       (texteVersionLien.typelien === "TXT_ASSOCIE" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "TXT_ASSOCIE" &&
         !texteVersionLien.cible) || // Example: LEGITEXT000006074068
-      (texteVersionLien.typelien === "TXT_SOURCE" && !texteVersionLien.cible)
+      texteVersionLien.typelien === "TXT_SOURCE"
     ) {
       // Ignore link.
     } else if (
       (texteVersionLien.typelien === "CODIFICATION" &&
         texteVersionLien.cible) ||
       (texteVersionLien.typelien === "CONCORDANCE" && texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "CONCORDE" && !texteVersionLien.cible) ||
       (texteVersionLien.typelien === "CREATION" && texteVersionLien.cible) ||
       // LEGIARTI000006527461 has an example of MODIFICATION with !cible
       texteVersionLien.typelien === "MODIFICATION" ||

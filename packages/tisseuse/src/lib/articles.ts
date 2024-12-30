@@ -131,6 +131,7 @@ function articleNumberSegmentToPriorityAndNumber(
       ],
       [/^Tableau$/i, () => 1],
       [/^[IVX]+$/, (segment) => toArabic(segment)],
+      [/^suite$/i, () => 1],
       [/^Annexe$/i, () => 1],
     ] as Array<
       [
@@ -168,7 +169,7 @@ function splitArticleNumber(articleNumber: string): string[] {
   }
   const segments = articleNumber
     .trim()
-    .split(/,?\s+|-/)
+    .split(/\s*[-,()]\s*|\s+/)
     .filter(
       (segment) =>
         segment !== "" &&

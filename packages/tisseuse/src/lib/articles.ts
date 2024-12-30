@@ -153,12 +153,18 @@ function articleNumberSegmentToPriorityAndNumber(
 
 function splitArticleNumber(articleNumber: string): string[] {
   let annexe = false
-  if (articleNumber.startsWith("Annexe à l'article ")) {
+  if (articleNumber === "ANNEXE À L'ARTICLE A. 752-3") {
+    // LEGIARTI000043893358
+    articleNumber = "Annexe 7-8"
+  } else if (articleNumber.startsWith("Annexe à l'article ")) {
     annexe = true
     articleNumber = articleNumber.replace(/^Annexe à l'article /, "")
   } else if (articleNumber.startsWith("Annexe article ")) {
     annexe = true
     articleNumber = articleNumber.replace(/^Annexe article /, "")
+  } else if (articleNumber === "R* 712-8") {
+    // LEGIARTI000027445433
+    articleNumber = "R712-8"
   }
   const segments = articleNumber
     .trim()

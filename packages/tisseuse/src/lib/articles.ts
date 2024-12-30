@@ -104,8 +104,8 @@ function articleNumberSegmentToPriorityAndNumber(
       [
         /^R\*?\d+$/,
         (segment) => {
-          // Article règlementaire
-          // TODO: What does R* mean?
+          // Article de la partie règlementaire
+          // "R*" means "article de la partie réglementaire pris par décret en Conseil d'État"
           const match = segment.match(/^R\*?(\d+)$/)!
           return parseInt(match[1])
         },

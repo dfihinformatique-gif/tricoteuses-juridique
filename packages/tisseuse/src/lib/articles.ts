@@ -1,13 +1,5 @@
 import { toArabic } from "roman-numerals"
 
-// A: Arrêté
-// D: Décret
-// L: Législatif
-// LO: Article créé par une loi organique
-// R: Règlemntaire
-const articleNumberRegExp =
-  /^préliminaire|PREAMBULE|((Annexe (à l')article )?([ADLR]|LO)?(1er|\d+))$/
-
 // TODO improve
 const numberBySemelBisTerEtc: Record<string, number> = {
   semel: 1,
@@ -87,25 +79,7 @@ const numberBySemelBisTerEtc: Record<string, number> = {
 }
 
 const semelBisTerEtcRegExp =
-  /^(?:un(?:de?)?|duo(?:de)?|ter|quater|quin|sex?|sept|octo|novo)?(?:dec|v[ei]c|tr[ei]c|quadrag|quinquag|sexag|septuag|octog|nonag)ies|semel|bis|ter|quater|(?:quinqu|sex|sept|oct|no[nv])ies$/
-
-function articleNumberSegmentToNumber(articleNumber: string): number {
-  return articleNumber === "PREAMBULE"
-    ? -4_000_000
-    : articleNumber === "préliminaire"
-      ? -3_000_000
-      : articleNumber[0] === "L"
-        ? articleNumber[1] === "O" // loi organique
-          ? parseInt(articleNumber.slice(2)) - 2_000_000
-          : parseInt(articleNumber.slice(1)) - 1_000_000 // législatif
-        : articleNumber[0] === "R" // règlementaire
-          ? parseInt(articleNumber.slice(1)) + 1_000_000
-          : articleNumber[0] === "D" // décret
-            ? parseInt(articleNumber.slice(1)) + 2_000_000
-            : articleNumber[0] === "A" // arrêté
-              ? parseInt(articleNumber.slice(1)) + 3_000_000
-              : parseInt(articleNumber)
-}
+  /^(?:un(?:de?)?|duo(?:de)?|ter|quater|quin|sex?|sept|octo|novo)?(?:dec|v[ei]c|tr[ei]c|quadrag|quinquag|sexag|septuag|octog|nonag)ies|semel|bis|ter|quater|(?:quinqu|sex|sept|oct|no[nv])ies$/i
 
 function articleNumberSegmentToPriorityAndNumber(
   segment: string,
@@ -114,7 +88,30 @@ function articleNumberSegmentToPriorityAndNumber(
 ): [number, number] {
   for (const [priority, [regExp, numberExtractor]] of (
     [
-      [articleNumberRegExp, (segment) => articleNumberSegmentToNumber(segment)],
+      [/^PREAMBULE$/, () => 1],
+      [/^préliminaire$/, () => 1],
+      [/^LO\d+$/, (segment) => parseInt(segment.slice(2))], // Article créé par une loi organique
+      [
+        /^L\d+[A-Z]?$/,
+        (segment) => {
+          // Article législatif
+          // Note: Articles L1A, L1B, etc are before L1. See, for example, in LEGITEXT000006072665
+          const match = segment.match(/^L(\d+)([A-Z])?$/)!
+          return parseInt(match[1]) * 1000 + (match[2]?.charCodeAt(0) ?? 999)
+        },
+      ],
+      [/^\d+$/, (segment) => parseInt(segment)], // Article de loi
+      [
+        /^R\*?\d+$/,
+        (segment) => {
+          // Article règlementaire
+          // TODO: What does R* mean?
+          const match = segment.match(/^R\*?(\d+)$/)!
+          return parseInt(match[1])
+        },
+      ],
+      [/^D\d+$/, (segment) => parseInt(segment.slice(1))], // Article de décret
+      [/^A\d+$/, (segment) => parseInt(segment.slice(1))], // Article d'arrêté
       [
         /^[A-Z]$/,
         (segment) =>
@@ -125,13 +122,16 @@ function articleNumberSegmentToPriorityAndNumber(
       ],
       [
         semelBisTerEtcRegExp,
-        (segment) => numberBySemelBisTerEtc[segment] ?? 9999,
+        (segment) => numberBySemelBisTerEtc[segment.toLowerCase()] ?? 9999,
       ],
       // "Annexe" alone must be sorted after "Article 1 Annexe", "Annexe 1, art. 1"…
-      [/^Annexe/i, () => (segments.length > 1 ? 1 : null)],
-      [/^Tableau/i, () => 1],
+      [
+        /^Annexe$/i,
+        (_segment, _index, segments) => (segments.length > 1 ? 1 : null),
+      ],
+      [/^Tableau$/i, () => 1],
       [/^[IVX]+$/, (segment) => toArabic(segment)],
-      [/^Annexe/i, () => 1],
+      [/^Annexe$/i, () => 1],
     ] as Array<
       [
         RegExp,
@@ -164,7 +164,7 @@ function splitArticleNumber(articleNumber: string): string[] {
     articleNumber = articleNumber.replace(/^Annexe article /, "")
   } else if (articleNumber === "R* 712-8") {
     // LEGIARTI000027445433
-    articleNumber = "R712-8"
+    articleNumber = "R*712-8"
   }
   const segments = articleNumber
     .trim()

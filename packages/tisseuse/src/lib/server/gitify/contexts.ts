@@ -50,6 +50,7 @@ export interface Context {
   // When a LEGI article, sectionTa or text has been created by the same JORF
   // article, sectionIa or text, ID of this JORF object
   jorfCreatorIdByConsolidatedId: Record<string, string>
+  logReferences?: boolean
   modifyingArticleIdByActionByConsolidatedId: Record<
     string,
     Partial<Record<Action, string>>

@@ -237,6 +237,7 @@ async function generateArticlesGit(
 export async function generateConsolidatedTextGit(
   consolidatedTextId: string,
   targetDir: string,
+  { "log-references": logReferences }: { "log-references"?: boolean },
 ): Promise<number> {
   const context: Context = {
     articleById: {},
@@ -248,6 +249,7 @@ export async function generateConsolidatedTextGit(
     currentInternalIds: new Set(),
     hasModifyingTextIdByActionByConsolidatedArticleId: {},
     jorfCreatorIdByConsolidatedId: {},
+    logReferences,
     modifyingArticleIdByActionByConsolidatedId: {},
     modifyingTextsIdsByArticleActionDate: {},
     sectionTaById: {},

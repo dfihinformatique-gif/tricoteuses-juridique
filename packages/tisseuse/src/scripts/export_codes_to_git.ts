@@ -14,11 +14,13 @@ const { forgejo } = config
 async function exportCodesToGit(
   targetDir: string,
   {
+    "log-references": logReferences,
     only,
     push,
     resume,
     silent,
   }: {
+    "log-references"?: boolean
     only?: string | string[]
     push?: boolean
     resume?: string
@@ -66,7 +68,13 @@ async function exportCodesToGit(
       codeId
     const codeSlug = slugify(codeTitle, "_")
     const codeRepositoryDir = path.join(targetDir, codeSlug)
-    const result = await generateConsolidatedTextGit(codeId, codeRepositoryDir)
+    const result = await generateConsolidatedTextGit(
+      codeId,
+      codeRepositoryDir,
+      {
+        "log-references": logReferences,
+      },
+    )
     if (result !== 0) {
       if (exitCode === 0) {
         exitCode = result
@@ -118,6 +126,10 @@ sade("export_codes_to_git <targetDir>", true)
   .describe("Convert codes of laws to a git repositories")
   .option("-o, --only", "ID of code to generate")
   .option("-p, --push", "Push generated code to their Forgejo repositories")
+  .option(
+    "-R, --log-references",
+    "Log references of consolidated text and its articles",
+  )
   .option("-r, --resume", "Resume generation at given code ID")
   .option("-s, --silent", "Hide log messages")
   .example("/var/tmp/codes")

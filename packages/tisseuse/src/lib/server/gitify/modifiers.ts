@@ -152,6 +152,7 @@ async function addModifyingTextId(
 
 export async function registerLegiArticleModifiers(
   context: Context,
+  depth: number,
   article: LegiArticle,
 ): Promise<void> {
   const articleId = article.META.META_COMMUN.ID
@@ -163,9 +164,9 @@ export async function registerLegiArticleModifiers(
   const metaArticle = articleMeta.META_SPEC.META_ARTICLE
   const articleDateDebut = metaArticle.DATE_DEBUT
   const articleDateFin = metaArticle.DATE_FIN
-  // console.log(
-  //   `${articleMeta.META_COMMUN.ID} ${"  ".repeat(depth)}Article ${metaArticle.NUM} (${articleDateDebut} — ${articleDateFin === "2999-01-01" ? "…" : articleDateFin}, ${metaArticle.ETAT})`,
-  // )
+  console.log(
+    `${articleMeta.META_COMMUN.ID} ${"  ".repeat(depth)}Article ${metaArticle.NUM} (${articleDateDebut} — ${articleDateFin === "2999-01-01" ? "…" : articleDateFin}, ${metaArticle.ETAT})`,
+  )
 
   // if (jorfCreatorId !== undefined) {
   //   await addModifyingArticleId(
@@ -197,14 +198,14 @@ export async function registerLegiArticleModifiers(
   for (const articleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id IN ${db(articleIds)}
   `) {
-    if (articleLien.article_id in context.consolidatedTextInternalIds) {
+    if (context.consolidatedTextInternalIds.has(articleLien.article_id)) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
     }
 
-    // console.log(
-    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
-    // )
+    console.log(
+      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
+    )
     assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
     assert(articleLien.article_id.startsWith("LEGIARTI"))
     if (
@@ -290,15 +291,15 @@ export async function registerLegiArticleModifiers(
     SELECT * FROM texte_version_lien WHERE id IN ${db(articleIds)}
   `) {
     if (
-      texteVersionLien.texte_version_id in context.consolidatedTextInternalIds
+      context.consolidatedTextInternalIds.has(texteVersionLien.texte_version_id)
     ) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
     }
 
-    // console.log(
-    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
-    // )
+    console.log(
+      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
+    )
     assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
     assert(
       texteVersionLien.texte_version_id.startsWith("JORFTEXT") ||
@@ -382,14 +383,14 @@ export async function registerLegiArticleModifiers(
         // Ignore link because it has no potential modifying text.
         continue
       }
-      if (articleLien["@id"]! in context.consolidatedTextInternalIds) {
+      if (context.consolidatedTextInternalIds.has(articleLien["@id"]!)) {
         // Ignore internal links because a LEGI texte can't modify itself.
         continue
       }
 
-      // console.log(
-      //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${articleLien["@sens"]} typelien: ${articleLien["@typelien"]} ${articleLien["@cidtexte"]} ${articleLien["@id"]}${articleLien["@nortexte"] === undefined ? "" : ` ${articleLien["@nortexte"]}`}${articleLien["@num"] === undefined ? "" : ` ${articleLien["@num"]}`} ${articleLien["@naturetexte"]} du ${articleLien["@datesignatexte"]} : ${articleLien["#text"]}`,
-      // )
+      console.log(
+        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${articleLien["@sens"]} typelien: ${articleLien["@typelien"]} ${articleLien["@cidtexte"]} ${articleLien["@id"]}${articleLien["@nortexte"] === undefined ? "" : ` ${articleLien["@nortexte"]}`}${articleLien["@num"] === undefined ? "" : ` ${articleLien["@num"]}`} ${articleLien["@naturetexte"]} du ${articleLien["@datesignatexte"]} : ${articleLien["#text"]}`,
+      )
       if (
         (articleLien["@typelien"] === "ABROGATION" &&
           articleLien["@sens"] === "source") ||
@@ -585,6 +586,7 @@ export async function registerLegiArticleModifiers(
 
 export async function registerLegiTextModifiers(
   context: Context,
+  depth: number,
   textelr: LegiTextelr,
   texteVersion: LegiTexteVersion,
 ): Promise<void> {
@@ -598,21 +600,21 @@ export async function registerLegiTextModifiers(
     texteVersionMeta.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT
   const texteVersionDateFin =
     texteVersionMeta.META_SPEC.META_TEXTE_VERSION.DATE_FIN
-  // console.log(
-  //   `${legiTextId} ${"  ".repeat(depth)} ${(texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITREFULL ?? texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITRE ?? texteVersionMeta.META_COMMUN.ID).replace(/\s+/g, " ").trim()}`,
-  // )
+  console.log(
+    `${legiTextId} ${"  ".repeat(depth)} ${(texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITREFULL ?? texteVersionMeta.META_SPEC.META_TEXTE_VERSION.TITRE ?? texteVersionMeta.META_COMMUN.ID).replace(/\s+/g, " ").trim()}`,
+  )
 
   for (const articleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id IN ${db(textIds)}
   `) {
-    if (articleLien.article_id in context.consolidatedTextInternalIds) {
+    if (context.consolidatedTextInternalIds.has(articleLien.article_id)) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
     }
 
-    // console.log(
-    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
-    // )
+    console.log(
+      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
+    )
     assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
     if (articleLien.typelien === "ABROGATION" && articleLien.cible) {
       await addModifyingArticleId(
@@ -672,15 +674,15 @@ export async function registerLegiTextModifiers(
     SELECT * FROM texte_version_lien WHERE id IN ${db(textIds)}
   `) {
     if (
-      texteVersionLien.texte_version_id in context.consolidatedTextInternalIds
+      context.consolidatedTextInternalIds.has(texteVersionLien.texte_version_id)
     ) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
     }
 
-    // console.log(
-    //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
-    // )
+    console.log(
+      `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
+    )
     assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
     if (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) {
       await addModifyingTextId(
@@ -745,14 +747,14 @@ export async function registerLegiTextModifiers(
           // Ignore link because it has no potential modifying text.
           continue
         }
-        if (texteVersionLien["@id"]! in context.consolidatedTextInternalIds) {
+        if (context.consolidatedTextInternalIds.has(texteVersionLien["@id"]!)) {
           // Ignore internal links because a LEGI texte can't modify itself.
           continue
         }
 
-        // console.log(
-        //   `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${texteVersionLien["@sens"]} typelien: ${texteVersionLien["@typelien"]} ${texteVersionLien["@cidtexte"]} ${texteVersionLien["@id"]}${texteVersionLien["@nortexte"] === undefined ? "" : ` ${texteVersionLien["@nortexte"]}`}${texteVersionLien["@num"] === undefined ? "" : ` ${texteVersionLien["@num"]}`} ${texteVersionLien["@naturetexte"]} du ${texteVersionLien["@datesignatexte"]} : ${texteVersionLien["#text"]}`,
-        // )
+        console.log(
+          `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${texteVersionLien["@sens"]} typelien: ${texteVersionLien["@typelien"]} ${texteVersionLien["@cidtexte"]} ${texteVersionLien["@id"]}${texteVersionLien["@nortexte"] === undefined ? "" : ` ${texteVersionLien["@nortexte"]}`}${texteVersionLien["@num"] === undefined ? "" : ` ${texteVersionLien["@num"]}`} ${texteVersionLien["@naturetexte"]} du ${texteVersionLien["@datesignatexte"]} : ${texteVersionLien["#text"]}`,
+        )
         // if () {
         //   await addModifyingTextId(
         //     context,

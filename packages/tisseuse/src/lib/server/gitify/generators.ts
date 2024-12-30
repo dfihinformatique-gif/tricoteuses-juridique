@@ -9,6 +9,7 @@ import { sortArticlesNumbers } from "$lib/articles"
 import type {
   JorfArticle,
   JorfSectionTaLienArt,
+  JorfSectionTaStructure,
   JorfTextelr,
   JorfTexteVersion,
 } from "$lib/legal/jorf"
@@ -17,6 +18,7 @@ import type {
   LegiArticleMetaArticle,
   LegiSectionTa,
   LegiSectionTaLienArt,
+  LegiSectionTaStructure,
   LegiTextelr,
   LegiTextelrLienArt,
   LegiTexteVersion,
@@ -31,6 +33,7 @@ import {
   getOrLoadSectionTa,
   getOrLoadTextelr,
   getOrLoadTexteVersion,
+  walkStructureTree,
   walkTextelrLiensArticles,
   type Action,
   type Context,
@@ -286,10 +289,9 @@ export async function generateConsolidatedTextGit(
       context.consolidatedTextCid,
     )) as JorfTextelr
     // Note we currently ignore JORF SectionTAs and reference only their articles.
-    for await (const jorfCreatorLienArticle of walkTextelrLiensArticles(
-      context,
-      jorfCreatorTextelr,
-    )) {
+    for await (const {
+      lienArticle: jorfCreatorLienArticle,
+    } of walkTextelrLiensArticles(context, jorfCreatorTextelr)) {
       // Note: In JORF text of 1958 Constitution (JORFTEXT000000571356), for example,
       // `num` of articles are only present in LienArticle, not in (incomplete) articles
       // themselves.
@@ -309,7 +311,15 @@ export async function generateConsolidatedTextGit(
   // their JORF counterparts (when JORF articles exist they should have the
   // same content as their LEGI counterparts).
 
-  for await (const lienArticle of walkTextelrLiensArticles(
+  for await (const { lienSectionTa } of walkStructureTree(
+    context,
+    consolidatedTextelr.STRUCT as
+      | JorfSectionTaStructure
+      | LegiSectionTaStructure,
+  )) {
+    context.consolidatedTextInternalIds.add(lienSectionTa["@id"])
+  }
+  for await (const { lienArticle } of walkTextelrLiensArticles(
     context,
     consolidatedTextelr,
   )) {
@@ -331,25 +341,30 @@ export async function generateConsolidatedTextGit(
 
   await registerLegiTextModifiers(
     context,
+    0,
     consolidatedTextelr,
     consolidatedTexteVersion,
   )
 
-  for await (const lienArticle of walkTextelrLiensArticles(
-    context,
-    consolidatedTextelr,
-  )) {
+  for await (const {
+    lienArticle,
+    parentsSectionTa,
+  } of walkTextelrLiensArticles(context, consolidatedTextelr)) {
     const article = (await getOrLoadArticle(
       context,
       lienArticle["@id"],
     )) as LegiArticle
     if (article !== null) {
-      await registerLegiArticleModifiers(context, article)
+      await registerLegiArticleModifiers(
+        context,
+        parentsSectionTa === undefined ? 0 : 1 + parentsSectionTa.length,
+        article,
+      )
     }
   }
 
   // Associate modified articles without modifying text with a modifying text that modified other articles at the same date.
-  for await (const lienArticle of walkTextelrLiensArticles(
+  for await (const { lienArticle } of walkTextelrLiensArticles(
     context,
     consolidatedTextelr,
   )) {
@@ -649,7 +664,7 @@ export async function generateConsolidatedTextGit(
       const currentArticleByNumber: Record<string, JorfArticle | LegiArticle> =
         {}
       for (const action of ["DELETE", "CREATE"] as Action[]) {
-        for await (const lienArticle of walkTextelrLiensArticles(
+        for await (const { lienArticle } of walkTextelrLiensArticles(
           context,
           consolidatedTextelr,
         )) {

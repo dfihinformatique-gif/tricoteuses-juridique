@@ -168,7 +168,6 @@ export async function* walkStructureTree(
         context,
         lienSectionTa["@id"],
       )
-      context.consolidatedTextInternalIds.add(lienSectionTa["@id"])
       yield {
         lienSectionTa,
         liensSectionTa,
@@ -189,19 +188,45 @@ export async function* walkStructureTree(
 export async function* walkTextelrLiensArticles(
   context: Context,
   textelr: JorfTextelr | LegiTextelr,
-): AsyncGenerator<JorfSectionTaLienArt | LegiSectionTaLienArt> {
+): AsyncGenerator<
+  {
+    lienArticle: JorfSectionTaLienArt | LegiSectionTaLienArt
+    lienSectionTa?: JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
+    liensSectionTa?: Array<
+      JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
+    >
+    parentsSectionTa?: Array<JorfSectionTa | LegiSectionTa>
+    sectionTa?: JorfSectionTa | LegiSectionTa
+  },
+  void
+> {
   const structure = textelr.STRUCT
   const liensArticles = structure?.LIEN_ART
   if (liensArticles !== undefined) {
-    yield* liensArticles
+    for (const lienArticle of liensArticles) {
+      yield { lienArticle }
+    }
   }
-  for await (const { sectionTa } of walkStructureTree(
+  for await (const {
+    lienSectionTa,
+    liensSectionTa,
+    parentsSectionTa,
+    sectionTa,
+  } of walkStructureTree(
     context,
     structure as JorfSectionTaStructure | LegiSectionTaStructure,
   )) {
     const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
     if (liensArticles !== undefined) {
-      yield* liensArticles
+      for (const lienArticle of liensArticles) {
+        yield {
+          lienArticle,
+          lienSectionTa,
+          liensSectionTa,
+          parentsSectionTa,
+          sectionTa,
+        }
+      }
     }
   }
 }

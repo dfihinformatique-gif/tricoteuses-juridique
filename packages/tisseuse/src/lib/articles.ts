@@ -90,13 +90,13 @@ function articleNumberSegmentToPriorityAndNumber(
     [
       [/^PREAMBULE$/, () => 1],
       [/^préliminaire$/, () => 1],
-      [/^LO\d+$/, (segment) => parseInt(segment.slice(2))], // Article créé par une loi organique
       [
-        /^L\d+[A-Z]?$/,
+        /^LO?\d+[A-Z]?$/,
         (segment) => {
-          // Article législatif
+          // Article de la partie législative
+          // LO => Article créé par une loi organique
           // Note: Articles L1A, L1B, etc are before L1. See, for example, in LEGITEXT000006072665
-          const match = segment.match(/^L(\d+)([A-Z])?$/)!
+          const match = segment.match(/^LO?(\d+)([A-Z])?$/)!
           return parseInt(match[1]) * 1000 + (match[2]?.charCodeAt(0) ?? 999)
         },
       ],

@@ -252,7 +252,6 @@ async function importLegi(
                   2,
                 )}\nError:\n${JSON.stringify(idError, null, 2)}`,
               )
-              assert
               await db`
                 INSERT INTO id (
                   eli,

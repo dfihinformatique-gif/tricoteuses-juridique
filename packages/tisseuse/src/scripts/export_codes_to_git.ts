@@ -72,6 +72,20 @@ async function exportCodesToGit(
       codeId
     const codeSlug = slugify(codeTitle, "_")
     const codeRepositoryDir = path.join(targetDir, codeSlug)
+    let codeRepositoryName = codeSlug
+    if (codeRepositoryName.length > 100) {
+      codeRepositoryName = codeRepositoryName
+        .replaceAll("_de_", "_")
+        .replaceAll("_des_", "_")
+        .replaceAll("_l_", "_")
+        .replaceAll("_la_", "_")
+        .replaceAll("_le_", "_")
+        .replaceAll("_les_", "_")
+    }
+    while (codeRepositoryName.length > 100) {
+      codeRepositoryName = codeRepositoryName.replace(/_[^_]+$/, "")
+    }
+
     const result = await generateConsolidatedTextGit(
       codeId,
       codeRepositoryDir,
@@ -87,37 +101,46 @@ async function exportCodesToGit(
     }
     if (push && forgejo !== undefined) {
       const response = await fetch(
-        new URL(`/api/v1/repos/textes_consolides/${codeSlug}`, forgejo.url),
+        new URL(
+          `/api/v1/repos/textes_consolides/${codeRepositoryName}`,
+          forgejo.url,
+        ),
         { headers: { Accept: "application/json" } },
       )
       if (response.status === 404) {
         // Create respository.
-        const response = await fetch(
-          new URL(`/api/v1/orgs/textes_consolides/repos`, forgejo.url),
-          {
-            body: JSON.stringify(
-              {
-                default_branch: "main",
-                description: codeTitle,
-                name: codeSlug,
-              },
-              null,
-              2,
-            ),
-            headers: {
-              Accept: "application/json",
-              Authorization: `token ${forgejo.token}`,
-              "Content-Type": "application/json",
+        const url = new URL(
+          `/api/v1/orgs/textes_consolides/repos`,
+          forgejo.url,
+        ).toString()
+        const response = await fetch(url, {
+          body: JSON.stringify(
+            {
+              default_branch: "main",
+              description: codeTitle,
+              name: codeRepositoryName,
             },
-            method: "POST",
+            null,
+            2,
+          ),
+          headers: {
+            Accept: "application/json",
+            Authorization: `token ${forgejo.token}`,
+            "Content-Type": "application/json",
           },
-        )
-        assert(response.ok)
+          method: "POST",
+        })
+        if (!response.ok) {
+          console.error(`Error while creating remote repository at ${url}:`)
+          console.error(`${response.status} ${response.statusText}`)
+          console.error(await response.text())
+          throw new Error("Error while creating remote repository")
+        }
       } else {
         assert(response.ok)
       }
       cd(codeRepositoryDir)
-      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:textes_consolides/${codeSlug}.git`
+      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:textes_consolides/${codeRepositoryName}.git`
       await $`git remote add origin ${origin}`
       await $`git push --force --tags --set-upstream origin main`
     }

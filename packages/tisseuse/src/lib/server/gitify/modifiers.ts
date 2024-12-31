@@ -210,7 +210,12 @@ export async function registerLegiArticleModifiers(
         `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
       )
     }
-    assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
+    if (articleLien.cidtexte !== context.consolidatedTextCid) {
+      console.warn(
+        `Ignoring article_lien ${JSON.stringify(articleLien)} with unexpected cidtexte: ${articleLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+      )
+      continue
+    }
     assert(articleLien.article_id.startsWith("LEGIARTI"))
     if (
       (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
@@ -309,7 +314,12 @@ export async function registerLegiArticleModifiers(
         `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
       )
     }
-    assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
+    if (texteVersionLien.cidtexte !== context.consolidatedTextCid) {
+      console.warn(
+        `Ignoring texte_version_lien ${JSON.stringify(texteVersionLien)} with unexpected cidtexte: ${texteVersionLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+      )
+      continue
+    }
     assert(
       texteVersionLien.texte_version_id.startsWith("JORFTEXT") ||
         texteVersionLien.texte_version_id.startsWith("LEGITEXT"),
@@ -642,7 +652,12 @@ export async function registerLegiTextModifiers(
         `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
       )
     }
-    assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
+    if (articleLien.cidtexte !== context.consolidatedTextCid) {
+      console.warn(
+        `Ignoring article_lien ${JSON.stringify(articleLien)} with unexpected cidtexte: ${articleLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+      )
+      continue
+    }
     if (
       (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
       (articleLien.typelien === "ABROGE" && !articleLien.cible)
@@ -716,7 +731,12 @@ export async function registerLegiTextModifiers(
         `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
       )
     }
-    assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
+    if (texteVersionLien.cidtexte !== context.consolidatedTextCid) {
+      console.warn(
+        `Ignoring texte_version_lien ${JSON.stringify(texteVersionLien)} with unexpected cidtexte: ${texteVersionLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+      )
+      continue
+    }
     if (
       (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible)

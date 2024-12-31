@@ -90,24 +90,26 @@ function articleNumberSegmentToPriorityAndNumber(
   for (const [priority, [regExp, numberExtractor]] of (
     [
       [/^PREAMBULE$/, () => 1],
-      [/^préliminaire$/, () => 1],
+      [/^[Pp]réliminaire$/, () => 1],
+      [/^liminaire$/, () => 1],
       [
-        /^LO?\d+[A-Z]?$/,
+        /^L[*O]?\d+[A-Z]?$/,
         (segment) => {
           // Article de la partie législative
-          // LO => Article créé par une loi organique
+          // L* or LO => Article créé par une loi organique
           // Note: Articles L1A, L1B, etc are before L1. See, for example, in LEGITEXT000006072665
-          const match = segment.match(/^LO?(\d+)([A-Z])?$/)!
+          const match = segment.match(/^L[*O]?(\d+)([A-Z])?$/)!
           return parseInt(match[1]) * 1000 + (match[2]?.charCodeAt(0) ?? 999)
         },
       ],
       [
-        /^\*?\d+$/,
+        /^\*?\d+[A-Z]?$/,
         (segment) => {
-          // Article de loi
+          // Article de loi or subnumber
           // "*" prefix before the number means "article pris par décret en Conseil d'État"
-          const match = segment.match(/^\*?(\d+)$/)!
-          return parseInt(match[1])
+          // Articles xxx-1A, xxx-1B, etc are before xxx-1. See, for example, in LEGITEXT000025503132
+          const match = segment.match(/^\*?(\d+)([A-Z])?$/)!
+          return parseInt(match[1]) * 1000 + (match[2]?.charCodeAt(0) ?? 999)
         },
       ],
       [
@@ -116,7 +118,7 @@ function articleNumberSegmentToPriorityAndNumber(
           // Article de la partie règlementaire
           // "R*" or "*R" means "article de la partie réglementaire pris par décret en Conseil d'État"
           // "R**" means "article de la partie réglementaire pris par décret en Conseil d'État et en conseil des ministres"
-          // Articles R1A, R1B, etc are before R1. See, for example, in LEGITEXT000025503132
+          // Articles R1A, R1B, etc are before R1.
           const match = segment.match(/^(R\*{0,2}|\*{0,2}R)(\d+)([A-Z])?$/)!
           return parseInt(match[2]) * 1000 + (match[3]?.charCodeAt(0) ?? 999)
         },
@@ -133,7 +135,7 @@ function articleNumberSegmentToPriorityAndNumber(
       ],
       [/^A\d+$/, (segment) => parseInt(segment.slice(1))], // Article d'arrêté
       [
-        /^[A-Z]$/,
+        /^[A-Z]$/i,
         (segment) =>
           [...segment].reduce(
             (sum, letter) => sum * 256 + letter.charCodeAt(0),
@@ -146,13 +148,35 @@ function articleNumberSegmentToPriorityAndNumber(
       ],
       // "Annexe" alone must be sorted after "Article 1 Annexe", "Annexe 1, art. 1"…
       [
-        /^Annexe$/i,
+        /^Annexes?$/i,
         (_segment, _index, segments) => (segments.length > 1 ? 1 : null),
       ],
+      [/^Rubrique$/i, () => 1],
+      [/^Sommaire$/i, () => 1],
       [/^Tableau$/i, () => 1],
       [/^[IVX]+$/, (segment) => toArabic(segment)],
-      [/^suite$/i, () => 1],
-      [/^Annexe$/i, () => 1],
+      [
+        /^[A-Z]\d{1,3}$/,
+        (segment) => {
+          const match = segment.match(/^([A-Z])(\d{1,3})$/)!
+          return match[1].charCodeAt(0) * 1000 + parseInt(match[2])
+        },
+      ],
+      [
+        /^.+$/,
+        (segment, index, segments) =>
+          segments
+            .slice(0, index)
+            .some((parent) =>
+              /^Annexes?|Rubrique|Sommaire|Tableau$/i.test(parent),
+            )
+            ? [...segment].reduce(
+                (sum, letter) => sum * 256 + letter.charCodeAt(0),
+                0,
+              )
+            : null,
+      ],
+      [/^Annexes?$/i, () => 1], // "Annexe" without anything else must be last.
     ] as Array<
       [
         RegExp,
@@ -188,14 +212,17 @@ function splitArticleNumber(articleNumber: string): string[] {
       .replace(/^R\*\s+(\d+)/, "R*$1") // LEGIARTI000027445433 (R* 712-8), etc
       .replace(/^R\.\s+(\d+)/, "R$1") // LEGIARTI000039432122 (R. 755-9-8)
       .replace(/\s+R\.\s+(\d+)/, " R$1") // LEGIARTI000047400121 (Annexe I à l'article R. 373-3), etc
+      .replace(/^CONTRAT COMMERCIAL$/, "Annexe CONTRAT COMMERCIAL")
+      .replace(/^Emplois classés$/, "Annexe Emplois classés")
   }
   const segments = articleNumber
     .trim()
-    .split(/\s*[-,()]\s*|\s+/)
+    .split(/\s*[-,.()]\s*|\s+/)
     .filter(
       (segment) =>
         segment !== "" &&
         ![
+          "alinéa",
           "à",
           "art",
           "art.",
@@ -207,7 +234,7 @@ function splitArticleNumber(articleNumber: string): string[] {
           "n°",
         ].includes(segment),
     )
-    .map((segment) => segment.replace(/^1er$/, "1"))
+    .map((segment) => segment.replace(/^1er$/, "1").replace(/^(\d+)e$/, "$1"))
   if (annexe) {
     segments.push("Annexe")
   }

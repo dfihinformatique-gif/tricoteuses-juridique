@@ -17,6 +17,7 @@ const numberBySemelBisTerEtc: Record<string, number> = {
   tridecies: 13,
   quaterdecies: 14,
   quindecies: 15,
+  quinquedecies: 15,
   sexdecies: 16,
   septdecies: 17,
   octodecies: 18,
@@ -79,7 +80,7 @@ const numberBySemelBisTerEtc: Record<string, number> = {
 }
 
 const semelBisTerEtcRegExp =
-  /^(?:un(?:de?)?|duo(?:de)?|ter|quater|quin|sex?|sept|octo|novo)?(?:dec|v[ei]c|tr[ei]c|quadrag|quinquag|sexag|septuag|octog|nonag)ies|semel|bis|ter|quater|(?:quinqu|sex|sept|oct|no[nv])ies$/i
+  /^(?:un(?:de?)?|duo(?:de)?|ter|quater|quin(?:que)?|sex?|sept|octo|novo)?(?:dec|v[ei]c|tr[ei]c|quadrag|quinquag|sexag|septuag|octog|nonag)ies|semel|bis|ter|quater|(?:quinqu|sex|sept|oct|no[nv])ies$/i
 
 function articleNumberSegmentToPriorityAndNumber(
   segment: string,
@@ -100,17 +101,36 @@ function articleNumberSegmentToPriorityAndNumber(
           return parseInt(match[1]) * 1000 + (match[2]?.charCodeAt(0) ?? 999)
         },
       ],
-      [/^\d+$/, (segment) => parseInt(segment)], // Article de loi
       [
-        /^R\*?\d+$/,
+        /^\*?\d+$/,
         (segment) => {
-          // Article de la partie règlementaire
-          // "R*" means "article de la partie réglementaire pris par décret en Conseil d'État"
-          const match = segment.match(/^R\*?(\d+)$/)!
+          // Article de loi
+          // "*" prefix before the number means "article pris par décret en Conseil d'État"
+          const match = segment.match(/^\*?(\d+)$/)!
           return parseInt(match[1])
         },
       ],
-      [/^D\d+$/, (segment) => parseInt(segment.slice(1))], // Article de décret
+      [
+        /^(R\*{0,2}|\*{0,2}R)\d+[A-Z]?$/,
+        (segment) => {
+          // Article de la partie règlementaire
+          // "R*" or "*R" means "article de la partie réglementaire pris par décret en Conseil d'État"
+          // "R**" means "article de la partie réglementaire pris par décret en Conseil d'État et en conseil des ministres"
+          // Articles R1A, R1B, etc are before R1. See, for example, in LEGITEXT000025503132
+          const match = segment.match(/^(R\*{0,2}|\*{0,2}R)(\d+)([A-Z])?$/)!
+          return parseInt(match[2]) * 1000 + (match[3]?.charCodeAt(0) ?? 999)
+        },
+      ],
+      [
+        /^D\*{0,2}\d+$/,
+        (segment) => {
+          // Article de décret
+          // "D*" means "décret en Conseil d'État"
+          // "D**" means "décret en Conseil d'État et en conseil des ministres"
+          const match = segment.match(/^D\*{0,2}(\d+)$/)!
+          return parseInt(match[1])
+        },
+      ],
       [/^A\d+$/, (segment) => parseInt(segment.slice(1))], // Article d'arrêté
       [
         /^[A-Z]$/,
@@ -163,9 +183,11 @@ function splitArticleNumber(articleNumber: string): string[] {
   } else if (articleNumber.startsWith("Annexe article ")) {
     annexe = true
     articleNumber = articleNumber.replace(/^Annexe article /, "")
-  } else if (articleNumber === "R* 712-8") {
-    // LEGIARTI000027445433
-    articleNumber = "R*712-8"
+  } else {
+    articleNumber = articleNumber
+      .replace(/^R\*\s+(\d+)/, "R*$1") // LEGIARTI000027445433 (R* 712-8), etc
+      .replace(/^R\.\s+(\d+)/, "R$1") // LEGIARTI000039432122 (R. 755-9-8)
+      .replace(/\s+R\.\s+(\d+)/, " R$1") // LEGIARTI000047400121 (Annexe I à l'article R. 373-3), etc
   }
   const segments = articleNumber
     .trim()
@@ -173,7 +195,17 @@ function splitArticleNumber(articleNumber: string): string[] {
     .filter(
       (segment) =>
         segment !== "" &&
-        !["à", "art.", "articles", "aux", "l'article", "n°"].includes(segment),
+        ![
+          "à",
+          "art",
+          "art.",
+          "articles",
+          "au",
+          "aux",
+          "L'article",
+          "l'article",
+          "n°",
+        ].includes(segment),
     )
     .map((segment) => segment.replace(/^1er$/, "1"))
   if (annexe) {

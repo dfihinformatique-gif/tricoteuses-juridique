@@ -231,6 +231,7 @@ export async function registerLegiArticleModifiers(
         articleDateFin,
       )
     } else if (
+      (articleLien.typelien === "ABROGATION" && !articleLien.cible) ||
       articleLien.typelien === "CITATION" ||
       articleLien.typelien === "CODIFIE" ||
       (articleLien.typelien === "HISTO" && articleLien.cible) ||
@@ -376,6 +377,12 @@ export async function registerLegiArticleModifiers(
           )
         }
       }
+    } else if (
+      texteVersionLien.typelien === "CONCORDE" &&
+      texteVersionLien.cible // LEGIARTI000018508754
+    ) {
+      // It seems to be errors.
+      // Ignore link.
     } else {
       throw new Error(
         `Unexpected texte_version_lien to article ${texteVersionLien.id}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
@@ -431,6 +438,8 @@ export async function registerLegiArticleModifiers(
           articleDateFin,
         )
       } else if (
+        (articleLien["@typelien"] === "ABROGATION" &&
+          articleLien["@sens"] === "cible") ||
         articleLien["@typelien"] === "CITATION" ||
         articleLien["@typelien"] === "CODIFIE" ||
         (articleLien["@typelien"] === "HISTO" &&

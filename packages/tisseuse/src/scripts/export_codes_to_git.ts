@@ -54,6 +54,10 @@ async function exportCodesToGit(
         "LEGITEXT000006074068", // Code des pensions militaires d'invalidité et des victimes de la guerre
         "LEGITEXT000006070302", // Code des pensions civiles et militaires de retraite
         "LEGITEXT000006069565", // Code de la consommation
+        "LEGITEXT000006072665", // Code de la santé publique
+        "LEGITEXT000006074234", // Code de l'aviation civile
+        "LEGITEXT000023086525", // Code des transports
+        "LEGITEXT000006070633", // Code général des collectivités territoriales
       ].includes(codeId)
     ) {
       continue

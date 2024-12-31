@@ -232,6 +232,7 @@ export async function registerLegiArticleModifiers(
       )
     } else if (
       articleLien.typelien === "CITATION" ||
+      articleLien.typelien === "CODIFIE" ||
       (articleLien.typelien === "HISTO" && articleLien.cible) ||
       (articleLien.typelien === "PEREMPTION" && articleLien.cible) ||
       articleLien.typelien === "PILOTE_SUIVEUR" ||
@@ -280,7 +281,8 @@ export async function registerLegiArticleModifiers(
       }
     } else if (
       (articleLien.typelien === "CREATION" && !articleLien.cible) ||
-      (articleLien.typelien === "MODIFICATION" && !articleLien.cible)
+      (articleLien.typelien === "MODIFICATION" && !articleLien.cible) ||
+      (articleLien.typelien === "MODIFIE" && articleLien.cible) // LEGIARTI000045468013
     ) {
       // It seems to be errors.
       // Ignore link.
@@ -313,7 +315,8 @@ export async function registerLegiArticleModifiers(
     )
     if (
       (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible)
+      (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "DISJONCTION" && texteVersionLien.cible)
     ) {
       await addModifyingTextId(
         context,
@@ -329,7 +332,7 @@ export async function registerLegiArticleModifiers(
       texteVersionLien.typelien === "CITATION" ||
       (texteVersionLien.typelien === "HISTO" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "PEREMPTION" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "SPEC_APPLI" && texteVersionLien.cible) ||
+      texteVersionLien.typelien === "SPEC_APPLI" ||
       (texteVersionLien.typelien === "TXT_ASSOCIE" && texteVersionLien.cible) ||
       (texteVersionLien.typelien === "TXT_ASSOCIE" &&
         !texteVersionLien.cible) || // Example: LEGITEXT000006074068
@@ -429,6 +432,7 @@ export async function registerLegiArticleModifiers(
         )
       } else if (
         articleLien["@typelien"] === "CITATION" ||
+        articleLien["@typelien"] === "CODIFIE" ||
         (articleLien["@typelien"] === "HISTO" &&
           articleLien["@sens"] === "source") ||
         (articleLien["@typelien"] === "PEREMPTION" &&
@@ -496,8 +500,10 @@ export async function registerLegiArticleModifiers(
           }
         }
       } else if (
-        articleLien["@typelien"] === "CREATION" &&
-        articleLien["@sens"] === "cible"
+        (articleLien["@typelien"] === "CREATION" &&
+          articleLien["@sens"] === "cible") ||
+        (articleLien["@typelien"] === "MODIFIE" &&
+          articleLien["@sens"] === "source") // LEGIARTI000045468013
       ) {
         // It seems to be an error.
         // Ignore link.
@@ -628,7 +634,10 @@ export async function registerLegiTextModifiers(
       )
     }
     assert.strictEqual(articleLien.cidtexte, context.consolidatedTextCid)
-    if (articleLien.typelien === "ABROGATION" && articleLien.cible) {
+    if (
+      (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
+      (articleLien.typelien === "ABROGE" && !articleLien.cible)
+    ) {
       await addModifyingArticleId(
         context,
         articleLien.article_id,
@@ -645,6 +654,7 @@ export async function registerLegiTextModifiers(
     ) {
       // Ignore link.
     } else if (
+      (articleLien.typelien === "CODIFICATION" && articleLien.cible) ||
       (articleLien.typelien === "CONCORDANCE" && !articleLien.cible) ||
       (articleLien.typelien === "CONCORDE" && !articleLien.cible) ||
       (articleLien.typelien === "CREE" && !articleLien.cible) ||
@@ -698,7 +708,10 @@ export async function registerLegiTextModifiers(
       )
     }
     assert.strictEqual(texteVersionLien.cidtexte, context.consolidatedTextCid)
-    if (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) {
+    if (
+      (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible)
+    ) {
       await addModifyingTextId(
         context,
         texteVersionLien.texte_version_id,
@@ -711,14 +724,16 @@ export async function registerLegiTextModifiers(
       (texteVersionLien.typelien === "APPLICATION" &&
         !texteVersionLien.cible) ||
       texteVersionLien.typelien === "CITATION" ||
+      (texteVersionLien.typelien === "SPEC_APPLI" && !texteVersionLien.cible) || // LEGITEXT000006074096
       (texteVersionLien.typelien === "TXT_ASSOCIE" &&
         !texteVersionLien.cible) || // Example: LEGITEXT000006074068
       (texteVersionLien.typelien === "TXT_SOURCE" && !texteVersionLien.cible)
     ) {
       // Ignore link.
     } else if (
-      texteVersionLien.typelien === "MODIFIE" &&
-      !texteVersionLien.cible
+      (texteVersionLien.typelien === "CODIFICATION" &&
+        texteVersionLien.cible) ||
+      (texteVersionLien.typelien === "MODIFIE" && !texteVersionLien.cible)
     ) {
       await addModifyingTextId(
         context,

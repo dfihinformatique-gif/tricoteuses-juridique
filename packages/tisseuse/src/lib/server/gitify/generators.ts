@@ -48,6 +48,8 @@ import { addArticleToTree, type SectionTaNode, type TextelrNode } from "./trees"
 const minDateObject = new Date("1971-01-01")
 const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)
 const oneDay = 24 * 60 * 60 // hours * minutes * seconds
+const todayObject = new Date(new Date().toISOString().slice(0, 10))
+const today = todayObject.toISOString().slice(0, 10)
 
 async function addLienArticleToCurrentArticles(
   context: Context,
@@ -549,6 +551,7 @@ export async function generateConsolidatedTextGit(
     message: "Création du dépôt Git",
   })
 
+  let future = false
   for (const [date, consolidatedIdsByActionByModifyingTextId] of Object.entries(
     context.consolidatedIdsByActionByModifyingTextIdByDate,
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
@@ -777,6 +780,15 @@ export async function generateConsolidatedTextGit(
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
             .join("\n")
+        }
+        if (date > today && !future) {
+          await git.branch({
+            checkout: true,
+            dir: targetDir,
+            fs,
+            ref: "futur",
+          })
+          future = true
         }
         await git.commit({
           dir: targetDir,

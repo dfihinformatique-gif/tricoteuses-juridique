@@ -808,10 +808,18 @@ export async function generateConsolidatedTextGit(
           message: [modifyingTextTitle, summary, messageLines]
             .filter((block) => block !== undefined)
             .join("\n\n"),
+          ref: future ? "refs/heads/futur" : undefined,
         })
       }
       if (modifyingTextIndex === modifyingTexteVersionArray.length - 1) {
-        await git.tag({ dir: targetDir, fs, ref: date })
+        await git.tag({
+          dir: targetDir,
+          fs,
+          ref:
+            date === "2222-02-22"
+              ? "différé" // mise en vigueur différée à une date non précisée
+              : date,
+        })
       }
 
       const t4 = performance.now()

@@ -1,6 +1,7 @@
 import assert from "assert"
 import dedent from "dedent-js"
 import fs from "fs-extra"
+import objectHash from "object-hash"
 import git from "isomorphic-git"
 import path from "path"
 import * as prettier from "prettier"
@@ -23,6 +24,7 @@ import type {
   LegiTextelrLienArt,
   LegiTexteVersion,
 } from "$lib/legal/legi"
+import { db } from "$lib/server/databases"
 import { writeTextFileIfChanged } from "$lib/server/files"
 import { walkDir } from "$lib/server/file_systems"
 import { slugify } from "$lib/strings"
@@ -239,7 +241,15 @@ async function generateArticlesGit(
 export async function generateConsolidatedTextGit(
   consolidatedTextId: string,
   targetDir: string,
-  { "log-references": logReferences }: { "log-references"?: boolean },
+  {
+    currentSourceCodeCommitOid,
+    force,
+    "log-references": logReferences,
+  }: {
+    currentSourceCodeCommitOid?: string
+    force?: boolean
+    "log-references"?: boolean
+  },
 ): Promise<number> {
   const context: Context = {
     articleById: {},
@@ -364,6 +374,32 @@ export async function generateConsolidatedTextGit(
         parentsSectionTa === undefined ? 0 : 1 + parentsSectionTa.length,
         article,
       )
+    }
+  }
+
+  // If code & data have not changed and no force option, don't generate git repository.
+  const dataHash = objectHash({
+    articleById: context.articleById,
+    sectionTaById: context.sectionTaById,
+    textelrById: context.textelrById,
+    texteVersionById: context.texteVersionById,
+  })
+  if (!force) {
+    const consolidatedTextGitHashes = (
+      await db<{ data_hash: string; source_code_commit_oid: string }[]>`
+      SELECT * FROM consolidated_texts_git_hashes
+      WHERE id = ${consolidatedTextId}
+    `
+    )[0]
+    if (consolidatedTextGitHashes !== undefined) {
+      if (
+        currentSourceCodeCommitOid ===
+        consolidatedTextGitHashes.source_code_commit_oid
+      ) {
+        if (dataHash === consolidatedTextGitHashes.data_hash) {
+          return 10
+        }
+      }
     }
   }
 
@@ -826,6 +862,23 @@ export async function generateConsolidatedTextGit(
       console.log(`Durations: ${t1 - t0} ${t2 - t1} ${t3 - t2} ${t4 - t3}`)
     }
   }
+
+  await db`
+    INSERT INTO consolidated_texts_git_hashes (
+      id,
+      data_hash,
+      source_code_commit_oid
+    ) VALUES (
+      ${consolidatedTextId},
+      ${dataHash},
+      ${currentSourceCodeCommitOid ?? ""}
+    )
+    ON CONFLICT (id)
+    DO UPDATE SET
+      data_hash = ${dataHash},
+      source_code_commit_oid = ${currentSourceCodeCommitOid ?? ""}
+  `
+
   return 0
 }
 

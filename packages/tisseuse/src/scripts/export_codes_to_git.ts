@@ -1,4 +1,6 @@
 import assert from "assert"
+import fs from "fs-extra"
+import git from "isomorphic-git"
 import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
@@ -14,12 +16,14 @@ const { forgejo } = config
 async function exportCodesToGit(
   targetDir: string,
   {
+    force,
     "log-references": logReferences,
     only,
     push,
     resume,
     silent,
   }: {
+    force?: boolean
     "log-references"?: boolean
     only?: string | string[]
     push?: boolean
@@ -32,6 +36,15 @@ async function exportCodesToGit(
     only = [only]
   }
   let skip = resume !== undefined
+
+  const currentSourceCodeCommitOid = (
+    await git.log({
+      depth: 1,
+      dir: ".",
+      fs,
+    })
+  )[0]?.oid
+
   for (const { data: codeTexteVersion, id: codeId } of await db<
     { data: LegiTexteVersion; id: string }[]
   >`
@@ -77,11 +90,14 @@ async function exportCodesToGit(
       codeId,
       codeRepositoryDir,
       {
+        currentSourceCodeCommitOid,
+        force,
         "log-references": logReferences,
       },
     )
     if (result !== 0) {
-      if (exitCode === 0) {
+      // Note: When result === 10, the git repository has not been generated.
+      if (result !== 10 && exitCode === 0) {
         exitCode = result
       }
       continue
@@ -139,6 +155,10 @@ async function exportCodesToGit(
 
 sade("export_codes_to_git <targetDir>", true)
   .describe("Convert codes of laws to a git repositories")
+  .option(
+    "-f, --force",
+    "Force generation of git repositories even if source code and source data have not changed",
+  )
   .option("-o, --only", "ID of code to generate")
   .option("-p, --push", "Push generated code to their Forgejo repositories")
   .option(

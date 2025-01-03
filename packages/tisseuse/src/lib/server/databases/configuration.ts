@@ -138,6 +138,15 @@ export async function configureDatabase() {
     )
   `
 
+  // Table: consolidated_texts_git_states
+  await db`
+    CREATE TABLE IF NOT EXISTS consolidated_texts_git_hashes (
+      id char(20) PRIMARY KEY NOT NULL REFERENCES texte_version(id) ON DELETE CASCADE,
+      data_hash text NOT NULL,
+      source_code_commit_oid text NOT NULL
+    )
+  `
+
   // Table: dossier_legislatif
   await db`
     CREATE TABLE IF NOT EXISTS dossier_legislatif (

@@ -146,7 +146,7 @@ async function exportCodesToGit(
       const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:textes_consolides/${codeRepositoryName}.git`
       await $`git remote add origin ${origin}`
       await $`git push --all --force --set-upstream origin`
-      await $`git push --tags`
+      await $`git push --force --tags`
     }
   }
 

@@ -9,7 +9,7 @@ import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi"
 import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
 import { generateConsolidatedTextGit } from "$lib/server/gitify/generators"
-import { slugify } from "$lib/strings"
+import { repositoryNameFromTitle } from "$lib/server/gitify/repositories"
 
 const { forgejo } = config
 
@@ -85,28 +85,14 @@ async function exportConsolidatedTextsToGit(
       consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
       consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
       consolidatedTextId
-    const consolidatedTextSlug = slugify(consolidatedTextTitle, "_")
+    const consolidatedTextRepositoryName = repositoryNameFromTitle(
+      consolidatedTextTitle,
+    )
     const consolidatedTextRepositoryDir = path.join(
       targetDir,
       consolidatedTextNatureDirName,
-      consolidatedTextSlug,
+      consolidatedTextRepositoryName,
     )
-    let consolidatedTextRepositoryName = consolidatedTextSlug
-    if (consolidatedTextRepositoryName.length > 100) {
-      consolidatedTextRepositoryName = consolidatedTextRepositoryName
-        .replaceAll("_de_", "_")
-        .replaceAll("_des_", "_")
-        .replaceAll("_l_", "_")
-        .replaceAll("_la_", "_")
-        .replaceAll("_le_", "_")
-        .replaceAll("_les_", "_")
-    }
-    while (consolidatedTextRepositoryName.length > 100) {
-      consolidatedTextRepositoryName = consolidatedTextRepositoryName.replace(
-        /_[^_]+$/,
-        "",
-      )
-    }
 
     const result = await generateConsolidatedTextGit(
       consolidatedTextId,

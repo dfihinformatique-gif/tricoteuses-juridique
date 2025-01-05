@@ -5,13 +5,19 @@ import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
 
-import type { LegiTexteVersion } from "$lib/legal/legi"
+import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi"
 import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
 import { generateConsolidatedTextGit } from "$lib/server/gitify/generators"
 import { slugify } from "$lib/strings"
 
 const { forgejo } = config
+
+const dirNameByNature: Partial<Record<LegiTexteNature, string>> = {
+  CODE: "codes",
+  CONSTITUTION: "constitution",
+  DECLARATION: "declarations",
+}
 
 async function exportCodesToGit(
   targetDir: string,
@@ -45,36 +51,49 @@ async function exportCodesToGit(
     })
   )[0]?.oid
 
-  for (const { data: codeTexteVersion, id: codeId } of await db<
-    { data: LegiTexteVersion; id: string }[]
-  >`
-    SELECT data, id FROM texte_version WHERE nature = 'CODE' and id LIKE 'LEGITEXT%'
+  for (const {
+    data: consolidatedTexteVersion,
+    id: consolidatedTextId,
+  } of await db<{ data: LegiTexteVersion; id: string }[]>`
+    SELECT data, id
+    FROM texte_version
+    WHERE
+      nature IN ('CODE', 'CONSTITUTION', 'DECLARATION')
+      and id LIKE 'LEGITEXT%'
   `) {
     if (skip) {
-      if (codeId === resume) {
+      if (consolidatedTextId === resume) {
         skip = false
         if (!silent) {
           console.log(
-            `Resuming at code ${codeId} ${codeTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}...`,
+            `Resuming at consolidated text ${consolidatedTextId} ${consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}...`,
           )
         }
       } else {
         continue
       }
     }
-    if (only !== undefined && !only.includes(codeId)) {
+    if (only !== undefined && !only.includes(consolidatedTextId)) {
       continue
     }
 
-    const codeTitle =
-      codeTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
-      codeTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
-      codeId
-    const codeSlug = slugify(codeTitle, "_")
-    const codeRepositoryDir = path.join(targetDir, codeSlug)
-    let codeRepositoryName = codeSlug
-    if (codeRepositoryName.length > 100) {
-      codeRepositoryName = codeRepositoryName
+    const consolidatedTextNatureDirName = dirNameByNature[
+      consolidatedTexteVersion.META.META_COMMUN.NATURE as LegiTexteNature
+    ] as string
+    assert.notStrictEqual(consolidatedTextNatureDirName, undefined)
+    const consolidatedTextTitle =
+      consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
+      consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+      consolidatedTextId
+    const consolidatedTextSlug = slugify(consolidatedTextTitle, "_")
+    const consolidatedTextRepositoryDir = path.join(
+      targetDir,
+      consolidatedTextNatureDirName,
+      consolidatedTextSlug,
+    )
+    let consolidatedTextRepositoryName = consolidatedTextSlug
+    if (consolidatedTextRepositoryName.length > 100) {
+      consolidatedTextRepositoryName = consolidatedTextRepositoryName
         .replaceAll("_de_", "_")
         .replaceAll("_des_", "_")
         .replaceAll("_l_", "_")
@@ -82,13 +101,16 @@ async function exportCodesToGit(
         .replaceAll("_le_", "_")
         .replaceAll("_les_", "_")
     }
-    while (codeRepositoryName.length > 100) {
-      codeRepositoryName = codeRepositoryName.replace(/_[^_]+$/, "")
+    while (consolidatedTextRepositoryName.length > 100) {
+      consolidatedTextRepositoryName = consolidatedTextRepositoryName.replace(
+        /_[^_]+$/,
+        "",
+      )
     }
 
     const result = await generateConsolidatedTextGit(
-      codeId,
-      codeRepositoryDir,
+      consolidatedTextId,
+      consolidatedTextRepositoryDir,
       {
         currentSourceCodeCommitOid,
         force,
@@ -105,7 +127,7 @@ async function exportCodesToGit(
     if (push && forgejo !== undefined) {
       const response = await fetch(
         new URL(
-          `/api/v1/repos/textes_consolides/${codeRepositoryName}`,
+          `/api/v1/repos/${consolidatedTextNatureDirName}/${consolidatedTextRepositoryName}`,
           forgejo.url,
         ),
         { headers: { Accept: "application/json" } },
@@ -113,15 +135,15 @@ async function exportCodesToGit(
       if (response.status === 404) {
         // Create respository.
         const url = new URL(
-          `/api/v1/orgs/textes_consolides/repos`,
+          `/api/v1/orgs/${consolidatedTextNatureDirName}/repos`,
           forgejo.url,
         ).toString()
         const response = await fetch(url, {
           body: JSON.stringify(
             {
               default_branch: "main",
-              description: codeTitle,
-              name: codeRepositoryName,
+              description: consolidatedTextTitle,
+              name: consolidatedTextRepositoryName,
             },
             null,
             2,
@@ -142,8 +164,8 @@ async function exportCodesToGit(
       } else {
         assert(response.ok)
       }
-      cd(codeRepositoryDir)
-      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:textes_consolides/${codeRepositoryName}.git`
+      cd(consolidatedTextRepositoryDir)
+      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:${consolidatedTextNatureDirName}/${consolidatedTextRepositoryName}.git`
       await $`git remote add origin ${origin}`
       await $`git push --all --force --set-upstream origin`
       await $`git push --force --tags`
@@ -153,21 +175,24 @@ async function exportCodesToGit(
   return exitCode
 }
 
-sade("export_codes_to_git <targetDir>", true)
-  .describe("Convert codes of laws to a git repositories")
+sade("export_consolidated_texts_to_git <targetDir>", true)
+  .describe("Convert consolidated texts of laws to a git repositories")
   .option(
     "-f, --force",
     "Force generation of git repositories even if source code and source data have not changed",
   )
-  .option("-o, --only", "ID of code to generate")
-  .option("-p, --push", "Push generated code to their Forgejo repositories")
+  .option("-o, --only", "ID of consolidated text to generate")
+  .option(
+    "-p, --push",
+    "Push generated consolidated texts to their Forgejo repositories",
+  )
   .option(
     "-R, --log-references",
     "Log references of consolidated text and its articles",
   )
-  .option("-r, --resume", "Resume generation at given code ID")
+  .option("-r, --resume", "Resume generation at given consolidated text ID")
   .option("-s, --silent", "Hide log messages")
-  .example("/var/tmp/codes")
+  .example("/var/tmp")
   .action(async (targetDir, options) => {
     process.exit(await exportCodesToGit(targetDir, options))
   })

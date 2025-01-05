@@ -179,7 +179,7 @@ sade("export_consolidated_texts_to_git <targetDir>", true)
   .describe("Convert consolidated texts of laws to a git repositories")
   .option(
     "-f, --force",
-    "Force generation of git repositories even if source code and source data have not changed",
+    "Force generation of git repositories even if source data have not changed",
   )
   .option("-o, --only", "ID of consolidated text to generate")
   .option(

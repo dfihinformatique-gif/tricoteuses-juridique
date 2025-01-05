@@ -19,7 +19,7 @@ const dirNameByNature: Partial<Record<LegiTexteNature, string>> = {
   DECLARATION: "declarations",
 }
 
-async function exportCodesToGit(
+async function exportConsolidatedTextsToGit(
   targetDir: string,
   {
     force,
@@ -194,6 +194,6 @@ sade("export_consolidated_texts_to_git <targetDir>", true)
   .option("-s, --silent", "Hide log messages")
   .example("/var/tmp")
   .action(async (targetDir, options) => {
-    process.exit(await exportCodesToGit(targetDir, options))
+    process.exit(await exportConsolidatedTextsToGit(targetDir, options))
   })
   .parse(process.argv)

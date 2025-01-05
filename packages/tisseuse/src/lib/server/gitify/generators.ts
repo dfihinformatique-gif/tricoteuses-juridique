@@ -1024,7 +1024,7 @@ async function generateTextGit(
   const readmeBlocks = [
     `${"#".repeat(Math.min(depth, 6))} ${texteTitle}`,
     dedent`
-      **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://git.tricoteuses.fr/)
+      **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
       de conversion à git des textes juridiques consolidés français.
       **Il peut contenir des erreurs !**
     `,

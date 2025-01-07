@@ -124,19 +124,26 @@ async function cleanHtmlFragment(
   try {
     return fragment === undefined
       ? undefined
-      : await prettier.format(
-          fragment
-            .replaceAll("<<", "«")
-            .replaceAll(">>", "»")
-            .replace(/<p>(.*?)<\/p>/gs, "$1<br />\n\n")
-            .replace(/\s*(<br\s*\/>\s*)+/gs, "<br />\n\n")
-            .replace(/^\s*(<br\s*\/>\s*)+/gs, "")
-            .replace(/\s*(<br\s*\/>\s*)+$/gs, "")
-            .trim(),
-          {
-            parser: "html",
-          },
+      : (
+          await prettier.format(
+            fragment
+              .replaceAll("<<", "«")
+              .replaceAll(">>", "»")
+              .replace(/<p>(.*?)<\/p>/gs, "$1<br />\n\n")
+              .replace(/\s*(<br\s*\/>\s*)+/gs, "<br />\n\n")
+              // Remove <br /> at the beginning of fragment.
+              .replace(/^\s*(<br\s*\/>\s*)+/gs, "")
+              // Remove <br /> at the end of fragment.
+              .replace(/\s*(<br\s*\/>\s*)+$/gs, "")
+              .trim(),
+            {
+              parser: "html",
+            },
+          )
         )
+          // Remove blank lines after a <br > when the text is indented,
+          // because it breaks Markdown rendering.
+          .replace(/<br \/>\n\n+ /g, "<br />\n ")
   } catch (e) {
     console.trace(`Cleanup of following text failed:\n${fragment}`)
     console.error(e)

@@ -12,7 +12,10 @@ import type {
 } from "$lib/legal/legi"
 import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
-import { repositoryNameFromTitle } from "$lib/server/gitify/repositories"
+import {
+  licence,
+  repositoryNameFromTitle,
+} from "$lib/server/gitify/repositories"
 import { writeTextFileIfChanged } from "$lib/server/files"
 
 const { forgejo } = config
@@ -32,6 +35,9 @@ async function exportCodesListToGit(
   await fs.ensureDir(repositoryDir)
   cd(repositoryDir)
   await $`git init`
+
+  await writeTextFileIfChanged(path.join(repositoryDir, "LICENCE.md"), licence)
+  await $`git add LICENCE.md`
 
   const codesLinks: Array<{
     etat?: LegiTexteEtat

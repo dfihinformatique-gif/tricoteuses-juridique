@@ -399,16 +399,16 @@ export async function generateConsolidatedTextGit(
       WHERE id = ${consolidatedTextId}
     `
     )[0]
-    // if (consolidatedTextGitHashes !== undefined) {
-    // if (
-    //   currentSourceCodeCommitOid ===
-    //   consolidatedTextGitHashes.source_code_commit_oid
-    // ) {
-    if (dataHash === consolidatedTextGitHashes.data_hash) {
-      return 10
+    if (consolidatedTextGitHashes !== undefined) {
+      // if (
+      //   currentSourceCodeCommitOid ===
+      //   consolidatedTextGitHashes.source_code_commit_oid
+      // ) {
+      if (dataHash === consolidatedTextGitHashes.data_hash) {
+        return 10
+      }
+      // }
     }
-    // }
-    // }
   }
 
   // Associate modified articles without modifying text with a modifying text that modified other articles at the same date.

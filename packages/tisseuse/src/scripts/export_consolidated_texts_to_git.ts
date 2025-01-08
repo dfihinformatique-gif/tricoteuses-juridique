@@ -23,6 +23,7 @@ async function exportConsolidatedTextsToGit(
   targetDir: string,
   {
     force,
+    "log-commits": logCommits,
     "log-references": logReferences,
     only,
     push,
@@ -30,6 +31,7 @@ async function exportConsolidatedTextsToGit(
     silent,
   }: {
     force?: boolean
+    "log-commits"?: boolean
     "log-references"?: boolean
     only?: string | string[]
     push?: boolean
@@ -100,6 +102,7 @@ async function exportConsolidatedTextsToGit(
       {
         currentSourceCodeCommitOid,
         force,
+        "log-commits": logCommits,
         "log-references": logReferences,
       },
     )
@@ -163,6 +166,7 @@ async function exportConsolidatedTextsToGit(
 
 sade("export_consolidated_texts_to_git <targetDir>", true)
   .describe("Convert consolidated texts of laws to a git repositories")
+  .option("-C, --log-commits", "Log commits")
   .option(
     "-f, --force",
     "Force generation of git repositories even if source data have not changed",

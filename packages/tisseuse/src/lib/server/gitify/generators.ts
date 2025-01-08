@@ -252,10 +252,12 @@ export async function generateConsolidatedTextGit(
   {
     currentSourceCodeCommitOid,
     force,
+    "log-commits": logCommits,
     "log-references": logReferences,
   }: {
     currentSourceCodeCommitOid?: string
     force?: boolean
+    "log-commits"?: boolean
     "log-references"?: boolean
   },
 ): Promise<number> {
@@ -534,7 +536,9 @@ export async function generateConsolidatedTextGit(
   for (const [date, consolidatedIdsByActionByModifyingTextId] of Object.entries(
     context.consolidatedIdsByActionByModifyingTextIdByDate,
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
-    console.log(date)
+    if (logCommits) {
+      console.log(date)
+    }
     const dateObject = new Date(date)
     const timezoneOffset = dateObject.getTimezoneOffset() // in minutes
     let timestamp = Math.floor(dateObject.getTime() / 1000)
@@ -630,15 +634,17 @@ export async function generateConsolidatedTextGit(
         modifyingTextId = "ZZZZ TEXTE MANQUANT"
         modifyingTextTitle = `!!! Texte non trouvé ${date} !!!`
       }
-      console.log(`  ${modifyingTextId} ${modifyingTextTitle}`)
+      if (logCommits) {
+        console.log(`  ${modifyingTextId} ${modifyingTextTitle}`)
+      }
       const consolidatedIdsByAction =
         consolidatedIdsByActionByModifyingTextId[modifyingTextId]
-      if (consolidatedIdsByAction.DELETE !== undefined) {
+      if (consolidatedIdsByAction.DELETE !== undefined && logCommits) {
         console.log(
           `    DELETE: ${[...consolidatedIdsByAction.DELETE].toSorted().join(", ")}`,
         )
       }
-      if (consolidatedIdsByAction.CREATE !== undefined) {
+      if (consolidatedIdsByAction.CREATE !== undefined && logCommits) {
         console.log(
           `    CREATE: ${[...consolidatedIdsByAction.CREATE].toSorted().join(", ")}`,
         )

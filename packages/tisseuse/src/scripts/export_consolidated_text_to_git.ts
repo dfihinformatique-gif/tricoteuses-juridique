@@ -8,6 +8,7 @@ sade("export_consolidated_text_to_git <consolidatedTextId> <targetDir>", true)
   .describe(
     "Convert a consolidated LEGI texte (Constitution, code, law, etc) to a git repository",
   )
+  .option("-C, --log-commits", "Log commits")
   .option(
     "-f, --force",
     "Force generation of git repository even if source code and source data have not changed",

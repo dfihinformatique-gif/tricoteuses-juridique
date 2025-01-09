@@ -157,7 +157,7 @@ async function exportConsolidatedTextsToGit(
       const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:${consolidatedTextNatureDirName}/${consolidatedTextRepositoryName}.git`
       await $`git remote add origin ${origin}`
       await $`git push --all --force --set-upstream origin`
-      await $`git push --force --tags`
+      await $`git push --force --quiet --tags`
     }
   }
 

@@ -122,7 +122,7 @@ async function exportConsolidatedTextsToGit(
         { headers: { Accept: "application/json" } },
       )
       if (response.status === 404) {
-        // Create respository.
+        // Create repository.
         const url = new URL(
           `/api/v1/orgs/${consolidatedTextNatureDirName}/repos`,
           forgejo.url,

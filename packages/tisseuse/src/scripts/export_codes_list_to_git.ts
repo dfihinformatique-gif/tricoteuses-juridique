@@ -111,7 +111,7 @@ async function exportCodesListToGit(
       { headers: { Accept: "application/json" } },
     )
     if (response.status === 404) {
-      // Create respository.
+      // Create repository.
       const url = new URL(`/api/v1/orgs/codes/repos`, forgejo.url).toString()
       const response = await fetch(url, {
         body: JSON.stringify(

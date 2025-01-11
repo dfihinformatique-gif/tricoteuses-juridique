@@ -57,7 +57,7 @@ async function exportConsolidatedTextsToGit({
     }
 
     const url = new URL(
-      `repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/gitify/dispatches`,
+      `repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/gitify.yaml/dispatches`,
       process.env.GITHUB_API_URL,
     ).toString()
     const response = await fetch(url, {

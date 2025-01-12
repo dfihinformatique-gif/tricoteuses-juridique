@@ -860,22 +860,21 @@ async function generateSectionTaGit(
 
   if (sectionTaNode.children !== undefined) {
     for (const child of sectionTaNode.children) {
-      const sectionTa = (await getOrLoadSectionTa(
-        context,
-        child.id,
-      )) as LegiSectionTa
-      const sectionTaDirName = child.slug
-      readmeLinks.push({ href: sectionTaDirName, title: child.title })
+      const sectionTa = await getOrLoadSectionTa(context, child.id)
+      if (sectionTa !== null) {
+        const sectionTaDirName = child.slug
+        readmeLinks.push({ href: sectionTaDirName, title: child.title })
 
-      changedFilesCount += await generateSectionTaGit(
-        context,
-        depth + 1,
-        child,
-        sectionTa,
-        repositoryRelativeDir,
-        modifyingTextId,
-        obsoleteRepositoryRelativeFilesPaths,
-      )
+        changedFilesCount += await generateSectionTaGit(
+          context,
+          depth + 1,
+          child,
+          sectionTa,
+          repositoryRelativeDir,
+          modifyingTextId,
+          obsoleteRepositoryRelativeFilesPaths,
+        )
+      }
     }
   }
 
@@ -953,22 +952,21 @@ async function generateTextGit(
 
   if (tree.children !== undefined) {
     for (const child of tree.children) {
-      const sectionTa = (await getOrLoadSectionTa(
-        context,
-        child.id,
-      )) as LegiSectionTa
-      const sectionTaDirName = child.slug
-      readmeLinks.push({ href: sectionTaDirName, title: child.title })
+      const sectionTa = await getOrLoadSectionTa(context, child.id)
+      if (sectionTa !== null) {
+        const sectionTaDirName = child.slug
+        readmeLinks.push({ href: sectionTaDirName, title: child.title })
 
-      changedFilesCount += await generateSectionTaGit(
-        context,
-        depth + 1,
-        child,
-        sectionTa,
-        "",
-        modifyingTextId,
-        obsoleteRepositoryRelativeFilesPaths,
-      )
+        changedFilesCount += await generateSectionTaGit(
+          context,
+          depth + 1,
+          child,
+          sectionTa,
+          "",
+          modifyingTextId,
+          obsoleteRepositoryRelativeFilesPaths,
+        )
+      }
     }
   }
 

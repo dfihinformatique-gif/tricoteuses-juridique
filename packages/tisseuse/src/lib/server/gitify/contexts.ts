@@ -1,5 +1,3 @@
-import assert from "assert"
-
 import type {
   JorfArticle,
   JorfSectionTa,
@@ -56,7 +54,7 @@ export interface Context {
     Partial<Record<Action, string>>
   >
   modifyingTextsIdsByArticleActionDate: Record<string, Set<string>>
-  sectionTaById: Record<string, LegiSectionTa>
+  sectionTaById: Record<string, LegiSectionTa | null>
   targetDir: string
   texteManquantById: Record<string, TexteManquant>
   textelrById: Record<string, JorfTextelr | LegiTextelr | null>
@@ -92,15 +90,18 @@ export async function getOrLoadArticle(
 export async function getOrLoadSectionTa(
   context: Context,
   sectionTaId: string,
-): Promise<LegiSectionTa> {
-  let sectionTa = context.sectionTaById[sectionTaId]
+): Promise<LegiSectionTa | null> {
+  let sectionTa: LegiSectionTa | null = context.sectionTaById[sectionTaId]
   if (sectionTa === undefined) {
     sectionTa = (
       await db<{ data: LegiSectionTa }[]>`
         SELECT data FROM section_ta WHERE id = ${sectionTaId}
       `
     )[0]?.data
-    assert.notStrictEqual(sectionTa, undefined)
+    if (sectionTa === undefined) {
+      console.warn(`SectionTA ${sectionTaId} not found in table section_ta`)
+      sectionTa = null
+    }
     context.sectionTaById[sectionTaId] = sectionTa
   }
   return sectionTa
@@ -169,18 +170,20 @@ export async function* walkStructureTree(
         context,
         lienSectionTa["@id"],
       )
-      yield {
-        lienSectionTa,
-        liensSectionTa,
-        parentsSectionTa,
-        sectionTa: childSectionTa,
-      }
-      const childStructure = childSectionTa.STRUCTURE_TA
-      if (childStructure !== undefined) {
-        yield* walkStructureTree(context, childStructure, [
-          ...parentsSectionTa,
-          childSectionTa,
-        ])
+      if (childSectionTa !== null) {
+        yield {
+          lienSectionTa,
+          liensSectionTa,
+          parentsSectionTa,
+          sectionTa: childSectionTa,
+        }
+        const childStructure = childSectionTa.STRUCTURE_TA
+        if (childStructure !== undefined) {
+          yield* walkStructureTree(context, childStructure, [
+            ...parentsSectionTa,
+            childSectionTa,
+          ])
+        }
       }
     }
   }

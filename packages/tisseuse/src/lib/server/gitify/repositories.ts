@@ -1,6 +1,9 @@
 import dedent from "dedent-js"
+import fs from "fs-extra"
+import git from "isomorphic-git"
 
 import { slugify } from "$lib/strings"
+import type { TreeEntry } from "isomorphic-git"
 
 export const licence =
   dedent`
@@ -69,6 +72,7 @@ export const licence =
     libertés (CNIL), la réutilisation ne peut avoir pour objet ou pour effet de
     réidentifier les personnes concernées.
   ` + "\n"
+const textEncoder = new TextEncoder()
 
 export function repositoryNameFromTitle(title: string): string {
   const slug = slugify(title, "_")
@@ -86,4 +90,22 @@ export function repositoryNameFromTitle(title: string): string {
     repositoryName = repositoryName.replace(/_[^_]+$/, "")
   }
   return repositoryName
+}
+
+export async function writeTextFileBlob(
+  gitdir: string,
+  path: string,
+  text: string,
+): Promise<TreeEntry> {
+  const oid = await git.writeBlob({
+    fs,
+    gitdir,
+    blob: textEncoder.encode(text),
+  })
+  return {
+    mode: "100644",
+    path,
+    oid,
+    type: "blob",
+  }
 }

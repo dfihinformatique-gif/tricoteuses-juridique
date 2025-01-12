@@ -1,3 +1,5 @@
+import type { TreeEntry } from "isomorphic-git"
+
 import type {
   JorfArticle,
   JorfSectionTa,
@@ -20,15 +22,8 @@ import { db } from "$lib/server/databases"
 
 export type Action = (typeof actions)[number]
 
-interface ArticleCache {
-  id: string
-  markdown: string
-  repositoryRelativeFilePath: string
-}
-
 export interface Context {
   articleById: Record<string, JorfArticle | LegiArticle | null>
-  articleCacheByNumber: Record<string, ArticleCache>
   consolidatedIdsByActionByModifyingTextIdByDate: Record<
     string,
     Record<string, Partial<Record<Action, Set<string>>>>
@@ -41,6 +36,7 @@ export interface Context {
   >
   // Current content of a text at a given date
   currentInternalIds: Set<string>
+  gitdir: string
   hasModifyingTextIdByActionByConsolidatedArticleId: Record<
     string,
     Partial<Record<Action, boolean>>
@@ -55,10 +51,19 @@ export interface Context {
   >
   modifyingTextsIdsByArticleActionDate: Record<string, Set<string>>
   sectionTaById: Record<string, LegiSectionTa | null>
-  targetDir: string
   texteManquantById: Record<string, TexteManquant>
   textelrById: Record<string, JorfTextelr | LegiTextelr | null>
   texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
+  textFileCacheByRepositoryRelativeFilePath: Record<string, TextFileCache>
+}
+
+interface TextFileCache {
+  /**
+   * Text that can change even when id doesn't change
+   */
+  custom?: string
+  id: string
+  treeEntry: TreeEntry
 }
 
 export interface TexteManquant {

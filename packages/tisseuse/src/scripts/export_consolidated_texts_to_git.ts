@@ -98,7 +98,7 @@ async function exportConsolidatedTextsToGit(
 
     const result = await generateConsolidatedTextGit(
       consolidatedTextId,
-      consolidatedTextRepositoryDir,
+      consolidatedTextRepositoryDir + ".git",
       {
         currentSourceCodeCommitOid,
         force,
@@ -153,7 +153,7 @@ async function exportConsolidatedTextsToGit(
       } else {
         assert(response.ok)
       }
-      cd(consolidatedTextRepositoryDir)
+      cd(consolidatedTextRepositoryDir + ".git")
       const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:${consolidatedTextNatureDirName}/${consolidatedTextRepositoryName}.git`
       await $`git remote add origin ${origin}`
       await $`git push --all --force --set-upstream origin`

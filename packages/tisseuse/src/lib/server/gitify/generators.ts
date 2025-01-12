@@ -2,7 +2,7 @@ import assert from "assert"
 import dedent from "dedent-js"
 import fs from "fs-extra"
 import objectHash from "object-hash"
-import git from "isomorphic-git"
+import git, { type TreeEntry, type TreeObject } from "isomorphic-git"
 import path from "path"
 import * as prettier from "prettier"
 
@@ -25,8 +25,6 @@ import type {
   LegiTexteVersion,
 } from "$lib/legal/legi"
 import { db } from "$lib/server/databases"
-import { writeTextFileIfChanged } from "$lib/server/files"
-import { walkDir } from "$lib/server/file_systems"
 import { slugify } from "$lib/strings"
 
 import {
@@ -45,8 +43,12 @@ import {
   registerLegiArticleModifiers,
   registerLegiTextModifiers,
 } from "./modifiers"
-import { licence } from "./repositories"
-import { addArticleToTree, type SectionTaNode, type TextelrNode } from "./trees"
+import { licence, writeTextFileBlob } from "./repositories"
+import {
+  addArticleToTree,
+  type SectionTaNode,
+  type TextelrNode,
+} from "./texts_trees"
 
 const minDateObject = new Date("1971-01-01")
 const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)
@@ -155,13 +157,12 @@ async function generateArticlesGit(
   context: Context,
   articles: Array<JorfArticle | LegiArticle> | undefined,
   repositoryRelativeDir: string,
-  obsoleteRepositoryRelativeFilesPaths: Set<string>,
 ): Promise<{
-  changedFilesCount: number
   readmeLinks: Array<{ href: string; title: string }>
+  tree: TreeObject
 }> {
-  let changedFilesCount = 0
   const readmeLinks: Array<{ href: string; title: string }> = []
+  const tree: TreeObject = []
 
   if (articles !== undefined) {
     for (const article of articles) {
@@ -181,74 +182,62 @@ async function generateArticlesGit(
         articleFilename,
       )
       const articleCache =
-        articleNumber === undefined
-          ? undefined
-          : context.articleCacheByNumber[articleNumber]
+        context.textFileCacheByRepositoryRelativeFilePath[
+          articleRepositoryRelativeFilePath
+        ]
       if (
         articleCache === undefined ||
         articleId !== articleCache.id ||
-        articleRepositoryRelativeFilePath !==
-          articleCache.repositoryRelativeFilePath
+        articleCache.custom !== undefined
       ) {
         const articleMarkdown = dedent`
-            ---
-            ${[
-              [
-                "État",
-                (article as LegiArticle).META.META_SPEC.META_ARTICLE.ETAT,
-              ],
-              ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-              ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-              ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
-              ["Identifiant", articleId],
-              ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
-              // TODO: Mettre l'URL dans le Git Tricoteuses
-              ["URL", article.META.META_COMMUN.URL],
-            ]
-              .filter(([, value]) => value !== undefined)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join("\n")}
-            ---
+          ---
+          ${[
+            ["État", (article as LegiArticle).META.META_SPEC.META_ARTICLE.ETAT],
+            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
+            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
+            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+            ["Identifiant", articleId],
+            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
+            // TODO: Mettre l'URL dans le Git Tricoteuses
+            ["URL", article.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}
+          ---
 
-            ###### ${articleTitle}
+          ###### ${articleTitle}
 
-            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
-          `
-        if (articleNumber !== undefined) {
-          context.articleCacheByNumber[articleNumber] = {
-            id: articleId,
-            markdown: articleMarkdown,
-            repositoryRelativeFilePath: articleRepositoryRelativeFilePath,
-          }
-        }
-        const fileChanged = await writeTextFileIfChanged(
-          path.join(context.targetDir, articleRepositoryRelativeFilePath),
+          ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
+        `
+        const treeEntry = await writeTextFileBlob(
+          context.gitdir,
+          articleRepositoryRelativeFilePath,
           articleMarkdown,
         )
-        if (fileChanged) {
-          await git.add({
-            dir: context.targetDir,
-            filepath: articleRepositoryRelativeFilePath,
-            fs,
-          })
-          changedFilesCount++
+        tree.push(treeEntry)
+        context.textFileCacheByRepositoryRelativeFilePath[
+          articleRepositoryRelativeFilePath
+        ] = {
+          id: articleId,
+          treeEntry,
         }
+      } else {
+        tree.push(articleCache.treeEntry)
       }
-      obsoleteRepositoryRelativeFilesPaths.delete(
-        articleRepositoryRelativeFilePath,
-      )
       readmeLinks.push({ href: articleFilename, title: articleTitle })
     }
   }
   return {
-    changedFilesCount,
     readmeLinks,
+    tree,
   }
 }
 
 export async function generateConsolidatedTextGit(
   consolidatedTextId: string,
-  targetDir: string,
+  gitdir: string,
   {
     currentSourceCodeCommitOid,
     force,
@@ -263,22 +252,22 @@ export async function generateConsolidatedTextGit(
 ): Promise<number> {
   const context: Context = {
     articleById: {},
-    articleCacheByNumber: {},
     consolidatedIdsByActionByModifyingTextIdByDate: {},
     consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
     consolidatedTextInternalIds: new Set([consolidatedTextId]),
     consolidatedTextModifyingTextsIdsByActionByPublicationDate: {},
     currentInternalIds: new Set(),
+    gitdir,
     hasModifyingTextIdByActionByConsolidatedArticleId: {},
     jorfCreatorIdByConsolidatedId: {},
     logReferences,
     modifyingArticleIdByActionByConsolidatedId: {},
     modifyingTextsIdsByArticleActionDate: {},
     sectionTaById: {},
-    targetDir,
     textelrById: {},
     texteManquantById: {},
     texteVersionById: {},
+    textFileCacheByRepositoryRelativeFilePath: {},
   }
   const consolidatedTextelr = (await getOrLoadTextelr(
     context,
@@ -492,47 +481,68 @@ export async function generateConsolidatedTextGit(
 
   // Generation of Git repository
 
-  const repositoryDir = targetDir
-  await fs.remove(repositoryDir)
-  await fs.mkdir(repositoryDir, { recursive: true })
+  await fs.remove(gitdir)
+  await fs.mkdir(gitdir, { recursive: true })
   await git.init({
+    bare: true,
     defaultBranch: "main",
-    dir: repositoryDir,
+    gitdir,
     fs,
   })
+
+  const tree: TreeObject = []
 
   // Generate LICENCE.md file.
-  const licenceRepositoryRelativeFilePath = "LICENCE.md"
-  await writeTextFileIfChanged(
-    path.join(repositoryDir, licenceRepositoryRelativeFilePath),
+  const licenseRepositoryRelativeFilePath = "LICENCE.md"
+  const treeEntry = await writeTextFileBlob(
+    context.gitdir,
+    licenseRepositoryRelativeFilePath,
     licence,
   )
-  await git.add({
-    dir: repositoryDir,
-    filepath: licenceRepositoryRelativeFilePath,
-    fs,
-  })
+  tree.push(treeEntry)
+  context.textFileCacheByRepositoryRelativeFilePath[
+    licenseRepositoryRelativeFilePath
+  ] = {
+    id: licenseRepositoryRelativeFilePath,
+    treeEntry,
+  }
 
-  // First commit of repository
-  await git.commit({
-    dir: targetDir,
+  const treeOid = await git.writeTree({
     fs,
-    author: {
-      email: "tricoteuses@tricoteuses.fr",
-      name: "Tricoteuses",
-      timestamp: 0,
-      timezoneOffset: -60,
+    gitdir,
+    tree,
+  })
+  let commitOid = await git.writeCommit({
+    commit: {
+      author: {
+        email: "tricoteuses@tricoteuses.fr",
+        name: "Tricoteuses",
+        timestamp: 0,
+        timezoneOffset: -60,
+      },
+      committer: {
+        email: "republique@tricoteuses.fr",
+        name: "République française",
+        timestamp: 0,
+        timezoneOffset: -60,
+      },
+      message: "Création du dépôt Git",
+      parent: [],
+      tree: treeOid,
     },
-    committer: {
-      email: "republique@tricoteuses.fr",
-      name: "République française",
-      timestamp: 0,
-      timezoneOffset: -60,
-    },
-    message: "Création du dépôt Git",
+    fs,
+    gitdir,
+  })
+  await git.writeRef({
+    force: true,
+    fs,
+    gitdir,
+    ref: "refs/heads/main",
+    value: commitOid,
   })
 
   let future = false
+  let latestTreeOid: string | undefined = undefined
   for (const [date, consolidatedIdsByActionByModifyingTextId] of Object.entries(
     context.consolidatedIdsByActionByModifyingTextIdByDate,
   ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
@@ -675,7 +685,7 @@ export async function generateConsolidatedTextGit(
       }
 
       const t2 = performance.now()
-      const changedFilesCount = await generateTextGit(
+      const treeOid = await generateTextGit(
         context,
         1,
         tree,
@@ -684,7 +694,7 @@ export async function generateConsolidatedTextGit(
       )
 
       const t3 = performance.now()
-      if (changedFilesCount > 0) {
+      if (treeOid !== latestTreeOid) {
         let messageLines: string | undefined = undefined
         let summary: string | undefined = undefined
         if (modifyingTextId.startsWith("JORFTEXT")) {
@@ -769,41 +779,54 @@ export async function generateConsolidatedTextGit(
         if (date > today && !future) {
           await git.branch({
             checkout: true,
-            dir: targetDir,
+            gitdir,
             fs,
             ref: "futur",
           })
           future = true
         }
-        await git.commit({
-          dir: targetDir,
+        commitOid = await git.writeCommit({
+          commit: {
+            author: {
+              email: "republique@tricoteuses.fr",
+              name: "République française",
+              timestamp,
+              timezoneOffset,
+            },
+            committer: {
+              email: "republique@tricoteuses.fr",
+              name: "République française",
+              timestamp,
+              timezoneOffset,
+            },
+            message: [modifyingTextTitle, summary, messageLines]
+              .filter((block) => block !== undefined)
+              .join("\n\n"),
+            parent: [commitOid],
+            tree: treeOid,
+          },
           fs,
-          author: {
-            email: "republique@tricoteuses.fr",
-            name: "République française",
-            timestamp,
-            timezoneOffset,
-          },
-          committer: {
-            email: "republique@tricoteuses.fr",
-            name: "République française",
-            timestamp,
-            timezoneOffset,
-          },
-          message: [modifyingTextTitle, summary, messageLines]
-            .filter((block) => block !== undefined)
-            .join("\n\n"),
-          ref: future ? "refs/heads/futur" : undefined,
+          gitdir,
         })
+        await git.writeRef({
+          force: true,
+          fs,
+          gitdir,
+          ref: `refs/heads/${future ? "futur" : "main"}`,
+          value: commitOid,
+        })
+        latestTreeOid = treeOid
       }
       if (modifyingTextIndex === modifyingTexteVersionArray.length - 1) {
-        await git.tag({
-          dir: targetDir,
+        await git.writeRef({
           fs,
-          ref:
+          gitdir,
+          ref: `refs/tags/${
             date === "2222-02-22"
               ? "différé" // mise en vigueur différée à une date non précisée
-              : date,
+              : date
+          }`,
+          value: commitOid,
         })
       }
 
@@ -840,23 +863,18 @@ async function generateSectionTaGit(
   sectionTa: LegiSectionTa,
   parentRepositoryRelativeDir: string,
   modifyingTextId: string,
-  obsoleteRepositoryRelativeFilesPaths: Set<string>,
-): Promise<number> {
+): Promise<TreeEntry> {
   const sectionTaDirName = sectionTaNode.slug
   const repositoryRelativeDir = path.join(
     parentRepositoryRelativeDir,
     sectionTaDirName,
   )
-  await fs.ensureDir(path.join(context.targetDir, repositoryRelativeDir))
 
-  const articlesGitGeneration = await generateArticlesGit(
+  const { readmeLinks, tree } = await generateArticlesGit(
     context,
     sectionTaNode.articles,
     repositoryRelativeDir,
-    obsoleteRepositoryRelativeFilesPaths,
   )
-  let { changedFilesCount } = articlesGitGeneration
-  const { readmeLinks } = articlesGitGeneration
 
   if (sectionTaNode.children !== undefined) {
     for (const child of sectionTaNode.children) {
@@ -865,66 +883,93 @@ async function generateSectionTaGit(
         const sectionTaDirName = child.slug
         readmeLinks.push({ href: sectionTaDirName, title: child.title })
 
-        changedFilesCount += await generateSectionTaGit(
-          context,
-          depth + 1,
-          child,
-          sectionTa,
-          repositoryRelativeDir,
-          modifyingTextId,
-          obsoleteRepositoryRelativeFilesPaths,
+        tree.push(
+          await generateSectionTaGit(
+            context,
+            depth + 1,
+            child,
+            sectionTa,
+            repositoryRelativeDir,
+            modifyingTextId,
+          ),
         )
       }
     }
   }
 
+  const readmeLinksMarkdown = readmeLinks
+    .map(({ href, title }) => `- [${title}](${href})`)
+    .join("\n")
   const readmeRepositoryRelativeFilePath = path.join(
     repositoryRelativeDir,
     "README.md",
   )
-  const fileChanged = await writeTextFileIfChanged(
-    path.join(context.targetDir, readmeRepositoryRelativeFilePath),
-    dedent`
-      ---
-      ${[
-        ["Commentaire", sectionTa.COMMENTAIRE],
-        // ["État", lienSectionTa["@etat"]],
-        ["Date de début", sectionTaNode.startDate],
-        ["Date de fin", sectionTaNode.endDate],
-        ["Identifiant", sectionTaNode.id],
-        // TODO: Mettre l'URL dans le Git Tricoteuses
-        // ["URL", lienSectionTa["@url"]],
-      ]
-        .filter(([, value]) => value !== undefined)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join("\n")}
-      ---
+  const readmeCache =
+    context.textFileCacheByRepositoryRelativeFilePath[
+      readmeRepositoryRelativeFilePath
+    ]
+  if (
+    readmeCache === undefined ||
+    readmeCache.id !== sectionTaNode.id ||
+    readmeCache.custom !== readmeLinksMarkdown
+  ) {
+    const treeEntry = await writeTextFileBlob(
+      context.gitdir,
+      readmeRepositoryRelativeFilePath,
+      dedent`
+        ---
+        ${[
+          ["Commentaire", sectionTa.COMMENTAIRE],
+          // ["État", lienSectionTa["@etat"]],
+          ["Date de début", sectionTaNode.startDate],
+          ["Date de fin", sectionTaNode.endDate],
+          ["Identifiant", sectionTaNode.id],
+          // TODO: Mettre l'URL dans le Git Tricoteuses
+          // ["URL", lienSectionTa["@url"]],
+        ]
+          .filter(([, value]) => value !== undefined)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n")}
+        ---
 
-      ${"#".repeat(Math.min(depth, 6))} ${sectionTaNode.title}
+        ${"#".repeat(Math.min(depth, 6))} ${sectionTaNode.title}
 
-      ${readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n")}
-    ` + "\n",
-  )
-  if (fileChanged) {
-    await git.add({
-      dir: context.targetDir,
-      filepath: readmeRepositoryRelativeFilePath,
-      fs,
-    })
-    changedFilesCount++
+        ${readmeLinksMarkdown}
+      ` + "\n",
+    )
+    tree.push(treeEntry)
+    context.textFileCacheByRepositoryRelativeFilePath[
+      readmeRepositoryRelativeFilePath
+    ] = {
+      custom: readmeLinksMarkdown,
+      id: sectionTaNode.id,
+      treeEntry,
+    }
+  } else {
+    tree.push(readmeCache.treeEntry)
   }
-  obsoleteRepositoryRelativeFilesPaths.delete(readmeRepositoryRelativeFilePath)
 
-  return changedFilesCount
+  const treeOid = await git.writeTree({
+    fs,
+    gitdir: context.gitdir,
+    tree,
+  })
+
+  return {
+    mode: "040000",
+    path: repositoryRelativeDir,
+    oid: treeOid,
+    type: "tree",
+  }
 }
 
 async function generateTextGit(
   context: Context,
   depth: number,
-  tree: TextelrNode,
+  textelrNode: TextelrNode,
   texteVersion: LegiTexteVersion,
   modifyingTextId: string,
-): Promise<number> {
+): Promise<string> {
   const texteTitle = (
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
     texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
@@ -932,115 +977,108 @@ async function generateTextGit(
   )
     .replace(/\s+/g, " ")
     .trim()
-  const repositoryDir = context.targetDir
-  await fs.ensureDir(repositoryDir)
-  const obsoleteRepositoryRelativeFilesPaths = new Set(
-    walkDir(repositoryDir).map((repositoryRelativeFileSplitPath) =>
-      path.join(...repositoryRelativeFileSplitPath),
-    ),
-  )
-  obsoleteRepositoryRelativeFilesPaths.delete("LICENCE.md")
 
-  const articlesGitGeneration = await generateArticlesGit(
+  const { readmeLinks, tree } = await generateArticlesGit(
     context,
-    tree.articles,
+    textelrNode.articles,
     "",
-    obsoleteRepositoryRelativeFilesPaths,
   )
-  let { changedFilesCount } = articlesGitGeneration
-  const { readmeLinks } = articlesGitGeneration
 
-  if (tree.children !== undefined) {
-    for (const child of tree.children) {
+  if (textelrNode.children !== undefined) {
+    for (const child of textelrNode.children) {
       const sectionTa = await getOrLoadSectionTa(context, child.id)
       if (sectionTa !== null) {
         const sectionTaDirName = child.slug
         readmeLinks.push({ href: sectionTaDirName, title: child.title })
 
-        changedFilesCount += await generateSectionTaGit(
-          context,
-          depth + 1,
-          child,
-          sectionTa,
-          "",
-          modifyingTextId,
-          obsoleteRepositoryRelativeFilesPaths,
+        tree.push(
+          await generateSectionTaGit(
+            context,
+            depth + 1,
+            child,
+            sectionTa,
+            "",
+            modifyingTextId,
+          ),
         )
       }
     }
   }
 
-  const readmeBlocks = [
-    `${"#".repeat(Math.min(depth, 6))} ${texteTitle}`,
-    dedent`
-      **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
-      de conversion à git des textes juridiques consolidés français.
-      **Il peut contenir des erreurs !**
-    `,
-    await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
-    readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
-    await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
-  ].filter((block) => block != null)
+  const readmeLinksMarkdown = readmeLinks
+    .map(({ href, title }) => `- [${title}](${href})`)
+    .join("\n")
   const readmeRepositoryRelativeFilePath = "README.md"
-
-  const fileChanged = await writeTextFileIfChanged(
-    path.join(repositoryDir, readmeRepositoryRelativeFilePath),
-    dedent`
-    ---
-    ${[
-      ["État", texteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT],
-      ["Nature", texteVersion.META.META_COMMUN.NATURE],
-      [
-        "Date de début",
-        texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT,
-      ],
-      ["Date de fin", texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_FIN],
-      ["Identifiant", texteVersion.META.META_COMMUN.ID],
-      ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
-      ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-      // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-      ["URL", texteVersion.META.META_COMMUN.URL],
+  const readmeCache =
+    context.textFileCacheByRepositoryRelativeFilePath[
+      readmeRepositoryRelativeFilePath
     ]
-      .filter(([, value]) => value !== undefined)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join("\n")}
-    ---
+  if (
+    readmeCache === undefined ||
+    readmeCache.id !== texteVersion.META.META_COMMUN.ID ||
+    readmeCache.custom !== readmeLinksMarkdown
+  ) {
+    const readmeBlocks = [
+      `${"#".repeat(Math.min(depth, 6))} ${texteTitle}`,
+      dedent`
+          **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
+          de conversion à git des textes juridiques consolidés français.
+          **Il peut contenir des erreurs !**
+        `,
+      await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
+      readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
+      await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
+    ].filter((block) => block != null)
 
-    ${readmeBlocks.join("\n\n")}
-  ` + "\n",
-  )
-  if (fileChanged) {
-    await git.add({
-      dir: repositoryDir,
-      filepath: readmeRepositoryRelativeFilePath,
-      fs,
-    })
-    changedFilesCount++
-  }
-  obsoleteRepositoryRelativeFilesPaths.delete(readmeRepositoryRelativeFilePath)
+    const treeEntry = await writeTextFileBlob(
+      context.gitdir,
+      readmeRepositoryRelativeFilePath,
+      dedent`
+          ---
+          ${[
+            ["État", texteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT],
+            ["Nature", texteVersion.META.META_COMMUN.NATURE],
+            [
+              "Date de début",
+              texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT,
+            ],
+            [
+              "Date de fin",
+              texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_FIN,
+            ],
+            ["Identifiant", texteVersion.META.META_COMMUN.ID],
+            ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
+            ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
+            // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
+            ["URL", texteVersion.META.META_COMMUN.URL],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}
+          ---
 
-  // Delete obsolete files and directories.
-  for (const obsoleteRepositoryRelativeFilePath of obsoleteRepositoryRelativeFilesPaths) {
-    await fs.remove(
-      path.join(repositoryDir, obsoleteRepositoryRelativeFilePath),
+          ${readmeBlocks.join("\n\n")}
+        ` + "\n",
     )
-    await git.remove({
-      dir: repositoryDir,
-      filepath: obsoleteRepositoryRelativeFilePath,
-      fs,
-    })
-    changedFilesCount++
-    if (
-      obsoleteRepositoryRelativeFilePath === "README.md" ||
-      obsoleteRepositoryRelativeFilePath.endsWith("/README.md")
-    ) {
-      await fs.remove(
-        path.dirname(
-          path.join(repositoryDir, obsoleteRepositoryRelativeFilePath),
-        ),
-      )
+    tree.push(treeEntry)
+    context.textFileCacheByRepositoryRelativeFilePath[
+      readmeRepositoryRelativeFilePath
+    ] = {
+      custom: readmeLinksMarkdown,
+      id: texteVersion.META.META_COMMUN.ID,
+      treeEntry,
     }
+  } else {
+    tree.push(readmeCache.treeEntry)
   }
 
-  return changedFilesCount
+  tree.push(
+    context.textFileCacheByRepositoryRelativeFilePath["LICENCE.md"].treeEntry,
+  )
+
+  return await git.writeTree({
+    fs,
+    gitdir: context.gitdir,
+    tree,
+  })
 }

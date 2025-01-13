@@ -42,7 +42,7 @@ import {
 import {
   registerLegiArticleModifiers,
   registerLegiTextModifiers,
-} from "./modifiers"
+} from "./references"
 import { licence, writeTextFileBlob } from "./repositories"
 import {
   addArticleToTree,

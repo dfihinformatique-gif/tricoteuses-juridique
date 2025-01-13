@@ -8,10 +8,10 @@ const { forgejo } = config
 
 async function exportConsolidatedTextsToGit({
   force,
-  // "log-commits": logCommits,
-  // "log-references": logReferences,
+  "log-commits": logCommits,
+  "log-references": logReferences,
   only,
-  // push,
+  push,
   resume,
   silent,
 }: {
@@ -65,10 +65,10 @@ async function exportConsolidatedTextsToGit({
         {
           inputs: {
             force,
-            // logCommits,
-            // logReferences,
+            "log-commits": logCommits,
+            "log-references": logReferences,
             only: consolidatedTextId,
-            // push,
+            push,
           },
           ref: "main",
         },

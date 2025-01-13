@@ -94,7 +94,7 @@ export function repositoryNameFromTitle(title: string): string {
 
 export async function writeTextFileBlob(
   gitdir: string,
-  path: string,
+  filename: string,
   text: string,
 ): Promise<TreeEntry> {
   const oid = await git.writeBlob({
@@ -104,7 +104,7 @@ export async function writeTextFileBlob(
   })
   return {
     mode: "100644",
-    path,
+    path: filename,
     oid,
     type: "blob",
   }

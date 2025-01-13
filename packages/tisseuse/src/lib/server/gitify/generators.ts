@@ -213,7 +213,7 @@ async function generateArticlesGit(
         `
         const treeEntry = await writeTextFileBlob(
           context.gitdir,
-          articleRepositoryRelativeFilePath,
+          articleFilename,
           articleMarkdown,
         )
         tree.push(treeEntry)
@@ -493,10 +493,11 @@ export async function generateConsolidatedTextGit(
   const tree: TreeObject = []
 
   // Generate LICENCE.md file.
-  const licenseRepositoryRelativeFilePath = "LICENCE.md"
+  const licenseFilename = "LICENCE.md"
+  const licenseRepositoryRelativeFilePath = licenseFilename
   const treeEntry = await writeTextFileBlob(
     context.gitdir,
-    licenseRepositoryRelativeFilePath,
+    licenseFilename,
     licence,
   )
   tree.push(treeEntry)
@@ -897,12 +898,13 @@ async function generateSectionTaGit(
     }
   }
 
+  const readmeFilename = "README.md"
   const readmeLinksMarkdown = readmeLinks
     .map(({ href, title }) => `- [${title}](${href})`)
     .join("\n")
   const readmeRepositoryRelativeFilePath = path.join(
     repositoryRelativeDir,
-    "README.md",
+    readmeFilename,
   )
   const readmeCache =
     context.textFileCacheByRepositoryRelativeFilePath[
@@ -915,7 +917,7 @@ async function generateSectionTaGit(
   ) {
     const treeEntry = await writeTextFileBlob(
       context.gitdir,
-      readmeRepositoryRelativeFilePath,
+      readmeFilename,
       dedent`
         ---
         ${[
@@ -957,7 +959,7 @@ async function generateSectionTaGit(
 
   return {
     mode: "040000",
-    path: repositoryRelativeDir,
+    path: sectionTaDirName,
     oid: treeOid,
     type: "tree",
   }
@@ -1005,10 +1007,11 @@ async function generateTextGit(
     }
   }
 
+  const readmeFilename = "README.md"
   const readmeLinksMarkdown = readmeLinks
     .map(({ href, title }) => `- [${title}](${href})`)
     .join("\n")
-  const readmeRepositoryRelativeFilePath = "README.md"
+  const readmeRepositoryRelativeFilePath = readmeFilename
   const readmeCache =
     context.textFileCacheByRepositoryRelativeFilePath[
       readmeRepositoryRelativeFilePath
@@ -1032,7 +1035,7 @@ async function generateTextGit(
 
     const treeEntry = await writeTextFileBlob(
       context.gitdir,
-      readmeRepositoryRelativeFilePath,
+      readmeFilename,
       dedent`
           ---
           ${[

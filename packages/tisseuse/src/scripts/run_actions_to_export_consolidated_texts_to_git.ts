@@ -64,12 +64,12 @@ async function exportConsolidatedTextsToGit({
       {
         inputs: {
           // Forgejo doesn't accept booleans yet.
-          force: force ? "1" : undefined,
-          // force_number: force ? "1" : undefined,
-          "log-commits": logCommits ? true : undefined,
-          "log-references": logReferences ? true : undefined,
+          // force: force ? true : undefined,
+          force_number: force ? "1" : undefined,
+          // "log-commits": logCommits ? true : undefined,
+          // "log-references": logReferences ? true : undefined,
           only: consolidatedTextId,
-          push: push ? true : undefined,
+          // push: push ? true : undefined,
         },
         ref: "main",
       },

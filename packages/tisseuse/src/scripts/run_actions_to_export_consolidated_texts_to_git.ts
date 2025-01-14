@@ -60,21 +60,22 @@ async function exportConsolidatedTextsToGit({
       `v1/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/gitify.yaml/dispatches`,
       process.env.GITHUB_API_URL,
     ).toString()
-    const response = await fetch(url, {
-      body: JSON.stringify(
-        {
-          inputs: {
-            force,
-            "log-commits": logCommits,
-            "log-references": logReferences,
-            only: consolidatedTextId,
-            push,
-          },
-          ref: "main",
+    const body = JSON.stringify(
+      {
+        inputs: {
+          force,
+          "log-commits": logCommits,
+          "log-references": logReferences,
+          only: consolidatedTextId,
+          push,
         },
-        null,
-        2,
-      ),
+        ref: "main",
+      },
+      null,
+      2,
+    )
+    const response = await fetch(url, {
+      body,
       headers: {
         Accept: "application/json",
         Authorization: `token ${forgejo.token}`,
@@ -86,6 +87,8 @@ async function exportConsolidatedTextsToGit({
       console.error(
         `Error while launching action to export consolidated text to git at ${url}:`,
       )
+      console.error(body)
+      console.error()
       console.error(`${response.status} ${response.statusText}`)
       console.error(await response.text())
       throw new Error(

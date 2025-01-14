@@ -64,7 +64,8 @@ async function exportConsolidatedTextsToGit({
       {
         inputs: {
           // Forgejo doesn't accept booleans yet.
-          force_number: force ? "1" : undefined,
+          force: force ? "1" : undefined,
+          // force_number: force ? "1" : undefined,
           "log-commits": logCommits ? true : undefined,
           "log-references": logReferences ? true : undefined,
           only: consolidatedTextId,

@@ -63,11 +63,11 @@ async function exportConsolidatedTextsToGit({
     const body = JSON.stringify(
       {
         inputs: {
-          force: force ? "true" : undefined,
-          "log-commits": logCommits ? "true" : undefined,
-          "log-references": logReferences ? "true" : undefined,
+          force: force ? true : undefined,
+          "log-commits": logCommits ? true : undefined,
+          "log-references": logReferences ? true : undefined,
           only: consolidatedTextId,
-          push: push ? "true" : undefined,
+          push: push ? true : undefined,
         },
         ref: "main",
       },

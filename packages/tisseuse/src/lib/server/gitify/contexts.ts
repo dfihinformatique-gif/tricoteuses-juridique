@@ -19,6 +19,7 @@ import type {
   LegiTexteVersion,
 } from "$lib/legal/legi"
 import { db } from "$lib/server/databases"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 
 export type Action = (typeof actions)[number]
 
@@ -50,6 +51,8 @@ export interface Context {
     Partial<Record<Action, string>>
   >
   modifyingTextsIdsByArticleActionDate: Record<string, Set<string>>
+  referringTextsLiensById: Record<string, TexteVersionLienDb[]>
+  referringArticlesLiensById: Record<string, ArticleLienDb[]>
   sectionTaById: Record<string, LegiSectionTa | null>
   texteManquantById: Record<string, TexteManquant>
   textelrById: Record<string, JorfTextelr | LegiTextelr | null>

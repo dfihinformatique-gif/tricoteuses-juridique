@@ -44,6 +44,7 @@ export {
   type JorfArticleType,
   type JorfSectionTa,
   type JorfMetaTexteChronicle,
+  type JorfMetaTexteVersion,
   type JorfSectionTaLienArt,
   type JorfSectionTaLienArtEtat,
   type JorfSectionTaLienSectionTa,
@@ -98,6 +99,7 @@ export {
   type LegiArticleTexteNature,
   type LegiArticleType,
   type LegiMetaTexteChronicle,
+  type LegiMetaTexteVersion,
   type LegiSectionTa,
   type LegiSectionTaLienArt,
   type LegiSectionTaLienArtEtat,
@@ -586,9 +588,12 @@ export function assertNeverLegalObjectType(type: never): never {
 }
 
 export function bestItemForDate<T extends { "@debut": string; "@fin": string }>(
-  items: T | T[],
+  items: T | T[] | undefined | null,
   date: string,
 ): T | undefined {
+  if (items == null) {
+    return undefined
+  }
   if (!Array.isArray(items)) {
     // Singleton
     return items

@@ -7,15 +7,18 @@ import path from "path"
 import * as prettier from "prettier"
 
 import { sortArticlesNumbers } from "$lib/articles"
+import { bestItemForDate } from "$lib/legal"
 import type {
   JorfArticle,
   JorfSectionTaLienArt,
   JorfSectionTaStructure,
   JorfTextelr,
   JorfTexteVersion,
+  JorfTexteVersionLien,
 } from "$lib/legal/jorf"
 import type {
   LegiArticle,
+  LegiArticleLien,
   LegiArticleMetaArticle,
   LegiSectionTa,
   LegiSectionTaLienArt,
@@ -23,6 +26,7 @@ import type {
   LegiTextelr,
   LegiTextelrLienArt,
   LegiTexteVersion,
+  LegiTexteVersionLien,
 } from "$lib/legal/legi"
 import { db } from "$lib/server/databases"
 import { slugify } from "$lib/strings"
@@ -40,8 +44,9 @@ import {
   type TexteManquant,
 } from "./contexts"
 import {
-  registerLegiArticleModifiers,
-  registerLegiTextModifiers,
+  registerLegiArticleModifiersAndReferences,
+  registerLegiSectionTaModifiersAndReferences,
+  registerLegiTextModifiersAndReferences,
 } from "./references"
 import { licence, writeTextFileBlob } from "./repositories"
 import {
@@ -49,6 +54,7 @@ import {
   type SectionTaNode,
   type TextelrNode,
 } from "./texts_trees"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 
 const minDateObject = new Date("1971-01-01")
 const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)
@@ -153,6 +159,33 @@ async function cleanHtmlFragment(
   }
 }
 
+// Taken from https://github.com/sveltejs/svelte/blob/main/packages/svelte/src/escaping.js
+function escapeHtml<StringOrUndefined extends string | undefined>(
+  s: StringOrUndefined,
+  isAttribute = false,
+): StringOrUndefined {
+  if (s === undefined) {
+    return undefined as StringOrUndefined
+  }
+
+  const pattern = isAttribute ? /[&"<]/g : /[&<]/g
+  pattern.lastIndex = 0
+
+  let escaped = ""
+  let last = 0
+
+  while (pattern.test(s)) {
+    const i = pattern.lastIndex - 1
+    const ch = s[i]
+    escaped +=
+      s.substring(last, i) +
+      (ch === "&" ? "&amp;" : ch === '"' ? "&quot;" : "&lt;")
+    last = i + 1
+  }
+
+  return (escaped + s.substring(last)) as StringOrUndefined
+}
+
 async function generateArticlesGit(
   context: Context,
   articles: Array<JorfArticle | LegiArticle> | undefined,
@@ -207,14 +240,66 @@ async function generateArticlesGit(
             .join("\n")}
           ---
 
-          ###### ${articleTitle}
+          <h1>${escapeHtml(articleTitle)}</h1>
 
           ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
         `
+
+        let referringArticlesLiensHtml: string | undefined
+        const referringArticlesLiens =
+          context.referringArticlesLiensById[articleId]
+        if (referringArticlesLiens !== undefined) {
+          referringArticlesLiensHtml = dedent`
+            <h2>Articles faisant référence à l'article</h2>
+
+            ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+          `
+        }
+
+        let referringTextsLiensHtml: string | undefined
+        const referringTextsLiens = context.referringTextsLiensById[articleId]
+        if (referringTextsLiens !== undefined) {
+          referringTextsLiensHtml = dedent`
+            <h2>Textes faisant référence à l'article</h2>
+
+            ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+          `
+        }
+
+        let referredLiensHtml: string | undefined
+        const referredLiens = (article as LegiArticle).LIENS?.LIEN
+        if (referredLiens !== undefined) {
+          referredLiensHtml = dedent`
+            <h2>Références faites par l'article</h2>
+
+            ${await htmlFromReferredLiens(context, referredLiens)}
+          `
+        }
+
+        const referencesHtml = [
+          referringArticlesLiensHtml,
+          referringTextsLiensHtml,
+          referredLiensHtml,
+        ]
+          .filter((block) => block !== undefined)
+          .join("\n\n")
+        const detailsHtml =
+          referencesHtml === ""
+            ? undefined
+            : dedent`
+                <details>
+                  <summary><em>Références</em></summary>
+
+                  ${referencesHtml.replaceAll("\n", "\n  ")}
+                </details>
+              `
+
         const treeEntry = await writeTextFileBlob(
           context.gitdir,
           articleFilename,
-          articleMarkdown,
+          [articleMarkdown, detailsHtml]
+            .filter((block) => block !== undefined)
+            .join("\n\n") + "\n",
         )
         tree.push(treeEntry)
         context.textFileCacheByRepositoryRelativeFilePath[
@@ -263,6 +348,8 @@ export async function generateConsolidatedTextGit(
     logReferences,
     modifyingArticleIdByActionByConsolidatedId: {},
     modifyingTextsIdsByArticleActionDate: {},
+    referringArticlesLiensById: {},
+    referringTextsLiensById: {},
     sectionTaById: {},
     textelrById: {},
     texteManquantById: {},
@@ -352,12 +439,30 @@ export async function generateConsolidatedTextGit(
 
   // Second Pass : Register texts & articles that modify parts (aka SectionTA & Article) of the consolidated text.
 
-  await registerLegiTextModifiers(
+  await registerLegiTextModifiersAndReferences(
     context,
     0,
     consolidatedTextelr,
     consolidatedTexteVersion,
   )
+
+  for await (const {
+    lienSectionTa,
+    parentsSectionTa,
+    sectionTa,
+  } of walkStructureTree(
+    context,
+    consolidatedTextelr.STRUCT as
+      | JorfSectionTaStructure
+      | LegiSectionTaStructure,
+  )) {
+    await registerLegiSectionTaModifiersAndReferences(
+      context,
+      parentsSectionTa === undefined ? 0 : parentsSectionTa.length,
+      lienSectionTa,
+      sectionTa,
+    )
+  }
 
   for await (const {
     lienArticle,
@@ -368,7 +473,7 @@ export async function generateConsolidatedTextGit(
       lienArticle["@id"],
     )) as LegiArticle
     if (article !== null) {
-      await registerLegiArticleModifiers(
+      await registerLegiArticleModifiersAndReferences(
         context,
         parentsSectionTa === undefined ? 0 : 1 + parentsSectionTa.length,
         article,
@@ -838,6 +943,18 @@ export async function generateConsolidatedTextGit(
     }
   }
 
+  if (future) {
+    // Return to main branch.
+    await git.writeRef({
+      fs,
+      force: true,
+      gitdir,
+      ref: "HEAD",
+      symbolic: true,
+      value: "refs/heads/main",
+    })
+  }
+
   await db`
     INSERT INTO consolidated_texts_git_hashes (
       id,
@@ -915,29 +1032,69 @@ async function generateSectionTaGit(
     readmeCache.id !== sectionTaNode.id ||
     readmeCache.custom !== readmeLinksMarkdown
   ) {
+    const readmeMarkdown = dedent`
+      ---
+      ${[
+        ["Commentaire", sectionTa.COMMENTAIRE],
+        // ["État", lienSectionTa["@etat"]],
+        ["Date de début", sectionTaNode.startDate],
+        ["Date de fin", sectionTaNode.endDate],
+        ["Identifiant", sectionTaNode.id],
+        // TODO: Mettre l'URL dans le Git Tricoteuses
+        // ["URL", lienSectionTa["@url"]],
+      ]
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n")}
+      ---
+
+      <h1>${escapeHtml(sectionTaNode.title)}</h1>
+
+      ${readmeLinksMarkdown}
+    `
+
+    let referringArticlesLiensHtml: string | undefined
+    const referringArticlesLiens =
+      context.referringArticlesLiensById[sectionTaNode.id]
+    if (referringArticlesLiens !== undefined) {
+      referringArticlesLiensHtml = dedent`
+        <h2>Articles faisant référence à la section</h2>
+
+        ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+      `
+    }
+
+    let referringTextsLiensHtml: string | undefined
+    const referringTextsLiens =
+      context.referringTextsLiensById[sectionTaNode.id]
+    if (referringTextsLiens !== undefined) {
+      referringTextsLiensHtml = dedent`
+        <h2>Textes faisant référence à la section</h2>
+
+        ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+      `
+    }
+
+    const referencesHtml = [referringArticlesLiensHtml, referringTextsLiensHtml]
+      .filter((block) => block !== undefined)
+      .join("\n\n")
+    const detailsHtml =
+      referencesHtml === ""
+        ? undefined
+        : dedent`
+            <details>
+              <summary><em>Références</em></summary>
+
+              ${referencesHtml.replaceAll("\n", "\n  ")}
+            </details>
+          `
+
     const treeEntry = await writeTextFileBlob(
       context.gitdir,
       readmeFilename,
-      dedent`
-        ---
-        ${[
-          ["Commentaire", sectionTa.COMMENTAIRE],
-          // ["État", lienSectionTa["@etat"]],
-          ["Date de début", sectionTaNode.startDate],
-          ["Date de fin", sectionTaNode.endDate],
-          ["Identifiant", sectionTaNode.id],
-          // TODO: Mettre l'URL dans le Git Tricoteuses
-          // ["URL", lienSectionTa["@url"]],
-        ]
-          .filter(([, value]) => value !== undefined)
-          .map(([key, value]) => `${key}: ${value}`)
-          .join("\n")}
-        ---
-
-        ${"#".repeat(Math.min(depth, 6))} ${sectionTaNode.title}
-
-        ${readmeLinksMarkdown}
-      ` + "\n",
+      [readmeMarkdown, detailsHtml]
+        .filter((block) => block !== undefined)
+        .join("\n\n") + "\n",
     )
     tree.push(treeEntry)
     context.textFileCacheByRepositoryRelativeFilePath[
@@ -972,10 +1129,12 @@ async function generateTextGit(
   texteVersion: LegiTexteVersion,
   modifyingTextId: string,
 ): Promise<string> {
+  const textId = texteVersion.META.META_COMMUN.ID
+  const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
   const texteTitle = (
-    texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
-    texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
-    texteVersion.META.META_COMMUN.ID
+    metaTexteVersion.TITREFULL ??
+    metaTexteVersion.TITRE ??
+    textId
   )
     .replace(/\s+/g, " ")
     .trim()
@@ -1018,50 +1177,96 @@ async function generateTextGit(
     ]
   if (
     readmeCache === undefined ||
-    readmeCache.id !== texteVersion.META.META_COMMUN.ID ||
+    readmeCache.id !== textId ||
     readmeCache.custom !== readmeLinksMarkdown
   ) {
     const readmeBlocks = [
-      `${"#".repeat(Math.min(depth, 6))} ${texteTitle}`,
+      `<h1>${escapeHtml(texteTitle)}</h1>`,
       dedent`
-          **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
-          de conversion à git des textes juridiques consolidés français.
-          **Il peut contenir des erreurs !**
+          > **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
+          > de conversion à git des textes juridiques consolidés français.
+          > **Il peut contenir des erreurs !**
         `,
       await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
       readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
       await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
     ].filter((block) => block != null)
 
+    const readmeMarkdown = dedent`
+      ---
+      ${[
+        ["État", metaTexteVersion.ETAT],
+        ["Nature", texteVersion.META.META_COMMUN.NATURE],
+        ["Date de début", metaTexteVersion.DATE_DEBUT],
+        ["Date de fin", metaTexteVersion.DATE_FIN],
+        ["Identifiant", textId],
+        ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
+        ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
+        // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
+        ["URL", texteVersion.META.META_COMMUN.URL],
+      ]
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n")}
+      ---
+
+      ${readmeBlocks.join("\n\n")}
+    `
+
+    let referringArticlesLiensHtml: string | undefined
+    const referringArticlesLiens = context.referringArticlesLiensById[textId]
+    if (referringArticlesLiens !== undefined) {
+      referringArticlesLiensHtml = dedent`
+        <h2>Articles faisant référence au texte</h2>
+
+        ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+      `
+    }
+
+    let referringTextsLiensHtml: string | undefined
+    const referringTextsLiens = context.referringTextsLiensById[textId]
+    if (referringTextsLiens !== undefined) {
+      referringTextsLiensHtml = dedent`
+        <h2>Textes faisant référence au texte</h2>
+
+        ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+      `
+    }
+
+    let referredLiensHtml: string | undefined
+    const referredLiens = metaTexteVersion.LIENS?.LIEN
+    if (referredLiens !== undefined) {
+      referredLiensHtml = dedent`
+        <h2>Références faites par le texte</h2>
+
+        ${await htmlFromReferredLiens(context, referredLiens)}
+      `
+    }
+
+    const referencesHtml = [
+      referringArticlesLiensHtml,
+      referringTextsLiensHtml,
+      referredLiensHtml,
+    ]
+      .filter((block) => block !== undefined)
+      .join("\n\n")
+    const detailsHtml =
+      referencesHtml === ""
+        ? undefined
+        : dedent`
+            <details>
+              <summary><em>Références</em></summary>
+
+              ${referencesHtml.replaceAll("\n", "\n  ")}
+            </details>
+          `
+
     const treeEntry = await writeTextFileBlob(
       context.gitdir,
       readmeFilename,
-      dedent`
-          ---
-          ${[
-            ["État", texteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT],
-            ["Nature", texteVersion.META.META_COMMUN.NATURE],
-            [
-              "Date de début",
-              texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT,
-            ],
-            [
-              "Date de fin",
-              texteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_FIN,
-            ],
-            ["Identifiant", texteVersion.META.META_COMMUN.ID],
-            ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
-            ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-            // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-            ["URL", texteVersion.META.META_COMMUN.URL],
-          ]
-            .filter(([, value]) => value !== undefined)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n")}
-          ---
-
-          ${readmeBlocks.join("\n\n")}
-        ` + "\n",
+      [readmeMarkdown, detailsHtml]
+        .filter((block) => block !== undefined)
+        .join("\n\n") + "\n",
     )
     tree.push(treeEntry)
     context.textFileCacheByRepositoryRelativeFilePath[
@@ -1084,4 +1289,140 @@ async function generateTextGit(
     gitdir: context.gitdir,
     tree,
   })
+}
+
+async function htmlFromReferredLiens(
+  context: Context,
+  referredLiens: Array<
+    LegiArticleLien | LegiTexteVersionLien | JorfTexteVersionLien
+  >,
+) {
+  return dedent`
+    <ul>
+      ${(
+        await Promise.all(
+          referredLiens.map(async (referredLien) => {
+            return dedent`
+              <li>
+                ${referredLien["@datesignatexte"]} ${referredLien["@typelien"]} ${referredLien["@sens"]} ${referredLien["@naturetexte"]} ${referredLien["@cidtexte"]} ${referredLien["@num"]} ${referredLien["@id"]}<br />
+                ${escapeHtml(referredLien["#text"])}
+              </li>
+            `
+          }),
+        )
+      )
+        .join("\n")
+        .replaceAll("\n", "\n  ")}
+    </ul>
+  `
+}
+
+async function htmlFromReferringArticlesLiens(
+  context: Context,
+  referringArticlesLiens: ArticleLienDb[],
+) {
+  return dedent`
+    <ul>
+      ${(
+        await Promise.all(
+          referringArticlesLiens.map(async (referringArticleLien) => {
+            let referringArticleTitle: string | undefined = undefined
+            const referringArticle = await getOrLoadArticle(
+              context,
+              referringArticleLien.article_id,
+            )
+            if (referringArticle !== null) {
+              const referringMetaArticle =
+                referringArticle.META.META_SPEC.META_ARTICLE
+              const referringArticleTitleFragment =
+                "article" +
+                [
+                  referringMetaArticle.NUM,
+                  referringMetaArticle.TYPE,
+                  (referringMetaArticle as LegiArticleMetaArticle).ETAT,
+                  `(${referringArticleLien.article_id})`,
+                ]
+                  .filter((value) => value !== undefined)
+                  .map((value) => ` ${value}`)
+                  .join("") +
+                (referringMetaArticle.DATE_DEBUT === "2999-01-01" &&
+                referringMetaArticle.DATE_FIN === "2999-01-01"
+                  ? ""
+                  : referringMetaArticle.DATE_FIN === "2999-01-01"
+                    ? `, en vigueur depuis le ${referringMetaArticle.DATE_DEBUT}`
+                    : `, en vigueur du ${referringMetaArticle.DATE_DEBUT} au ${referringMetaArticle.DATE_FIN}`)
+
+              const referringArticleTexte = referringArticle.CONTEXTE.TEXTE
+              const referringTextTitreTxt = bestItemForDate(
+                referringArticleTexte.TITRE_TXT,
+                referringMetaArticle.DATE_DEBUT,
+              )
+              const referringTextTitleFragment =
+                referringTextTitreTxt === undefined
+                  ? `${referringArticleTexte["@nature"] ?? "Texte"} ${referringArticleTexte["@cid"]} manquant`
+                  : (referringTextTitreTxt["#text"] ??
+                    referringTextTitreTxt["@c_titre_court"] ??
+                    `${referringArticleTexte["@nature"] ?? "Texte"} ${referringArticleTexte["@cid"]} sans titre`)
+              referringArticleTitle = `${referringTextTitleFragment} - ${referringArticleTitleFragment}`
+            }
+            return dedent`
+              <li>
+                ${referringArticleTitle ?? `Article ${referringArticleLien.article_id} manquant`} ${referringArticleLien.typelien} ${referringArticleLien.cible ? "cible" : "source"}
+              </li>
+            `
+          }),
+        )
+      )
+        .join("\n")
+        .replaceAll("\n", "\n  ")}
+    </ul>
+  `
+}
+
+async function htmlFromReferringTextsLiens(
+  context: Context,
+  referringTextsLiens: TexteVersionLienDb[],
+) {
+  return dedent`
+    <ul>
+      ${(
+        await Promise.all(
+          referringTextsLiens.map(async (referringTextLien) => {
+            let referringTextTitle: string | undefined = undefined
+            const referringTexteVersion = await getOrLoadTexteVersion(
+              context,
+              referringTextLien.texte_version_id,
+            )
+            if (referringTexteVersion !== null) {
+              const referringMetaTexteVersion =
+                referringTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+              referringTextTitle =
+                (
+                  referringMetaTexteVersion.TITREFULL ??
+                  referringMetaTexteVersion.TITRE ??
+                  referringTextLien.texte_version_id
+                )
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .replace(/\s+\(\d+\)$/, "") +
+                ` referringMetaTexteVersion as LegiMetaTexteVersion).ETAT} (${referringTextLien.texte_version_id})` +
+                (referringMetaTexteVersion.DATE_DEBUT === "2999-01-01" &&
+                referringMetaTexteVersion.DATE_FIN === "2999-01-01"
+                  ? ""
+                  : referringMetaTexteVersion.DATE_FIN === "2999-01-01"
+                    ? `, en vigueur depuis le ${referringMetaTexteVersion.DATE_DEBUT}`
+                    : `, en vigueur du ${referringMetaTexteVersion.DATE_DEBUT} au ${referringMetaTexteVersion.DATE_FIN}`)
+            }
+            return dedent`
+              <li>
+                ${referringTextTitle === undefined ? `Texte ${referringTextLien.texte_version_id} manquant` : referringTextTitle} ${referringTextLien.typelien} ${referringTextLien.cible ? "cible" : "source"}
+              </li>
+            `
+          }),
+        )
+      )
+        .join("\n")
+        .replaceAll("\n", "\n  ")}
+    </ul>
+  `
 }

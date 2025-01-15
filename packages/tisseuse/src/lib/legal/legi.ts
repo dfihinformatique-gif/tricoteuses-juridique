@@ -106,6 +106,39 @@ export interface LegiArticleTm {
 
 export type LegiArticleType = (typeof allLegiArticleTypes)[number]
 
+export interface LegiMetaTexteChronicle {
+  CID: string
+  DATE_PUBLI: string
+  DATE_TEXTE: string
+  DERNIERE_MODIFICATION: string
+  NOR?: string
+  NUM?: string
+  NUM_PARUTION?: number
+  NUM_SEQUENCE?: number
+  ORIGINE_PUBLI?: string
+  PAGE_DEB_PUBLI?: number
+  PAGE_FIN_PUBLI?: number
+  VERSIONS_A_VENIR?: {
+    VERSION_A_VENIR: string[]
+  }
+}
+
+export interface LegiMetaTexteVersion {
+  AUTORITE?: string
+  DATE_DEBUT?: string
+  DATE_FIN?: string
+  ETAT?: LegiTexteEtat
+  LIENS?: {
+    LIEN: Array<LegiTexteVersionLien>
+  }
+  MCS_TXT?: {
+    MC: string[]
+  }
+  MINISTERE?: string
+  TITRE?: string
+  TITREFULL?: string
+}
+
 // Section Texte Article
 // Correspond à un niveau d'une table des matières
 export interface LegiSectionTa {
@@ -134,23 +167,6 @@ export interface LegiSectionTa {
   ID: string
   STRUCTURE_TA?: LegiSectionTaStructure
   TITRE_TA?: string // Titre de la section (peut contenir des sauts de lignes à remplacer par des espaces)
-}
-
-export interface LegiMetaTexteChronicle {
-  CID: string
-  DATE_PUBLI: string
-  DATE_TEXTE: string
-  DERNIERE_MODIFICATION: string
-  NOR?: string
-  NUM?: string
-  NUM_PARUTION?: number
-  NUM_SEQUENCE?: number
-  ORIGINE_PUBLI?: string
-  PAGE_DEB_PUBLI?: number
-  PAGE_FIN_PUBLI?: number
-  VERSIONS_A_VENIR?: {
-    VERSION_A_VENIR: string[]
-  }
 }
 
 export interface LegiSectionTaLienArt {
@@ -289,21 +305,7 @@ export interface LegiTexteVersion {
     }
     META_SPEC: {
       META_TEXTE_CHRONICLE: LegiMetaTexteChronicle
-      META_TEXTE_VERSION: {
-        AUTORITE?: string
-        DATE_DEBUT?: string
-        DATE_FIN?: string
-        ETAT?: LegiTexteEtat
-        LIENS?: {
-          LIEN: Array<LegiTexteVersionLien>
-        }
-        MCS_TXT?: {
-          MC: string[]
-        }
-        MINISTERE?: string
-        TITRE?: string
-        TITREFULL?: string
-      }
+      META_TEXTE_VERSION: LegiMetaTexteVersion
     }
   }
   NOTA?: {

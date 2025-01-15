@@ -1,8 +1,14 @@
 import assert from "assert"
 
-import type { JorfTextelr } from "$lib/legal/jorf"
+import type {
+  JorfTextelr,
+  JorfSectionTa,
+  JorfSectionTaLienSectionTa,
+} from "$lib/legal/jorf"
 import type {
   LegiArticle,
+  LegiSectionTa,
+  LegiSectionTaLienSectionTa,
   LegiTextelr,
   LegiTexteVersion,
 } from "$lib/legal/legi"
@@ -150,7 +156,7 @@ async function addModifyingTextId(
   }
 }
 
-export async function registerLegiArticleModifiers(
+export async function registerLegiArticleModifiersAndReferences(
   context: Context,
   depth: number,
   article: LegiArticle,
@@ -197,73 +203,113 @@ export async function registerLegiArticleModifiers(
   //   }
   // }
 
-  for (const articleLien of await db<ArticleLienDb[]>`
+  for (const referringArticleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id IN ${db(articleIds)}
   `) {
-    if (context.consolidatedTextInternalIds.has(articleLien.article_id)) {
+    const referringArticlesLiens = (context.referringArticlesLiensById[
+      articleId
+    ] ??= [])
+    if (
+      referringArticlesLiens.every(
+        (lien) =>
+          lien.article_id !== referringArticleLien.article_id ||
+          lien.cible !== referringArticleLien.cible ||
+          lien.typelien !== referringArticleLien.typelien,
+      )
+    ) {
+      referringArticlesLiens.push(referringArticleLien)
+    }
+
+    if (
+      context.consolidatedTextInternalIds.has(referringArticleLien.article_id)
+    ) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
     }
 
     if (context.logReferences) {
       console.log(
-        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
+        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${referringArticleLien.article_id} cible: ${referringArticleLien.cible} typelien: ${referringArticleLien.typelien}`,
       )
     }
-    if (articleLien.cidtexte !== context.consolidatedTextCid) {
+    if (referringArticleLien.cidtexte !== context.consolidatedTextCid) {
       console.warn(
-        `Ignoring article_lien ${JSON.stringify(articleLien)} with unexpected cidtexte: ${articleLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+        `Ignoring article_lien ${JSON.stringify(referringArticleLien)} with unexpected cidtexte: ${referringArticleLien.cidtexte} instead of ${context.consolidatedTextCid}`,
       )
       continue
     }
-    assert(articleLien.article_id.startsWith("LEGIARTI"))
+    assert(referringArticleLien.article_id.startsWith("LEGIARTI"))
     if (
-      (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
-      (articleLien.typelien === "ABROGE" && !articleLien.cible) ||
-      (articleLien.typelien === "CONCORDANCE" && !articleLien.cible) ||
-      (articleLien.typelien === "CONCORDE" && articleLien.cible) ||
-      (articleLien.typelien === "DISJOINT" && !articleLien.cible) ||
-      (articleLien.typelien === "DISJONCTION" && articleLien.cible) ||
-      (articleLien.typelien === "PERIME" && !articleLien.cible) ||
-      (articleLien.typelien === "TRANSFERE" && !articleLien.cible)
+      (referringArticleLien.typelien === "ABROGATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "ABROGE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDANCE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDE" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "DISJOINT" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "DISJONCTION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "PERIME" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "TRANSFERE" &&
+        !referringArticleLien.cible)
     ) {
       await addModifyingArticleId(
         context,
-        articleLien.article_id,
+        referringArticleLien.article_id,
         "DELETE",
         articleId,
         articleDateDebut,
         articleDateFin,
       )
     } else if (
-      (articleLien.typelien === "ABROGATION" && !articleLien.cible) ||
-      articleLien.typelien === "CITATION" ||
-      articleLien.typelien === "CODIFIE" ||
-      (articleLien.typelien === "HISTO" && articleLien.cible) ||
-      (articleLien.typelien === "PEREMPTION" && articleLien.cible) ||
-      articleLien.typelien === "PILOTE_SUIVEUR" ||
-      (articleLien.typelien === "SPEC_APPLI" && articleLien.cible) ||
-      (articleLien.typelien === "SPEC_APPLI" && !articleLien.cible) || // LEGIARTI000006794309
-      articleLien.typelien === "TXT_ASSOCIE" ||
-      articleLien.typelien === "TXT_SOURCE"
+      (referringArticleLien.typelien === "ABROGATION" &&
+        !referringArticleLien.cible) ||
+      referringArticleLien.typelien === "CITATION" ||
+      referringArticleLien.typelien === "CODIFIE" ||
+      (referringArticleLien.typelien === "HISTO" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "PEREMPTION" &&
+        referringArticleLien.cible) ||
+      referringArticleLien.typelien === "PILOTE_SUIVEUR" ||
+      (referringArticleLien.typelien === "SPEC_APPLI" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "SPEC_APPLI" &&
+        !referringArticleLien.cible) || // LEGIARTI000006794309
+      referringArticleLien.typelien === "TXT_ASSOCIE" ||
+      referringArticleLien.typelien === "TXT_SOURCE"
     ) {
       // Ignore link.
     } else if (
-      (articleLien.typelien === "CODIFICATION" && articleLien.cible) ||
-      (articleLien.typelien === "CONCORDANCE" && articleLien.cible) ||
-      (articleLien.typelien === "CONCORDE" && !articleLien.cible) ||
-      (articleLien.typelien === "CREATION" && articleLien.cible) ||
-      (articleLien.typelien === "CREE" && !articleLien.cible) ||
-      (articleLien.typelien === "DEPLACE" && !articleLien.cible) ||
-      (articleLien.typelien === "DEPLACEMENT" && articleLien.cible) ||
-      (articleLien.typelien === "DISJOINT" && articleLien.cible) ||
-      (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
-      (articleLien.typelien === "MODIFIE" && !articleLien.cible) ||
-      (articleLien.typelien === "TRANSFERT" && articleLien.cible)
+      (referringArticleLien.typelien === "CODIFICATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDANCE" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CREATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CREE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "DEPLACE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "DEPLACEMENT" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "DISJOINT" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "MODIFICATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "MODIFIE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "TRANSFERT" &&
+        referringArticleLien.cible)
     ) {
       await addModifyingArticleId(
         context,
-        articleLien.article_id,
+        referringArticleLien.article_id,
         "CREATE",
         articleId,
         articleDateDebut,
@@ -277,7 +323,7 @@ export async function registerLegiArticleModifiers(
         if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
           await addModifyingArticleId(
             context,
-            articleLien.article_id,
+            referringArticleLien.article_id,
             "DELETE",
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
@@ -286,24 +332,42 @@ export async function registerLegiArticleModifiers(
         }
       }
     } else if (
-      (articleLien.typelien === "CREATION" && !articleLien.cible) ||
-      (articleLien.typelien === "MODIFICATION" && !articleLien.cible) ||
-      (articleLien.typelien === "MODIFIE" && articleLien.cible) // LEGIARTI000045468013
+      (referringArticleLien.typelien === "CREATION" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "MODIFICATION" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "MODIFIE" &&
+        referringArticleLien.cible) // LEGIARTI000045468013
     ) {
       // It seems to be errors.
       // Ignore link.
     } else {
       throw new Error(
-        `Unexpected article_lien to article ${articleLien.id}: typelien=${articleLien.typelien}, cible=${articleLien.cible}`,
+        `Unexpected article_lien to article ${referringArticleLien.id}: typelien=${referringArticleLien.typelien}, cible=${referringArticleLien.cible}`,
       )
     }
   }
 
-  for (const texteVersionLien of await db<TexteVersionLienDb[]>`
+  for (const referringTextLien of await db<TexteVersionLienDb[]>`
     SELECT * FROM texte_version_lien WHERE id IN ${db(articleIds)}
   `) {
+    const referringTextsLiens = (context.referringTextsLiensById[articleId] ??=
+      [])
     if (
-      context.consolidatedTextInternalIds.has(texteVersionLien.texte_version_id)
+      referringTextsLiens.every(
+        (lien) =>
+          lien.texte_version_id !== referringTextLien.texte_version_id ||
+          lien.cible !== referringTextLien.cible ||
+          lien.typelien !== referringTextLien.typelien,
+      )
+    ) {
+      referringTextsLiens.push(referringTextLien)
+    }
+
+    if (
+      context.consolidatedTextInternalIds.has(
+        referringTextLien.texte_version_id,
+      )
     ) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
@@ -311,61 +375,66 @@ export async function registerLegiArticleModifiers(
 
     if (context.logReferences) {
       console.log(
-        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
+        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${referringTextLien.texte_version_id} cible: ${referringTextLien.cible} typelien: ${referringTextLien.typelien}`,
       )
     }
-    if (texteVersionLien.cidtexte !== context.consolidatedTextCid) {
+    if (referringTextLien.cidtexte !== context.consolidatedTextCid) {
       console.warn(
-        `Ignoring texte_version_lien ${JSON.stringify(texteVersionLien)} with unexpected cidtexte: ${texteVersionLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+        `Ignoring texte_version_lien ${JSON.stringify(referringTextLien)} with unexpected cidtexte: ${referringTextLien.cidtexte} instead of ${context.consolidatedTextCid}`,
       )
       continue
     }
     assert(
-      texteVersionLien.texte_version_id.startsWith("JORFTEXT") ||
-        texteVersionLien.texte_version_id.startsWith("LEGITEXT"),
+      referringTextLien.texte_version_id.startsWith("JORFTEXT") ||
+        referringTextLien.texte_version_id.startsWith("LEGITEXT"),
     )
     if (
-      (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "DISJONCTION" && texteVersionLien.cible)
+      (referringTextLien.typelien === "ABROGATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "ANNULATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "DISJONCTION" && referringTextLien.cible)
     ) {
       await addModifyingTextId(
         context,
-        texteVersionLien.texte_version_id,
+        referringTextLien.texte_version_id,
         "DELETE",
         articleId,
         articleDateDebut,
         articleDateFin,
       )
     } else if (
-      (texteVersionLien.typelien === "APPLICATION" &&
-        !texteVersionLien.cible) ||
-      texteVersionLien.typelien === "CITATION" ||
-      (texteVersionLien.typelien === "HISTO" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "PEREMPTION" && texteVersionLien.cible) ||
-      texteVersionLien.typelien === "SPEC_APPLI" ||
-      (texteVersionLien.typelien === "TXT_ASSOCIE" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "TXT_ASSOCIE" &&
-        !texteVersionLien.cible) || // Example: LEGITEXT000006074068
-      texteVersionLien.typelien === "TXT_SOURCE"
+      (referringTextLien.typelien === "APPLICATION" &&
+        !referringTextLien.cible) ||
+      referringTextLien.typelien === "CITATION" ||
+      (referringTextLien.typelien === "HISTO" && referringTextLien.cible) ||
+      (referringTextLien.typelien === "PEREMPTION" &&
+        referringTextLien.cible) ||
+      referringTextLien.typelien === "SPEC_APPLI" ||
+      (referringTextLien.typelien === "TXT_ASSOCIE" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "TXT_ASSOCIE" &&
+        !referringTextLien.cible) || // Example: LEGITEXT000006074068
+      referringTextLien.typelien === "TXT_SOURCE"
     ) {
       // Ignore link.
     } else if (
-      (texteVersionLien.typelien === "CODIFICATION" &&
-        texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "CONCORDANCE" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "CONCORDE" && !texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "CREATION" && texteVersionLien.cible) ||
+      (referringTextLien.typelien === "CODIFICATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "CONCORDANCE" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "CONCORDE" && !referringTextLien.cible) ||
+      (referringTextLien.typelien === "CREATION" && referringTextLien.cible) ||
       // LEGIARTI000006527461 has an example of MODIFICATION with !cible
-      texteVersionLien.typelien === "MODIFICATION" ||
-      (texteVersionLien.typelien === "MODIFIE" && !texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "RECTIFICATION" &&
-        texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "TRANSFERT" && texteVersionLien.cible)
+      referringTextLien.typelien === "MODIFICATION" ||
+      (referringTextLien.typelien === "MODIFIE" && !referringTextLien.cible) ||
+      (referringTextLien.typelien === "RECTIFICATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "TRANSFERT" && referringTextLien.cible)
     ) {
       await addModifyingTextId(
         context,
-        texteVersionLien.texte_version_id,
+        referringTextLien.texte_version_id,
         "CREATE",
         articleId,
         articleDateDebut,
@@ -379,7 +448,7 @@ export async function registerLegiArticleModifiers(
         if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
           await addModifyingTextId(
             context,
-            texteVersionLien.texte_version_id,
+            referringTextLien.texte_version_id,
             "DELETE",
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
@@ -388,115 +457,117 @@ export async function registerLegiArticleModifiers(
         }
       }
     } else if (
-      texteVersionLien.typelien === "CONCORDE" &&
-      texteVersionLien.cible // LEGIARTI000018508754
+      referringTextLien.typelien === "CONCORDE" &&
+      referringTextLien.cible // LEGIARTI000018508754
     ) {
       // It seems to be errors.
       // Ignore link.
     } else {
       throw new Error(
-        `Unexpected texte_version_lien to article ${texteVersionLien.id}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
+        `Unexpected texte_version_lien to article ${referringTextLien.id}: typelien=${referringTextLien.typelien}, cible=${referringTextLien.cible}`,
       )
     }
   }
 
-  const articleLiens = article.LIENS?.LIEN
+  const articleReferredLiens = article.LIENS?.LIEN
   // Note: The (eventual) JORF version of article (with ID === context.jorfCreatorIdByConsolidatedId[articleId]]) never has LIENS.
   // => It is skipped.
-  if (articleLiens !== undefined) {
-    for (const articleLien of articleLiens) {
-      if (articleLien["@cidtexte"] === undefined) {
+  if (articleReferredLiens !== undefined) {
+    for (const articleReferredLien of articleReferredLiens) {
+      if (articleReferredLien["@cidtexte"] === undefined) {
         // Ignore link because it has no potential modifying text.
         continue
       }
-      if (context.consolidatedTextInternalIds.has(articleLien["@id"]!)) {
+      if (
+        context.consolidatedTextInternalIds.has(articleReferredLien["@id"]!)
+      ) {
         // Ignore internal links because a LEGI texte can't modify itself.
         continue
       }
 
       if (context.logReferences) {
         console.log(
-          `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${articleLien["@sens"]} typelien: ${articleLien["@typelien"]} ${articleLien["@cidtexte"]} ${articleLien["@id"]}${articleLien["@nortexte"] === undefined ? "" : ` ${articleLien["@nortexte"]}`}${articleLien["@num"] === undefined ? "" : ` ${articleLien["@num"]}`} ${articleLien["@naturetexte"]} du ${articleLien["@datesignatexte"]} : ${articleLien["#text"]}`,
+          `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${articleReferredLien["@sens"]} typelien: ${articleReferredLien["@typelien"]} ${articleReferredLien["@cidtexte"]} ${articleReferredLien["@id"]}${articleReferredLien["@nortexte"] === undefined ? "" : ` ${articleReferredLien["@nortexte"]}`}${articleReferredLien["@num"] === undefined ? "" : ` ${articleReferredLien["@num"]}`} ${articleReferredLien["@naturetexte"]} du ${articleReferredLien["@datesignatexte"]} : ${articleReferredLien["#text"]}`,
         )
       }
       if (
-        (articleLien["@typelien"] === "ABROGATION" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "ABROGE" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "ANNULATION" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "CONCORDANCE" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "CONCORDE" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "DISJOINT" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "DISJONCTION" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "PERIME" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "TRANSFERE" &&
-          articleLien["@sens"] === "cible")
+        (articleReferredLien["@typelien"] === "ABROGATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "ABROGE" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "ANNULATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "CONCORDANCE" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "CONCORDE" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "DISJOINT" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "DISJONCTION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "PERIME" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "TRANSFERE" &&
+          articleReferredLien["@sens"] === "cible")
       ) {
         await addModifyingTextId(
           context,
-          articleLien["@cidtexte"],
+          articleReferredLien["@cidtexte"],
           "DELETE",
           articleId,
           articleDateDebut,
           articleDateFin,
         )
       } else if (
-        (articleLien["@typelien"] === "ABROGATION" &&
-          articleLien["@sens"] === "cible") ||
-        articleLien["@typelien"] === "CITATION" ||
-        articleLien["@typelien"] === "CODIFIE" ||
-        (articleLien["@typelien"] === "HISTO" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "PEREMPTION" &&
-          articleLien["@sens"] === "source") ||
-        articleLien["@typelien"] === "PILOTE_SUIVEUR" ||
-        (articleLien["@typelien"] === "SPEC_APPLI" &&
-          articleLien["@sens"] === "source") ||
-        articleLien["@typelien"] === "TXT_ASSOCIE" ||
-        (articleLien["@typelien"] === "SPEC_APPLI" &&
-          articleLien["@sens"] === "cible") || // LEGIARTI000006794309
-        articleLien["@typelien"] === "TXT_SOURCE"
+        (articleReferredLien["@typelien"] === "ABROGATION" &&
+          articleReferredLien["@sens"] === "cible") ||
+        articleReferredLien["@typelien"] === "CITATION" ||
+        articleReferredLien["@typelien"] === "CODIFIE" ||
+        (articleReferredLien["@typelien"] === "HISTO" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "PEREMPTION" &&
+          articleReferredLien["@sens"] === "source") ||
+        articleReferredLien["@typelien"] === "PILOTE_SUIVEUR" ||
+        (articleReferredLien["@typelien"] === "SPEC_APPLI" &&
+          articleReferredLien["@sens"] === "source") ||
+        articleReferredLien["@typelien"] === "TXT_ASSOCIE" ||
+        (articleReferredLien["@typelien"] === "SPEC_APPLI" &&
+          articleReferredLien["@sens"] === "cible") || // LEGIARTI000006794309
+        articleReferredLien["@typelien"] === "TXT_SOURCE"
       ) {
         // Ignore link.
       } else if (
-        (articleLien["@typelien"] === "CODIFICATION" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "CONCORDANCE" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "CONCORDE" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "CREATION" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "CREE" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "DEPLACE" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "DEPLACEMENT" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "DISJOINT" &&
-          articleLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "CODIFICATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "CONCORDANCE" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "CONCORDE" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "CREATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "CREE" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "DEPLACE" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "DEPLACEMENT" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "DISJOINT" &&
+          articleReferredLien["@sens"] === "source") ||
         // Occurs for LEGIARTI000028043722
-        (articleLien["@typelien"] === "MODIFICATION" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "MODIFICATION" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "MODIFIE" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "RECTIFICATION" &&
-          articleLien["@sens"] === "source") ||
-        (articleLien["@typelien"] === "TRANSFERT" &&
-          articleLien["@sens"] === "source")
+        (articleReferredLien["@typelien"] === "MODIFICATION" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "MODIFICATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "MODIFIE" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "RECTIFICATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "TRANSFERT" &&
+          articleReferredLien["@sens"] === "source")
       ) {
         await addModifyingTextId(
           context,
-          articleLien["@cidtexte"],
+          articleReferredLien["@cidtexte"],
           "CREATE",
           articleId,
           articleDateDebut,
@@ -510,7 +581,7 @@ export async function registerLegiArticleModifiers(
           if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
             await addModifyingTextId(
               context,
-              articleLien["@cidtexte"],
+              articleReferredLien["@cidtexte"],
               "DELETE",
               articleVersion.LIEN_ART["@id"],
               articleVersion.LIEN_ART["@debut"],
@@ -519,16 +590,16 @@ export async function registerLegiArticleModifiers(
           }
         }
       } else if (
-        (articleLien["@typelien"] === "CREATION" &&
-          articleLien["@sens"] === "cible") ||
-        (articleLien["@typelien"] === "MODIFIE" &&
-          articleLien["@sens"] === "source") // LEGIARTI000045468013
+        (articleReferredLien["@typelien"] === "CREATION" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "MODIFIE" &&
+          articleReferredLien["@sens"] === "source") // LEGIARTI000045468013
       ) {
         // It seems to be an error.
         // Ignore link.
       } else {
         throw new Error(
-          `Unexpected LIEN in article ${articleId}: @typelien=${articleLien["@typelien"]}, @sens=${articleLien["@sens"]}`,
+          `Unexpected LIEN in article ${articleId}: @typelien=${articleReferredLien["@typelien"]}, @sens=${articleReferredLien["@sens"]}`,
         )
       }
     }
@@ -617,7 +688,65 @@ export async function registerLegiArticleModifiers(
   // Another tentative to associate with modifying texts is done later.
 }
 
-export async function registerLegiTextModifiers(
+export async function registerLegiSectionTaModifiersAndReferences(
+  context: Context,
+  depth: number,
+  lienSectionTa: JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa,
+  sectionTa: JorfSectionTa | LegiSectionTa,
+): Promise<void> {
+  // Note: Currently, SectionTA modifiers are not registered. Only references are registered.
+
+  const sectionTaId = sectionTa.ID
+  const sectionTaIds = [
+    sectionTaId,
+    // context.jorfCreatorIdByConsolidatedId[sectionTaId],
+  ].filter((id) => id !== undefined)
+  const sectionTaDateDebut = lienSectionTa["@debut"]
+  const sectionTaDateFin = lienSectionTa["@fin"]
+  if (context.logReferences) {
+    console.log(
+      `${sectionTaId} ${"  ".repeat(depth)}SectionTA ${sectionTa.TITRE_TA} (${sectionTaDateDebut} — ${sectionTaDateFin === "2999-01-01" ? "…" : sectionTaDateFin})`,
+    )
+  }
+
+  for (const referringArticleLien of await db<ArticleLienDb[]>`
+    SELECT * FROM article_lien WHERE id IN ${db(sectionTaIds)}
+  `) {
+    const referringArticlesLiens = (context.referringArticlesLiensById[
+      sectionTaId
+    ] ??= [])
+    if (
+      referringArticlesLiens.every(
+        (lien) =>
+          lien.article_id !== referringArticleLien.article_id ||
+          lien.cible !== referringArticleLien.cible ||
+          lien.typelien !== referringArticleLien.typelien,
+      )
+    ) {
+      referringArticlesLiens.push(referringArticleLien)
+    }
+  }
+
+  for (const referringTextLien of await db<TexteVersionLienDb[]>`
+    SELECT * FROM texte_version_lien WHERE id IN ${db(sectionTaIds)}
+  `) {
+    const referringTextsLiens = (context.referringTextsLiensById[
+      sectionTaId
+    ] ??= [])
+    if (
+      referringTextsLiens.every(
+        (lien) =>
+          lien.texte_version_id !== referringTextLien.texte_version_id ||
+          lien.cible !== referringTextLien.cible ||
+          lien.typelien !== referringTextLien.typelien,
+      )
+    ) {
+      referringTextsLiens.push(referringTextLien)
+    }
+  }
+}
+
+export async function registerLegiTextModifiersAndReferences(
   context: Context,
   depth: number,
   textelr: LegiTextelr,
@@ -639,55 +768,81 @@ export async function registerLegiTextModifiers(
     )
   }
 
-  for (const articleLien of await db<ArticleLienDb[]>`
+  for (const referringArticleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id IN ${db(textIds)}
   `) {
-    if (context.consolidatedTextInternalIds.has(articleLien.article_id)) {
+    const referringArticlesLiens = (context.referringArticlesLiensById[
+      legiTextId
+    ] ??= [])
+    if (
+      referringArticlesLiens.every(
+        (lien) =>
+          lien.article_id !== referringArticleLien.article_id ||
+          lien.cible !== referringArticleLien.cible ||
+          lien.typelien !== referringArticleLien.typelien,
+      )
+    ) {
+      referringArticlesLiens.push(referringArticleLien)
+    }
+
+    if (
+      context.consolidatedTextInternalIds.has(referringArticleLien.article_id)
+    ) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
     }
 
     if (context.logReferences) {
       console.log(
-        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${articleLien.article_id} cible: ${articleLien.cible} typelien: ${articleLien.typelien}`,
+        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${referringArticleLien.article_id} cible: ${referringArticleLien.cible} typelien: ${referringArticleLien.typelien}`,
       )
     }
-    if (articleLien.cidtexte !== context.consolidatedTextCid) {
+    if (referringArticleLien.cidtexte !== context.consolidatedTextCid) {
       console.warn(
-        `Ignoring article_lien ${JSON.stringify(articleLien)} with unexpected cidtexte: ${articleLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+        `Ignoring article_lien ${JSON.stringify(referringArticleLien)} with unexpected cidtexte: ${referringArticleLien.cidtexte} instead of ${context.consolidatedTextCid}`,
       )
       continue
     }
     if (
-      (articleLien.typelien === "ABROGATION" && articleLien.cible) ||
-      (articleLien.typelien === "ABROGE" && !articleLien.cible)
+      (referringArticleLien.typelien === "ABROGATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "ABROGE" &&
+        !referringArticleLien.cible)
     ) {
       await addModifyingArticleId(
         context,
-        articleLien.article_id,
+        referringArticleLien.article_id,
         "DELETE",
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
     } else if (
-      articleLien.typelien === "CITATION" ||
-      (articleLien.typelien === "SPEC_APPLI" && !articleLien.cible) || // Example: LEGITEXT000006074068
-      (articleLien.typelien === "TXT_ASSOCIE" && !articleLien.cible) || // Example: LEGITEXT000006074068
-      articleLien.typelien === "TXT_SOURCE"
+      referringArticleLien.typelien === "CITATION" ||
+      (referringArticleLien.typelien === "SPEC_APPLI" &&
+        !referringArticleLien.cible) || // Example: LEGITEXT000006074068
+      (referringArticleLien.typelien === "TXT_ASSOCIE" &&
+        !referringArticleLien.cible) || // Example: LEGITEXT000006074068
+      referringArticleLien.typelien === "TXT_SOURCE"
     ) {
       // Ignore link.
     } else if (
-      (articleLien.typelien === "CODIFICATION" && articleLien.cible) ||
-      (articleLien.typelien === "CONCORDANCE" && !articleLien.cible) ||
-      (articleLien.typelien === "CONCORDE" && !articleLien.cible) ||
-      (articleLien.typelien === "CREE" && !articleLien.cible) ||
-      (articleLien.typelien === "MODIFICATION" && articleLien.cible) ||
-      (articleLien.typelien === "MODIFIE" && !articleLien.cible)
+      (referringArticleLien.typelien === "CODIFICATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDANCE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CREE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "MODIFICATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "MODIFIE" &&
+        !referringArticleLien.cible)
     ) {
       await addModifyingArticleId(
         context,
-        articleLien.article_id,
+        referringArticleLien.article_id,
         "CREATE",
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
@@ -701,7 +856,7 @@ export async function registerLegiTextModifiers(
         if (version.LIEN_TXT["@fin"] === texteVersionDateDebut) {
           await addModifyingArticleId(
             context,
-            articleLien.article_id,
+            referringArticleLien.article_id,
             "DELETE",
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
@@ -711,16 +866,31 @@ export async function registerLegiTextModifiers(
       }
     } else {
       throw new Error(
-        `Unexpected article_lien to text ${articleLien.id}: typelien=${articleLien.typelien}, cible=${articleLien.cible}`,
+        `Unexpected article_lien to text ${referringArticleLien.id}: typelien=${referringArticleLien.typelien}, cible=${referringArticleLien.cible}`,
       )
     }
   }
 
-  for (const texteVersionLien of await db<TexteVersionLienDb[]>`
+  for (const referringTextLien of await db<TexteVersionLienDb[]>`
     SELECT * FROM texte_version_lien WHERE id IN ${db(textIds)}
   `) {
+    const referringTextsLiens = (context.referringTextsLiensById[legiTextId] ??=
+      [])
     if (
-      context.consolidatedTextInternalIds.has(texteVersionLien.texte_version_id)
+      referringTextsLiens.every(
+        (lien) =>
+          lien.texte_version_id !== referringTextLien.texte_version_id ||
+          lien.cible !== referringTextLien.cible ||
+          lien.typelien !== referringTextLien.typelien,
+      )
+    ) {
+      referringTextsLiens.push(referringTextLien)
+    }
+
+    if (
+      context.consolidatedTextInternalIds.has(
+        referringTextLien.texte_version_id,
+      )
     ) {
       // Ignore internal links because a LEGI texte can't modify itself.
       continue
@@ -728,45 +898,47 @@ export async function registerLegiTextModifiers(
 
     if (context.logReferences) {
       console.log(
-        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${texteVersionLien.texte_version_id} cible: ${texteVersionLien.cible} typelien: ${texteVersionLien.typelien}`,
+        `${" ".repeat(20)} ${"  ".repeat(depth + 1)}${referringTextLien.texte_version_id} cible: ${referringTextLien.cible} typelien: ${referringTextLien.typelien}`,
       )
     }
-    if (texteVersionLien.cidtexte !== context.consolidatedTextCid) {
+    if (referringTextLien.cidtexte !== context.consolidatedTextCid) {
       console.warn(
-        `Ignoring texte_version_lien ${JSON.stringify(texteVersionLien)} with unexpected cidtexte: ${texteVersionLien.cidtexte} instead of ${context.consolidatedTextCid}`,
+        `Ignoring texte_version_lien ${JSON.stringify(referringTextLien)} with unexpected cidtexte: ${referringTextLien.cidtexte} instead of ${context.consolidatedTextCid}`,
       )
       continue
     }
     if (
-      (texteVersionLien.typelien === "ABROGATION" && texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "ANNULATION" && texteVersionLien.cible)
+      (referringTextLien.typelien === "ABROGATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "ANNULATION" && referringTextLien.cible)
     ) {
       await addModifyingTextId(
         context,
-        texteVersionLien.texte_version_id,
+        referringTextLien.texte_version_id,
         "DELETE",
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
     } else if (
-      (texteVersionLien.typelien === "APPLICATION" &&
-        !texteVersionLien.cible) ||
-      texteVersionLien.typelien === "CITATION" ||
-      (texteVersionLien.typelien === "SPEC_APPLI" && !texteVersionLien.cible) || // LEGITEXT000006074096
-      (texteVersionLien.typelien === "TXT_ASSOCIE" &&
-        !texteVersionLien.cible) || // Example: LEGITEXT000006074068
-      (texteVersionLien.typelien === "TXT_SOURCE" && !texteVersionLien.cible)
+      (referringTextLien.typelien === "APPLICATION" &&
+        !referringTextLien.cible) ||
+      referringTextLien.typelien === "CITATION" ||
+      (referringTextLien.typelien === "SPEC_APPLI" &&
+        !referringTextLien.cible) || // LEGITEXT000006074096
+      (referringTextLien.typelien === "TXT_ASSOCIE" &&
+        !referringTextLien.cible) || // Example: LEGITEXT000006074068
+      (referringTextLien.typelien === "TXT_SOURCE" && !referringTextLien.cible)
     ) {
       // Ignore link.
     } else if (
-      (texteVersionLien.typelien === "CODIFICATION" &&
-        texteVersionLien.cible) ||
-      (texteVersionLien.typelien === "MODIFIE" && !texteVersionLien.cible)
+      (referringTextLien.typelien === "CODIFICATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "MODIFIE" && !referringTextLien.cible)
     ) {
       await addModifyingTextId(
         context,
-        texteVersionLien.texte_version_id,
+        referringTextLien.texte_version_id,
         "CREATE",
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
@@ -780,7 +952,7 @@ export async function registerLegiTextModifiers(
         if (version.LIEN_TXT["@fin"] === texteVersionDateDebut) {
           await addModifyingTextId(
             context,
-            texteVersionLien.texte_version_id,
+            referringTextLien.texte_version_id,
             "DELETE",
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
@@ -790,35 +962,35 @@ export async function registerLegiTextModifiers(
       }
     } else {
       throw new Error(
-        `Unexpected texte_version_lien to text ${texteVersionLien.id}: typelien=${texteVersionLien.typelien}, cible=${texteVersionLien.cible}`,
+        `Unexpected texte_version_lien to text ${referringTextLien.id}: typelien=${referringTextLien.typelien}, cible=${referringTextLien.cible}`,
       )
     }
   }
 
   for (const textId of textIds) {
     const texteVersion = await getOrLoadTexteVersion(context, textId)
-    const texteVersionLiens =
+    const textReferredLiens =
       texteVersion?.META.META_SPEC.META_TEXTE_VERSION.LIENS?.LIEN
-    if (texteVersionLiens !== undefined) {
-      for (const texteVersionLien of texteVersionLiens) {
-        if (texteVersionLien["@cidtexte"] === undefined) {
+    if (textReferredLiens !== undefined) {
+      for (const textReferredLien of textReferredLiens) {
+        if (textReferredLien["@cidtexte"] === undefined) {
           // Ignore link because it has no potential modifying text.
           continue
         }
-        if (context.consolidatedTextInternalIds.has(texteVersionLien["@id"]!)) {
+        if (context.consolidatedTextInternalIds.has(textReferredLien["@id"]!)) {
           // Ignore internal links because a LEGI texte can't modify itself.
           continue
         }
 
         if (context.logReferences) {
           console.log(
-            `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${texteVersionLien["@sens"]} typelien: ${texteVersionLien["@typelien"]} ${texteVersionLien["@cidtexte"]} ${texteVersionLien["@id"]}${texteVersionLien["@nortexte"] === undefined ? "" : ` ${texteVersionLien["@nortexte"]}`}${texteVersionLien["@num"] === undefined ? "" : ` ${texteVersionLien["@num"]}`} ${texteVersionLien["@naturetexte"]} du ${texteVersionLien["@datesignatexte"]} : ${texteVersionLien["#text"]}`,
+            `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${textReferredLien["@sens"]} typelien: ${textReferredLien["@typelien"]} ${textReferredLien["@cidtexte"]} ${textReferredLien["@id"]}${textReferredLien["@nortexte"] === undefined ? "" : ` ${textReferredLien["@nortexte"]}`}${textReferredLien["@num"] === undefined ? "" : ` ${textReferredLien["@num"]}`} ${textReferredLien["@naturetexte"]} du ${textReferredLien["@datesignatexte"]} : ${textReferredLien["#text"]}`,
           )
         }
         // if () {
         //   await addModifyingTextId(
         //     context,
-        //     texteVersionLien["@cidtexte"],
+        //     textReferredLien["@cidtexte"],
         //     "DELETE",
         //     legiTextId,
         //     texteVersionDateDebut ?? "2999-01-01",
@@ -826,20 +998,20 @@ export async function registerLegiTextModifiers(
         //   )
         // } else
         if (
-          (texteVersionLien["@typelien"] === "APPLICATION" &&
-            texteVersionLien["@sens"] === "cible") ||
-          texteVersionLien["@typelien"] === "CITATION"
+          (textReferredLien["@typelien"] === "APPLICATION" &&
+            textReferredLien["@sens"] === "cible") ||
+          textReferredLien["@typelien"] === "CITATION"
         ) {
           // Ignore link.
         } else if (
-          (texteVersionLien["@typelien"] === "MODIFICATION" &&
-            texteVersionLien["@sens"] === "source") ||
-          (texteVersionLien["@typelien"] === "MODIFIE" &&
-            texteVersionLien["@sens"] === "cible")
+          (textReferredLien["@typelien"] === "MODIFICATION" &&
+            textReferredLien["@sens"] === "source") ||
+          (textReferredLien["@typelien"] === "MODIFIE" &&
+            textReferredLien["@sens"] === "cible")
         ) {
           await addModifyingTextId(
             context,
-            texteVersionLien["@cidtexte"],
+            textReferredLien["@cidtexte"],
             "CREATE",
             legiTextId,
             texteVersionDateDebut ?? "2999-01-01",
@@ -857,7 +1029,7 @@ export async function registerLegiTextModifiers(
             if (version.LIEN_TXT["@fin"] === texteVersionDateDebut) {
               await addModifyingTextId(
                 context,
-                texteVersionLien["@cidtexte"],
+                textReferredLien["@cidtexte"],
                 "DELETE",
                 version.LIEN_TXT["@id"],
                 version.LIEN_TXT["@debut"],
@@ -867,7 +1039,7 @@ export async function registerLegiTextModifiers(
           }
         } else {
           throw new Error(
-            `Unexpected LIEN in text ${textId}: @typelien=${texteVersionLien["@typelien"]}, @sens=${texteVersionLien["@sens"]}`,
+            `Unexpected LIEN in text ${textId}: @typelien=${textReferredLien["@typelien"]}, @sens=${textReferredLien["@sens"]}`,
           )
         }
       }

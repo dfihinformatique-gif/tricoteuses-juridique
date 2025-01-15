@@ -132,6 +132,21 @@ export interface JorfMetaTexteChronicle {
   PAGE_FIN_PUBLI?: number
 }
 
+export interface JorfMetaTexteVersion {
+  AUTORITE?: string
+  DATE_DEBUT: string
+  DATE_FIN: string
+  LIENS?: {
+    LIEN: Array<JorfTexteVersionLien>
+  }
+  MCS_TXT?: {
+    MC: string[]
+  }
+  MINISTERE?: string
+  TITRE?: string
+  TITREFULL?: string
+}
+
 // Section Texte Article
 // Correspond à un niveau d'une table des matières
 export interface JorfSectionTa {
@@ -310,20 +325,7 @@ export interface JorfTexteVersion {
     }
     META_SPEC: {
       META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
-      META_TEXTE_VERSION: {
-        AUTORITE?: string
-        DATE_DEBUT: string
-        DATE_FIN: string
-        LIENS?: {
-          LIEN: Array<JorfTexteVersionLien>
-        }
-        MCS_TXT?: {
-          MC: string[]
-        }
-        MINISTERE?: string
-        TITRE?: string
-        TITREFULL?: string
-      }
+      META_TEXTE_VERSION: JorfMetaTexteVersion
     }
   }
   NOTICE?: {

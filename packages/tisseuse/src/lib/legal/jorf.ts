@@ -721,6 +721,7 @@ export const allJorfTexteVersionLienNatures = [
   "Décision", // 1
   "DECISION", // 109937
   "DECLARATION", // 8
+  "DECLARATION GENERALE",
   "DECRET_LOI", // 2061
   "DECRET", // 747993
   "Délibération", // 1

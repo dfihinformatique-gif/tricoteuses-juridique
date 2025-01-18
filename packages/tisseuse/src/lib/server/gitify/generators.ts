@@ -28,6 +28,13 @@ import type {
   LegiTexteVersion,
   LegiTexteVersionLien,
 } from "$lib/legal/legi"
+import type {
+  ArticleGitDb,
+  ArticleLienDb,
+  SectionTaGitDb,
+  TexteVersionGitDb,
+  TexteVersionLienDb,
+} from "$lib/legal/shared"
 import { db } from "$lib/server/databases"
 import { slugify } from "$lib/strings"
 
@@ -54,7 +61,6 @@ import {
   type SectionTaNode,
   type TextelrNode,
 } from "./texts_trees"
-import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
 
 const minDateObject = new Date("1971-01-01")
 const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)
@@ -189,6 +195,7 @@ function escapeHtml<StringOrUndefined extends string | undefined>(
 async function generateArticlesGit(
   context: Context,
   articles: Array<JorfArticle | LegiArticle> | undefined,
+  date: string,
   repositoryRelativeDir: string,
 ): Promise<{
   readmeLinks: Array<{ href: string; title: string }>
@@ -302,6 +309,10 @@ async function generateArticlesGit(
             .join("\n\n") + "\n",
         )
         tree.push(treeEntry)
+        context.articleGitById[articleId] ??= {
+          date,
+          path: articleRepositoryRelativeFilePath,
+        }
         context.textFileCacheByRepositoryRelativeFilePath[
           articleRepositoryRelativeFilePath
         ] = {
@@ -337,6 +348,7 @@ export async function generateConsolidatedTextGit(
 ): Promise<number> {
   const context: Context = {
     articleById: {},
+    articleGitById: {},
     consolidatedIdsByActionByModifyingTextIdByDate: {},
     consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
     consolidatedTextInternalIds: new Set([consolidatedTextId]),
@@ -351,9 +363,11 @@ export async function generateConsolidatedTextGit(
     referringArticlesLiensById: {},
     referringTextsLiensById: {},
     sectionTaById: {},
+    sectionTaGitById: {},
     textelrById: {},
     texteManquantById: {},
     texteVersionById: {},
+    texteVersionGitById: {},
     textFileCacheByRepositoryRelativeFilePath: {},
   }
   const consolidatedTextelr = (await getOrLoadTextelr(
@@ -796,6 +810,7 @@ export async function generateConsolidatedTextGit(
         1,
         tree,
         consolidatedTexteVersion as LegiTexteVersion,
+        date,
         modifyingTextId,
       )
 
@@ -955,6 +970,93 @@ export async function generateConsolidatedTextGit(
     })
   }
 
+  for await (const articleGitRows of db<ArticleGitDb[]>`
+    SELECT * FROM article_git
+    WHERE id in (
+      SELECT id
+      FROM article
+      WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${consolidatedTextId}
+    )
+  `.cursor(100)) {
+    for (const { id, date, path } of articleGitRows) {
+      const articleGit = context.articleGitById[id]
+      if (articleGit === undefined) {
+        await db`
+          DELETE FROM article_git
+          WHERE id = ${id}
+        `
+      } else if (date === articleGit.date && path === articleGit.path) {
+        delete context.articleGitById[id]
+      }
+    }
+  }
+  if (Object.keys(context.articleGitById).length !== 0) {
+    await db`
+      INSERT INTO article_git
+      ${db(Object.entries(context.articleGitById).map(([id, { date, path }]) => ({ id, date, path })))}
+      ON CONFLICT (id)
+      DO UPDATE SET
+        date = excluded.date,
+        path = excluded.path
+    `
+  }
+
+  for await (const sectionTaGitRows of db<SectionTaGitDb[]>`
+    SELECT * FROM section_ta_git
+    WHERE id in (
+      SELECT id
+      FROM section_ta
+      WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${consolidatedTextId}
+    )
+  `.cursor(100)) {
+    for (const { id, date, path } of sectionTaGitRows) {
+      const sectionTaGit = context.sectionTaGitById[id]
+      if (sectionTaGit === undefined) {
+        await db`
+          DELETE FROM section_ta_git
+          WHERE id = ${id}
+        `
+      } else if (date === sectionTaGit.date && path === sectionTaGit.path) {
+        delete context.sectionTaGitById[id]
+      }
+    }
+  }
+  if (Object.keys(context.sectionTaGitById).length !== 0) {
+    await db`
+      INSERT INTO section_ta_git
+      ${db(Object.entries(context.sectionTaGitById).map(([id, { date, path }]) => ({ id, date, path })))}
+      ON CONFLICT (id)
+      DO UPDATE SET
+        date = excluded.date,
+        path = excluded.path
+    `
+  }
+
+  for (const { id, date, path } of await db<TexteVersionGitDb[]>`
+    SELECT * FROM texte_version_git
+    WHERE id = ${consolidatedTextId}
+  `) {
+    const texteVersionGit = context.texteVersionGitById[id]
+    if (texteVersionGit === undefined) {
+      await db`
+        DELETE FROM texte_version_git
+        WHERE id = ${id}
+      `
+    } else if (date === texteVersionGit.date && path === texteVersionGit.path) {
+      delete context.texteVersionGitById[id]
+    }
+  }
+  if (Object.keys(context.texteVersionGitById).length !== 0) {
+    await db`
+      INSERT INTO texte_version_git
+      ${db(Object.entries(context.texteVersionGitById).map(([id, { date, path }]) => ({ id, date, path })))}
+      ON CONFLICT (id)
+      DO UPDATE SET
+        date = excluded.date,
+        path = excluded.path
+    `
+  }
+
   await db`
     INSERT INTO consolidated_texts_git_hashes (
       id,
@@ -979,6 +1081,7 @@ async function generateSectionTaGit(
   depth: number,
   sectionTaNode: SectionTaNode,
   sectionTa: LegiSectionTa,
+  date: string,
   parentRepositoryRelativeDir: string,
   modifyingTextId: string,
 ): Promise<TreeEntry> {
@@ -991,15 +1094,20 @@ async function generateSectionTaGit(
   const { readmeLinks, tree } = await generateArticlesGit(
     context,
     sectionTaNode.articles,
+    date,
     repositoryRelativeDir,
   )
 
+  const readmeFilename = "README.md"
   if (sectionTaNode.children !== undefined) {
     for (const child of sectionTaNode.children) {
       const sectionTa = await getOrLoadSectionTa(context, child.id)
       if (sectionTa !== null) {
         const sectionTaDirName = child.slug
-        readmeLinks.push({ href: sectionTaDirName, title: child.title })
+        readmeLinks.push({
+          href: path.join(sectionTaDirName, readmeFilename),
+          title: child.title,
+        })
 
         tree.push(
           await generateSectionTaGit(
@@ -1007,6 +1115,7 @@ async function generateSectionTaGit(
             depth + 1,
             child,
             sectionTa,
+            date,
             repositoryRelativeDir,
             modifyingTextId,
           ),
@@ -1015,7 +1124,6 @@ async function generateSectionTaGit(
     }
   }
 
-  const readmeFilename = "README.md"
   const readmeLinksMarkdown = readmeLinks
     .map(({ href, title }) => `- [${title}](${href})`)
     .join("\n")
@@ -1097,6 +1205,10 @@ async function generateSectionTaGit(
         .join("\n\n") + "\n",
     )
     tree.push(treeEntry)
+    context.sectionTaGitById[sectionTaNode.id] ??= {
+      date,
+      path: readmeRepositoryRelativeFilePath,
+    }
     context.textFileCacheByRepositoryRelativeFilePath[
       readmeRepositoryRelativeFilePath
     ] = {
@@ -1127,6 +1239,7 @@ async function generateTextGit(
   depth: number,
   textelrNode: TextelrNode,
   texteVersion: LegiTexteVersion,
+  date: string,
   modifyingTextId: string,
 ): Promise<string> {
   const textId = texteVersion.META.META_COMMUN.ID
@@ -1142,15 +1255,20 @@ async function generateTextGit(
   const { readmeLinks, tree } = await generateArticlesGit(
     context,
     textelrNode.articles,
+    date,
     "",
   )
 
+  const readmeFilename = "README.md"
   if (textelrNode.children !== undefined) {
     for (const child of textelrNode.children) {
       const sectionTa = await getOrLoadSectionTa(context, child.id)
       if (sectionTa !== null) {
         const sectionTaDirName = child.slug
-        readmeLinks.push({ href: sectionTaDirName, title: child.title })
+        readmeLinks.push({
+          href: path.join(sectionTaDirName, readmeFilename),
+          title: child.title,
+        })
 
         tree.push(
           await generateSectionTaGit(
@@ -1158,6 +1276,7 @@ async function generateTextGit(
             depth + 1,
             child,
             sectionTa,
+            date,
             "",
             modifyingTextId,
           ),
@@ -1166,7 +1285,6 @@ async function generateTextGit(
     }
   }
 
-  const readmeFilename = "README.md"
   const readmeLinksMarkdown = readmeLinks
     .map(({ href, title }) => `- [${title}](${href})`)
     .join("\n")
@@ -1269,6 +1387,10 @@ async function generateTextGit(
         .join("\n\n") + "\n",
     )
     tree.push(treeEntry)
+    context.texteVersionGitById[textId] ??= {
+      date,
+      path: readmeRepositoryRelativeFilePath,
+    }
     context.textFileCacheByRepositoryRelativeFilePath[
       readmeRepositoryRelativeFilePath
     ] = {

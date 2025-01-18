@@ -1,6 +1,10 @@
 export type Sens = (typeof allSens)[number]
 
-export const allSens = ["cible", "source"] as const
+export interface ArticleGitDb {
+  id: string
+  date: string
+  path: string
+}
 
 export interface ArticleLienDb {
   article_id: string
@@ -10,6 +14,12 @@ export interface ArticleLienDb {
   typelien: string
 }
 
+export interface SectionTaGitDb {
+  id: string
+  date: string
+  path: string
+}
+
 export interface TexteVersionLienDb {
   texte_version_id: string
   cible: boolean
@@ -17,3 +27,11 @@ export interface TexteVersionLienDb {
   id: string
   typelien: string
 }
+
+export interface TexteVersionGitDb {
+  id: string
+  date: string
+  path: string
+}
+
+export const allSens = ["cible", "source"] as const

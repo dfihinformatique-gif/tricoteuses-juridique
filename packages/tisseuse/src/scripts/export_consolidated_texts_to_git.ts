@@ -9,15 +9,12 @@ import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi"
 import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
 import { generateConsolidatedTextGit } from "$lib/server/gitify/generators"
-import { repositoryNameFromTitle } from "$lib/server/gitify/repositories"
+import {
+  organizationNameByTexteNature,
+  repositoryNameFromTitle,
+} from "$lib/urls"
 
 const { forgejo } = config
-
-const dirNameByNature: Partial<Record<LegiTexteNature, string>> = {
-  CODE: "codes",
-  CONSTITUTION: "constitution",
-  DECLARATION: "declarations",
-}
 
 async function exportConsolidatedTextsToGit(
   targetDir: string,
@@ -79,10 +76,10 @@ async function exportConsolidatedTextsToGit(
       continue
     }
 
-    const consolidatedTextNatureDirName = dirNameByNature[
+    const consolidatedTextOrganizationName = organizationNameByTexteNature[
       consolidatedTexteVersion.META.META_COMMUN.NATURE as LegiTexteNature
     ] as string
-    assert.notStrictEqual(consolidatedTextNatureDirName, undefined)
+    assert.notStrictEqual(consolidatedTextOrganizationName, undefined)
     const consolidatedTextTitle =
       consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
       consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
@@ -92,7 +89,7 @@ async function exportConsolidatedTextsToGit(
     )
     const consolidatedTextRepositoryDir = path.join(
       targetDir,
-      consolidatedTextNatureDirName,
+      consolidatedTextOrganizationName,
       consolidatedTextRepositoryName,
     )
 
@@ -116,7 +113,7 @@ async function exportConsolidatedTextsToGit(
     if (push && forgejo !== undefined) {
       const response = await fetch(
         new URL(
-          `/api/v1/repos/${consolidatedTextNatureDirName}/${consolidatedTextRepositoryName}`,
+          `/api/v1/repos/${consolidatedTextOrganizationName}/${consolidatedTextRepositoryName}`,
           forgejo.url,
         ),
         { headers: { Accept: "application/json" } },
@@ -124,7 +121,7 @@ async function exportConsolidatedTextsToGit(
       if (response.status === 404) {
         // Create repository.
         const url = new URL(
-          `/api/v1/orgs/${consolidatedTextNatureDirName}/repos`,
+          `/api/v1/orgs/${consolidatedTextOrganizationName}/repos`,
           forgejo.url,
         ).toString()
         const response = await fetch(url, {
@@ -154,7 +151,7 @@ async function exportConsolidatedTextsToGit(
         assert(response.ok)
       }
       cd(consolidatedTextRepositoryDir + ".git")
-      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:${consolidatedTextNatureDirName}/${consolidatedTextRepositoryName}.git`
+      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:${consolidatedTextOrganizationName}/${consolidatedTextRepositoryName}.git`
       await $`git remote add origin ${origin}`
       await $`git push --all --force --set-upstream origin`
       await $`git push --force --quiet --tags`

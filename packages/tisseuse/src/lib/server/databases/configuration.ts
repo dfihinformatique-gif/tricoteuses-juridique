@@ -126,6 +126,15 @@ export async function configureDatabase() {
   //   )
   // `
 
+  // Table: article_git
+  await db`
+    CREATE TABLE IF NOT EXISTS article_git (
+      id char(20) PRIMARY KEY REFERENCES article(id) ON DELETE CASCADE,
+      date char(10) NOT NULL,
+      path text NOT NULL
+    )
+  `
+
   // Table: article_lien
   await db`
     CREATE TABLE IF NOT EXISTS article_lien (
@@ -189,6 +198,15 @@ export async function configureDatabase() {
     )
   `
 
+  // Table: section_ta_git
+  await db`
+    CREATE TABLE IF NOT EXISTS section_ta_git (
+      id char(20) PRIMARY KEY REFERENCES section_ta(id) ON DELETE CASCADE,
+      date char(10) NOT NULL,
+      path text NOT NULL
+    )
+  `
+
   // Table: texte_version
   await db`
     CREATE TABLE IF NOT EXISTS texte_version (
@@ -207,6 +225,15 @@ export async function configureDatabase() {
     CREATE TABLE IF NOT EXISTS texte_version_dossier_legislatif_assemblee_associations (
       id char(20) PRIMARY KEY REFERENCES texte_version(id) ON DELETE CASCADE,
       assemblee_uid char(13) NOT NULL
+    )
+  `
+
+  // Table: texte_version_git
+  await db`
+    CREATE TABLE IF NOT EXISTS texte_version_git (
+      id char(20) PRIMARY KEY REFERENCES texte_version(id) ON DELETE CASCADE,
+      date char(10) NOT NULL,
+      path text NOT NULL
     )
   `
 
@@ -323,6 +350,11 @@ export async function configureDatabase() {
   // `
 
   await db`
+    CREATE INDEX IF NOT EXISTS article_cid_key
+    ON article ((data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid'))
+  `
+
+  await db`
     CREATE INDEX IF NOT EXISTS article_lien_cidtext_reverse_key
     ON article_lien (cidtexte, cible, typelien)
   `
@@ -340,6 +372,11 @@ export async function configureDatabase() {
     CREATE INDEX IF NOT EXISTS dossier_legislatif_jorf_textes_id_key
     ON dossier_legislatif (jorf_textes_id)
   `
+
+  await db`
+      CREATE INDEX IF NOT EXISTS section_ta_cid_key
+      ON section_ta ((data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid'))
+    `
 
   await db`
     CREATE INDEX IF NOT EXISTS texte_version_nature_et_num_key

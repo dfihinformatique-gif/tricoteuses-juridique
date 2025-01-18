@@ -18,13 +18,20 @@ import type {
   LegiTextelr,
   LegiTexteVersion,
 } from "$lib/legal/legi"
-import { db } from "$lib/server/databases"
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
+import { db } from "$lib/server/databases"
 
 export type Action = (typeof actions)[number]
 
 export interface Context {
   articleById: Record<string, JorfArticle | LegiArticle | null>
+  articleGitById: Record<
+    string,
+    {
+      date: string
+      path: string
+    }
+  >
   consolidatedIdsByActionByModifyingTextIdByDate: Record<
     string,
     Record<string, Partial<Record<Action, Set<string>>>>
@@ -54,9 +61,23 @@ export interface Context {
   referringTextsLiensById: Record<string, TexteVersionLienDb[]>
   referringArticlesLiensById: Record<string, ArticleLienDb[]>
   sectionTaById: Record<string, LegiSectionTa | null>
+  sectionTaGitById: Record<
+    string,
+    {
+      date: string
+      path: string
+    }
+  >
   texteManquantById: Record<string, TexteManquant>
   textelrById: Record<string, JorfTextelr | LegiTextelr | null>
   texteVersionById: Record<string, JorfTexteVersion | LegiTexteVersion | null>
+  texteVersionGitById: Record<
+    string,
+    {
+      date: string
+      path: string
+    }
+  >
   textFileCacheByRepositoryRelativeFilePath: Record<string, TextFileCache>
 }
 

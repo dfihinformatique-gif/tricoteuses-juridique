@@ -5,18 +5,12 @@ import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
 
-import type {
-  LegiTexteEtat,
-  LegiTexteNature,
-  LegiTexteVersion,
-} from "$lib/legal/legi"
+import type { LegiTexteEtat, LegiTexteVersion } from "$lib/legal/legi"
 import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
-import {
-  licence,
-  repositoryNameFromTitle,
-} from "$lib/server/gitify/repositories"
+import { licence } from "$lib/server/gitify/repositories"
 import { writeTextFileIfChanged } from "$lib/server/files"
+import { repositoryNameFromTitle } from "$lib/urls"
 
 const { forgejo } = config
 

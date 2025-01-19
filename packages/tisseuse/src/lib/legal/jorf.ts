@@ -134,8 +134,8 @@ export interface JorfMetaTexteChronicle {
 
 export interface JorfMetaTexteVersion {
   AUTORITE?: string
-  DATE_DEBUT: string
-  DATE_FIN: string
+  DATE_DEBUT?: string
+  DATE_FIN?: string
   LIENS?: {
     LIEN: Array<JorfTexteVersionLien>
   }

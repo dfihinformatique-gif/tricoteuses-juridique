@@ -1513,10 +1513,13 @@ async function htmlFromReferredLiens(
                       .trim()
                       .replace(/\s+\(\d+\)$/, "") +
                     ` ${(referredMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
-                    (referredMetaTexteVersion.DATE_DEBUT === "2999-01-01" &&
+                    (((referredMetaTexteVersion.DATE_DEBUT === undefined ||
+                      referredMetaTexteVersion.DATE_DEBUT === "2999-01-01") &&
+                      referredMetaTexteVersion.DATE_FIN === undefined) ||
                     referredMetaTexteVersion.DATE_FIN === "2999-01-01"
                       ? ""
-                      : referredMetaTexteVersion.DATE_FIN === "2999-01-01"
+                      : referredMetaTexteVersion.DATE_FIN === undefined ||
+                          referredMetaTexteVersion.DATE_FIN === "2999-01-01"
                         ? `, en vigueur depuis le ${referredMetaTexteVersion.DATE_DEBUT}`
                         : `, en vigueur du ${referredMetaTexteVersion.DATE_DEBUT} au ${referredMetaTexteVersion.DATE_FIN}`)
                   referredA = `<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitle)}</a>`
@@ -1625,10 +1628,13 @@ async function htmlFromReferringTextsLiens(
                   .trim()
                   .replace(/\s+\(\d+\)$/, "") +
                 ` ${(referringMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
-                (referringMetaTexteVersion.DATE_DEBUT === "2999-01-01" &&
-                referringMetaTexteVersion.DATE_FIN === "2999-01-01"
+                ((referringMetaTexteVersion.DATE_DEBUT === undefined ||
+                  referringMetaTexteVersion.DATE_DEBUT === "2999-01-01") &&
+                (referringMetaTexteVersion.DATE_FIN === undefined ||
+                  referringMetaTexteVersion.DATE_FIN === "2999-01-01")
                   ? ""
-                  : referringMetaTexteVersion.DATE_FIN === "2999-01-01"
+                  : referringMetaTexteVersion.DATE_FIN === undefined ||
+                      referringMetaTexteVersion.DATE_FIN === "2999-01-01"
                     ? `, en vigueur depuis le ${referringMetaTexteVersion.DATE_DEBUT}`
                     : `, en vigueur du ${referringMetaTexteVersion.DATE_DEBUT} au ${referringMetaTexteVersion.DATE_FIN}`)
               referringTextA = `<a href="${new URL(`redirection/${referringTextLien.texte_version_id}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referringTextTitle)}</a>`

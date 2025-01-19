@@ -20,6 +20,7 @@ import type {
   LegiArticle,
   LegiArticleLien,
   LegiArticleMetaArticle,
+  LegiMetaTexteVersion,
   LegiSectionTa,
   LegiSectionTaLienArt,
   LegiSectionTaStructure,
@@ -1623,7 +1624,7 @@ async function htmlFromReferringTextsLiens(
                   .replace(/\s+/g, " ")
                   .trim()
                   .replace(/\s+\(\d+\)$/, "") +
-                ` referringMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
+                ` ${(referringMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
                 (referringMetaTexteVersion.DATE_DEBUT === "2999-01-01" &&
                 referringMetaTexteVersion.DATE_FIN === "2999-01-01"
                   ? ""

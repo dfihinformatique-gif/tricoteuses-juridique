@@ -992,15 +992,22 @@ export async function generateConsolidatedTextGit(
       }
     }
   }
-  if (Object.keys(context.articleGitById).length !== 0) {
-    await db`
-      INSERT INTO article_git
-      ${db(Object.entries(context.articleGitById).map(([id, { date, path }]) => ({ id, date, path })))}
-      ON CONFLICT (id)
-      DO UPDATE SET
-        date = excluded.date,
-        path = excluded.path
-    `
+  const articleGitArray = Object.entries(context.articleGitById).map(
+    ([id, { date, path }]) => ({ id, date, path }),
+  )
+  if (articleGitArray.length !== 0) {
+    // Split articleGitArray to avoid error:
+    // MAX_PARAMETERS_EXCEEDED: Max number of parameters (65534) exceeded
+    for (let i = 0; i < articleGitArray.length; i += 10_000) {
+      await db`
+        INSERT INTO article_git
+        ${db(articleGitArray.slice(i, i + 10_000))}
+        ON CONFLICT (id)
+        DO UPDATE SET
+          date = excluded.date,
+          path = excluded.path
+      `
+    }
   }
 
   for await (const sectionTaGitRows of db<SectionTaGitDb[]>`

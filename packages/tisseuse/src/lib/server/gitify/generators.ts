@@ -1512,7 +1512,7 @@ async function htmlFromReferredLiens(
                       .replace(/\s+/g, " ")
                       .trim()
                       .replace(/\s+\(\d+\)$/, "") +
-                    ` referredMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
+                    ` ${(referredMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
                     (referredMetaTexteVersion.DATE_DEBUT === "2999-01-01" &&
                     referredMetaTexteVersion.DATE_FIN === "2999-01-01"
                       ? ""

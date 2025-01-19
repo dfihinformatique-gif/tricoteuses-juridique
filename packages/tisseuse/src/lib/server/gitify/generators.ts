@@ -1462,7 +1462,10 @@ async function htmlFromReferredLiens(
                   const referredTextTitleFragment =
                     referredTextTitreTxt === undefined
                       ? `${referredArticleTexte["@nature"] ?? "Texte"} ${referredArticleTexte["@cid"]} manquant`
-                      : (referredTextTitreTxt["#text"] ??
+                      : (referredTextTitreTxt["#text"]
+                          ?.replace(/\s+/g, " ")
+                          .trim()
+                          .replace(/\s+\(\d+\)$/, "") ??
                         referredTextTitreTxt["@c_titre_court"] ??
                         `${referredArticleTexte["@nature"] ?? "Texte"} ${referredArticleTexte["@cid"]} sans titre`)
                   referredA = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredArticleTitleFragment)}</a>`
@@ -1488,7 +1491,10 @@ async function htmlFromReferredLiens(
                   const referredTextTitleFragment =
                     referredTextTitreTxt === undefined
                       ? `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} manquant`
-                      : (referredTextTitreTxt["#text"] ??
+                      : (referredTextTitreTxt["#text"]
+                          ?.replace(/\s+/g, " ")
+                          .trim()
+                          .replace(/\s+\(\d+\)$/, "") ??
                         referredTextTitreTxt["@c_titre_court"] ??
                         `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} sans titre`)
                   referredA = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredSectionTaTitleFragment)}</a>`
@@ -1585,7 +1591,10 @@ async function htmlFromReferringArticlesLiens(
               const referringTextTitleFragment =
                 referringTextTitreTxt === undefined
                   ? `${referringArticleTexte["@nature"] ?? "Texte"} ${referringArticleTexte["@cid"]} manquant`
-                  : (referringTextTitreTxt["#text"] ??
+                  : (referringTextTitreTxt["#text"]
+                      ?.replace(/\s+/g, " ")
+                      .trim()
+                      .replace(/\s+\(\d+\)$/, "") ??
                     referringTextTitreTxt["@c_titre_court"] ??
                     `${referringArticleTexte["@nature"] ?? "Texte"} ${referringArticleTexte["@cid"]} sans titre`)
               referringArticleA = dedent`<a href="${new URL(`redirection/${referringArticleLien.article_id}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referringTextTitleFragment)} - ${escapeHtml(referringArticleTitleFragment)}</a>`

@@ -35,6 +35,7 @@ import type {
   TexteVersionGitDb,
   TexteVersionLienDb,
 } from "$lib/legal/shared"
+import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
 import { slugify } from "$lib/strings"
 
@@ -1424,10 +1425,106 @@ async function htmlFromReferredLiens(
       ${(
         await Promise.all(
           referredLiens.map(async (referredLien) => {
+            let referredA: string | undefined = undefined
+            const referredId = referredLien["@id"] ?? referredLien["@cidtexte"]
+            if (referredId !== undefined) {
+              if (/^(JORF|LEGI)ARTI\d{12}$/.test(referredId)) {
+                const referredArticle = await getOrLoadArticle(
+                  context,
+                  referredId,
+                )
+                if (referredArticle !== null) {
+                  const referredMetaArticle =
+                    referredArticle.META.META_SPEC.META_ARTICLE
+                  const referredArticleTitleFragment =
+                    "article" +
+                    [
+                      referredMetaArticle.NUM,
+                      referredMetaArticle.TYPE,
+                      (referredMetaArticle as LegiArticleMetaArticle).ETAT,
+                    ]
+                      .filter((value) => value !== undefined)
+                      .map((value) => ` ${value}`)
+                      .join("") +
+                    (referredMetaArticle.DATE_DEBUT === "2999-01-01" &&
+                    referredMetaArticle.DATE_FIN === "2999-01-01"
+                      ? ""
+                      : referredMetaArticle.DATE_FIN === "2999-01-01"
+                        ? `, en vigueur depuis le ${referredMetaArticle.DATE_DEBUT}`
+                        : `, en vigueur du ${referredMetaArticle.DATE_DEBUT} au ${referredMetaArticle.DATE_FIN}`)
+
+                  const referredArticleTexte = referredArticle.CONTEXTE.TEXTE
+                  const referredTextTitreTxt = bestItemForDate(
+                    referredArticleTexte.TITRE_TXT,
+                    referredMetaArticle.DATE_DEBUT,
+                  )
+                  const referredTextTitleFragment =
+                    referredTextTitreTxt === undefined
+                      ? `${referredArticleTexte["@nature"] ?? "Texte"} ${referredArticleTexte["@cid"]} manquant`
+                      : (referredTextTitreTxt["#text"] ??
+                        referredTextTitreTxt["@c_titre_court"] ??
+                        `${referredArticleTexte["@nature"] ?? "Texte"} ${referredArticleTexte["@cid"]} sans titre`)
+                  referredA = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredArticleTitleFragment)}</a>`
+                }
+              }
+
+              if (/^(JORF|LEGI)SCTA\d{12}$/.test(referredId)) {
+                const referredSectionTa = await getOrLoadSectionTa(
+                  context,
+                  referredId,
+                )
+                if (referredSectionTa !== null) {
+                  const referredSectionTaTitleFragment =
+                    referredSectionTa.TITRE_TA?.replace(/\s+/g, " ").trim() ??
+                    "Section sans titre"
+
+                  const referredSectionTaTexte =
+                    referredSectionTa.CONTEXTE.TEXTE
+                  const referredTextTitreTxt = bestItemForDate(
+                    referredSectionTaTexte.TITRE_TXT,
+                    today, // TODO: Use a better date?
+                  )
+                  const referredTextTitleFragment =
+                    referredTextTitreTxt === undefined
+                      ? `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} manquant`
+                      : (referredTextTitreTxt["#text"] ??
+                        referredTextTitreTxt["@c_titre_court"] ??
+                        `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} sans titre`)
+                  referredA = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredSectionTaTitleFragment)}</a>`
+                }
+              }
+
+              if (/^(JORF|LEGI)TEXT\d{12}$/.test(referredId)) {
+                const referredTexteVersion = await getOrLoadTexteVersion(
+                  context,
+                  referredId,
+                )
+                if (referredTexteVersion !== null) {
+                  const referredMetaTexteVersion =
+                    referredTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                  const referredTextTitle =
+                    (
+                      referredMetaTexteVersion.TITREFULL ??
+                      referredMetaTexteVersion.TITRE ??
+                      referredId
+                    )
+                      .replace(/\s+/g, " ")
+                      .trim()
+                      .replace(/\s+\(\d+\)$/, "") +
+                    ` referredMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
+                    (referredMetaTexteVersion.DATE_DEBUT === "2999-01-01" &&
+                    referredMetaTexteVersion.DATE_FIN === "2999-01-01"
+                      ? ""
+                      : referredMetaTexteVersion.DATE_FIN === "2999-01-01"
+                        ? `, en vigueur depuis le ${referredMetaTexteVersion.DATE_DEBUT}`
+                        : `, en vigueur du ${referredMetaTexteVersion.DATE_DEBUT} au ${referredMetaTexteVersion.DATE_FIN}`)
+                  referredA = `<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitle)}</a>`
+                }
+              }
+            }
             return dedent`
               <li>
-                ${referredLien["@datesignatexte"]} ${referredLien["@typelien"]} ${referredLien["@sens"]} ${referredLien["@naturetexte"]} ${referredLien["@cidtexte"]} ${referredLien["@num"]} ${referredLien["@id"]}<br />
-                ${escapeHtml(referredLien["#text"])}
+                ${[referredLien["@datesignatexte"], referredLien["@typelien"], referredLien["@sens"]].filter((item) => item !== undefined).join(" ")} ${referredA ?? escapeHtml(referredLien["#text"] ?? "lien sans titre")}
               </li>
             `
           }),
@@ -1448,7 +1545,7 @@ async function htmlFromReferringArticlesLiens(
       ${(
         await Promise.all(
           referringArticlesLiens.map(async (referringArticleLien) => {
-            let referringArticleTitle: string | undefined = undefined
+            let referringArticleA: string | undefined = undefined
             const referringArticle = await getOrLoadArticle(
               context,
               referringArticleLien.article_id,
@@ -1462,7 +1559,6 @@ async function htmlFromReferringArticlesLiens(
                   referringMetaArticle.NUM,
                   referringMetaArticle.TYPE,
                   (referringMetaArticle as LegiArticleMetaArticle).ETAT,
-                  `(${referringArticleLien.article_id})`,
                 ]
                   .filter((value) => value !== undefined)
                   .map((value) => ` ${value}`)
@@ -1485,11 +1581,11 @@ async function htmlFromReferringArticlesLiens(
                   : (referringTextTitreTxt["#text"] ??
                     referringTextTitreTxt["@c_titre_court"] ??
                     `${referringArticleTexte["@nature"] ?? "Texte"} ${referringArticleTexte["@cid"]} sans titre`)
-              referringArticleTitle = `${referringTextTitleFragment} - ${referringArticleTitleFragment}`
+              referringArticleA = dedent`<a href="${new URL(`redirection/${referringArticleLien.article_id}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referringTextTitleFragment)} - ${escapeHtml(referringArticleTitleFragment)}</a>`
             }
             return dedent`
               <li>
-                ${referringArticleTitle ?? `Article ${referringArticleLien.article_id} manquant`} ${referringArticleLien.typelien} ${referringArticleLien.cible ? "cible" : "source"}
+                ${referringArticleA ?? `Article ${referringArticleLien.article_id} manquant`} ${referringArticleLien.typelien} ${referringArticleLien.cible ? "cible" : "source"}
               </li>
             `
           }),
@@ -1510,7 +1606,7 @@ async function htmlFromReferringTextsLiens(
       ${(
         await Promise.all(
           referringTextsLiens.map(async (referringTextLien) => {
-            let referringTextTitle: string | undefined = undefined
+            let referringTextA: string | undefined = undefined
             const referringTexteVersion = await getOrLoadTexteVersion(
               context,
               referringTextLien.texte_version_id,
@@ -1518,7 +1614,7 @@ async function htmlFromReferringTextsLiens(
             if (referringTexteVersion !== null) {
               const referringMetaTexteVersion =
                 referringTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-              referringTextTitle =
+              const referringTextTitle =
                 (
                   referringMetaTexteVersion.TITREFULL ??
                   referringMetaTexteVersion.TITRE ??
@@ -1527,17 +1623,18 @@ async function htmlFromReferringTextsLiens(
                   .replace(/\s+/g, " ")
                   .trim()
                   .replace(/\s+\(\d+\)$/, "") +
-                ` referringMetaTexteVersion as LegiMetaTexteVersion).ETAT} (${referringTextLien.texte_version_id})` +
+                ` referringMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
                 (referringMetaTexteVersion.DATE_DEBUT === "2999-01-01" &&
                 referringMetaTexteVersion.DATE_FIN === "2999-01-01"
                   ? ""
                   : referringMetaTexteVersion.DATE_FIN === "2999-01-01"
                     ? `, en vigueur depuis le ${referringMetaTexteVersion.DATE_DEBUT}`
                     : `, en vigueur du ${referringMetaTexteVersion.DATE_DEBUT} au ${referringMetaTexteVersion.DATE_FIN}`)
+              referringTextA = `<a href="${new URL(`redirection/${referringTextLien.texte_version_id}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referringTextTitle)}</a>`
             }
             return dedent`
               <li>
-                ${referringTextTitle === undefined ? `Texte ${referringTextLien.texte_version_id} manquant` : referringTextTitle} ${referringTextLien.typelien} ${referringTextLien.cible ? "cible" : "source"}
+                ${referringTextA ?? `Texte ${referringTextLien.texte_version_id} manquant`} ${referringTextLien.typelien} ${referringTextLien.cible ? "cible" : "source"}
               </li>
             `
           }),

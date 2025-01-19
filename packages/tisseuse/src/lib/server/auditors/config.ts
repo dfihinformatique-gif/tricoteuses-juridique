@@ -55,6 +55,15 @@ export function auditConfig(
     auditEmptyToNull,
     auditRequire,
   )
+  audit.attribute(
+    data,
+    "url",
+    true,
+    errors,
+    remainingKeys,
+    auditHttpUrl,
+    auditRequire,
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

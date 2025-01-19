@@ -24,6 +24,7 @@ export interface Config {
     url: string
   }
   title: string
+  url: string
 }
 
 const [config, error] = validateConfig({
@@ -51,6 +52,7 @@ const [config, error] = validateConfig({
           url: process.env.FORGEJO_URL,
         },
   title: process.env.TITLE,
+  url: process.env.URL,
 }) as [Config, unknown]
 if (error !== null) {
   console.error(

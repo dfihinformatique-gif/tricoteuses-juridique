@@ -1512,7 +1512,10 @@ async function htmlFromReferredLiens(
                       .replace(/\s+/g, " ")
                       .trim()
                       .replace(/\s+\(\d+\)$/, "") +
-                    ` ${(referredMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
+                    ((referredMetaTexteVersion as LegiMetaTexteVersion).ETAT ===
+                    undefined
+                      ? ""
+                      : ` ${(referredMetaTexteVersion as LegiMetaTexteVersion).ETAT}`) +
                     (((referredMetaTexteVersion.DATE_DEBUT === undefined ||
                       referredMetaTexteVersion.DATE_DEBUT === "2999-01-01") &&
                       referredMetaTexteVersion.DATE_FIN === undefined) ||
@@ -1627,7 +1630,10 @@ async function htmlFromReferringTextsLiens(
                   .replace(/\s+/g, " ")
                   .trim()
                   .replace(/\s+\(\d+\)$/, "") +
-                ` ${(referringMetaTexteVersion as LegiMetaTexteVersion).ETAT}` +
+                ((referringMetaTexteVersion as LegiMetaTexteVersion).ETAT ===
+                undefined
+                  ? ""
+                  : ` ${(referringMetaTexteVersion as LegiMetaTexteVersion).ETAT}`) +
                 ((referringMetaTexteVersion.DATE_DEBUT === undefined ||
                   referringMetaTexteVersion.DATE_DEBUT === "2999-01-01") &&
                 (referringMetaTexteVersion.DATE_FIN === undefined ||

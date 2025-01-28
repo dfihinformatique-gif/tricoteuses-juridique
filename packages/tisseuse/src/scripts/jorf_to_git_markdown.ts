@@ -63,19 +63,55 @@ const xmlParser = new XMLParser({
 })
 
 async function convertGitTree(
+  sourceParentTree: nodegit.Tree | undefined,
   sourceTree: nodegit.Tree,
   targetRepository: nodegit.Repository,
+  targetExistingTree: nodegit.Tree | undefined,
 ): Promise<nodegit.Oid> {
   const targetTreeBuilder = await nodegit.Treebuilder.create(targetRepository)
+  const sourceParentEntryByName =
+    sourceParentTree === undefined
+      ? undefined
+      : Object.fromEntries(
+          sourceParentTree.entries().map((entry) => [entry.name(), entry]),
+        )
+  const targetExistingEntryByName =
+    targetExistingTree === undefined
+      ? undefined
+      : Object.fromEntries(
+          targetExistingTree.entries().map((entry) => [entry.name(), entry]),
+        )
   for (const sourceEntry of sourceTree.entries()) {
-    if (sourceEntry.isTree()) {
+    const sourceEntryName = sourceEntry.name()
+    const sourceParentEntry = sourceParentEntryByName?.[sourceEntryName]
+    if (sourceParentEntry !== undefined) {
+      // Ensure that at the end of the loop sourceParentEntryByName contains
+      // only entries deleted from the source tree.
+      delete sourceParentEntryByName![sourceEntryName]
+    }
+    const targetExistingEntry = targetExistingEntryByName?.[sourceEntryName]
+    if (
+      sourceEntry.oid() === sourceParentEntry?.oid() &&
+      targetExistingEntry !== undefined
+    ) {
+      // Reuse existing target entry.
+      targetTreeBuilder.insert(
+        targetExistingEntry.name(),
+        targetExistingEntry.id(),
+        targetExistingEntry.filemode(),
+      )
+    } else if (sourceEntry.isTree()) {
       await targetTreeBuilder.insert(
-        sourceEntry.name(),
-        await convertGitTree(await sourceEntry.getTree(), targetRepository),
+        sourceEntryName,
+        await convertGitTree(
+          await sourceParentEntry?.getTree(),
+          await sourceEntry.getTree(),
+          targetRepository,
+          await targetExistingEntry?.getTree(),
+        ),
         sourceEntry.filemode(),
       )
     } else {
-      const sourceEntryName = sourceEntry.name()
       const targetEntryName = sourceEntryName.replace(/\.xml$/, ".md")
       const xmlData = xmlParser.parse((await sourceEntry.getBlob()).content())
       for (const [tag, element] of Object.entries(xmlData) as [
@@ -381,6 +417,11 @@ async function convertGitTree(
       }
     }
   }
+
+  // Remaining entries in sourceParentEntryByName are deleted.
+  // => Remove them from targetTree.
+  // TODO
+
   return await targetTreeBuilder.write()
 }
 
@@ -444,7 +485,7 @@ async function jorfToGitMarkdown(
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository)
   for await (const sourceCommitOid of iterCommitsOids(sourceRepository)) {
     const sourceCommitOidString = sourceCommitOid.tostrS()
-    const targetPreviousCommitOid = targetCommitOid
+    const targetParentCommitOid = targetCommitOid
     if (!force && !targetCommitsOidsIterationsDone) {
       const { done, value } = await targetCommitsOidsIterator.next()
       if (done) {
@@ -469,14 +510,30 @@ async function jorfToGitMarkdown(
       }
       if (!silent) {
         console.log(
-          `Resuming conversion at source commit ${sourceCommitOidString}, previous target commit ${targetPreviousCommitOid?.tostrS() ?? "none"}…`,
+          `Resuming conversion at source commit ${sourceCommitOidString}, parent target commit ${targetParentCommitOid?.tostrS() ?? "none"}…`,
         )
       }
     }
 
     const sourceCommit = await sourceRepository.getCommit(sourceCommitOid)
     const sourceTree = await sourceCommit.getTree()
-    const targetTreeOid = await convertGitTree(sourceTree, targetRepository)
+    const sourceParentCommit =
+      sourceCommit.parents().length === 0
+        ? undefined
+        : await sourceCommit.parent(0)
+    const sourceParentTree = await sourceParentCommit?.getTree()
+    const targetParentCommit =
+      targetParentCommitOid === undefined
+        ? undefined
+        : await targetRepository.getCommit(targetParentCommitOid)
+    const targetParentTree = await targetParentCommit?.getTree()
+
+    const targetTreeOid = await convertGitTree(
+      sourceParentTree,
+      sourceTree,
+      targetRepository,
+      targetParentTree,
+    )
     const sourceAuthorWhen = sourceCommit.author().when()
     const sourceCommitterWhen = sourceCommit.committer().when()
     const targetCommitMessage = `${sourceCommit.message().trim()} (${sourceCommitOidString})`
@@ -499,7 +556,7 @@ async function jorfToGitMarkdown(
       ),
       targetCommitMessage,
       targetTreeOid,
-      [targetPreviousCommitOid].filter(
+      [targetParentCommitOid].filter(
         (oid) => oid !== undefined,
       ) as nodegit.Oid[],
     )

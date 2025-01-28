@@ -25,15 +25,14 @@ import {
   // jorfTextelrStats,
   // jorfTexteVersionStats,
 } from "$lib/auditors/jorf"
+import type { Versions, XmlHeader } from "$lib/legal"
 import type {
   Jo,
   JorfArticle,
   JorfSectionTa,
   JorfTextelr,
   JorfTexteVersion,
-  Versions,
-  XmlHeader,
-} from "$lib/legal"
+} from "$lib/legal/jorf"
 import { db } from "$lib/server/databases"
 import { walkDir } from "$lib/server/file_systems"
 

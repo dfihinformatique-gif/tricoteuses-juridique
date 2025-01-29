@@ -534,6 +534,12 @@ async function jorfToGitMarkdown(
       targetRepository,
       targetParentTree,
     )
+    if (targetTreeOid.tostrS() === targetParentCommitOid?.tostrS()) {
+      // No change to commit.
+      continue
+    }
+
+    // Commit changes.
     const sourceAuthorWhen = sourceCommit.author().when()
     const sourceCommitterWhen = sourceCommit.committer().when()
     const targetCommitMessage = `${sourceCommit.message().trim()} (${sourceCommitOidString})`

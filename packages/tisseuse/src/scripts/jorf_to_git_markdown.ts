@@ -67,7 +67,7 @@ async function convertGitTree(
   sourceTree: nodegit.Tree,
   targetRepository: nodegit.Repository,
   targetExistingTree: nodegit.Tree | undefined,
-): Promise<nodegit.Oid> {
+): Promise<nodegit.Oid | undefined> {
   const targetTreeBuilder = await nodegit.Treebuilder.create(targetRepository)
   const sourceParentEntryByName =
     sourceParentTree === undefined
@@ -101,16 +101,19 @@ async function convertGitTree(
         targetExistingEntry.filemode(),
       )
     } else if (sourceEntry.isTree()) {
-      await targetTreeBuilder.insert(
-        sourceEntryName,
-        await convertGitTree(
-          await sourceParentEntry?.getTree(),
-          await sourceEntry.getTree(),
-          targetRepository,
-          await targetExistingEntry?.getTree(),
-        ),
-        sourceEntry.filemode(),
+      const targetSubtreeOid = await convertGitTree(
+        await sourceParentEntry?.getTree(),
+        await sourceEntry.getTree(),
+        targetRepository,
+        await targetExistingEntry?.getTree(),
       )
+      if (targetSubtreeOid !== undefined) {
+        await targetTreeBuilder.insert(
+          sourceEntryName,
+          targetSubtreeOid,
+          sourceEntry.filemode(),
+        )
+      }
     } else {
       const targetEntryName = sourceEntryName.replace(/\.xml$/, ".md")
       const xmlData = xmlParser.parse((await sourceEntry.getBlob()).content())
@@ -422,7 +425,9 @@ async function convertGitTree(
   // => Remove them from targetTree.
   // TODO
 
-  return await targetTreeBuilder.write()
+  return targetTreeBuilder.entrycount() === 0
+    ? undefined
+    : await targetTreeBuilder.write()
 }
 
 async function* iterCommitsOids(
@@ -528,13 +533,14 @@ async function jorfToGitMarkdown(
         : await targetRepository.getCommit(targetParentCommitOid)
     const targetParentTree = await targetParentCommit?.getTree()
 
-    const targetTreeOid = await convertGitTree(
+    const targetTreeOid = (await convertGitTree(
       sourceParentTree,
       sourceTree,
       targetRepository,
       targetParentTree,
-    )
-    if (targetTreeOid.tostrS() === targetParentCommitOid?.tostrS()) {
+    )) as nodegit.Oid
+    assert.notStrictEqual(targetTreeOid, undefined)
+    if (targetTreeOid.tostrS() === targetParentTree?.id().tostrS()) {
       // No change to commit.
       continue
     }

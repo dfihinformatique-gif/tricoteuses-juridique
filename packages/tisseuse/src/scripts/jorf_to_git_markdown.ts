@@ -63,17 +63,17 @@ const xmlParser = new XMLParser({
 })
 
 async function convertGitTree(
-  sourceParentTree: nodegit.Tree | undefined,
+  sourcePreviousTree: nodegit.Tree | undefined,
   sourceTree: nodegit.Tree,
   targetRepository: nodegit.Repository,
   targetExistingTree: nodegit.Tree | undefined,
 ): Promise<nodegit.Oid | undefined> {
   const targetTreeBuilder = await nodegit.Treebuilder.create(targetRepository)
-  const sourceParentEntryByName =
-    sourceParentTree === undefined
+  const sourcePreviousEntryByName =
+    sourcePreviousTree === undefined
       ? undefined
       : Object.fromEntries(
-          sourceParentTree.entries().map((entry) => [entry.name(), entry]),
+          sourcePreviousTree.entries().map((entry) => [entry.name(), entry]),
         )
   const targetExistingEntryByName =
     targetExistingTree === undefined
@@ -83,15 +83,15 @@ async function convertGitTree(
         )
   for (const sourceEntry of sourceTree.entries()) {
     const sourceEntryName = sourceEntry.name()
-    const sourceParentEntry = sourceParentEntryByName?.[sourceEntryName]
-    if (sourceParentEntry !== undefined) {
-      // Ensure that at the end of the loop sourceParentEntryByName contains
+    const sourcePreviousEntry = sourcePreviousEntryByName?.[sourceEntryName]
+    if (sourcePreviousEntry !== undefined) {
+      // Ensure that at the end of the loop sourcePreviousEntryByName contains
       // only entries deleted from the source tree.
-      delete sourceParentEntryByName![sourceEntryName]
+      delete sourcePreviousEntryByName![sourceEntryName]
     }
     const targetExistingEntry = targetExistingEntryByName?.[sourceEntryName]
     if (
-      sourceEntry.oid() === sourceParentEntry?.oid() &&
+      sourceEntry.oid() === sourcePreviousEntry?.oid() &&
       targetExistingEntry !== undefined
     ) {
       // Reuse existing target entry.
@@ -102,7 +102,7 @@ async function convertGitTree(
       )
     } else if (sourceEntry.isTree()) {
       const targetSubtreeOid = await convertGitTree(
-        await sourceParentEntry?.getTree(),
+        await sourcePreviousEntry?.getTree(),
         await sourceEntry.getTree(),
         targetRepository,
         await targetExistingEntry?.getTree(),
@@ -421,7 +421,7 @@ async function convertGitTree(
     }
   }
 
-  // Remaining entries in sourceParentEntryByName are deleted.
+  // Remaining entries in sourcePreviousEntryByName are deleted.
   // => Remove them from targetTree.
   // TODO
 
@@ -490,7 +490,7 @@ async function jorfToGitMarkdown(
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository)
   for await (const sourceCommitOid of iterCommitsOids(sourceRepository)) {
     const sourceCommitOidString = sourceCommitOid.tostrS()
-    const targetParentCommitOid = targetCommitOid
+    const targetPreviousCommitOid = targetCommitOid
     if (!force && !targetCommitsOidsIterationsDone) {
       const { done, value } = await targetCommitsOidsIterator.next()
       if (done) {
@@ -515,32 +515,32 @@ async function jorfToGitMarkdown(
       }
       if (!silent) {
         console.log(
-          `Resuming conversion at source commit ${sourceCommitOidString}, parent target commit ${targetParentCommitOid?.tostrS() ?? "none"}…`,
+          `Resuming conversion at source commit ${sourceCommitOidString}, parent target commit ${targetPreviousCommitOid?.tostrS() ?? "none"}…`,
         )
       }
     }
 
     const sourceCommit = await sourceRepository.getCommit(sourceCommitOid)
     const sourceTree = await sourceCommit.getTree()
-    const sourceParentCommit =
+    const sourcePreviousCommit =
       sourceCommit.parents().length === 0
         ? undefined
         : await sourceCommit.parent(0)
-    const sourceParentTree = await sourceParentCommit?.getTree()
-    const targetParentCommit =
-      targetParentCommitOid === undefined
+    const sourcePreviousTree = await sourcePreviousCommit?.getTree()
+    const targetPreviousCommit =
+      targetPreviousCommitOid === undefined
         ? undefined
-        : await targetRepository.getCommit(targetParentCommitOid)
-    const targetParentTree = await targetParentCommit?.getTree()
+        : await targetRepository.getCommit(targetPreviousCommitOid)
+    const targetPreviousTree = await targetPreviousCommit?.getTree()
 
     const targetTreeOid = (await convertGitTree(
-      sourceParentTree,
+      sourcePreviousTree,
       sourceTree,
       targetRepository,
-      targetParentTree,
+      targetPreviousTree,
     )) as nodegit.Oid
     assert.notStrictEqual(targetTreeOid, undefined)
-    if (targetTreeOid.tostrS() === targetParentTree?.id().tostrS()) {
+    if (targetTreeOid.tostrS() === targetPreviousTree?.id().tostrS()) {
       // No change to commit.
       continue
     }
@@ -568,7 +568,7 @@ async function jorfToGitMarkdown(
       ),
       targetCommitMessage,
       targetTreeOid,
-      [targetParentCommitOid].filter(
+      [targetPreviousCommitOid].filter(
         (oid) => oid !== undefined,
       ) as nodegit.Oid[],
     )

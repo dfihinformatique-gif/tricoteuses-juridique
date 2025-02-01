@@ -226,35 +226,23 @@ interface JorfSectionTaTm {
   TM?: JorfSectionTaTm
 }
 
+/**
+ * The merging of a JorfTextelr & a JorfTexteVersion
+ */
+export type JorfTexte = JorfTexteVersion & {
+  STRUCT?: JorfTextelrStructure
+  VERSIONS: JorfTextelrVersions
+}
+
 export interface JorfTextelr {
   META: {
-    META_COMMUN: {
-      ANCIEN_ID?: string
-      ELI_ALIAS?: {
-        ID_ELI_ALIAS: string
-      }
-      ID: string
-      ID_ELI?: string
-      NATURE?: JorfTexteNature
-      ORIGINE: JorfTexteOrigine
-      URL: string
-    }
+    META_COMMUN: JorfTexteMetaCommun
     META_SPEC: {
       META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
     }
   }
   STRUCT?: JorfTextelrStructure
-  VERSIONS: {
-    VERSION: Array<{
-      "@etat"?: JorfTextelrEtat
-      LIEN_TXT: {
-        "@debut": string
-        "@fin": string
-        "@id": string
-        "@num"?: string
-      }
-    }>
-  }
+  VERSIONS: JorfTextelrVersions
 }
 
 export type JorfTextelrEtat = (typeof allJorfTextelrEtats)[number]
@@ -277,6 +265,18 @@ export type JorfTextelrLienArtNature =
 export type JorfTextelrLienArtOrigine =
   (typeof allJorfTextelrLienArtOrigines)[number]
 
+export interface JorfTexteMetaCommun {
+  ANCIEN_ID?: string
+  ELI_ALIAS?: {
+    ID_ELI_ALIAS: string
+  }
+  ID: string
+  ID_ELI?: string
+  NATURE?: JorfTexteNature
+  ORIGINE: JorfTexteOrigine
+  URL: string
+}
+
 export type JorfTexteNature = (typeof allJorfTexteNatures)[number]
 
 export type JorfTexteOrigine = (typeof allJorfTexteOrigines)[number]
@@ -298,6 +298,19 @@ export interface JorfTextelrStructure {
   LIEN_ART?: JorfTextelrLienArt[]
   LIEN_SECTION_TA?: JorfTextelrLienSectionTa[]
 }
+
+export interface JorfTextelrVersions {
+  VERSION: Array<{
+    "@etat"?: JorfTextelrEtat
+    LIEN_TXT: {
+      "@debut": string
+      "@fin": string
+      "@id": string
+      "@num"?: string
+    }
+  }>
+}
+
 export interface JorfTexteVersion {
   ABRO?: {
     CONTENU: string // HTML
@@ -312,17 +325,7 @@ export interface JorfTexteVersion {
     }
   }
   META: {
-    META_COMMUN: {
-      ANCIEN_ID?: string
-      ELI_ALIAS?: {
-        ID_ELI_ALIAS: string
-      }
-      ID: string
-      ID_ELI?: string
-      NATURE?: JorfTexteNature
-      ORIGINE: JorfTexteOrigine
-      URL: string
-    }
+    META_COMMUN: JorfTexteMetaCommun
     META_SPEC: {
       META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
       META_TEXTE_VERSION: JorfMetaTexteVersion

@@ -218,6 +218,14 @@ interface LegiSectionTaTm {
   TM?: LegiSectionTaTm
 }
 
+/**
+ * The merging of a LegiTextelr & a LegiTexteVersion
+ */
+export type LegiTexte = LegiTexteVersion & {
+  STRUCT?: LegiTextelrStructure
+  VERSIONS: LegiTextelrVersions
+}
+
 export interface LegiTextelr {
   META: {
     META_COMMUN: {
@@ -232,17 +240,7 @@ export interface LegiTextelr {
     }
   }
   STRUCT?: LegiTextelrStructure
-  VERSIONS: {
-    VERSION: Array<{
-      "@etat"?: LegiTexteEtat
-      LIEN_TXT: {
-        "@debut": string
-        "@fin": string
-        "@id": string
-        "@num"?: string
-      }
-    }>
-  }
+  VERSIONS: LegiTextelrVersions
 }
 
 export type LegiTexteEtat = (typeof allLegiTexteEtats)[number]
@@ -285,6 +283,18 @@ export type LegiTexteOrigine = (typeof allLegiTexteOrigines)[number]
 export interface LegiTextelrStructure {
   LIEN_ART?: LegiTextelrLienArt[]
   LIEN_SECTION_TA?: LegiTextelrLienSectionTa[]
+}
+
+export interface LegiTextelrVersions {
+  VERSION: Array<{
+    "@etat"?: LegiTexteEtat
+    LIEN_TXT: {
+      "@debut": string
+      "@fin": string
+      "@id": string
+      "@num"?: string
+    }
+  }>
 }
 
 export interface LegiTexteVersion {

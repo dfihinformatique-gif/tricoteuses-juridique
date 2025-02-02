@@ -119,6 +119,8 @@ export interface JorfArticleTm {
 
 export type JorfArticleType = (typeof allJorfArticleTypes)[number]
 
+export type JorfCategorieTag = (typeof allJorfCategoriesTags)[number]
+
 export interface JorfMetaTexteChronicle {
   CID: string
   DATE_PUBLI: string
@@ -480,6 +482,16 @@ export const allJorfArticleTypes = [
   "AUTONOME",
   "ENTIEREMENT_MODIF",
   "PARTIELLEMENT_MODIF",
+] as const
+
+export const allJorfCategoriesTags = [
+  "ARTICLE",
+  "ID",
+  "JO",
+  "SECTION_TA",
+  "TEXTE_VERSION",
+  "TEXTELR",
+  "VERSIONS",
 ] as const
 
 export const allJorfSectionTaLienArtEtats = ["VIGUEUR"] as const

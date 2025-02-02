@@ -26,27 +26,17 @@ import {
   // jorfTexteVersionStats,
 } from "$lib/auditors/jorf"
 import type { Versions, XmlHeader } from "$lib/legal"
-import type {
-  Jo,
-  JorfArticle,
-  JorfSectionTa,
-  JorfTextelr,
-  JorfTexteVersion,
+import {
+  allJorfCategoriesTags,
+  type Jo,
+  type JorfArticle,
+  type JorfCategorieTag,
+  type JorfSectionTa,
+  type JorfTextelr,
+  type JorfTexteVersion,
 } from "$lib/legal/jorf"
 import { db } from "$lib/server/databases"
 import { walkDir } from "$lib/server/file_systems"
-
-type CategoryTag = (typeof allCategoriesCode)[number]
-
-const allCategoriesCode = [
-  "ARTICLE",
-  "ID",
-  "JO",
-  "SECTION_TA",
-  "TEXTE_VERSION",
-  "TEXTELR",
-  "VERSIONS",
-] as const
 
 const xmlParser = new XMLParser({
   attributeNamePrefix: "@",
@@ -71,14 +61,14 @@ async function importJorf(
   dilaDir: string,
   { category, resume }: { category?: string; resume?: string } = {},
 ): Promise<void> {
-  const [categoryTag, categoryError] = auditOptions([
-    ...[...allCategoriesCode],
-  ])(strictAudit, category) as [CategoryTag | undefined, unknown]
+  const [categorieTag, categorieError] = auditOptions([
+    ...[...allJorfCategoriesTags],
+  ])(strictAudit, category) as [JorfCategorieTag | undefined, unknown]
   assert.strictEqual(
-    categoryError,
+    categorieError,
     null,
-    `Error for category ${JSON.stringify(categoryTag)}:\n${JSON.stringify(
-      categoryError,
+    `Error for category ${JSON.stringify(categorieTag)}:\n${JSON.stringify(
+      categorieError,
       null,
       2,
     )}`,
@@ -88,7 +78,7 @@ async function importJorf(
   const deleteRemainingIds = !skip
 
   const articleRemainingIds =
-    categoryTag === undefined || categoryTag === "ARTICLE"
+    categorieTag === undefined || categorieTag === "ARTICLE"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -100,7 +90,7 @@ async function importJorf(
         )
       : new Set<string>()
   const idRemainingElis =
-    categoryTag === undefined || categoryTag === "ID"
+    categorieTag === undefined || categorieTag === "ID"
       ? new Set(
           (
             await db<{ eli: string }[]>`
@@ -111,7 +101,7 @@ async function importJorf(
         )
       : new Set<string>()
   const joRemainingIds =
-    categoryTag === undefined || categoryTag === "JO"
+    categorieTag === undefined || categorieTag === "JO"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -122,7 +112,7 @@ async function importJorf(
         )
       : new Set<string>()
   const sectionTaRemainingIds =
-    categoryTag === undefined || categoryTag === "SECTION_TA"
+    categorieTag === undefined || categorieTag === "SECTION_TA"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -134,7 +124,7 @@ async function importJorf(
         )
       : new Set<string>()
   const textelrRemainingIds =
-    categoryTag === undefined || categoryTag === "TEXTELR"
+    categorieTag === undefined || categorieTag === "TEXTELR"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -146,7 +136,7 @@ async function importJorf(
         )
       : new Set<string>()
   const texteVersionRemainingIds =
-    categoryTag === undefined || categoryTag === "TEXTE_VERSION"
+    categorieTag === undefined || categorieTag === "TEXTE_VERSION"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -158,7 +148,7 @@ async function importJorf(
         )
       : new Set<string>()
   const versionsRemainingElis =
-    categoryTag === undefined || categoryTag === "VERSIONS"
+    categorieTag === undefined || categorieTag === "VERSIONS"
       ? new Set(
           (
             await db<{ eli: string }[]>`
@@ -201,7 +191,7 @@ async function importJorf(
       })
       const xmlData = xmlParser.parse(xmlString)
       for (const [tag, element] of Object.entries(xmlData) as [
-        CategoryTag | "?xml",
+        JorfCategorieTag | "?xml",
         (
           | Jo
           | JorfArticle
@@ -220,7 +210,7 @@ async function importJorf(
             break
           }
           case "ARTICLE":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [article, error] = auditChain(
                 auditJorfArticle,
                 auditRequire,
@@ -250,7 +240,7 @@ async function importJorf(
             }
             break
           case "ID":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               assert.strictEqual(relativeSplitPath[0], "global")
               assert.strictEqual(relativeSplitPath[1], "eli")
               const eli = relativeSplitPath.slice(2, -1).join("/")
@@ -283,7 +273,7 @@ async function importJorf(
             }
             break
           case "JO":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [jo, error] = auditChain(auditJo, auditRequire)(
                 strictAudit,
                 element,
@@ -313,7 +303,7 @@ async function importJorf(
             }
             break
           case "SECTION_TA":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [section, error] = auditChain(
                 auditJorfSectionTa,
                 auditRequire,
@@ -343,7 +333,7 @@ async function importJorf(
             }
             break
           case "TEXTE_VERSION":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [texteVersion, error] = auditChain(
                 auditJorfTexteVersion,
                 auditRequire,
@@ -396,7 +386,7 @@ async function importJorf(
             }
             break
           case "TEXTELR":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [textelr, error] = auditChain(
                 auditJorfTextelr,
                 auditRequire,
@@ -426,7 +416,7 @@ async function importJorf(
             }
             break
           case "VERSIONS":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               assert.strictEqual(relativeSplitPath[0], "global")
               assert.strictEqual(relativeSplitPath[1], "eli")
               const eli = relativeSplitPath.slice(2, -1).join("/")

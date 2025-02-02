@@ -106,6 +106,8 @@ export interface LegiArticleTm {
 
 export type LegiArticleType = (typeof allLegiArticleTypes)[number]
 
+export type LegiCategorieTag = (typeof allLegiCategoriesTags)[number]
+
 export interface LegiMetaTexteChronicle {
   CID: string
   DATE_PUBLI: string
@@ -466,6 +468,15 @@ export const allLegiArticleTypes = [
   "AUTONOME",
   "ENTIEREMENT_MODIF",
   "PARTIELLEMENT_MODIF",
+] as const
+
+export const allLegiCategoriesTags = [
+  "ARTICLE",
+  "ID",
+  "SECTION_TA",
+  "TEXTE_VERSION",
+  "TEXTELR",
+  "VERSIONS",
 ] as const
 
 export const allLegiSectionTaLienArtEtats = [

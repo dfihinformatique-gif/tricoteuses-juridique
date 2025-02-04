@@ -687,7 +687,7 @@ async function gitXmlToGitMarkdown(
         TEXTE: {},
       },
     }
-  // const referencesByLegalIdByCategoreByOrigine: ReferencesByLegalIdByCategoreByOrigine =
+  // const referencesByLegalIdByCategorieByOrigine: ReferencesByLegalIdByCategorieByOrigine =
   //   {
   //     JORF: {
   //       ARTICLE: {},
@@ -810,6 +810,7 @@ async function gitXmlToGitMarkdown(
       for (const [origine, sourceTree] of Object.entries(
         sourceTreeByOrigine,
       ) as Array<[Origine, nodegit.Tree]>) {
+        console.log(`Loading source ${origine}`)
         switch (origine) {
           case "JORF": {
             await loadSourceJorfObjects(
@@ -856,7 +857,7 @@ async function gitXmlToGitMarkdown(
     // )
     // addReferencesToLegalObjects(
     //   legalObjectByIdByCategorieByOrigine,
-    //   referencesByLegalIdByCategoreByOrigine,
+    //   referencesByLegalIdByCategorieByOrigine,
     // )
 
     console.log("Performance: ")
@@ -1432,7 +1433,6 @@ sade("git_xml_to_git_markdown <dilaDir>", true)
     "Generate a git repository containing latest commits of JORF & LEGI data converted to Markdown",
   )
   .option("-f, --force", "Force regeneration of every existing commits")
-  .option("-k, --category", "Convert only given type of data")
   .option(
     "-i, --init",
     "Start conversion at given Dila export date (YYYYMMDD-HHMMSS format",

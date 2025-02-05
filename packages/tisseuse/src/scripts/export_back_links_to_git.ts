@@ -157,7 +157,7 @@ async function exportBackLinksToGit(
   const steps: Array<{ label: string; start: number }> = []
   steps.push({ label: "Resuming", start: performance.now() })
 
-  let exitCode = 0
+  const exitCode = 0
   const [dilaStartDate, dilaStartDateError] = auditChain(
     auditTest(
       (value: string) => dilaDateRegExp.test(value),

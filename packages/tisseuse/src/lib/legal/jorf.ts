@@ -702,20 +702,21 @@ export const allJorfTexteVersionLienNatures = [
   "COMMUNIQUE", // 4
   "COMPOSITION", // 7
   "CONSTITUTION", // 13896
+  "CONVENTION", // 329
+  "Convention", // 1
+  "convention", // 1
+  "CONVENTION COLLECTIVE", // 148
+  "Convention collective", // 666
+  "convention collective", // 106
   "Convention collective de travail", // 4
   "Convention collective départementale", // 36
   "CONVENTION COLLECTIVE INTERREGIONALE", // 217
   "Convention collective interrégionale", // 7
-  "Convention collective nationale de travail", // 1
   "CONVENTION COLLECTIVE NATIONALE", // 6
   "Convention collective nationale", // 6077
+  "Convention collective nationale de travail", // 1
   "Convention collective régionale", // 148
-  "convention collective", // 106
-  "CONVENTION COLLECTIVE", // 148
-  "Convention collective", // 666
   "Convention de référencement", // 1
-  "Convention", // 1
-  "CONVENTION", // 329
   "DECISION_CC", // 116
   "DECISION_EURO", // 243
   "Décision", // 1

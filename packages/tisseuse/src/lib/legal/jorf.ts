@@ -401,9 +401,8 @@ export const allJorfArticleOrigines = ["JORF"] as const
 
 export const allJorfArticleTexteNatures = [
   "ABROGATION", // 10
-  "Accord multilatéral", // 3
-  "ACCORD_FONCTION_PUBLIQUE", //
   "ACCORD", // 153
+  "ACCORD_FONCTION_PUBLIQUE", //
   "ADDITIF", // 139
   "ANNEXE", // 2
   "ANNONCES", // 755
@@ -413,6 +412,7 @@ export const allJorfArticleTexteNatures = [
   "ATTESTATION", // 1
   "AVENANT", // 533
   "AVIS", // 101688
+  "Accord multilatéral", // 3
   "CANDIDAT", // 2
   "CHARTE", // 1
   "CIRCULAIRE", // 3933
@@ -425,12 +425,12 @@ export const allJorfArticleTexteNatures = [
   "CONTRAT", // 32
   "CONVENTION", // 972
   "DATE", // 1
+  "DECISION", // 244100
   "DECISION_CC", // 51
   "DECISION_EURO", // 15
-  "DECISION", // 244100
   "DECLARATION", // 77
-  "DECRET_LOI", // 85
   "DECRET", // 555543
+  "DECRET_LOI", // 85
   "DELEGATION", // 1
   "DELIBERATION", // 11012
   "DEUXIEME", // 5
@@ -445,10 +445,10 @@ export const allJorfArticleTexteNatures = [
   "INSTRUCTION", // 1207
   "LETTRE", // 10
   "LISTE", // 24279
+  "LOI", // 64957
   "LOI_CONSTIT", // 76
   "LOI_ORGANIQUE", // 1144
   "LOI_PROGRAMME", // 10
-  "LOI", // 64957
   "MEMOIRE", // 72
   "MODIFICATION", // 724
   "OBSERVATION", // 623
@@ -486,13 +486,13 @@ export const allJorfSectionTaLienArtOrigines = ["JORF"] as const
 export const allJorfSectionTaLienSectionTaEtats = [] as const
 
 export const allJorfSectionTaTexteNatures = [
-  "Accord multilatéral", // 2
-  "ACCORD_FONCTION_PUBLIQUE", // 2
   "ACCORD", // 3
+  "ACCORD_FONCTION_PUBLIQUE", // 2
   "ADDITIF", // 3
   "ARRETE", // 53716
   "AVENANT", // 89
   "AVIS", // 3212
+  "Accord multilatéral", // 2
   "CIRCULAIRE", // 168
   "CONVENTION", // 38
   "DECISION", // 16923
@@ -503,8 +503,8 @@ export const allJorfSectionTaTexteNatures = [
   "INFORMATIONS_PARLEMENTAIRES", // 28
   "INSTRUCTION", // 39
   "LISTE", // 394
-  "LOI_ORGANIQUE", // 71
   "LOI", // 5161
+  "LOI_ORGANIQUE", // 71
   "MODIFICATION", // 6
   "ORDONNANCE", // 9566
   "PROPOSITION", // 3
@@ -518,14 +518,14 @@ export const allJorfSectionTaTexteNatures = [
 ] as const
 
 export const allJorfTextelrEtats = [
-  "ABROGE_DIFF", // 129
   "ABROGE", // 21890
+  "ABROGE_DIFF", // 129
   "ANNULE", // 199
-  "MODIFIE_MORT_NE", // 24
   "MODIFIE", // 3008
+  "MODIFIE_MORT_NE", // 24
   "PERIME", // 3127
-  "VIGUEUR_DIFF", // 103
   "VIGUEUR", // 98711
+  "VIGUEUR_DIFF", // 103
 ] as const
 
 export const allJorfTextelrLienArtEtats = ["VIGUEUR"] as const
@@ -536,9 +536,8 @@ export const allJorfTextelrLienArtOrigines = ["JORF"] as const
 
 export const allJorfTexteNatures = [
   "ABROGATION", // 8
-  "Accord multilatéral", // 1
-  "ACCORD_FONCTION_PUBLIQUE", // 4
   "ACCORD", // 46
+  "ACCORD_FONCTION_PUBLIQUE", // 4
   "ACTE", // 3
   "ADDITIF", // 131
   "ANNEXE", // 1
@@ -553,6 +552,7 @@ export const allJorfTexteNatures = [
   "AVENANT", // 186
   "AVIS", // 97999
   "AVISEURO", // 4618
+  "Accord multilatéral", // 1
   "CANDIDAT", // 2
   "CHARTE", // 1
   "CIRCULAIRE", // 3532
@@ -565,19 +565,19 @@ export const allJorfTexteNatures = [
   "CONTRAT", // 2
   "CONVENTION", // 151
   "DATE", // 1
+  "DECISION", // 67164
   "DECISION_CC", // 96
   "DECISION_EURO", // 550
-  "DECISION", // 67164
   "DECLARATION", // 20
   "DECLARATIONEURO", // 18
-  "DECRET_LOI", // 660
   "DECRET", // 209363
+  "DECRET_LOI", // 660
   "DELEGATION", // 1
   "DELIBERATION", // 3993
   "DELIBERATIONEURO", // 36
   "DEUXIEME", // 5
-  "DIRECTIVE_EURO", // 4249
   "DIRECTIVE", // 13
+  "DIRECTIVE_EURO", // 4249
   "DISPOSITIONS", // 1
   "ELECTION", // 1
   "ELECTIONDUPRESIDENTDELAREPUBLIQU", // 2
@@ -592,10 +592,10 @@ export const allJorfTexteNatures = [
   "LETTRE", // 13
   "LETTREEURO", // 15
   "LISTE", // 5552
+  "LOI", // 12859
   "LOI_CONSTIT", // 12
   "LOI_ORGANIQUE", // 105
   "LOI_PROGRAMME", // 2
-  "LOI", // 12859
   "MEMOIRE", // 63
   "MESSAGE", // 2
   "MODIFICATION", // 497
@@ -629,16 +629,39 @@ export const allJorfTexteOrigines = ["JORF"] as const
 
 export const allJorfTexteVersionLienNatures = [
   "ABROGATION", // 5
-  "Accord autonome", // 3
-  "ACCORD CADRE", // 1
+  "ACCORD CADRE INTERSECTEURS",
   "ACCORD CADRE NATIONAL",
+  "ACCORD CADRE", // 1
+  "ACCORD COLLECTIF NATIONAL", // 57
   "ACCORD COLLECTIF",
-  "Accord collectif", // 6
+  "ACCORD DE BRANCHE", // 1
+  "ACCORD NATIONAL PARITAIRE", // 16
+  "ACCORD NATIONAL PROFESSIONNEL", // 11
+  "ACCORD NATIONAL", // 101
+  "ACCORD PARITAIRE", // 5
+  "ACCORD PROFESSIONNEL", // 4
+  "ACCORD", // 1048
+  "ACCORD-CADRE", // 20
+  "ACCORD_FONCTION_PUBLIQUE", // 12
+  "ACTE", // 5
+  "ADDITIF", // 39
+  "ANNEXE", // 149
+  "ANNEXES", // 3
+  "ANNONCES", // 4
+  "ARRET", // 48
+  "ARRETE", // 547820
+  "ARRETEEURO", // 15
+  "ARRETEURO", // 599
+  "ATTESTATION", // 2
+  "AVENANT", // 858
+  "AVIS D'INTERPRETATION", // 2
+  "AVIS", // 30500
+  "AVISEURO", // 3645
+  "Accord autonome", // 3
   "Accord collectif interbranche",
   "Accord collectif national sectoriel", // 7
   "Accord collectif national", // 50
-  "ACCORD COLLECTIF NATIONAL", // 57
-  "ACCORD DE BRANCHE", // 1
+  "Accord collectif", // 6
   "Accord de branche", // 24
   "Accord de champ", // 1
   "Accord de convergence", // 3
@@ -647,133 +670,111 @@ export const allJorfTexteVersionLienNatures = [
   "Accord de substitution", // 12
   "Accord du", // 1
   "Accord interbranches", // 5
-  "Accord interprétatif", // 3
   "Accord interprofessionnel départemental", // 1
   "Accord interprofessionnel", // 8
+  "Accord interprétatif", // 3
   "Accord national de branche", // 45
   "Accord national interprofessionnel", // 6
-  "ACCORD NATIONAL PARITAIRE", // 16
   "Accord national professionnel", // 1
-  "ACCORD NATIONAL PROFESSIONNEL", // 11
-  "ACCORD NATIONAL", // 101
   "Accord national", // 20
   "Accord paritaire national", // 4
-  "ACCORD PARITAIRE", // 5
   "Accord paritaire", // 8
-  "ACCORD PROFESSIONNEL", // 4
   "Accord professionnel", // 56
   "Accord régional", // 2
   "Accord territorial",
-  "ACCORD_FONCTION_PUBLIQUE", // 12
+  "Accord", // 22442
   "Accord-cadre interbranches", // 2
-  "ACCORD-CADRE", // 20
   "Accord-cadre", // 7
   "Accord-type", // 1
-  "ACCORD", // 1048
-  "accord", // 130
-  "Accord", // 22442
-  "ACTE", // 5
   "Additif", // 24
-  "ADDITIF", // 39
   "Adhésion par lettre", // 8
   "Adhésion", // 1
   "Annexe spécifique", // 2
-  "ANNEXE", // 149
   "Annexe", // 367
-  "ANNEXES", // 3
-  "ANNONCES", // 4
-  "ARRET", // 48
-  "ARRETE", // 547820
-  "ARRETEEURO", // 15
-  "ARRETEURO", // 599
-  "ATTESTATION", // 2
   "Avenant de révision", // 36
   "Avenant rectificatif", // 1
   "Avenant", // 18057
-  "avenant", // 185
-  "AVENANT", // 858
-  "AVIS D'INTERPRETATION", // 2
   "Avis d'interprétation", // 8
   "Avis interprétatif", // 4
-  "AVIS", // 30500
-  "AVISEURO", // 3645
   "CIRCULAIRE", // 4362
   "CODE", // 535600
   "COMMUNIQUE", // 4
   "COMPOSITION", // 7
   "CONSTITUTION", // 13896
-  "CONVENTION", // 329
-  "Convention", // 1
-  "convention", // 1
+  "CONVENTION COLLECTIVE INTERREGIONALE", // 217
+  "CONVENTION COLLECTIVE NATIONALE", // 6
   "CONVENTION COLLECTIVE", // 148
-  "Convention collective", // 666
-  "convention collective", // 106
+  "CONVENTION", // 329
   "Convention collective de travail", // 4
   "Convention collective départementale", // 36
-  "CONVENTION COLLECTIVE INTERREGIONALE", // 217
   "Convention collective interrégionale", // 7
-  "CONVENTION COLLECTIVE NATIONALE", // 6
-  "Convention collective nationale", // 6077
   "Convention collective nationale de travail", // 1
+  "Convention collective nationale", // 6077
   "Convention collective régionale", // 148
+  "Convention collective", // 666
   "Convention de référencement", // 1
+  "Convention", // 1
+  "DECISION", // 109937
   "DECISION_CC", // 116
   "DECISION_EURO", // 243
-  "Décision", // 1
-  "DECISION", // 109937
-  "DECLARATION", // 8
   "DECLARATION GENERALE",
-  "DECRET_LOI", // 2061
+  "DECLARATION", // 8
   "DECRET", // 747993
-  "Délibération", // 1
+  "DECRET_LOI", // 2061
   "DELIBERATION", // 10824
   "DELIBERATIONEURO", // 26
+  "DIRECTIVE", // 43
+  "DIRECTIVE_EURO", // 22593
+  "Décision", // 1
+  "Délibération", // 1
   "Dénonciation par lettre", // 3
   "Dénonciation", // 2
-  "DIRECTIVE_EURO", // 22593
-  "DIRECTIVE", // 43
   "ELECTIONDUPRESIDENTDELAREPUBLIQU", // 6
   "INFORMATION", // 26
   "INFORMATIONS_DIVERSES", // 16
   "INFORMATIONS_PARLEMENTAIRES", // 2576
   "INSTRUCTION", // 218
   "INSTRUCTIONEURO", // 700
-  "Lettre de dénonciation", // 1
   "LETTREEURO", // 5
   "LISTE", // 262
+  "LOI", // 216342
   "LOI_CONSTIT", // 30
   "LOI_ORGANIQUE", // 2899
   "LOI_PROGRAMME", // 55
-  "LOI", // 216342
+  "Lettre de dénonciation", // 1
   "MEMOIRE", // 21
   "MODIFICATION", // 125
   "NOTE", // 3
   "OBSERVATION", // 256
   "ORDONNANCE", // 35340
-  "Procès-verbal de désaccord", // 4
   "PROJET", // 93
   "PROTOCOLE D'ACCORD COLLECTIF", // 7
-  "Protocole d'accord de méthode", // 1
   "PROTOCOLE D'ACCORD INTERBRANCHE", // 3
-  "Protocole D'accord", // 1
   "PROTOCOLE D'ACCORD", // 33
-  "Protocole d'accord", // 62
-  "Protocole", // 55
   "PROTOCOLE", // 7
   "PUBLICATION", // 1
+  "Procès-verbal de désaccord", // 4
+  "Protocole D'accord", // 1
+  "Protocole d'accord de méthode", // 1
+  "Protocole d'accord", // 62
+  "Protocole", // 55
   "RAPPORT", // 1756
-  "Recommandation patronale", // 2
-  "RECOMMANDATION_EURO", // 1
   "RECOMMANDATION", // 243
-  "Rectificatif au Bulletin officiel n°", // 4
+  "RECOMMANDATION_EURO", // 1
   "REGLEMENT", // 800
   "REGLEMENTEUROPEEN", // 1897
   "RESULTATS", // 3901
+  "Recommandation patronale", // 2
+  "Rectificatif au Bulletin officiel n°", // 4
   "SAISINE", // 352
   "SALAIRES", // 4
   "SENATUS", // 4
   "SUSPENSION", // 1
   "TABLEAU", // 12
+  "accord", // 130
+  "avenant", // 185
+  "convention collective", // 106
+  "convention", // 1
 ] as const
 
 export const allJorfTexteVersionLienTypes = [

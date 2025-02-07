@@ -14,20 +14,8 @@ import path from "path"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts"
-import {
-  auditJo,
-  auditJorfArticle,
-  auditJorfSectionTa,
-  auditJorfTextelr,
-  auditJorfTexteVersion,
-} from "$lib/auditors/jorf"
-import { auditId, auditVersions } from "$lib/auditors/legal"
-import {
-  auditLegiArticle,
-  // auditLegiSectionTa,
-  // auditLegiTextelr,
-  auditLegiTexteVersion,
-} from "$lib/auditors/legi"
+import { auditJorfTexteVersion } from "$lib/auditors/jorf"
+import { auditLegiArticle, auditLegiTexteVersion } from "$lib/auditors/legi"
 import type { Versions, XmlHeader } from "$lib/legal"
 import type {
   Jo,
@@ -66,12 +54,9 @@ interface ReferencesToLegalObject {
   targetId: string
 }
 
-type ReferencesByTargetId = Map<string, ReferencesToLegalObject>
+type ReferencesByTargetId = Map<string, ReferencesToLegalObject | null>
 
-type ReferencesTreeByTargetPath = Map<
-  string,
-  ReferencesToLegalObject | ReferencesTreeByTargetPath
->
+type TreeStructure = Map<string, TreeStructure | nodegit.Oid>
 
 const { forgejo } = config
 const dilaDateRegExp = /20\d\d[01]\d[0-3]\d-([0-6]\d){3}/
@@ -97,46 +82,33 @@ const xmlParser = new XMLParser({
   tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
 })
 
-function addReferenceToTarget(
+function addOrRemoveReferenceToTarget(
   referencesByTargetId: ReferencesByTargetId,
-  referencesTreeByTargetPath: ReferencesTreeByTargetPath,
-  targetId: string,
+  add: boolean, // false => remove
   source: Source,
+  targetId: string,
 ) {
   let referencesToTarget = referencesByTargetId.get(targetId)
-  if (referencesToTarget === undefined) {
-    referencesToTarget = { sources: [], targetId }
-
-    referencesByTargetId.set(targetId, referencesToTarget)
-
-    const targetIdMatch = targetId.match(idRegExp)
-    assert.notStrictEqual(targetIdMatch, null, `Unknown ID format: ${targetId}`)
-    let referencesSubTreeByTargetPath = referencesTreeByTargetPath
-    for (const targetIdFragment of targetIdMatch!.slice(1, -1)) {
-      let referencesSubSubTree = referencesSubTreeByTargetPath.get(
-        targetIdFragment,
-      ) as ReferencesTreeByTargetPath
-      if (referencesSubSubTree === undefined) {
-        referencesSubSubTree = new Map<string, ReferencesTreeByTargetPath>()
-        referencesSubTreeByTargetPath.set(
-          targetIdFragment,
-          referencesSubSubTree,
-        )
-      }
-      referencesSubTreeByTargetPath = referencesSubSubTree
+  if (add) {
+    if (referencesToTarget == null) {
+      referencesToTarget = { sources: [], targetId }
+      referencesByTargetId.set(targetId, referencesToTarget)
     }
-    const targetIdLastFragment = targetIdMatch!.at(-1)!
-    const referencesToTargetFromTree =
-      referencesSubTreeByTargetPath.get(targetIdLastFragment)
-    assert.strictEqual(referencesToTargetFromTree, undefined)
-    referencesSubTreeByTargetPath.set(targetIdLastFragment, referencesToTarget)
-  }
-  if (
-    referencesToTarget.sources.every(
+    if (
+      referencesToTarget.sources.every(
+        (existingSource) => existingSource.id !== source.id,
+      )
+    ) {
+      referencesToTarget.sources.push(source)
+    }
+  } else if (referencesToTarget != null) {
+    // Remove reference from source to target.
+    referencesToTarget.sources = referencesToTarget.sources.filter(
       (existingSource) => existingSource.id !== source.id,
     )
-  ) {
-    referencesToTarget.sources.push(source)
+    if (referencesToTarget.sources.length === 0) {
+      referencesByTargetId.set(targetId, null)
+    }
   }
 }
 
@@ -196,7 +168,6 @@ async function exportBackLinksToGit(
 
   let commitsChanged = false
   const referencesByTargetId: ReferencesByTargetId = new Map()
-  const referencesTreeByTargetPath: ReferencesTreeByTargetPath = new Map()
   let skip = true
   let sourcePreviousCommitByOrigine:
     | Record<"JORF" | "LEGI", nodegit.Commit>
@@ -299,48 +270,21 @@ async function exportBackLinksToGit(
         : await targetRepository.getCommit(targetPreviousCommitOid)
     const targetPreviousTree = await targetPreviousCommit?.getTree()
 
-    if (sourcePreviousCommitByOrigine === undefined) {
-      for (const [origine, sourceTree] of Object.entries(
-        sourceTreeByOrigine,
-      ) as Array<[Origine, nodegit.Tree]>) {
-        console.log(`Loading source ${origine}`)
-        switch (origine) {
-          case "JORF": {
-            await extractJorfObjectsReferences(
-              referencesByTargetId,
-              referencesTreeByTargetPath,
-              sourceTree,
-              texteTitleById,
-            )
-            break
-          }
-          case "LEGI": {
-            await extractLegiObjectsReferences(
-              referencesByTargetId,
-              referencesTreeByTargetPath,
-              sourceTree,
-              texteTitleById,
-            )
-            break
-          }
-          default:
-            assertNever("Origine", origine)
-        }
-      }
-    } else {
-      // const sourcePreviousTreeByOrigine: Record<Origine, nodegit.Tree> =
-      //   Object.fromEntries(
-      //     await Promise.all(
-      //       Object.entries(sourcePreviousCommitByOrigine).map(
-      //         async ([origine, sourcePreviousCommit]) => [
-      //           origine,
-      //           await sourcePreviousCommit.getTree(),
-      //         ],
-      //       ),
-      //     ),
-      //   )
-      // TODO
+    for (const [origine, sourceTree] of Object.entries(
+      sourceTreeByOrigine,
+    ) as Array<[Origine, nodegit.Tree]>) {
+      console.log(`Loading source ${origine}`)
+      const sourcePreviousCommit = sourcePreviousCommitByOrigine?.[origine]
+      const sourcePreviousTree = await sourcePreviousCommit?.getTree()
+      await extractSourceTreeReferences(
+        referencesByTargetId,
+        texteTitleById,
+        origine,
+        sourcePreviousTree,
+        sourceTree,
+      )
     }
+
     // Ensure that sourcePreviousCommitByOrigine will be updated for next iteration.
     sourcePreviousCommitByOrigine = sourceCommitByOrigine
 
@@ -353,11 +297,13 @@ async function exportBackLinksToGit(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
     for (const references of referencesByTargetId.values()) {
-      for (const source of references.sources) {
-        if (source.texteId !== undefined) {
-          const sourceTexteTitle = texteTitleById.get(source.texteId)
-          if (sourceTexteTitle !== undefined) {
-            source.texteTitle = sourceTexteTitle
+      if (references !== null) {
+        for (const source of references.sources) {
+          if (source.texteId !== undefined) {
+            const sourceTexteTitle = texteTitleById.get(source.texteId)
+            if (sourceTexteTitle !== undefined) {
+              source.texteTitle = sourceTexteTitle
+            }
           }
         }
       }
@@ -372,7 +318,7 @@ async function exportBackLinksToGit(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
     const targetTreeOid = (await generateReferencesGitTree(
-      referencesTreeByTargetPath,
+      referencesByTargetId,
       targetRepository,
       targetPreviousTree,
     )) as nodegit.Oid
@@ -458,434 +404,517 @@ async function exportBackLinksToGit(
   return exitCode
 }
 
-async function extractJorfObjectsReferences(
+async function extractJorfObjectReferences(
   referencesByTargetId: ReferencesByTargetId,
-  referencesTreeByTargetPath: ReferencesTreeByTargetPath,
-  sourceTree: nodegit.Tree,
   texteTitleById: Map<string, string>,
-): Promise<void> {
-  for (const sourceEntry of sourceTree.entries()) {
-    if (sourceEntry.isTree()) {
-      await extractJorfObjectsReferences(
-        referencesByTargetId,
-        referencesTreeByTargetPath,
-        await sourceEntry.getTree(),
-        texteTitleById,
-      )
-    } else {
-      const xmlData = xmlParser.parse((await sourceEntry.getBlob()).content())
-      for (const [tag, element] of Object.entries(xmlData) as [
-        JorfCategorieTag | "?xml",
-        (
-          | Jo
-          | JorfArticle
-          | JorfSectionTa
-          | JorfTextelr
-          | JorfTexteVersion
-          | Versions
-          | XmlHeader
-        ),
-      ][]) {
-        switch (tag) {
-          case "?xml": {
-            break
-          }
+  sourceBlobEntry: nodegit.TreeEntry,
+  add: boolean, // When false => remove
+) {
+  const xmlData = xmlParser.parse((await sourceBlobEntry.getBlob()).content())
+  for (const [tag, element] of Object.entries(xmlData) as [
+    JorfCategorieTag | "?xml",
+    (
+      | Jo
+      | JorfArticle
+      | JorfSectionTa
+      | JorfTextelr
+      | JorfTexteVersion
+      | Versions
+      | XmlHeader
+    ),
+  ][]) {
+    switch (tag) {
+      case "?xml": {
+        break
+      }
 
-          case "ARTICLE": {
-            // const [article, error] = auditChain(auditJorfArticle, auditRequire)(
-            //   strictAudit,
-            //   element,
-            // ) as [JorfArticle, unknown]
-            // assert.strictEqual(
-            //   error,
-            //   null,
-            //   `Unexpected format for ARTICLE:\n${JSON.stringify(
-            //     article,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            // )
-            break
-          }
+      case "ARTICLE": {
+        // const [article, error] = auditChain(auditJorfArticle, auditRequire)(
+        //   strictAudit,
+        //   element,
+        // ) as [JorfArticle, unknown]
+        // assert.strictEqual(
+        //   error,
+        //   null,
+        //   `Unexpected format for ARTICLE:\n${JSON.stringify(
+        //     article,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        // )
+        break
+      }
 
-          case "ID": {
-            // const sourceEntryPath = sourceEntry.path()
-            // const sourceEntrySplitPath = sourceEntryPath.split("/")
-            // assert.strictEqual(sourceEntrySplitPath[0], "global")
-            // assert.strictEqual(sourceEntrySplitPath[1], "eli")
-            // // const eli = sourceEntrySplitPath.slice(2, -1).join("/")
-            // const [id, idError] = auditChain(auditId, auditRequire)(
-            //   strictAudit,
-            //   element,
-            // )
-            // assert.strictEqual(
-            //   idError,
-            //   null,
-            //   `Unexpected format for ID:\n${JSON.stringify(
-            //     id,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(idError, null, 2)}`,
-            // )
-            break
-          }
+      case "ID": {
+        // const sourceEntryPath = sourceEntry.path()
+        // const sourceEntrySplitPath = sourceEntryPath.split("/")
+        // assert.strictEqual(sourceEntrySplitPath[0], "global")
+        // assert.strictEqual(sourceEntrySplitPath[1], "eli")
+        // // const eli = sourceEntrySplitPath.slice(2, -1).join("/")
+        // const [id, idError] = auditChain(auditId, auditRequire)(
+        //   strictAudit,
+        //   element,
+        // )
+        // assert.strictEqual(
+        //   idError,
+        //   null,
+        //   `Unexpected format for ID:\n${JSON.stringify(
+        //     id,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(idError, null, 2)}`,
+        // )
+        break
+      }
 
-          case "JO": {
-            // const [jo, error] = auditChain(auditJo, auditRequire)(
-            //   strictAudit,
-            //   element,
-            // ) as [Jo, unknown]
-            // assert.strictEqual(
-            //   error,
-            //   null,
-            //   `Unexpected format for JO:\n${JSON.stringify(
-            //     jo,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            // )
-            break
-          }
+      case "JO": {
+        // const [jo, error] = auditChain(auditJo, auditRequire)(
+        //   strictAudit,
+        //   element,
+        // ) as [Jo, unknown]
+        // assert.strictEqual(
+        //   error,
+        //   null,
+        //   `Unexpected format for JO:\n${JSON.stringify(
+        //     jo,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        // )
+        break
+      }
 
-          case "SECTION_TA": {
-            // const [sectionTa, error] = auditChain(
-            //   auditJorfSectionTa,
-            //   auditRequire,
-            // )(strictAudit, element) as [JorfSectionTa, unknown]
-            // assert.strictEqual(
-            //   error,
-            //   null,
-            //   `Unexpected format for SECTION_TA:\n${JSON.stringify(
-            //     sectionTa,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            // )
-            break
-          }
+      case "SECTION_TA": {
+        // const [sectionTa, error] = auditChain(
+        //   auditJorfSectionTa,
+        //   auditRequire,
+        // )(strictAudit, element) as [JorfSectionTa, unknown]
+        // assert.strictEqual(
+        //   error,
+        //   null,
+        //   `Unexpected format for SECTION_TA:\n${JSON.stringify(
+        //     sectionTa,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        // )
+        break
+      }
 
-          case "TEXTE_VERSION": {
-            const [texteVersion, error] = auditChain(
-              auditJorfTexteVersion,
-              auditRequire,
-            )(strictAudit, element) as [JorfTexteVersion, unknown]
-            assert.strictEqual(
-              error,
-              null,
-              `Unexpected format for TEXTE_VERSION:\n${JSON.stringify(
-                texteVersion,
-                null,
-                2,
-              )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            )
-            const metaTexteVersion =
-              texteVersion.META.META_SPEC.META_TEXTE_VERSION
-            const texteId = texteVersion.META.META_COMMUN.ID
-            const liens = metaTexteVersion.LIENS?.LIEN
-            if (liens !== undefined) {
-              const texteTitle =
-                metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
-              for (const lien of liens) {
-                const targetId = lien["@id"]
-                if (targetId !== undefined) {
-                  addReferenceToTarget(
-                    referencesByTargetId,
-                    referencesTreeByTargetPath,
-                    targetId,
-                    {
-                      id: texteId,
-                      title:
-                        metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE,
-                    },
-                  )
-                  if (texteTitle !== undefined) {
-                    texteTitleById.set(texteId, texteTitle)
-                  }
-                }
-              }
+      case "TEXTE_VERSION": {
+        const [texteVersion, error] = auditChain(
+          auditJorfTexteVersion,
+          auditRequire,
+        )(strictAudit, element) as [JorfTexteVersion, unknown]
+        assert.strictEqual(
+          error,
+          null,
+          `Unexpected format for TEXTE_VERSION:\n${JSON.stringify(
+            texteVersion,
+            null,
+            2,
+          )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        )
+        const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
+        const texteId = texteVersion.META.META_COMMUN.ID
+        const texteTitle = metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
+        if (texteTitle !== undefined) {
+          texteTitleById.set(texteId, texteTitle)
+        }
+        const liens = metaTexteVersion.LIENS?.LIEN
+        if (liens !== undefined) {
+          for (const lien of liens) {
+            const targetId = lien["@id"]
+            if (targetId !== undefined) {
+              addOrRemoveReferenceToTarget(
+                referencesByTargetId,
+                add,
+                {
+                  id: texteId,
+                  title: metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE,
+                },
+                targetId,
+              )
             }
-            break
-          }
-
-          case "TEXTELR": {
-            // const [textelr, error] = auditChain(auditJorfTextelr, auditRequire)(
-            //   strictAudit,
-            //   element,
-            // ) as [JorfTextelr, unknown]
-            // assert.strictEqual(
-            //   error,
-            //   null,
-            //   `Unexpected format for TEXTELR:\n${JSON.stringify(
-            //     textelr,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            // )
-            break
-          }
-
-          case "VERSIONS": {
-            // const sourceEntryPath = sourceEntry.path()
-            // const sourceEntrySplitPath = sourceEntryPath.split("/")
-            // assert.strictEqual(sourceEntrySplitPath[0], "global")
-            // assert.strictEqual(sourceEntrySplitPath[1], "eli")
-            // // const eli = sourceEntrySplitPath.slice(2, -1).join("/")
-            // const [versions, versionsError] = auditChain(
-            //   auditVersions,
-            //   auditRequire,
-            // )(strictAudit, element) as [Versions, unknown]
-            // assert.strictEqual(
-            //   versionsError,
-            //   null,
-            //   `Unexpected format for VERSIONS:\n${JSON.stringify(
-            //     versions,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(versionsError, null, 2)}`,
-            // )
-            break
-          }
-
-          default: {
-            console.warn(
-              `Unexpected root element "${tag}" in XML file: ${sourceEntry.path()}`,
-            )
-            break
           }
         }
+        break
+      }
+
+      case "TEXTELR": {
+        // const [textelr, error] = auditChain(auditJorfTextelr, auditRequire)(
+        //   strictAudit,
+        //   element,
+        // ) as [JorfTextelr, unknown]
+        // assert.strictEqual(
+        //   error,
+        //   null,
+        //   `Unexpected format for TEXTELR:\n${JSON.stringify(
+        //     textelr,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        // )
+        break
+      }
+
+      case "VERSIONS": {
+        // const sourceEntryPath = sourceEntry.path()
+        // const sourceEntrySplitPath = sourceEntryPath.split("/")
+        // assert.strictEqual(sourceEntrySplitPath[0], "global")
+        // assert.strictEqual(sourceEntrySplitPath[1], "eli")
+        // // const eli = sourceEntrySplitPath.slice(2, -1).join("/")
+        // const [versions, versionsError] = auditChain(
+        //   auditVersions,
+        //   auditRequire,
+        // )(strictAudit, element) as [Versions, unknown]
+        // assert.strictEqual(
+        //   versionsError,
+        //   null,
+        //   `Unexpected format for VERSIONS:\n${JSON.stringify(
+        //     versions,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(versionsError, null, 2)}`,
+        // )
+        break
+      }
+
+      default: {
+        console.warn(
+          `Unexpected root element "${tag}" in XML file: ${sourceBlobEntry.path()}`,
+        )
+        break
       }
     }
   }
 }
 
-async function extractLegiObjectsReferences(
+async function extractLegalObjectReferences(
   referencesByTargetId: ReferencesByTargetId,
-  referencesTreeByTargetPath: ReferencesTreeByTargetPath,
-  sourceTree: nodegit.Tree,
   texteTitleById: Map<string, string>,
-): Promise<void> {
-  for (const sourceEntry of sourceTree.entries()) {
-    if (sourceEntry.isTree()) {
-      await extractLegiObjectsReferences(
+  origine: Origine,
+  sourceBlobEntry: nodegit.TreeEntry,
+  add: boolean, // When false => remove
+) {
+  switch (origine) {
+    case "JORF": {
+      await extractJorfObjectReferences(
         referencesByTargetId,
-        referencesTreeByTargetPath,
-        await sourceEntry.getTree(),
         texteTitleById,
+        sourceBlobEntry,
+        add,
       )
-    } else {
-      const xmlData = xmlParser.parse((await sourceEntry.getBlob()).content())
-      for (const [tag, element] of Object.entries(xmlData) as [
-        LegiCategorieTag | "?xml",
-        (
-          | LegiArticle
-          | LegiSectionTa
-          | LegiTextelr
-          | LegiTexteVersion
-          | Versions
-          | XmlHeader
-        ),
-      ][]) {
-        switch (tag) {
-          case "?xml": {
-            break
-          }
+      break
+    }
+    case "LEGI": {
+      await extractLegiObjectReferences(
+        referencesByTargetId,
+        texteTitleById,
+        sourceBlobEntry,
+        add,
+      )
+      break
+    }
+    default:
+      assertNever("Origine", origine)
+  }
+}
 
-          case "ARTICLE": {
-            const [article, error] = auditChain(auditLegiArticle, auditRequire)(
-              strictAudit,
-              element,
-            ) as [LegiArticle, unknown]
-            assert.strictEqual(
-              error,
-              null,
-              `Unexpected format for ARTICLE:\n${JSON.stringify(
-                article,
-                null,
-                2,
-              )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            )
-            const articleId = article.META.META_COMMUN.ID
-            const liens = article.LIENS?.LIEN
-            if (liens !== undefined) {
-              for (const lien of liens) {
-                const targetId = lien["@id"]
-                if (targetId !== undefined) {
-                  addReferenceToTarget(
-                    referencesByTargetId,
-                    referencesTreeByTargetPath,
-                    targetId,
-                    {
-                      id: articleId,
-                      texteId: article.CONTEXTE.TEXTE["@cid"],
-                      title: article.META.META_SPEC.META_ARTICLE.NUM,
-                    },
-                  )
-                }
-              }
+async function extractLegiObjectReferences(
+  referencesByTargetId: ReferencesByTargetId,
+  texteTitleById: Map<string, string>,
+  sourceBlobEntry: nodegit.TreeEntry,
+  add: boolean, // When false => remove
+) {
+  const xmlData = xmlParser.parse((await sourceBlobEntry.getBlob()).content())
+  for (const [tag, element] of Object.entries(xmlData) as [
+    LegiCategorieTag | "?xml",
+    (
+      | LegiArticle
+      | LegiSectionTa
+      | LegiTextelr
+      | LegiTexteVersion
+      | Versions
+      | XmlHeader
+    ),
+  ][]) {
+    switch (tag) {
+      case "?xml": {
+        break
+      }
+
+      case "ARTICLE": {
+        const [article, error] = auditChain(auditLegiArticle, auditRequire)(
+          strictAudit,
+          element,
+        ) as [LegiArticle, unknown]
+        assert.strictEqual(
+          error,
+          null,
+          `Unexpected format for ARTICLE:\n${JSON.stringify(
+            article,
+            null,
+            2,
+          )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        )
+        const articleId = article.META.META_COMMUN.ID
+        const liens = article.LIENS?.LIEN
+        if (liens !== undefined) {
+          for (const lien of liens) {
+            const targetId = lien["@id"]
+            if (targetId !== undefined) {
+              addOrRemoveReferenceToTarget(
+                referencesByTargetId,
+                add,
+                {
+                  id: articleId,
+                  texteId: article.CONTEXTE.TEXTE["@cid"],
+                  title: article.META.META_SPEC.META_ARTICLE.NUM,
+                },
+                targetId,
+              )
             }
-            break
-          }
-
-          case "ID": {
-            //   const sourceEntryPath = sourceEntry.path()
-            //   const sourceEntrySplitPath = sourceEntryPath.split("/")
-            //   assert.strictEqual(sourceEntrySplitPath[0], "global")
-            //   assert.strictEqual(sourceEntrySplitPath[1], "eli")
-            //   // const eli = sourceEntrySplitPath.slice(2, -1).join("/")
-            //   const [id, idError] = auditChain(auditId, auditRequire)(
-            //     strictAudit,
-            //     element,
-            //   )
-            //   assert.strictEqual(
-            //     idError,
-            //     null,
-            //     `Unexpected format for ID:\n${JSON.stringify(
-            //       id,
-            //       null,
-            //       2,
-            //     )}\nError:\n${JSON.stringify(idError, null, 2)}`,
-            //   )
-            break
-          }
-
-          case "SECTION_TA": {
-            // const [sectionTa, error] = auditChain(
-            //   auditLegiSectionTa,
-            //   auditRequire,
-            // )(strictAudit, element) as [LegiSectionTa, unknown]
-            // assert.strictEqual(
-            //   error,
-            //   null,
-            //   `Unexpected format for SECTION_TA:\n${JSON.stringify(
-            //     sectionTa,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            // )
-            break
-          }
-
-          case "TEXTE_VERSION": {
-            const [texteVersion, error] = auditChain(
-              auditLegiTexteVersion,
-              auditRequire,
-            )(strictAudit, element) as [LegiTexteVersion, unknown]
-            assert.strictEqual(
-              error,
-              null,
-              `Unexpected format for TEXTE_VERSION:\n${JSON.stringify(
-                texteVersion,
-                null,
-                2,
-              )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            )
-            const texteId = texteVersion.META.META_COMMUN.ID
-            const metaTexteVersion =
-              texteVersion.META.META_SPEC.META_TEXTE_VERSION
-            const liens = metaTexteVersion.LIENS?.LIEN
-            if (liens !== undefined) {
-              const texteTitle =
-                metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
-              for (const lien of liens) {
-                const targetId = lien["@id"]
-                if (targetId !== undefined) {
-                  addReferenceToTarget(
-                    referencesByTargetId,
-                    referencesTreeByTargetPath,
-                    targetId,
-                    {
-                      id: texteId,
-                      title: texteTitle,
-                    },
-                  )
-                  if (texteTitle !== undefined) {
-                    texteTitleById.set(texteId, texteTitle)
-                  }
-                }
-              }
-            }
-            break
-          }
-
-          case "TEXTELR": {
-            // const [textelr, error] = auditChain(auditLegiTextelr, auditRequire)(
-            //   strictAudit,
-            //   element,
-            // ) as [LegiTextelr, unknown]
-            // assert.strictEqual(
-            //   error,
-            //   null,
-            //   `Unexpected format for TEXTELR:\n${JSON.stringify(
-            //     textelr,
-            //     null,
-            //     2,
-            //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-            // )
-            break
-          }
-
-          case "VERSIONS": {
-            //   const sourceEntryPath = sourceEntry.path()
-            //   const sourceEntrySplitPath = sourceEntryPath.split("/")
-            //   assert.strictEqual(sourceEntrySplitPath[0], "global")
-            //   assert.strictEqual(sourceEntrySplitPath[1], "eli")
-            //   const eli = sourceEntrySplitPath.slice(2, -1).join("/")
-            //   const [versions, versionsError] = auditChain(
-            //     auditVersions,
-            //     auditRequire,
-            //   )(strictAudit, element) as [Versions, unknown]
-            //   assert.strictEqual(
-            //     versionsError,
-            //     null,
-            //     `Unexpected format for VERSIONS:\n${JSON.stringify(
-            //       versions,
-            //       null,
-            //       2,
-            //     )}\nError:\n${JSON.stringify(versionsError, null, 2)}`,
-            //   )
-            break
-          }
-
-          default: {
-            console.warn(
-              `Unexpected root element "${tag}" in XML file: ${sourceEntry.path()}`,
-            )
-            break
           }
         }
+        break
       }
+
+      case "ID": {
+        //   const sourceEntryPath = sourceEntry.path()
+        //   const sourceEntrySplitPath = sourceEntryPath.split("/")
+        //   assert.strictEqual(sourceEntrySplitPath[0], "global")
+        //   assert.strictEqual(sourceEntrySplitPath[1], "eli")
+        //   // const eli = sourceEntrySplitPath.slice(2, -1).join("/")
+        //   const [id, idError] = auditChain(auditId, auditRequire)(
+        //     strictAudit,
+        //     element,
+        //   )
+        //   assert.strictEqual(
+        //     idError,
+        //     null,
+        //     `Unexpected format for ID:\n${JSON.stringify(
+        //       id,
+        //       null,
+        //       2,
+        //     )}\nError:\n${JSON.stringify(idError, null, 2)}`,
+        //   )
+        break
+      }
+
+      case "SECTION_TA": {
+        // const [sectionTa, error] = auditChain(
+        //   auditLegiSectionTa,
+        //   auditRequire,
+        // )(strictAudit, element) as [LegiSectionTa, unknown]
+        // assert.strictEqual(
+        //   error,
+        //   null,
+        //   `Unexpected format for SECTION_TA:\n${JSON.stringify(
+        //     sectionTa,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        // )
+        break
+      }
+
+      case "TEXTE_VERSION": {
+        const [texteVersion, error] = auditChain(
+          auditLegiTexteVersion,
+          auditRequire,
+        )(strictAudit, element) as [LegiTexteVersion, unknown]
+        assert.strictEqual(
+          error,
+          null,
+          `Unexpected format for TEXTE_VERSION:\n${JSON.stringify(
+            texteVersion,
+            null,
+            2,
+          )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        )
+        const texteId = texteVersion.META.META_COMMUN.ID
+        const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
+        const texteTitle = metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
+        if (texteTitle !== undefined) {
+          texteTitleById.set(texteId, texteTitle)
+        }
+        const liens = metaTexteVersion.LIENS?.LIEN
+        if (liens !== undefined) {
+          for (const lien of liens) {
+            const targetId = lien["@id"]
+            if (targetId !== undefined) {
+              addOrRemoveReferenceToTarget(
+                referencesByTargetId,
+                add,
+                {
+                  id: texteId,
+                  title: texteTitle,
+                },
+                targetId,
+              )
+            }
+          }
+        }
+        break
+      }
+
+      case "TEXTELR": {
+        // const [textelr, error] = auditChain(auditLegiTextelr, auditRequire)(
+        //   strictAudit,
+        //   element,
+        // ) as [LegiTextelr, unknown]
+        // assert.strictEqual(
+        //   error,
+        //   null,
+        //   `Unexpected format for TEXTELR:\n${JSON.stringify(
+        //     textelr,
+        //     null,
+        //     2,
+        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        // )
+        break
+      }
+
+      case "VERSIONS": {
+        //   const sourceEntryPath = sourceEntry.path()
+        //   const sourceEntrySplitPath = sourceEntryPath.split("/")
+        //   assert.strictEqual(sourceEntrySplitPath[0], "global")
+        //   assert.strictEqual(sourceEntrySplitPath[1], "eli")
+        //   const eli = sourceEntrySplitPath.slice(2, -1).join("/")
+        //   const [versions, versionsError] = auditChain(
+        //     auditVersions,
+        //     auditRequire,
+        //   )(strictAudit, element) as [Versions, unknown]
+        //   assert.strictEqual(
+        //     versionsError,
+        //     null,
+        //     `Unexpected format for VERSIONS:\n${JSON.stringify(
+        //       versions,
+        //       null,
+        //       2,
+        //     )}\nError:\n${JSON.stringify(versionsError, null, 2)}`,
+        //   )
+        break
+      }
+
+      default: {
+        console.warn(
+          `Unexpected root element "${tag}" in XML file: ${sourceBlobEntry.path()}`,
+        )
+        break
+      }
+    }
+  }
+}
+
+async function extractSourceTreeReferences(
+  referencesByTargetId: ReferencesByTargetId,
+  texteTitleById: Map<string, string>,
+  origine: Origine,
+  sourcePreviousTree: nodegit.Tree | undefined,
+  sourceTree: nodegit.Tree,
+): Promise<void> {
+  const sourcePreviousEntryByName =
+    sourcePreviousTree === undefined
+      ? undefined
+      : Object.fromEntries(
+          sourcePreviousTree.entries().map((entry) => [entry.name(), entry]),
+        )
+  for (const sourceEntry of sourceTree.entries()) {
+    const sourceEntryName = sourceEntry.name()
+    const sourcePreviousEntry = sourcePreviousEntryByName?.[sourceEntryName]
+    if (sourcePreviousEntry !== undefined) {
+      // Ensure that at the end of the loop sourcePreviousEntryByName contains
+      // only entries deleted from the source tree.
+      delete sourcePreviousEntryByName![sourceEntryName]
+    }
+    if (sourceEntry.oid() === sourcePreviousEntry?.oid()) {
+      // Entry has not changed => No reference to change.
+      continue
+    }
+    if (sourceEntry.isTree()) {
+      await extractSourceTreeReferences(
+        referencesByTargetId,
+        texteTitleById,
+        origine,
+        await sourcePreviousEntry?.getTree(),
+        await sourceEntry.getTree(),
+      )
+    } else {
+      if (sourcePreviousEntry !== undefined) {
+        // Source entry has changed.
+        // First, remove the links of previous entry from the back links
+        // of the entries it references.
+        await extractLegalObjectReferences(
+          referencesByTargetId,
+          texteTitleById,
+          origine,
+          sourcePreviousEntry,
+          false /* remove */,
+        )
+      }
+      await extractLegalObjectReferences(
+        referencesByTargetId,
+        texteTitleById,
+        origine,
+        sourceEntry,
+        true /* add */,
+      )
+    }
+  }
+
+  // Entries remaining in sourcePreviousEntryByName are deleted.
+  if (sourcePreviousEntryByName !== undefined) {
+    for (const sourcePreviousEntry of Object.values(
+      sourcePreviousEntryByName,
+    )) {
+      // Remove the links of previous entry from the back links
+      // of the entries it references.
+      await extractLegalObjectReferences(
+        referencesByTargetId,
+        texteTitleById,
+        origine,
+        sourcePreviousEntry,
+        false /* remove */,
+      )
     }
   }
 }
 
 async function generateReferencesGitTree(
-  referencesTreeByTargetPath: ReferencesTreeByTargetPath,
+  referencesByTargetId: ReferencesByTargetId,
   targetRepository: nodegit.Repository,
   targetExistingTree: nodegit.Tree | undefined,
 ): Promise<nodegit.Oid | undefined> {
-  const targetTreeBuilder = await nodegit.Treebuilder.create(targetRepository)
-  for (const [targetPathFragment, referenceOrSubTree] of [
-    ...referencesTreeByTargetPath.entries(),
-  ].toSorted()) {
-    if (referenceOrSubTree instanceof Map) {
-      const targetSubTreeOid = await generateReferencesGitTree(
-        referenceOrSubTree,
-        targetRepository,
-        targetExistingTree,
-      )
-      if (targetSubTreeOid !== undefined) {
-        await targetTreeBuilder.insert(
-          targetPathFragment,
-          targetSubTreeOid,
-          0o040000,
-        )
+  const treeStructure = await readTreeStructure(
+    targetRepository,
+    targetExistingTree,
+  )
+
+  for (const [targetId, references] of referencesByTargetId.entries()) {
+    const targetIdMatch = targetId.match(idRegExp)
+    assert.notStrictEqual(targetIdMatch, null, `Unknown ID format: ${targetId}`)
+    const targetFilename = targetId + ".json"
+
+    let currentLevel = treeStructure
+    for (const targetDirName of targetIdMatch!.slice(1, -1)) {
+      let subLevel = currentLevel.get(targetDirName)
+      if (subLevel === undefined || subLevel instanceof nodegit.Oid) {
+        subLevel = new Map()
+        currentLevel.set(targetDirName, subLevel)
       }
+      currentLevel = subLevel
+    }
+
+    if (references === null) {
+      currentLevel.delete(targetFilename)
     } else {
       const targetBlobOid = await targetRepository.createBlobFromBuffer(
         Buffer.from(
           JSON.stringify(
             {
-              sources: referenceOrSubTree.sources.toSorted((source1, source2) =>
+              sources: references.sources.toSorted((source1, source2) =>
                 source1.id.localeCompare(source2.id),
               ),
             },
@@ -895,16 +924,13 @@ async function generateReferencesGitTree(
           "utf-8",
         ),
       )
-      targetTreeBuilder.insert(
-        referenceOrSubTree.targetId + ".json",
-        targetBlobOid,
-        0o100644,
-      )
+      currentLevel.set(targetFilename, targetBlobOid)
     }
   }
-  return targetTreeBuilder.entrycount() === 0
-    ? undefined
-    : await targetTreeBuilder.write()
+
+  removeTreeStructureEmptyNodes(treeStructure)
+
+  return await writeTreeStructure(targetRepository, treeStructure)
 }
 
 async function* iterCommitsOids(
@@ -1042,6 +1068,58 @@ async function* iterSourceCommitsWithSameDilaDate(
       continue iterCommitsWithSameDilaDate
     }
   }
+}
+
+async function readTreeStructure(
+  repository: nodegit.Repository,
+  tree: nodegit.Tree | undefined,
+): Promise<TreeStructure> {
+  const structure: TreeStructure = new Map()
+  if (tree !== undefined) {
+    const entries = tree.entries()
+
+    for (const entry of entries) {
+      if (entry.isTree()) {
+        const subtree = await nodegit.Tree.lookup(repository, entry.oid())
+        structure.set(
+          entry.name(),
+          await readTreeStructure(repository, subtree),
+        )
+      } else {
+        structure.set(entry.name(), entry.id())
+      }
+    }
+  }
+  return structure
+}
+
+function removeTreeStructureEmptyNodes(structure: TreeStructure): void {
+  for (const [name, entry] of structure.entries()) {
+    if (!(entry instanceof nodegit.Oid)) {
+      removeTreeStructureEmptyNodes(entry)
+      if (entry.size === 0) {
+        structure.delete(name)
+      }
+    }
+  }
+}
+
+async function writeTreeStructure(
+  repository: nodegit.Repository,
+  structure: TreeStructure,
+): Promise<nodegit.Oid> {
+  const builder = await nodegit.Treebuilder.create(repository)
+
+  for (const [name, entry] of structure.entries()) {
+    if (entry instanceof nodegit.Oid) {
+      builder.insert(name, entry, nodegit.TreeEntry.FILEMODE.BLOB) // 0o040000
+    } else {
+      const subtreeOid = await writeTreeStructure(repository, entry)
+      builder.insert(name, subtreeOid, nodegit.TreeEntry.FILEMODE.TREE) // 0o100644
+    }
+  }
+
+  return builder.write()
 }
 
 sade("export_back_links_to_git <dilaDir>", true)

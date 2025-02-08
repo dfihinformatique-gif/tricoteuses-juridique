@@ -54,7 +54,7 @@ interface ReferencesToLegalObject {
   targetId: string
 }
 
-type ReferencesByTargetId = Map<string, ReferencesToLegalObject | null>
+type ReferencesByTargetId = Map<string, ReferencesToLegalObject>
 
 type TreeStructure = Map<string, TreeStructure | nodegit.Oid>
 
@@ -83,6 +83,7 @@ const xmlParser = new XMLParser({
 })
 
 function addOrRemoveReferenceToTarget(
+  changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
   add: boolean, // false => remove
   source: Source,
@@ -90,7 +91,7 @@ function addOrRemoveReferenceToTarget(
 ) {
   let referencesToTarget = referencesByTargetId.get(targetId)
   if (add) {
-    if (referencesToTarget == null) {
+    if (referencesToTarget === undefined) {
       referencesToTarget = { sources: [], targetId }
       referencesByTargetId.set(targetId, referencesToTarget)
     }
@@ -101,15 +102,16 @@ function addOrRemoveReferenceToTarget(
     ) {
       referencesToTarget.sources.push(source)
     }
-  } else if (referencesToTarget != null) {
+  } else if (referencesToTarget !== undefined) {
     // Remove reference from source to target.
     referencesToTarget.sources = referencesToTarget.sources.filter(
       (existingSource) => existingSource.id !== source.id,
     )
     if (referencesToTarget.sources.length === 0) {
-      referencesByTargetId.set(targetId, null)
+      referencesByTargetId.delete(targetId)
     }
   }
+  changedIds.add(targetId)
 }
 
 async function exportBackLinksToGit(
@@ -270,6 +272,7 @@ async function exportBackLinksToGit(
         : await targetRepository.getCommit(targetPreviousCommitOid)
     const targetPreviousTree = await targetPreviousCommit?.getTree()
 
+    const changedIds: Set<string> = new Set()
     for (const [origine, sourceTree] of Object.entries(
       sourceTreeByOrigine,
     ) as Array<[Origine, nodegit.Tree]>) {
@@ -277,6 +280,7 @@ async function exportBackLinksToGit(
       const sourcePreviousCommit = sourcePreviousCommitByOrigine?.[origine]
       const sourcePreviousTree = await sourcePreviousCommit?.getTree()
       await extractSourceTreeReferencesChanges(
+        changedIds,
         referencesByTargetId,
         texteTitleById,
         origine,
@@ -297,13 +301,11 @@ async function exportBackLinksToGit(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
     for (const references of referencesByTargetId.values()) {
-      if (references !== null) {
-        for (const source of references.sources) {
-          if (source.texteId !== undefined) {
-            const sourceTexteTitle = texteTitleById.get(source.texteId)
-            if (sourceTexteTitle !== undefined) {
-              source.texteTitle = sourceTexteTitle
-            }
+      for (const source of references.sources) {
+        if (source.texteId !== undefined) {
+          const sourceTexteTitle = texteTitleById.get(source.texteId)
+          if (sourceTexteTitle !== undefined) {
+            source.texteTitle = sourceTexteTitle
           }
         }
       }
@@ -333,7 +335,7 @@ async function exportBackLinksToGit(
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    for (const [targetId, references] of referencesByTargetId.entries()) {
+    for (const targetId of changedIds) {
       const targetIdMatch = targetId.match(idRegExp)
       assert.notStrictEqual(
         targetIdMatch,
@@ -341,6 +343,7 @@ async function exportBackLinksToGit(
         `Unknown ID format: ${targetId}`,
       )
       const targetFilename = targetId + ".json"
+      const references = referencesByTargetId.get(targetId)
 
       let currentLevel = treeStructure
       for (const targetDirName of targetIdMatch!.slice(1, -1)) {
@@ -352,7 +355,7 @@ async function exportBackLinksToGit(
         currentLevel = subLevel
       }
 
-      if (references === null) {
+      if (references === undefined) {
         currentLevel.delete(targetFilename)
       } else {
         const targetBlobOid = await targetRepository.createBlobFromBuffer(
@@ -491,6 +494,7 @@ async function exportBackLinksToGit(
 }
 
 async function extractJorfObjectReferences(
+  changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
   texteTitleById: Map<string, string>,
   sourceBlobEntry: nodegit.TreeEntry,
@@ -613,6 +617,7 @@ async function extractJorfObjectReferences(
             const targetId = lien["@id"]
             if (targetId !== undefined) {
               addOrRemoveReferenceToTarget(
+                changedIds,
                 referencesByTargetId,
                 add,
                 {
@@ -677,6 +682,7 @@ async function extractJorfObjectReferences(
 }
 
 async function extractLegalObjectReferences(
+  changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
   texteTitleById: Map<string, string>,
   origine: Origine,
@@ -686,6 +692,7 @@ async function extractLegalObjectReferences(
   switch (origine) {
     case "JORF": {
       await extractJorfObjectReferences(
+        changedIds,
         referencesByTargetId,
         texteTitleById,
         sourceBlobEntry,
@@ -695,6 +702,7 @@ async function extractLegalObjectReferences(
     }
     case "LEGI": {
       await extractLegiObjectReferences(
+        changedIds,
         referencesByTargetId,
         texteTitleById,
         sourceBlobEntry,
@@ -708,6 +716,7 @@ async function extractLegalObjectReferences(
 }
 
 async function extractLegiObjectReferences(
+  changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
   texteTitleById: Map<string, string>,
   sourceBlobEntry: nodegit.TreeEntry,
@@ -751,6 +760,7 @@ async function extractLegiObjectReferences(
             const targetId = lien["@id"]
             if (targetId !== undefined) {
               addOrRemoveReferenceToTarget(
+                changedIds,
                 referencesByTargetId,
                 add,
                 {
@@ -831,6 +841,7 @@ async function extractLegiObjectReferences(
             const targetId = lien["@id"]
             if (targetId !== undefined) {
               addOrRemoveReferenceToTarget(
+                changedIds,
                 referencesByTargetId,
                 add,
                 {
@@ -895,6 +906,7 @@ async function extractLegiObjectReferences(
 }
 
 async function extractSourceTreeReferencesChanges(
+  changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
   texteTitleById: Map<string, string>,
   origine: Origine,
@@ -924,6 +936,7 @@ async function extractSourceTreeReferencesChanges(
       // first remove its links from the back links.
       if (sourcePreviousEntry?.isBlob()) {
         await extractLegalObjectReferences(
+          changedIds,
           referencesByTargetId,
           texteTitleById,
           origine,
@@ -932,6 +945,7 @@ async function extractSourceTreeReferencesChanges(
         )
       }
       await extractSourceTreeReferencesChanges(
+        changedIds,
         referencesByTargetId,
         texteTitleById,
         origine,
@@ -948,6 +962,7 @@ async function extractSourceTreeReferencesChanges(
         // of the entries it references.
         if (sourcePreviousEntry.isTree()) {
           await removeSourceTreeReferences(
+            changedIds,
             referencesByTargetId,
             texteTitleById,
             origine,
@@ -955,6 +970,7 @@ async function extractSourceTreeReferencesChanges(
           )
         } else {
           await extractLegalObjectReferences(
+            changedIds,
             referencesByTargetId,
             texteTitleById,
             origine,
@@ -964,6 +980,7 @@ async function extractSourceTreeReferencesChanges(
         }
       }
       await extractLegalObjectReferences(
+        changedIds,
         referencesByTargetId,
         texteTitleById,
         origine,
@@ -982,6 +999,7 @@ async function extractSourceTreeReferencesChanges(
       // of the entries it references.
       if (sourcePreviousEntry.isTree()) {
         await removeSourceTreeReferences(
+          changedIds,
           referencesByTargetId,
           texteTitleById,
           origine,
@@ -989,6 +1007,7 @@ async function extractSourceTreeReferencesChanges(
         )
       } else {
         await extractLegalObjectReferences(
+          changedIds,
           referencesByTargetId,
           texteTitleById,
           origine,
@@ -1161,6 +1180,7 @@ async function readTreeStructure(
 }
 
 async function removeSourceTreeReferences(
+  changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
   texteTitleById: Map<string, string>,
   origine: Origine,
@@ -1169,6 +1189,7 @@ async function removeSourceTreeReferences(
   for (const sourceEntry of sourceTree.entries()) {
     if (sourceEntry.isTree()) {
       await removeSourceTreeReferences(
+        changedIds,
         referencesByTargetId,
         texteTitleById,
         origine,
@@ -1176,6 +1197,7 @@ async function removeSourceTreeReferences(
       )
     } else {
       await extractLegalObjectReferences(
+        changedIds,
         referencesByTargetId,
         texteTitleById,
         origine,

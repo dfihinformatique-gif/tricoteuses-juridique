@@ -177,6 +177,7 @@ async function exportBackLinksToGit(
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
   const texteTitleById: Map<string, string> = new Map()
+  const treeStructure: TreeStructure = new Map()
   for await (const {
     dilaDate,
     sourceCommitByOrigine,
@@ -252,14 +253,13 @@ async function exportBackLinksToGit(
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-
     const sourceTreeByOrigine: Record<Origine, nodegit.Tree> =
       Object.fromEntries(
         await Promise.all(
           Object.entries(sourceCommitByOrigine).map(
             async ([origine, sourceCommit]) => [
               origine,
-              await sourceCommit?.getTree(),
+              await sourceCommit.getTree(),
             ],
           ),
         ),
@@ -276,7 +276,7 @@ async function exportBackLinksToGit(
       console.log(`Loading source ${origine}`)
       const sourcePreviousCommit = sourcePreviousCommitByOrigine?.[origine]
       const sourcePreviousTree = await sourcePreviousCommit?.getTree()
-      await extractSourceTreeReferences(
+      await extractSourceTreeReferencesChanges(
         referencesByTargetId,
         texteTitleById,
         origine,
@@ -309,26 +309,105 @@ async function exportBackLinksToGit(
       }
     }
 
-    // Generate git tree of references & commit them.
+    // Read tree structure if it has not been read yet.
+    if (treeStructure.size === 0) {
+      steps.push({
+        label: "Read tree structure",
+        start: performance.now(),
+      })
+      console.log(
+        `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+      )
+      for (const [name, subTreeStructure] of (
+        await readTreeStructure(targetRepository, targetPreviousTree)
+      ).entries()) {
+        treeStructure.set(name, subTreeStructure)
+      }
+    }
+
+    // Update tree structure with modified references.
     steps.push({
-      label: "Commit references (back links)",
+      label: "Update tree structure with modified references",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    const targetTreeOid = (await generateReferencesGitTree(
-      referencesByTargetId,
+    for (const [targetId, references] of referencesByTargetId.entries()) {
+      const targetIdMatch = targetId.match(idRegExp)
+      assert.notStrictEqual(
+        targetIdMatch,
+        null,
+        `Unknown ID format: ${targetId}`,
+      )
+      const targetFilename = targetId + ".json"
+
+      let currentLevel = treeStructure
+      for (const targetDirName of targetIdMatch!.slice(1, -1)) {
+        let subLevel = currentLevel.get(targetDirName)
+        if (subLevel === undefined || subLevel instanceof nodegit.Oid) {
+          subLevel = new Map()
+          currentLevel.set(targetDirName, subLevel)
+        }
+        currentLevel = subLevel
+      }
+
+      if (references === null) {
+        currentLevel.delete(targetFilename)
+      } else {
+        const targetBlobOid = await targetRepository.createBlobFromBuffer(
+          Buffer.from(
+            JSON.stringify(
+              {
+                sources: references.sources.toSorted((source1, source2) =>
+                  source1.id.localeCompare(source2.id),
+                ),
+              },
+              null,
+              2,
+            ),
+            "utf-8",
+          ),
+        )
+        currentLevel.set(targetFilename, targetBlobOid)
+      }
+    }
+
+    // Cleanup tree structure.
+    steps.push({
+      label: "Cleanup tree structure",
+      start: performance.now(),
+    })
+    console.log(
+      `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+    )
+    removeTreeStructureEmptyNodes(treeStructure)
+
+    // Write updated tree structure.
+    steps.push({
+      label: "Write updated tree structure",
+      start: performance.now(),
+    })
+    console.log(
+      `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+    )
+    const targetTreeOid = await writeTreeStructure(
       targetRepository,
-      targetPreviousTree,
-    )) as nodegit.Oid
-    assert.notStrictEqual(targetTreeOid, undefined)
+      treeStructure,
+    )
     if (targetTreeOid.tostrS() === targetPreviousTree?.id().tostrS()) {
       // No change to commit.
       continue
     }
 
     // Commit changes.
+    steps.push({
+      label: "Commit changes",
+      start: performance.now(),
+    })
+    console.log(
+      `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+    )
     const sourceAuthorWhen = sourceCommitByOrigine.JORF.author().when()
     const sourceCommitterWhen = sourceCommitByOrigine.JORF.committer().when()
     const targetCommitMessage = dilaDate
@@ -356,13 +435,6 @@ async function exportBackLinksToGit(
       ) as nodegit.Oid[],
     )
     commitsChanged = true
-
-    console.log("Performance: ")
-    for (const [index, step] of steps.entries()) {
-      console.log(
-        `  ${step.label}: ${(steps[index + 1]?.start ?? performance.now()) - step.start}`,
-      )
-    }
   }
   assert.strictEqual(
     skip,
@@ -371,6 +443,13 @@ async function exportBackLinksToGit(
   )
 
   if (commitsChanged && forgejo !== undefined && push) {
+    steps.push({
+      label: "Push new commits",
+      start: performance.now(),
+    })
+    console.log(
+      `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+    )
     await targetRepository.createBranch("main", targetCommitOid!, true)
     await targetRepository.setHead("refs/heads/main")
     let targetRemote: nodegit.Remote
@@ -400,6 +479,13 @@ async function exportBackLinksToGit(
     })
     await nodegit.Branch.setUpstream(targetBranch, `origin/${targetBranchName}`)
   }
+
+  // console.log("Performance: ")
+  // for (const [index, step] of steps.entries()) {
+  //   console.log(
+  //     `  ${step.label}: ${(steps[index + 1]?.start ?? performance.now()) - step.start}`,
+  //   )
+  // }
 
   return exitCode
 }
@@ -808,7 +894,7 @@ async function extractLegiObjectReferences(
   }
 }
 
-async function extractSourceTreeReferences(
+async function extractSourceTreeReferencesChanges(
   referencesByTargetId: ReferencesByTargetId,
   texteTitleById: Map<string, string>,
   origine: Origine,
@@ -834,18 +920,9 @@ async function extractSourceTreeReferences(
       continue
     }
     if (sourceEntry.isTree()) {
-      await extractSourceTreeReferences(
-        referencesByTargetId,
-        texteTitleById,
-        origine,
-        await sourcePreviousEntry?.getTree(),
-        await sourceEntry.getTree(),
-      )
-    } else {
-      if (sourcePreviousEntry !== undefined) {
-        // Source entry has changed.
-        // First, remove the links of previous entry from the back links
-        // of the entries it references.
+      // If sourcePreviousEntry is a blob,
+      // first remove its links from the back links.
+      if (sourcePreviousEntry?.isBlob()) {
         await extractLegalObjectReferences(
           referencesByTargetId,
           texteTitleById,
@@ -853,6 +930,38 @@ async function extractSourceTreeReferences(
           sourcePreviousEntry,
           false /* remove */,
         )
+      }
+      await extractSourceTreeReferencesChanges(
+        referencesByTargetId,
+        texteTitleById,
+        origine,
+        sourcePreviousEntry?.isTree()
+          ? await sourcePreviousEntry?.getTree()
+          : undefined,
+        await sourceEntry.getTree(),
+      )
+    } else {
+      // SourceEntry is a blob.
+      if (sourcePreviousEntry !== undefined) {
+        // Source entry has changed.
+        // First, remove the links of previous entry from the back links
+        // of the entries it references.
+        if (sourcePreviousEntry.isTree()) {
+          await removeSourceTreeReferences(
+            referencesByTargetId,
+            texteTitleById,
+            origine,
+            await sourcePreviousEntry.getTree(),
+          )
+        } else {
+          await extractLegalObjectReferences(
+            referencesByTargetId,
+            texteTitleById,
+            origine,
+            sourcePreviousEntry,
+            false /* remove */,
+          )
+        }
       }
       await extractLegalObjectReferences(
         referencesByTargetId,
@@ -871,66 +980,24 @@ async function extractSourceTreeReferences(
     )) {
       // Remove the links of previous entry from the back links
       // of the entries it references.
-      await extractLegalObjectReferences(
-        referencesByTargetId,
-        texteTitleById,
-        origine,
-        sourcePreviousEntry,
-        false /* remove */,
-      )
-    }
-  }
-}
-
-async function generateReferencesGitTree(
-  referencesByTargetId: ReferencesByTargetId,
-  targetRepository: nodegit.Repository,
-  targetExistingTree: nodegit.Tree | undefined,
-): Promise<nodegit.Oid | undefined> {
-  const treeStructure = await readTreeStructure(
-    targetRepository,
-    targetExistingTree,
-  )
-
-  for (const [targetId, references] of referencesByTargetId.entries()) {
-    const targetIdMatch = targetId.match(idRegExp)
-    assert.notStrictEqual(targetIdMatch, null, `Unknown ID format: ${targetId}`)
-    const targetFilename = targetId + ".json"
-
-    let currentLevel = treeStructure
-    for (const targetDirName of targetIdMatch!.slice(1, -1)) {
-      let subLevel = currentLevel.get(targetDirName)
-      if (subLevel === undefined || subLevel instanceof nodegit.Oid) {
-        subLevel = new Map()
-        currentLevel.set(targetDirName, subLevel)
+      if (sourcePreviousEntry.isTree()) {
+        await removeSourceTreeReferences(
+          referencesByTargetId,
+          texteTitleById,
+          origine,
+          await sourcePreviousEntry.getTree(),
+        )
+      } else {
+        await extractLegalObjectReferences(
+          referencesByTargetId,
+          texteTitleById,
+          origine,
+          sourcePreviousEntry,
+          false /* remove */,
+        )
       }
-      currentLevel = subLevel
-    }
-
-    if (references === null) {
-      currentLevel.delete(targetFilename)
-    } else {
-      const targetBlobOid = await targetRepository.createBlobFromBuffer(
-        Buffer.from(
-          JSON.stringify(
-            {
-              sources: references.sources.toSorted((source1, source2) =>
-                source1.id.localeCompare(source2.id),
-              ),
-            },
-            null,
-            2,
-          ),
-          "utf-8",
-        ),
-      )
-      currentLevel.set(targetFilename, targetBlobOid)
     }
   }
-
-  removeTreeStructureEmptyNodes(treeStructure)
-
-  return await writeTreeStructure(targetRepository, treeStructure)
 }
 
 async function* iterCommitsOids(
@@ -1091,6 +1158,32 @@ async function readTreeStructure(
     }
   }
   return structure
+}
+
+async function removeSourceTreeReferences(
+  referencesByTargetId: ReferencesByTargetId,
+  texteTitleById: Map<string, string>,
+  origine: Origine,
+  sourceTree: nodegit.Tree,
+): Promise<void> {
+  for (const sourceEntry of sourceTree.entries()) {
+    if (sourceEntry.isTree()) {
+      await removeSourceTreeReferences(
+        referencesByTargetId,
+        texteTitleById,
+        origine,
+        await sourceEntry.getTree(),
+      )
+    } else {
+      await extractLegalObjectReferences(
+        referencesByTargetId,
+        texteTitleById,
+        origine,
+        sourceEntry,
+        false /* remove */,
+      )
+    }
+  }
 }
 
 function removeTreeStructureEmptyNodes(structure: TreeStructure): void {

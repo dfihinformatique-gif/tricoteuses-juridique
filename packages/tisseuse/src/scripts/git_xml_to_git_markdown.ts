@@ -63,6 +63,14 @@ import {
   type Origine,
   type OrigineEtendue,
 } from "$lib/server/nodegit/commits"
+import {
+  getOidFromIdTree,
+  readOidByIdTree,
+  removeOidByIdTreeEmptyNodes,
+  setOidInIdTree,
+  writeOidByIdTree,
+  type OidByIdTree,
+} from "$lib/server/nodegit/trees"
 import { cleanHtmlFragment, escapeHtml } from "$lib/strings"
 
 type ReferencesOrNullByTargetId = Map<string, ReferencesToLegalObject | null>
@@ -542,64 +550,46 @@ async function convertSourceTreeToMarkdown(
   sourceTree: nodegit.Tree,
   referencesTree: nodegit.Tree,
   referencesOrNullByTargetId: ReferencesOrNullByTargetId,
+  targetOidByIdTree: OidByIdTree,
   targetRepository: nodegit.Repository,
-  targetExistingTree: nodegit.Tree | undefined,
-): Promise<nodegit.Oid | undefined> {
+): Promise<boolean> {
+  let changed = false
   const sourcePreviousEntryByName =
     sourcePreviousTree === undefined
       ? undefined
       : Object.fromEntries(
           sourcePreviousTree.entries().map((entry) => [entry.name(), entry]),
         )
-  const targetTreeBuilder = await nodegit.Treebuilder.create(targetRepository)
   for (const sourceEntry of sourceTree.entries()) {
     const sourceEntryName = sourceEntry.name()
     const sourcePreviousEntry = sourcePreviousEntryByName?.[sourceEntryName]
     if (sourceEntry.isTree()) {
-      const targetExistingEntry = targetExistingTree
-        ?.entries()
-        .find((entry) => entry.isTree() && entry.name() === sourceEntryName)
-      const targetSubTreeOid = await convertSourceTreeToMarkdown(
-        origine,
-        sourcePreviousEntry?.isTree()
-          ? await sourcePreviousEntry?.getTree()
-          : undefined,
-        await sourceEntry.getTree(),
-        referencesTree,
-        referencesOrNullByTargetId,
-        targetRepository,
-        targetExistingEntry?.isTree()
-          ? await targetExistingEntry.getTree()
-          : undefined,
-      )
-      if (targetSubTreeOid !== undefined) {
-        await targetTreeBuilder.insert(
-          sourceEntryName,
-          targetSubTreeOid,
-          sourceEntry.filemode(),
+      if (
+        await convertSourceTreeToMarkdown(
+          origine,
+          sourcePreviousEntry?.isTree()
+            ? await sourcePreviousEntry?.getTree()
+            : undefined,
+          await sourceEntry.getTree(),
+          referencesTree,
+          referencesOrNullByTargetId,
+          targetOidByIdTree,
+          targetRepository,
         )
+      ) {
+        changed = true
       }
     } else {
       // SourceEntry is a blob.
       const id = sourceEntry.name().replace(/\.xml$/, "")
-      const targetFilename = id + ".md"
       // Caution: There are a lot of "versions" value for id (for ELI files).
       let referencesToLegalObject = referencesOrNullByTargetId.get(id)
-      const targetExistingEntry = targetExistingTree
-        ?.entries()
-        .find((entry) => entry.isBlob() && entry.name() === targetFilename)
+      const targetExistingOid = getOidFromIdTree(targetOidByIdTree, id)
       if (
-        sourceEntry.oid() === sourcePreviousEntry?.oid() &&
-        referencesToLegalObject === undefined &&
-        targetExistingEntry !== undefined
+        sourceEntry.oid() !== sourcePreviousEntry?.oid() ||
+        referencesToLegalObject !== undefined ||
+        targetExistingOid === undefined
       ) {
-        // Neither legal object nor its references have changed.
-        await targetTreeBuilder.insert(
-          targetExistingEntry.name(),
-          targetExistingEntry.id(),
-          targetExistingEntry.filemode(),
-        )
-      } else {
         if (referencesToLegalObject === undefined) {
           referencesToLegalObject =
             id === "versions"
@@ -610,25 +600,24 @@ async function convertSourceTreeToMarkdown(
                   id,
                 )
         }
-        const targetBlobOid = await convertLegalObjectToMarkdown(
-          origine,
-          sourceEntry,
-          referencesToLegalObject,
-          targetRepository,
-        )
-        if (targetBlobOid !== undefined) {
-          await targetTreeBuilder.insert(
-            targetFilename,
-            targetBlobOid,
-            sourceEntry.filemode(),
+        if (
+          setOidInIdTree(
+            targetOidByIdTree,
+            id,
+            await convertLegalObjectToMarkdown(
+              origine,
+              sourceEntry,
+              referencesToLegalObject,
+              targetRepository,
+            ),
           )
+        ) {
+          changed = true
         }
       }
     }
   }
-  return targetTreeBuilder.entrycount() === 0
-    ? undefined
-    : await targetTreeBuilder.write()
+  return changed
 }
 
 function generateJorfArticleTmBreadcrumb(
@@ -747,7 +736,7 @@ async function gitXmlToGitMarkdown(
   let targetCommitOid: nodegit.Oid | undefined = undefined
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
-  let targetTreeOid: nodegit.Oid | undefined = undefined
+  const targetOidByIdTree: OidByIdTree = new Map()
   for await (const {
     dilaDate,
     sourceCommitByOrigine,
@@ -792,7 +781,7 @@ async function gitXmlToGitMarkdown(
       }
     }
 
-    const targetPreviousCommitOid = targetCommitOid
+    const targetExistingCommitOid = targetCommitOid
     if (!force && !targetCommitsOidsIterationsDone) {
       // If a target commit already exists for this source commit, reuse it.
       const { done, value } = await targetCommitsOidsIterator.next()
@@ -855,11 +844,28 @@ async function gitXmlToGitMarkdown(
     // Ensure that sourcePreviousCommitByOrigine will be updated for next iteration.
     sourcePreviousCommitByOrigine = sourceCommitByOrigine
 
-    const targetPreviousCommit =
-      targetPreviousCommitOid === undefined
+    const targetExistingCommit =
+      targetExistingCommitOid === undefined
         ? undefined
-        : await targetRepository.getCommit(targetPreviousCommitOid)
-    let targetExistingTree = await targetPreviousCommit?.getTree()
+        : await targetRepository.getCommit(targetExistingCommitOid)
+    const targetExistingTree = await targetExistingCommit?.getTree()
+
+    // Read oidByIdTree if it has not been read yet.
+    if (targetOidByIdTree.size === 0) {
+      steps.push({
+        label: "Read oidByIdTree",
+        start: performance.now(),
+      })
+      console.log(
+        `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+      )
+      for (const [name, subOidByIdTree] of (
+        await readOidByIdTree(targetRepository, targetExistingTree)
+      ).entries()) {
+        targetOidByIdTree.set(name, subOidByIdTree)
+      }
+    }
+
     let commitChanged = false
     for (const [origine, sourceTree] of Object.entries(
       sourceTreeByOrigine,
@@ -875,20 +881,51 @@ async function gitXmlToGitMarkdown(
         `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
       )
       console.log(`Converting ${origine} to Markdown`)
-      targetTreeOid = await convertSourceTreeToMarkdown(
-        origine,
-        sourcePreviousTreeByOrigine?.[origine],
-        sourceTree,
-        sourceTreeByOrigine.LIENS_INVERSES_DONNEES_JURIDIQUES,
-        referencesOrNullByTargetId,
-        targetRepository,
-        targetExistingTree,
-      )
-      assert.notStrictEqual(targetTreeOid, undefined)
-      if (targetTreeOid!.tostrS() !== targetExistingTree?.id().tostrS()) {
-        targetExistingTree = await targetRepository.getTree(targetTreeOid!)
+      if (
+        await convertSourceTreeToMarkdown(
+          origine,
+          sourcePreviousTreeByOrigine?.[origine],
+          sourceTree,
+          sourceTreeByOrigine.LIENS_INVERSES_DONNEES_JURIDIQUES,
+          referencesOrNullByTargetId,
+          targetOidByIdTree,
+          targetRepository,
+        )
+      ) {
         commitChanged = true
       }
+    }
+    if (!commitChanged) {
+      // No change to commit.
+      continue
+    }
+
+    // Cleanup oidByIdTree.
+    steps.push({
+      label: "Cleanup oidByIdTree",
+      start: performance.now(),
+    })
+    console.log(
+      `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+    )
+    removeOidByIdTreeEmptyNodes(targetOidByIdTree)
+
+    // Write updated oidByIdTree.
+    steps.push({
+      label: "Write updated oidByIdTree",
+      start: performance.now(),
+    })
+    console.log(
+      `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+    )
+    const targetTreeOid = await writeOidByIdTree(
+      targetRepository,
+      targetOidByIdTree,
+      ".md",
+    )
+    if (targetTreeOid.tostrS() === targetExistingTree?.id().tostrS()) {
+      // No change to commit.
+      continue
     }
 
     console.log("Performance: ")
@@ -922,7 +959,7 @@ async function gitXmlToGitMarkdown(
         ),
         targetCommitMessage,
         targetTreeOid!,
-        [targetPreviousCommitOid].filter(
+        [targetExistingCommitOid].filter(
           (oid) => oid !== undefined,
         ) as nodegit.Oid[],
       )

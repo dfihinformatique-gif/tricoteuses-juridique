@@ -36,7 +36,6 @@ import type {
   LegiTextelr,
   LegiTexteVersion,
 } from "$lib/legal/legi"
-import { idRegExp } from "$lib/legal/shared"
 import { xmlParser } from "$lib/parsers/shared"
 import config from "$lib/server/config"
 import {
@@ -46,8 +45,13 @@ import {
   origines,
   type Origine,
 } from "$lib/server/nodegit/commits"
-
-type TreeStructure = Map<string, TreeStructure | nodegit.Oid>
+import {
+  readOidByIdTree,
+  removeOidByIdTreeEmptyNodes,
+  setOidInIdTree,
+  writeOidByIdTree,
+  type OidByIdTree,
+} from "$lib/server/nodegit/trees"
 
 const { forgejo } = config
 
@@ -147,8 +151,8 @@ async function exportBackLinksToGit(
   let targetCommitOid: nodegit.Oid | undefined = undefined
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
+  const targetOidByIdTree: OidByIdTree = new Map()
   const texteInfosById: Map<string, SourceArticleTexte> = new Map()
-  const treeStructure: TreeStructure = new Map()
   for await (const {
     dilaDate,
     sourceCommitByOrigine,
@@ -193,7 +197,7 @@ async function exportBackLinksToGit(
       }
     }
 
-    const targetPreviousCommitOid = targetCommitOid
+    const targetExistingCommitOid = targetCommitOid
     if (!force && !targetCommitsOidsIterationsDone) {
       // If a target commit already exists for this source commit, reuse it.
       const { done, value } = await targetCommitsOidsIterator.next()
@@ -235,11 +239,11 @@ async function exportBackLinksToGit(
           ),
         ),
       )
-    const targetPreviousCommit =
-      targetPreviousCommitOid === undefined
+    const targetExistingCommit =
+      targetExistingCommitOid === undefined
         ? undefined
-        : await targetRepository.getCommit(targetPreviousCommitOid)
-    const targetPreviousTree = await targetPreviousCommit?.getTree()
+        : await targetRepository.getCommit(targetExistingCommitOid)
+    const targetExistingTree = await targetExistingCommit?.getTree()
 
     const changedIds: Set<string> = new Set()
     for (const [origine, sourceTree] of Object.entries(
@@ -280,95 +284,88 @@ async function exportBackLinksToGit(
       }
     }
 
-    // Read tree structure if it has not been read yet.
-    if (treeStructure.size === 0) {
+    // Read oidByIdTree if it has not been read yet.
+    if (targetOidByIdTree.size === 0) {
       steps.push({
-        label: "Read tree structure",
+        label: "Read oidByIdTree",
         start: performance.now(),
       })
       console.log(
         `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
       )
-      for (const [name, subTreeStructure] of (
-        await readTreeStructure(targetRepository, targetPreviousTree)
+      for (const [name, subOidByIdTree] of (
+        await readOidByIdTree(targetRepository, targetExistingTree)
       ).entries()) {
-        treeStructure.set(name, subTreeStructure)
+        targetOidByIdTree.set(name, subOidByIdTree)
       }
     }
 
-    // Update tree structure with modified references.
+    // Update oidByIdTree with modified references.
     steps.push({
-      label: "Update tree structure with modified references",
+      label: "Update oidByIdTree with modified references",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
+    let commitChanged = false
     for (const targetId of changedIds) {
-      const targetIdMatch = targetId.match(idRegExp)
-      assert.notStrictEqual(
-        targetIdMatch,
-        null,
-        `Unknown ID format: ${targetId}`,
-      )
-      const targetFilename = targetId + ".json"
       const references = referencesByTargetId.get(targetId)
-
-      let currentLevel = treeStructure
-      for (const targetDirName of targetIdMatch!.slice(1, -1)) {
-        let subLevel = currentLevel.get(targetDirName)
-        if (subLevel === undefined || subLevel instanceof nodegit.Oid) {
-          subLevel = new Map()
-          currentLevel.set(targetDirName, subLevel)
-        }
-        currentLevel = subLevel
-      }
-
-      if (references === undefined) {
-        currentLevel.delete(targetFilename)
-      } else {
-        const targetBlobOid = await targetRepository.createBlobFromBuffer(
-          Buffer.from(
-            JSON.stringify(
-              {
-                sources: references.sources.toSorted((source1, source2) =>
-                  source1.id.localeCompare(source2.id),
+      if (
+        setOidInIdTree(
+          targetOidByIdTree,
+          targetId,
+          references === undefined
+            ? undefined
+            : await targetRepository.createBlobFromBuffer(
+                Buffer.from(
+                  JSON.stringify(
+                    {
+                      sources: references.sources.toSorted((source1, source2) =>
+                        source1.id.localeCompare(source2.id),
+                      ),
+                      targetId,
+                    },
+                    null,
+                    2,
+                  ),
+                  "utf-8",
                 ),
-                targetId,
-              },
-              null,
-              2,
-            ),
-            "utf-8",
-          ),
+              ),
         )
-        currentLevel.set(targetFilename, targetBlobOid)
+      ) {
+        commitChanged = true
       }
     }
+    if (!commitChanged) {
+      // No change to commit.
+      continue
+    }
 
-    // Cleanup tree structure.
+    // Cleanup oidByIdTree.
     steps.push({
-      label: "Cleanup tree structure",
+      label: "Cleanup oidByIdTree",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    removeTreeStructureEmptyNodes(treeStructure)
+    removeOidByIdTreeEmptyNodes(targetOidByIdTree)
 
-    // Write updated tree structure.
+    // Write updated oidByIdTree.
     steps.push({
-      label: "Write updated tree structure",
+      label: "Write updated oidByIdTree",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    const targetTreeOid = await writeTreeStructure(
+    const targetTreeOid = await writeOidByIdTree(
       targetRepository,
-      treeStructure,
+      targetOidByIdTree,
+      ".json",
     )
-    if (targetTreeOid.tostrS() === targetPreviousTree?.id().tostrS()) {
+    if (targetTreeOid.tostrS() === targetExistingTree?.id().tostrS()) {
       // No change to commit.
       continue
     }
@@ -403,7 +400,7 @@ async function exportBackLinksToGit(
       ),
       targetCommitMessage,
       targetTreeOid,
-      [targetPreviousCommitOid].filter(
+      [targetExistingCommitOid].filter(
         (oid) => oid !== undefined,
       ) as nodegit.Oid[],
     )
@@ -1041,29 +1038,6 @@ async function extractSourceTreeReferencesChanges(
   }
 }
 
-async function readTreeStructure(
-  repository: nodegit.Repository,
-  tree: nodegit.Tree | undefined,
-): Promise<TreeStructure> {
-  const structure: TreeStructure = new Map()
-  if (tree !== undefined) {
-    const entries = tree.entries()
-
-    for (const entry of entries) {
-      if (entry.isTree()) {
-        const subtree = await nodegit.Tree.lookup(repository, entry.oid())
-        structure.set(
-          entry.name(),
-          await readTreeStructure(repository, subtree),
-        )
-      } else {
-        structure.set(entry.name(), entry.id())
-      }
-    }
-  }
-  return structure
-}
-
 async function removeSourceTreeReferences(
   changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
@@ -1091,35 +1065,6 @@ async function removeSourceTreeReferences(
       )
     }
   }
-}
-
-function removeTreeStructureEmptyNodes(structure: TreeStructure): void {
-  for (const [name, entry] of structure.entries()) {
-    if (!(entry instanceof nodegit.Oid)) {
-      removeTreeStructureEmptyNodes(entry)
-      if (entry.size === 0) {
-        structure.delete(name)
-      }
-    }
-  }
-}
-
-async function writeTreeStructure(
-  repository: nodegit.Repository,
-  structure: TreeStructure,
-): Promise<nodegit.Oid> {
-  const builder = await nodegit.Treebuilder.create(repository)
-
-  for (const [name, entry] of structure.entries()) {
-    if (entry instanceof nodegit.Oid) {
-      builder.insert(name, entry, nodegit.TreeEntry.FILEMODE.BLOB) // 0o040000
-    } else {
-      const subtreeOid = await writeTreeStructure(repository, entry)
-      builder.insert(name, subtreeOid, nodegit.TreeEntry.FILEMODE.TREE) // 0o100644
-    }
-  }
-
-  return builder.write()
 }
 
 sade("export_back_links_to_git <dilaDir>", true)

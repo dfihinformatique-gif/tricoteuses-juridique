@@ -23,7 +23,7 @@ import {
   // jorfTextelrStats,
   // jorfTexteVersionStats,
 } from "$lib/auditors/jorf"
-import type { Versions, XmlHeader } from "$lib/legal"
+import type { XmlHeader } from "$lib/legal"
 import {
   allJorfCategoriesTags,
   type Jo,
@@ -172,15 +172,7 @@ async function importJorf(
       const xmlData = xmlParser.parse(xmlString)
       for (const [tag, element] of Object.entries(xmlData) as [
         JorfCategorieTag | "?xml",
-        (
-          | Jo
-          | JorfArticle
-          | JorfSectionTa
-          | JorfTextelr
-          | JorfTexteVersion
-          | Versions
-          | XmlHeader
-        ),
+        unknown,
       ][]) {
         switch (tag) {
           case "?xml": {
@@ -189,6 +181,7 @@ async function importJorf(
             assert.strictEqual(xmlHeader["@version"], "1.0", filePath)
             break
           }
+
           case "ARTICLE":
             if (categorieTag === undefined || categorieTag === tag) {
               const [article, error] = auditChain(
@@ -219,6 +212,7 @@ async function importJorf(
               articleRemainingIds.delete(article.META.META_COMMUN.ID)
             }
             break
+
           case "ID":
             if (categorieTag === undefined || categorieTag === tag) {
               assert.strictEqual(relativeSplitPath[0], "global")

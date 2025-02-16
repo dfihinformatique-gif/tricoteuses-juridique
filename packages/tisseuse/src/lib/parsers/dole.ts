@@ -12,7 +12,7 @@ export function parseDossierLegislatif(
     const xmlData = xmlParser.parse(xmlString)
     for (const [key, element] of Object.entries(xmlData) as [
       string,
-      DossierLegislatif | XmlHeader,
+      unknown,
     ][]) {
       switch (key) {
         case "?xml": {

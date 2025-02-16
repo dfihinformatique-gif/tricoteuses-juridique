@@ -7,7 +7,7 @@ export const dilaDateRegExp = /20\d\d[01]\d[0-3]\d-([0-6]\d){3}/
 export const origines = ["JORF", "LEGI"] as const
 export const originesEtendues = [
   ...origines,
-  "LIENS_INVERSES_DONNEES_JURIDIQUES",
+  "LIENS_DONNEES_JURIDIQUES",
 ] as const
 
 export async function* iterCommitsOids(

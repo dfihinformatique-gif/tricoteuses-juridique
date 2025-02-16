@@ -133,10 +133,7 @@ async function exportBackLinksToGit(
       ]),
     ),
   )
-  const targetGitDir = path.join(
-    dilaDir,
-    "liens_inverses_donnees_juridiques.git",
-  )
+  const targetGitDir = path.join(dilaDir, "liens_donnees_juridiques.git")
   const targetRepository = (await fs.pathExists(targetGitDir))
     ? await nodegit.Repository.open(targetGitDir)
     : await nodegit.Repository.init(targetGitDir, 1 /* bare */)
@@ -413,42 +410,50 @@ async function exportBackLinksToGit(
     `Date ${dilaStartDate} not found in commit messages`,
   )
 
-  if (commitsChanged && forgejo !== undefined && push) {
-    steps.push({
-      label: "Push new commits",
-      start: performance.now(),
-    })
-    console.log(
-      `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
-    )
+  if (commitsChanged) {
     await targetRepository.createBranch("main", targetCommitOid!, true)
     await targetRepository.setHead("refs/heads/main")
-    let targetRemote: nodegit.Remote
-    try {
-      targetRemote = await targetRepository.getRemote("origin")
-    } catch (error) {
-      if ((error as Error).message.includes("remote 'origin' does not exist")) {
-        const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/liens_inverses_donnees_juridiques.git`
-        targetRemote = await nodegit.Remote.create(
-          targetRepository,
-          "origin",
-          targetRemoteUrl,
-        )
-      } else {
-        throw error
+
+    if (forgejo !== undefined && push) {
+      steps.push({
+        label: "Push new commits",
+        start: performance.now(),
+      })
+      console.log(
+        `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+      )
+      let targetRemote: nodegit.Remote
+      try {
+        targetRemote = await targetRepository.getRemote("origin")
+      } catch (error) {
+        if (
+          (error as Error).message.includes("remote 'origin' does not exist")
+        ) {
+          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/liens_donnees_juridiques.git`
+          targetRemote = await nodegit.Remote.create(
+            targetRepository,
+            "origin",
+            targetRemoteUrl,
+          )
+        } else {
+          throw error
+        }
       }
-    }
-    const targetBranch = await targetRepository.getCurrentBranch()
-    const targetBranchName = targetBranch.shorthand()
-    const refspec = `+HEAD:refs/heads/${targetBranchName}` // "+" => force push
-    await targetRemote.push([refspec], {
-      callbacks: {
-        credentials: (_url: string, username: string) => {
-          return nodegit.Credential.sshKeyFromAgent(username)
+      const targetBranch = await targetRepository.getCurrentBranch()
+      const targetBranchName = targetBranch.shorthand()
+      const refspec = `+HEAD:refs/heads/${targetBranchName}` // "+" => force push
+      await targetRemote.push([refspec], {
+        callbacks: {
+          credentials: (_url: string, username: string) => {
+            return nodegit.Credential.sshKeyFromAgent(username)
+          },
         },
-      },
-    })
-    await nodegit.Branch.setUpstream(targetBranch, `origin/${targetBranchName}`)
+      })
+      await nodegit.Branch.setUpstream(
+        targetBranch,
+        `origin/${targetBranchName}`,
+      )
+    }
   }
 
   // console.log("Performance: ")
@@ -471,15 +476,7 @@ async function extractJorfObjectReferences(
   const xmlData = xmlParser.parse((await sourceBlobEntry.getBlob()).content())
   for (const [tag, element] of Object.entries(xmlData) as [
     JorfCategorieTag | "?xml",
-    (
-      | Jo
-      | JorfArticle
-      | JorfSectionTa
-      | JorfTextelr
-      | JorfTexteVersion
-      | Versions
-      | XmlHeader
-    ),
+    unknown,
   ][]) {
     switch (tag) {
       case "?xml": {
@@ -712,14 +709,7 @@ async function extractLegiObjectReferences(
   const xmlData = xmlParser.parse((await sourceBlobEntry.getBlob()).content())
   for (const [tag, element] of Object.entries(xmlData) as [
     LegiCategorieTag | "?xml",
-    (
-      | LegiArticle
-      | LegiSectionTa
-      | LegiTextelr
-      | LegiTexteVersion
-      | Versions
-      | XmlHeader
-    ),
+    unknown,
   ][]) {
     switch (tag) {
       case "?xml": {

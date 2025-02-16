@@ -103,15 +103,7 @@ async function importKali(
       const xmlData = xmlParser.parse(xmlString)
       for (const [key, element] of Object.entries(xmlData) as [
         string,
-        (
-          | Article
-          | Idcc
-          | SectionTa
-          | Textekali
-          | Textelr
-          | TexteVersion
-          | XmlHeader
-        ),
+        unknown,
       ][]) {
         switch (key) {
           case "?xml": {

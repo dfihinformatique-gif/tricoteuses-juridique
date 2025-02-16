@@ -26,7 +26,6 @@ import type {
   LegiSectionTa,
   LegiTextelr,
   LegiTexteVersion,
-  Versions,
   XmlHeader,
 } from "$lib/legal"
 import { allLegiCategoriesTags, type LegiCategorieTag } from "$lib/legal/legi"
@@ -158,14 +157,7 @@ async function importLegi(
       const xmlData = xmlParser.parse(xmlString)
       for (const [tag, element] of Object.entries(xmlData) as [
         LegiCategorieTag | "?xml",
-        (
-          | LegiArticle
-          | LegiSectionTa
-          | LegiTextelr
-          | LegiTexteVersion
-          | Versions
-          | XmlHeader
-        ),
+        unknown,
       ][]) {
         switch (tag) {
           case "?xml": {

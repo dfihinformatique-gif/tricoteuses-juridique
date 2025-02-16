@@ -511,7 +511,8 @@ async function convertSourceTreeToMarkdown(
       const id = sourceEntry.name().replace(/\.xml$/, "")
       // Caution: There are a lot of "versions" value for id (for ELI files).
       let referencesToLegalObject = referencesOrNullByTargetId.get(id)
-      const targetExistingOid = getOidFromIdTree(targetOidByIdTree, id)
+      const targetExistingOid =
+        id === "versions" ? null : getOidFromIdTree(targetOidByIdTree, id)
       if (
         sourceEntry.oid() !== sourcePreviousEntry?.oid() ||
         referencesToLegalObject !== undefined ||

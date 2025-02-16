@@ -1364,7 +1364,7 @@ async function generateTextGit(
 async function htmlFromReferredLiens(
   context: Context,
   referredLiens: Array<
-    LegiArticleLien | LegiTexteVersionLien | JorfTexteVersionLien
+    JorfTexteVersionLien | LegiArticleLien | LegiTexteVersionLien
   >,
 ) {
   return dedent`

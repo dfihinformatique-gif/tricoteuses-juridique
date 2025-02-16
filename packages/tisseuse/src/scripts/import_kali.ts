@@ -1,7 +1,5 @@
 import assert from "assert"
-import { XMLParser } from "fast-xml-parser"
 import fs from "fs-extra"
-import he from "he"
 import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -15,27 +13,9 @@ import type {
   TexteVersion,
   XmlHeader,
 } from "$lib/legal"
+import { xmlParser } from "$lib/parsers/shared"
 import { db } from "$lib/server/databases"
 import { walkDir } from "$lib/server/file_systems"
-
-const xmlParser = new XMLParser({
-  attributeNamePrefix: "@",
-  ignoreAttributes: false,
-  stopNodes: [
-    "ARTICLE.BLOC_TEXTUEL.CONTENU",
-    "ARTICLE.NOTA.CONTENU",
-    "ARTICLE.SM.CONTENU",
-    "TEXTE_VERSION.ABRO.CONTENU",
-    "TEXTE_VERSION.NOTA.CONTENU",
-    "TEXTE_VERSION.NOTICE.CONTENU",
-    "TEXTE_VERSION.RECT.CONTENU",
-    "TEXTE_VERSION.SIGNATAIRES.CONTENU",
-    "TEXTE_VERSION.SM.CONTENU",
-    "TEXTE_VERSION.TP.CONTENU",
-    "TEXTE_VERSION.VISAS.CONTENU",
-  ],
-  tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
-})
 
 async function importKali(
   dilaDir: string,

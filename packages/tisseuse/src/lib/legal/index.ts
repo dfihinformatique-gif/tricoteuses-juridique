@@ -1,7 +1,15 @@
 import type { MenuItem } from "@tricoteuses/explorer-tools"
 
 import type { DossierLegislatif } from "./dole"
-import type { Jo } from "./jorf"
+import type { Jo, JorfTexteNature, JorfTexteVersionLienType } from "./jorf"
+import type {
+  LegiArticleEtat,
+  LegiArticleLienType,
+  LegiTexteEtat,
+  LegiTexteNature,
+  LegiTexteVersionLienType,
+} from "./legi"
+import type { ArticleType, Sens } from "./shared"
 
 export {
   allDossierLegislatifTypes,
@@ -18,7 +26,6 @@ export {
   allJorfArticleNatures,
   allJorfArticleOrigines,
   allJorfArticleTexteNatures,
-  allJorfArticleTypes,
   allJorfSectionTaLienArtEtats,
   allJorfSectionTaLienArtOrigines,
   allJorfSectionTaLienSectionTaEtats,
@@ -41,7 +48,6 @@ export {
   type JorfArticleNature,
   type JorfArticleOrigine,
   type JorfArticleTexteNature,
-  type JorfArticleType,
   type JorfSectionTa,
   type JorfMetaTexteChronicle,
   type JorfMetaTexteVersion,
@@ -77,7 +83,6 @@ export {
   allLegiArticleNatures,
   allLegiArticleOrigines,
   allLegiArticleTexteNatures,
-  allLegiArticleTypes,
   allLegiSectionTaLienArtEtats,
   allLegiSectionTaLienArtOrigines,
   allLegiSectionTaLienSectionTaEtats,
@@ -100,7 +105,6 @@ export {
   type LegiArticleNature,
   type LegiArticleOrigine,
   type LegiArticleTexteNature,
-  type LegiArticleType,
   type LegiMetaTexteChronicle,
   type LegiMetaTexteVersion,
   type LegiSectionTa,
@@ -127,7 +131,18 @@ export {
   type LegiTexteVersionLienNature,
   type LegiTexteVersionLienType,
 } from "./legi"
-export { allSens, type Sens } from "./shared"
+export {
+  allArticleTypes,
+  allSens,
+  idRegExp,
+  type ArticleGitDb,
+  type ArticleLienDb,
+  type ArticleType,
+  type SectionTaGitDb,
+  type Sens,
+  type TexteVersionGitDb,
+  type TexteVersionLienDb,
+} from "./shared"
 
 export interface Article {
   META: {
@@ -415,6 +430,13 @@ export type Nature =
 
 export type Origine = "JORF" | "KALI" | "LEGI"
 
+export type ReferencesByTargetId = Map<string, ReferencesToLegalObject>
+
+export interface ReferencesToLegalObject {
+  sources: Source[]
+  targetId: string
+}
+
 export interface SectionTa {
   ID: string
   CONTEXTE: Contexte
@@ -423,6 +445,55 @@ export interface SectionTa {
     LIEN_ART?: LienArt | LienArt[]
     LIEN_SECTION_TA?: LienSectionTa | LienSectionTa[]
   }
+}
+
+export type Source = SourceArticle | SourceTexteVersion
+
+/**
+ * Source article of a link can only be a LegiArticle,
+ * because a JorfArticle has no LIENS.
+ */
+export interface SourceArticle extends SourceBase {
+  endDate?: string
+  kind: "ARTICLE"
+  linkType: LegiArticleLienType
+  /**
+   * Numéro de l'article
+   */
+  number?: string
+  state?: LegiArticleEtat
+  startDate?: string
+  texte?: SourceArticleTexte
+  type?: ArticleType
+  url: string
+}
+
+export interface SourceArticleTexte {
+  endDate?: string
+  id: string
+  nature?: JorfTexteNature | LegiTexteNature
+  startDate?: string
+  state?: LegiTexteEtat
+  title?: string
+}
+
+export interface SourceBase {
+  direction: Sens
+  id: string
+  kind: SourceKind
+}
+
+export type SourceKind = (typeof allSourceKinds)[number]
+
+export interface SourceTexteVersion extends SourceBase {
+  endDate?: string
+  kind: "TEXTE_VERSION"
+  linkType: JorfTexteVersionLienType | LegiTexteVersionLienType
+  nature?: JorfTexteNature | LegiTexteNature
+  startDate?: string
+  state?: LegiTexteEtat
+  title?: string
+  url: string
 }
 
 export type Textekali = Textelr
@@ -540,6 +611,8 @@ export interface XmlHeader {
   "@encoding": "UTF-8"
   "@version": "1.0"
 }
+
+export const allSourceKinds = ["ARTICLE", "TEXTE_VERSION"] as const
 
 export const appMenu: MenuItem[] = [
   { href: "/recherche", label: "Recherche" },

@@ -14,12 +14,12 @@ import {
 } from "@auditors/core"
 
 import {
+  allArticleTypes,
   allJorfArticleEtats,
   allJorfArticleLienArticleOrigines,
   allJorfArticleNatures,
   allJorfArticleOrigines,
   allJorfArticleTexteNatures,
-  allJorfArticleTypes,
 } from "$lib/legal"
 
 export const jorfArticleStats: {
@@ -394,7 +394,7 @@ function auditMetaArticle(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allJorfArticleTypes),
+    auditOptions(allArticleTypes),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)

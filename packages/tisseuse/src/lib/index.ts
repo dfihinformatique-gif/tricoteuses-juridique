@@ -9,6 +9,7 @@ export {
 } from "./aggregates"
 
 export {
+  allArticleTypes,
   allDossierLegislatifTypes,
   allJoNatures,
   allJoOrigines,
@@ -17,7 +18,6 @@ export {
   allJorfArticleNatures,
   allJorfArticleOrigines,
   allJorfArticleTexteNatures,
-  allJorfArticleTypes,
   allJorfSectionTaLienArtEtats,
   allJorfSectionTaLienArtOrigines,
   allJorfSectionTaLienSectionTaEtats,
@@ -36,7 +36,6 @@ export {
   allLegiArticleNatures,
   allLegiArticleOrigines,
   allLegiArticleTexteNatures,
-  allLegiArticleTypes,
   allLegiSectionTaLienArtEtats,
   allLegiSectionTaLienArtOrigines,
   allLegiSectionTaLienSectionTaEtats,
@@ -50,6 +49,7 @@ export {
   allLegiTexteVersionLienNatures,
   allLegiTexteVersionLienTypes,
   allSens,
+  type ArticleType,
   type DossierLegislatif,
   type DossierLegislatifType,
   type Echeancier,
@@ -63,7 +63,6 @@ export {
   type JorfArticleNature,
   type JorfArticleOrigine,
   type JorfArticleTexteNature,
-  type JorfArticleType,
   type JorfMetaTexteChronicle,
   type JorfMetaTexteVersion,
   type JorfSectionTa,
@@ -89,7 +88,6 @@ export {
   type LegiArticleNature,
   type LegiArticleOrigine,
   type LegiArticleTexteNature,
-  type LegiArticleType,
   type LegiMetaTexteChronicle,
   type LegiMetaTexteVersion,
   type LegiSectionTa,

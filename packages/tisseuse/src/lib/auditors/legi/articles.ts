@@ -12,13 +12,13 @@ import {
 } from "@auditors/core"
 
 import {
+  allArticleTypes,
   allLegiArticleEtats,
   allLegiArticleLienNatures,
   allLegiArticleLienTypes,
   allLegiArticleNatures,
   allLegiArticleOrigines,
   allLegiArticleTexteNatures,
-  allLegiArticleTypes,
   allSens,
 } from "$lib/legal"
 
@@ -446,7 +446,7 @@ function auditMetaArticle(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allLegiArticleTypes),
+    auditOptions(allArticleTypes),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)

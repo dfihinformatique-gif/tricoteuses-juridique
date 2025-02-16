@@ -1,4 +1,4 @@
-import type { Sens } from "./shared"
+import type { ArticleType, Sens } from "./shared"
 
 export interface LegiArticle {
   BLOC_TEXTUEL?: {
@@ -84,7 +84,7 @@ export interface LegiArticleMetaArticle {
   DATE_FIN: string
   ETAT?: LegiArticleEtat
   NUM?: string
-  TYPE?: LegiArticleType
+  TYPE?: ArticleType
 }
 
 export type LegiArticleNature = (typeof allLegiArticleNatures)[number]
@@ -103,8 +103,6 @@ export interface LegiArticleTm {
   }>
   TM?: LegiArticleTm
 }
-
-export type LegiArticleType = (typeof allLegiArticleTypes)[number]
 
 export type LegiCategorieTag = (typeof allLegiCategoriesTags)[number]
 
@@ -363,12 +361,12 @@ export const allLegiArticleEtats = [
   "ANNULE", // 1955
   "DEPLACE", // 1
   "DISJOINT", // 87
-  "MODIFIE_MORT_NE", // 6929
   "MODIFIE", // 429664
+  "MODIFIE_MORT_NE", // 6929
   "PERIME", // 19628
   "TRANSFERE", // 14757
-  "VIGUEUR_DIFF", // 14629
   "VIGUEUR", // 619477
+  "VIGUEUR_DIFF", // 14629
 ] as const
 
 export const allLegiArticleLienArticleOrigines = ["JORF", "LEGI"] as const
@@ -462,12 +460,6 @@ export const allLegiArticleTexteNatures = [
   "LOI", // 94775,
   "ORDONNANCE", // 26800,
   "RAPPORT", // 22,
-] as const
-
-export const allLegiArticleTypes = [
-  "AUTONOME",
-  "ENTIEREMENT_MODIF",
-  "PARTIELLEMENT_MODIF",
 ] as const
 
 export const allLegiCategoriesTags = [

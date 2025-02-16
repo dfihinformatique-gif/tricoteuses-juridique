@@ -6,9 +6,7 @@ import {
   strictAudit,
 } from "@auditors/core"
 import assert from "assert"
-import { XMLParser } from "fast-xml-parser"
 import fs from "fs-extra"
-import he from "he"
 import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
@@ -16,7 +14,13 @@ import sade from "sade"
 import { assertNever } from "$lib/asserts"
 import { auditJorfTexteVersion } from "$lib/auditors/jorf"
 import { auditLegiArticle, auditLegiTexteVersion } from "$lib/auditors/legi"
-import type { Versions, XmlHeader } from "$lib/legal"
+import type {
+  Source,
+  ReferencesByTargetId,
+  Versions,
+  XmlHeader,
+  SourceArticleTexte,
+} from "$lib/legal"
 import type {
   Jo,
   JorfArticle,
@@ -32,55 +36,20 @@ import type {
   LegiTextelr,
   LegiTexteVersion,
 } from "$lib/legal/legi"
+import { idRegExp } from "$lib/legal/shared"
+import { xmlParser } from "$lib/parsers/shared"
 import config from "$lib/server/config"
-
-interface Source {
-  id: string
-  /**
-   * Used only when source is an article
-   */
-  texteId?: string
-  /**
-   * Used only when source is an article
-   */
-  texteTitle?: string
-  title?: string
-}
-
-type Origine = (typeof origines)[number]
-
-interface ReferencesToLegalObject {
-  sources: Source[]
-  targetId: string
-}
-
-type ReferencesByTargetId = Map<string, ReferencesToLegalObject>
+import {
+  dilaDateRegExp,
+  iterCommitsOids,
+  iterSourceCommitsWithSameDilaDate,
+  origines,
+  type Origine,
+} from "$lib/server/nodegit/commits"
 
 type TreeStructure = Map<string, TreeStructure | nodegit.Oid>
 
 const { forgejo } = config
-const dilaDateRegExp = /20\d\d[01]\d[0-3]\d-([0-6]\d){3}/
-const idRegExp =
-  /^(CNIL|DOLE|JORF|KALI|LEGI)(ARTI|CONT|SCTA|TEXT)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/
-const origines = ["JORF", "LEGI"] as const
-const xmlParser = new XMLParser({
-  attributeNamePrefix: "@",
-  ignoreAttributes: false,
-  stopNodes: [
-    "ARTICLE.BLOC_TEXTUEL.CONTENU",
-    "ARTICLE.NOTA.CONTENU",
-    "ARTICLE.SM.CONTENU",
-    "TEXTE_VERSION.ABRO.CONTENU",
-    "TEXTE_VERSION.NOTA.CONTENU",
-    "TEXTE_VERSION.NOTICE.CONTENU",
-    "TEXTE_VERSION.RECT.CONTENU",
-    "TEXTE_VERSION.SIGNATAIRES.CONTENU",
-    "TEXTE_VERSION.SM.CONTENU",
-    "TEXTE_VERSION.TP.CONTENU",
-    "TEXTE_VERSION.VISAS.CONTENU",
-  ],
-  tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
-})
 
 function addOrRemoveReferenceToTarget(
   changedIds: Set<string>,
@@ -172,13 +141,13 @@ async function exportBackLinksToGit(
   const referencesByTargetId: ReferencesByTargetId = new Map()
   let skip = true
   let sourcePreviousCommitByOrigine:
-    | Record<"JORF" | "LEGI", nodegit.Commit>
+    | Record<Origine, nodegit.Commit>
     | undefined = undefined
   let targetBaseCommitFound = false
   let targetCommitOid: nodegit.Oid | undefined = undefined
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
-  const texteTitleById: Map<string, string> = new Map()
+  const texteInfosById: Map<string, SourceArticleTexte> = new Map()
   const treeStructure: TreeStructure = new Map()
   for await (const {
     dilaDate,
@@ -193,7 +162,7 @@ async function exportBackLinksToGit(
     }
 
     // The first time that this part of the loop is reached,
-    // find the commit of target to use for a base for future
+    // find the commit of target to use as base for future
     // target commits.
     if (!targetBaseCommitFound) {
       let targetBaseCommitOid: nodegit.Oid | undefined
@@ -282,7 +251,7 @@ async function exportBackLinksToGit(
       await extractSourceTreeReferencesChanges(
         changedIds,
         referencesByTargetId,
-        texteTitleById,
+        texteInfosById,
         origine,
         sourcePreviousTree,
         sourceTree,
@@ -302,10 +271,10 @@ async function exportBackLinksToGit(
     )
     for (const references of referencesByTargetId.values()) {
       for (const source of references.sources) {
-        if (source.texteId !== undefined) {
-          const sourceTexteTitle = texteTitleById.get(source.texteId)
-          if (sourceTexteTitle !== undefined) {
-            source.texteTitle = sourceTexteTitle
+        if (source.kind === "ARTICLE" && source.texte !== undefined) {
+          const sourceTexteInfos = texteInfosById.get(source.texte.id)
+          if (sourceTexteInfos !== undefined) {
+            source.texte = sourceTexteInfos
           }
         }
       }
@@ -365,6 +334,7 @@ async function exportBackLinksToGit(
                 sources: references.sources.toSorted((source1, source2) =>
                   source1.id.localeCompare(source2.id),
                 ),
+                targetId,
               },
               null,
               2,
@@ -439,6 +409,7 @@ async function exportBackLinksToGit(
     )
     commitsChanged = true
   }
+
   assert.strictEqual(
     skip,
     false,
@@ -496,7 +467,7 @@ async function exportBackLinksToGit(
 async function extractJorfObjectReferences(
   changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
-  texteTitleById: Map<string, string>,
+  texteInfosById: Map<string, SourceArticleTexte>,
   sourceBlobEntry: nodegit.TreeEntry,
   add: boolean, // When false => remove
 ) {
@@ -605,12 +576,23 @@ async function extractJorfObjectReferences(
             2,
           )}\nError:\n${JSON.stringify(error, null, 2)}`,
         )
+        const metaCommun = texteVersion.META.META_COMMUN
         const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
-        const texteId = texteVersion.META.META_COMMUN.ID
-        const texteTitle = metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
-        if (texteTitle !== undefined) {
-          texteTitleById.set(texteId, texteTitle)
-        }
+        const texteId = metaCommun.ID
+        const texteTitle = (
+          metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
+        )
+          ?.replace(/\s+/g, " ")
+          .trim()
+          .replace(/\s+\(\d+\)$/, "")
+        texteInfosById.set(texteId, {
+          endDate: metaTexteVersion.DATE_FIN,
+          id: texteId,
+          nature: metaCommun.NATURE,
+          // state: metaTexteVersion.ETAT,
+          startDate: metaTexteVersion.DATE_DEBUT,
+          title: texteTitle,
+        })
         const liens = metaTexteVersion.LIENS?.LIEN
         if (liens !== undefined) {
           for (const lien of liens) {
@@ -621,8 +603,16 @@ async function extractJorfObjectReferences(
                 referencesByTargetId,
                 add,
                 {
+                  direction: lien["@sens"],
+                  endDate: metaTexteVersion.DATE_FIN,
                   id: texteId,
-                  title: metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE,
+                  kind: "TEXTE_VERSION",
+                  linkType: lien["@typelien"],
+                  nature: metaCommun.NATURE,
+                  // state: metaTexteVersion.ETAT,
+                  startDate: metaTexteVersion.DATE_DEBUT,
+                  title: texteTitle,
+                  url: metaCommun.URL,
                 },
                 targetId,
               )
@@ -684,7 +674,7 @@ async function extractJorfObjectReferences(
 async function extractLegalObjectReferences(
   changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
-  texteTitleById: Map<string, string>,
+  texteInfosById: Map<string, SourceArticleTexte>,
   origine: Origine,
   sourceBlobEntry: nodegit.TreeEntry,
   add: boolean, // When false => remove
@@ -694,7 +684,7 @@ async function extractLegalObjectReferences(
       await extractJorfObjectReferences(
         changedIds,
         referencesByTargetId,
-        texteTitleById,
+        texteInfosById,
         sourceBlobEntry,
         add,
       )
@@ -704,7 +694,7 @@ async function extractLegalObjectReferences(
       await extractLegiObjectReferences(
         changedIds,
         referencesByTargetId,
-        texteTitleById,
+        texteInfosById,
         sourceBlobEntry,
         add,
       )
@@ -718,7 +708,7 @@ async function extractLegalObjectReferences(
 async function extractLegiObjectReferences(
   changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
-  texteTitleById: Map<string, string>,
+  texteInfosById: Map<string, SourceArticleTexte>,
   sourceBlobEntry: nodegit.TreeEntry,
   add: boolean, // When false => remove
 ) {
@@ -753,7 +743,9 @@ async function extractLegiObjectReferences(
             2,
           )}\nError:\n${JSON.stringify(error, null, 2)}`,
         )
-        const articleId = article.META.META_COMMUN.ID
+        const metaArticle = article.META.META_SPEC.META_ARTICLE
+        const metaCommun = article.META.META_COMMUN
+        const articleId = metaCommun.ID
         const liens = article.LIENS?.LIEN
         if (liens !== undefined) {
           for (const lien of liens) {
@@ -764,9 +756,20 @@ async function extractLegiObjectReferences(
                 referencesByTargetId,
                 add,
                 {
+                  direction: lien["@sens"],
+                  endDate: metaArticle.DATE_FIN,
                   id: articleId,
-                  texteId: article.CONTEXTE.TEXTE["@cid"],
-                  title: article.META.META_SPEC.META_ARTICLE.NUM,
+                  kind: "ARTICLE",
+                  linkType: lien["@typelien"],
+                  number: metaArticle.NUM,
+                  state: metaArticle.ETAT,
+                  startDate: metaArticle.DATE_DEBUT,
+                  texte:
+                    article.CONTEXTE.TEXTE["@cid"] === undefined
+                      ? undefined
+                      : { id: article.CONTEXTE.TEXTE["@cid"] },
+                  type: metaArticle.TYPE,
+                  url: metaCommun.URL,
                 },
                 targetId,
               )
@@ -829,12 +832,23 @@ async function extractLegiObjectReferences(
             2,
           )}\nError:\n${JSON.stringify(error, null, 2)}`,
         )
-        const texteId = texteVersion.META.META_COMMUN.ID
+        const metaCommun = texteVersion.META.META_COMMUN
         const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
-        const texteTitle = metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
-        if (texteTitle !== undefined) {
-          texteTitleById.set(texteId, texteTitle)
-        }
+        const texteId = metaCommun.ID
+        const texteTitle = (
+          metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE
+        )
+          ?.replace(/\s+/g, " ")
+          .trim()
+          .replace(/\s+\(\d+\)$/, "")
+        texteInfosById.set(texteId, {
+          endDate: metaTexteVersion.DATE_FIN,
+          id: texteId,
+          nature: metaCommun.NATURE,
+          state: metaTexteVersion.ETAT,
+          startDate: metaTexteVersion.DATE_DEBUT,
+          title: texteTitle,
+        })
         const liens = metaTexteVersion.LIENS?.LIEN
         if (liens !== undefined) {
           for (const lien of liens) {
@@ -845,8 +859,16 @@ async function extractLegiObjectReferences(
                 referencesByTargetId,
                 add,
                 {
+                  direction: lien["@sens"],
+                  endDate: metaTexteVersion.DATE_FIN,
                   id: texteId,
+                  kind: "TEXTE_VERSION",
+                  linkType: lien["@typelien"],
+                  nature: metaCommun.NATURE,
+                  state: metaTexteVersion.ETAT,
+                  startDate: metaTexteVersion.DATE_DEBUT,
                   title: texteTitle,
+                  url: metaCommun.URL,
                 },
                 targetId,
               )
@@ -908,7 +930,7 @@ async function extractLegiObjectReferences(
 async function extractSourceTreeReferencesChanges(
   changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
-  texteTitleById: Map<string, string>,
+  texteInfosById: Map<string, SourceArticleTexte>,
   origine: Origine,
   sourcePreviousTree: nodegit.Tree | undefined,
   sourceTree: nodegit.Tree,
@@ -938,7 +960,7 @@ async function extractSourceTreeReferencesChanges(
         await extractLegalObjectReferences(
           changedIds,
           referencesByTargetId,
-          texteTitleById,
+          texteInfosById,
           origine,
           sourcePreviousEntry,
           false /* remove */,
@@ -947,7 +969,7 @@ async function extractSourceTreeReferencesChanges(
       await extractSourceTreeReferencesChanges(
         changedIds,
         referencesByTargetId,
-        texteTitleById,
+        texteInfosById,
         origine,
         sourcePreviousEntry?.isTree()
           ? await sourcePreviousEntry?.getTree()
@@ -964,7 +986,7 @@ async function extractSourceTreeReferencesChanges(
           await removeSourceTreeReferences(
             changedIds,
             referencesByTargetId,
-            texteTitleById,
+            texteInfosById,
             origine,
             await sourcePreviousEntry.getTree(),
           )
@@ -972,7 +994,7 @@ async function extractSourceTreeReferencesChanges(
           await extractLegalObjectReferences(
             changedIds,
             referencesByTargetId,
-            texteTitleById,
+            texteInfosById,
             origine,
             sourcePreviousEntry,
             false /* remove */,
@@ -982,7 +1004,7 @@ async function extractSourceTreeReferencesChanges(
       await extractLegalObjectReferences(
         changedIds,
         referencesByTargetId,
-        texteTitleById,
+        texteInfosById,
         origine,
         sourceEntry,
         true /* add */,
@@ -1001,7 +1023,7 @@ async function extractSourceTreeReferencesChanges(
         await removeSourceTreeReferences(
           changedIds,
           referencesByTargetId,
-          texteTitleById,
+          texteInfosById,
           origine,
           await sourcePreviousEntry.getTree(),
         )
@@ -1009,149 +1031,12 @@ async function extractSourceTreeReferencesChanges(
         await extractLegalObjectReferences(
           changedIds,
           referencesByTargetId,
-          texteTitleById,
+          texteInfosById,
           origine,
           sourcePreviousEntry,
           false /* remove */,
         )
       }
-    }
-  }
-}
-
-async function* iterCommitsOids(
-  repository: nodegit.Repository,
-  reverse: boolean,
-): AsyncGenerator<nodegit.Oid, void> {
-  const revisionWalker = repository.createRevWalk()
-  revisionWalker.pushHead()
-  if (reverse) {
-    revisionWalker.sorting(nodegit.Revwalk.SORT.REVERSE)
-  }
-  while (true) {
-    try {
-      const commitOid = await revisionWalker.next()
-      yield commitOid
-    } catch (err) {
-      if (
-        (err as Error)?.message.includes("Method next has thrown an error.")
-      ) {
-        break
-      }
-      throw err
-    }
-  }
-}
-
-async function* iterSourceCommitsWithSameDilaDate(
-  repositoryByOrigine: Record<Origine, nodegit.Repository>,
-  reverse: boolean,
-): AsyncGenerator<
-  { dilaDate: string; sourceCommitByOrigine: Record<Origine, nodegit.Commit> },
-  void
-> {
-  // When reverse is false, the first commit is the most recent one.
-  // When reverse is true, the first commit is the latest one.
-  const commitsOidsIteratorByOrigine = Object.fromEntries(
-    Object.entries(repositoryByOrigine).map(([origine, repository]) => [
-      origine,
-      iterCommitsOids(repository, reverse),
-    ]),
-  )
-  iterCommitsWithSameDilaDate: while (true) {
-    const commitOrNullByOrigine: Record<string, nodegit.Commit | null> =
-      Object.fromEntries(
-        await Promise.all(
-          Object.entries(commitsOidsIteratorByOrigine).map(
-            async ([origine, commitsOidsIterator]) => {
-              const { done, value } = await commitsOidsIterator.next()
-              if (done) {
-                return [origine, null]
-              }
-              return [
-                origine,
-                await repositoryByOrigine[origine as Origine].getCommit(
-                  value as nodegit.Oid,
-                ),
-              ]
-            },
-          ),
-        ),
-      )
-    if (
-      Object.values(commitOrNullByOrigine).some((commit) => commit === null)
-    ) {
-      return
-    }
-    const commitByOrigine = commitOrNullByOrigine as Record<
-      Origine,
-      nodegit.Commit
-    >
-    const commitDilaDateByOrigine = Object.fromEntries(
-      Object.entries(commitByOrigine).map(([origine, commit]) => {
-        const message = commit.message()
-        const dilaDate = message.match(dilaDateRegExp)?.[0] ?? null
-        return [origine, dilaDate]
-      }),
-    )
-    let dilaDateGoal = Object.values(commitDilaDateByOrigine).reduce(
-      (dilaDateGoal, commitDilaDate) =>
-        commitDilaDate === null
-          ? dilaDateGoal
-          : dilaDateGoal === null
-            ? commitDilaDate
-            : reverse
-              ? commitDilaDate > dilaDateGoal
-                ? commitDilaDate
-                : dilaDateGoal
-              : commitDilaDate < dilaDateGoal
-                ? commitDilaDate
-                : dilaDateGoal,
-      null,
-    )
-    if (dilaDateGoal === null) {
-      continue iterCommitsWithSameDilaDate
-    }
-
-    // Iterate commits until each origin has the same commit date as the others.
-    tryNextDilaDate: while (true) {
-      for (const origineAndCommitTuple of Object.entries(commitByOrigine)) {
-        const origine = origineAndCommitTuple[0]
-        let commit = origineAndCommitTuple[1]
-        let commitDilaDate = commitDilaDateByOrigine[origine]
-        while (
-          commitDilaDate === null ||
-          (reverse
-            ? commitDilaDate < dilaDateGoal
-            : commitDilaDate > dilaDateGoal)
-        ) {
-          const { done, value } =
-            await commitsOidsIteratorByOrigine[origine].next()
-          if (done) {
-            return
-          }
-          commitByOrigine[origine as Origine] = commit =
-            await repositoryByOrigine[origine as Origine].getCommit(
-              value as nodegit.Oid,
-            )
-          const message = commit.message()
-          commitDilaDateByOrigine[origine] = commitDilaDate =
-            message.match(dilaDateRegExp)?.[0] ?? null
-        }
-        if (commitDilaDate !== dilaDateGoal) {
-          dilaDateGoal = commitDilaDate
-          // Check if each origin has a commit with the new dilaDateGoal.
-          continue tryNextDilaDate
-        }
-      }
-      // The commits of each origin have the same Dila date.
-      yield {
-        dilaDate: dilaDateGoal,
-        sourceCommitByOrigine: { ...commitByOrigine },
-      }
-      // Go to the next commit of each origin and look again for a Dila date
-      // that is present in the commits of each origin.
-      continue iterCommitsWithSameDilaDate
     }
   }
 }
@@ -1182,7 +1067,7 @@ async function readTreeStructure(
 async function removeSourceTreeReferences(
   changedIds: Set<string>,
   referencesByTargetId: ReferencesByTargetId,
-  texteTitleById: Map<string, string>,
+  texteInfosById: Map<string, SourceArticleTexte>,
   origine: Origine,
   sourceTree: nodegit.Tree,
 ): Promise<void> {
@@ -1191,7 +1076,7 @@ async function removeSourceTreeReferences(
       await removeSourceTreeReferences(
         changedIds,
         referencesByTargetId,
-        texteTitleById,
+        texteInfosById,
         origine,
         await sourceEntry.getTree(),
       )
@@ -1199,7 +1084,7 @@ async function removeSourceTreeReferences(
       await extractLegalObjectReferences(
         changedIds,
         referencesByTargetId,
-        texteTitleById,
+        texteInfosById,
         origine,
         sourceEntry,
         false /* remove */,

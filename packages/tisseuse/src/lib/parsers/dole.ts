@@ -1,23 +1,8 @@
 import { auditChain, auditRequire, strictAudit } from "@auditors/core"
-import { XMLParser } from "fast-xml-parser"
-import he from "he"
 
 import { auditDossierLegislatif } from "$lib/auditors/dole"
 import type { DossierLegislatif, XmlHeader } from "$lib/legal"
-
-const xmlParser = new XMLParser({
-  attributeNamePrefix: "@",
-  ignoreAttributes: false,
-  stopNodes: [
-    "DOSSIER_LEGISLATIF.CONTENU.CONTENU_DOSSIER_1",
-    "DOSSIER_LEGISLATIF.CONTENU.CONTENU_DOSSIER_2",
-    "DOSSIER_LEGISLATIF.CONTENU.CONTENU_DOSSIER_3",
-    "DOSSIER_LEGISLATIF.CONTENU.CONTENU_DOSSIER_4",
-    "DOSSIER_LEGISLATIF.CONTENU.CONTENU_DOSSIER_5",
-    "DOSSIER_LEGISLATIF.CONTENU.EXPOSE_MOTIF",
-  ],
-  tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
-})
+import { xmlParser } from "$lib/parsers/shared"
 
 export function parseDossierLegislatif(
   filePath: string,

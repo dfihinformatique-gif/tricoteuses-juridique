@@ -1,4 +1,4 @@
-import type { Sens } from "./shared"
+import type { ArticleType, Sens } from "./shared"
 
 export interface Jo {
   META: {
@@ -97,7 +97,7 @@ export interface JorfArticleMetaArticle {
   /// Mots-clés
   MCS_ART?: { MC: string[] }
   NUM?: string
-  TYPE?: JorfArticleType
+  TYPE?: ArticleType
 }
 
 export type JorfArticleNature = (typeof allJorfArticleNatures)[number]
@@ -116,8 +116,6 @@ export interface JorfArticleTm {
   }
   TM?: JorfArticleTm
 }
-
-export type JorfArticleType = (typeof allJorfArticleTypes)[number]
 
 export type JorfCategorieTag = (typeof allJorfCategoriesTags)[number]
 
@@ -394,8 +392,8 @@ export const allJorfArticleEtats = [
   "MODIFIE",
   "PERIME",
   "TRANSFERE",
-  "VIGUEUR_DIFF",
   "VIGUEUR",
+  "VIGUEUR_DIFF",
 ] as const
 
 export const allJorfArticleLienArticleOrigines = ["JORF", "LEGI"] as const
@@ -476,12 +474,6 @@ export const allJorfArticleTexteNatures = [
   "TABLEAU", // 1063
   "TROISIEME", // 2
   "VOCABULAIRE", // 170
-] as const
-
-export const allJorfArticleTypes = [
-  "AUTONOME",
-  "ENTIEREMENT_MODIF",
-  "PARTIELLEMENT_MODIF",
 ] as const
 
 export const allJorfCategoriesTags = [

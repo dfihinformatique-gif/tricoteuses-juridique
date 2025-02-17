@@ -43,6 +43,3 @@ export const allArticleTypes = [
 ] as const
 
 export const allSens = ["cible", "source"] as const
-
-export const idRegExp =
-  /^(CNIL|DOLE|JORF|KALI|LEGI)(ARTI|CONT|SCTA|TEXT)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/

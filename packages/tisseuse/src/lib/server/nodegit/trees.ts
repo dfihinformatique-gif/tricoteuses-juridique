@@ -1,7 +1,7 @@
 import assert from "assert"
 import nodegit from "nodegit"
 
-import { idRegExp } from "$lib/legal/shared"
+import { idRegExp } from "$lib/legal/ids"
 
 export type OidByIdTree = Map<string, OidByIdTree | nodegit.Oid>
 

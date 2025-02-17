@@ -28,14 +28,8 @@ import {
   auditLegiTextelr,
   auditLegiTexteVersion,
 } from "$lib/auditors/legi"
-import {
-  bestItemForDate,
-  type ReferencesToLegalObject,
-  type SourceArticle,
-  type SourceTexteVersion,
-  type Versions,
-  type XmlHeader,
-} from "$lib/legal"
+import { bestItemForDate, type Versions, type XmlHeader } from "$lib/legal"
+import { gitPathFromId, idRegExp } from "$lib/legal/ids"
 import type {
   Jo,
   JorfArticle,
@@ -55,8 +49,14 @@ import type {
   LegiTextelr,
   LegiTexteVersion,
 } from "$lib/legal/legi"
-import { idRegExp } from "$lib/legal/shared"
 import { xmlParser } from "$lib/parsers/shared"
+import type {
+  Edge,
+  LegalObjectRelations,
+  RelationArticle,
+  RelationTexte,
+  TexteRecap,
+} from "$lib/relations"
 import config from "$lib/server/config"
 import {
   dilaDateRegExp,
@@ -74,14 +74,14 @@ import {
 } from "$lib/server/nodegit/trees"
 import { cleanHtmlFragment, escapeHtml } from "$lib/strings"
 
-type ReferencesOrNullByTargetId = Map<string, ReferencesToLegalObject | null>
+type RelationsOrNullById = Map<string, LegalObjectRelations | null>
 
 const { forgejo } = config
 
 async function convertArticleElementToMarkdown(
   origine: Origine,
   element: unknown,
-  referencesToLegalObject: ReferencesToLegalObject | null,
+  relations: LegalObjectRelations | null,
   targetRepository: nodegit.Repository,
 ) {
   let auditArticle: (audit: Audit, data: unknown) => [unknown, unknown]
@@ -165,12 +165,12 @@ async function convertArticleElementToMarkdown(
       }
     }
   }
-  const referringArticlesSources = (
-    referencesToLegalObject?.sources ?? []
-  ).filter((source) => source.kind === "ARTICLE")
-  const referringTextesSources = (
-    referencesToLegalObject?.sources ?? []
-  ).filter((source) => source.kind === "TEXTE_VERSION")
+  const incomingArticlesEdges = (relations?.incoming ?? []).filter(
+    (edge) => edge.node.kind === "ARTICLE",
+  )
+  const incomingTextesEdges = (relations?.incoming ?? []).filter(
+    (edge) => edge.node.kind === "TEXTE",
+  )
   const articleMarkdown = [
     dedent`
       ---
@@ -209,19 +209,19 @@ async function convertArticleElementToMarkdown(
       ? undefined
       : `<h1>${escapeHtml(`Article ${articleNumber}`)}</h1>`,
     await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU),
-    referringArticlesSources.length === 0
+    incomingArticlesEdges.length === 0
       ? undefined
       : dedent`
           <h2>Articles faisant référence à l'article</h2>
 
-          ${htmlFromSourceArticles(referringArticlesSources)}
+          ${htmlFromIncomingArticlesEdges(incomingArticlesEdges)}
         `,
-    referringTextesSources.length === 0
+    incomingTextesEdges.length === 0
       ? undefined
       : dedent`
             <h2>Textes faisant référence à l'article</h2>
 
-            ${htmlFromSourceTextesVersions(referringTextesSources)}
+            ${htmlFromIncomingTextesEdges(incomingTextesEdges)}
           `,
   ]
     .filter((block) => block !== undefined)
@@ -235,7 +235,7 @@ async function convertArticleElementToMarkdown(
 
 async function convertJorfObjectToMarkdown(
   sourceBlobEntry: nodegit.TreeEntry,
-  referencesToLegalObject: ReferencesToLegalObject | null,
+  relations: LegalObjectRelations | null,
   targetRepository: nodegit.Repository,
 ): Promise<nodegit.Oid | undefined> {
   const sourceEntryName = sourceBlobEntry.name()
@@ -253,7 +253,7 @@ async function convertJorfObjectToMarkdown(
         return await convertArticleElementToMarkdown(
           "JORF",
           element,
-          referencesToLegalObject,
+          relations,
           targetRepository,
         )
       }
@@ -344,21 +344,21 @@ async function convertJorfObjectToMarkdown(
 async function convertLegalObjectToMarkdown(
   origine: Origine,
   sourceBlobEntry: nodegit.TreeEntry,
-  referencesToLegalObject: ReferencesToLegalObject | null,
+  relations: LegalObjectRelations | null,
   targetRepository: nodegit.Repository,
 ): Promise<nodegit.Oid | undefined> {
   switch (origine) {
     case "JORF": {
       return await convertJorfObjectToMarkdown(
         sourceBlobEntry,
-        referencesToLegalObject,
+        relations,
         targetRepository,
       )
     }
     case "LEGI": {
       return await convertLegiObjectToMarkdown(
         sourceBlobEntry,
-        referencesToLegalObject,
+        relations,
         targetRepository,
       )
     }
@@ -369,7 +369,7 @@ async function convertLegalObjectToMarkdown(
 
 async function convertLegiObjectToMarkdown(
   sourceBlobEntry: nodegit.TreeEntry,
-  referencesToLegalObject: ReferencesToLegalObject | null,
+  relations: LegalObjectRelations | null,
   targetRepository: nodegit.Repository,
 ): Promise<nodegit.Oid | undefined> {
   const sourceEntryName = sourceBlobEntry.name()
@@ -387,7 +387,7 @@ async function convertLegiObjectToMarkdown(
         return await convertArticleElementToMarkdown(
           "LEGI",
           element,
-          referencesToLegalObject,
+          relations,
           targetRepository,
         )
       }
@@ -475,8 +475,8 @@ async function convertSourceTreeToMarkdown(
   origine: Origine,
   sourcePreviousTree: nodegit.Tree | undefined,
   sourceTree: nodegit.Tree,
-  referencesTree: nodegit.Tree,
-  referencesOrNullByTargetId: ReferencesOrNullByTargetId,
+  relationsTree: nodegit.Tree,
+  relationsOrNullById: RelationsOrNullById,
   targetOidByIdTree: OidByIdTree,
   targetRepository: nodegit.Repository,
 ): Promise<boolean> {
@@ -498,8 +498,8 @@ async function convertSourceTreeToMarkdown(
             ? await sourcePreviousEntry?.getTree()
             : undefined,
           await sourceEntry.getTree(),
-          referencesTree,
-          referencesOrNullByTargetId,
+          relationsTree,
+          relationsOrNullById,
           targetOidByIdTree,
           targetRepository,
         )
@@ -512,17 +512,17 @@ async function convertSourceTreeToMarkdown(
       if (id === "versions") {
         continue
       }
-      let referencesToLegalObject = referencesOrNullByTargetId.get(id)
+      let relations = relationsOrNullById.get(id)
       const targetExistingOid = getOidFromIdTree(targetOidByIdTree, id)
       if (
         sourceEntry.oid() !== sourcePreviousEntry?.oid() ||
-        referencesToLegalObject !== undefined ||
+        relations !== undefined ||
         targetExistingOid === undefined
       ) {
-        if (referencesToLegalObject === undefined) {
-          referencesToLegalObject = await loadReferencesToTargetId(
-            referencesTree,
-            referencesOrNullByTargetId,
+        if (relations === undefined) {
+          relations = await loadLegalObjectRelations(
+            relationsTree,
+            relationsOrNullById,
             id,
           )
         }
@@ -533,7 +533,7 @@ async function convertSourceTreeToMarkdown(
             await convertLegalObjectToMarkdown(
               origine,
               sourceEntry,
-              referencesToLegalObject,
+              relations,
               targetRepository,
             ),
           )
@@ -641,7 +641,7 @@ async function gitXmlToGitMarkdown(
       originesEtendues.map(async (origine) => [
         origine,
         await nodegit.Repository.open(
-          origine === "LIENS_DONNEES_JURIDIQUES"
+          origine === "RELATIONS_DONNEES_JURIDIQUES"
             ? path.join(dilaDir, origine.toLowerCase() + ".git")
             : path.join(dilaDir, origine.toLowerCase(), ".git"),
         ),
@@ -762,9 +762,9 @@ async function gitXmlToGitMarkdown(
           ),
         ),
       )
-    const referencesOrNullByTargetId = await loadReferencesChanges(
-      sourcePreviousTreeByOrigine?.LIENS_DONNEES_JURIDIQUES,
-      sourceTreeByOrigine.LIENS_DONNEES_JURIDIQUES,
+    const relationsOrNullById = await loadRelationsChanges(
+      sourcePreviousTreeByOrigine?.RELATIONS_DONNEES_JURIDIQUES,
+      sourceTreeByOrigine.RELATIONS_DONNEES_JURIDIQUES,
     )
 
     // Ensure that sourcePreviousCommitByOrigine will be updated for next iteration.
@@ -796,7 +796,7 @@ async function gitXmlToGitMarkdown(
     for (const [origine, sourceTree] of Object.entries(
       sourceTreeByOrigine,
     ) as Array<[OrigineEtendue, nodegit.Tree]>) {
-      if (origine === "LIENS_DONNEES_JURIDIQUES") {
+      if (origine === "RELATIONS_DONNEES_JURIDIQUES") {
         continue
       }
       steps.push({
@@ -812,8 +812,8 @@ async function gitXmlToGitMarkdown(
           origine,
           sourcePreviousTreeByOrigine?.[origine],
           sourceTree,
-          sourceTreeByOrigine.LIENS_DONNEES_JURIDIQUES,
-          referencesOrNullByTargetId,
+          sourceTreeByOrigine.RELATIONS_DONNEES_JURIDIQUES,
+          relationsOrNullById,
           targetOidByIdTree,
           targetRepository,
         )
@@ -911,7 +911,7 @@ async function gitXmlToGitMarkdown(
         if (
           (error as Error).message.includes("remote 'origin' does not exist")
         ) {
-          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/liens_donnees_juridiques.git`
+          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/relations_donnees_juridiques.git`
           targetRemote = await nodegit.Remote.create(
             targetRepository,
             "origin",
@@ -1088,26 +1088,29 @@ async function* iterSourceCommitsWithSameDilaDate(
   }
 }
 
-function htmlFromSourceArticles(sources: SourceArticle[]): string {
+function htmlFromIncomingArticlesEdges(edges: Edge[]): string {
   return dedent`
     <ul>
-      ${sources
-        .map((source) => {
+      ${edges
+        .map((edge) => {
+          const articleRecap = edge.node as RelationArticle
           const articleTitleFragment =
             "article" +
-            [source.number, source.type, source.state]
+            [articleRecap.number, articleRecap.type, articleRecap.state]
               .filter((value) => value !== undefined)
               .map((value) => ` ${value}`)
               .join("") +
-            ((source.startDate === undefined ||
-              source.startDate === "2999-01-01") &&
-            (source.endDate === undefined || source.endDate === "2999-01-01")
+            ((articleRecap.startDate === undefined ||
+              articleRecap.startDate === "2999-01-01") &&
+            (articleRecap.endDate === undefined ||
+              articleRecap.endDate === "2999-01-01")
               ? ""
-              : source.endDate === undefined || source.endDate === "2999-01-01"
-                ? `, en vigueur depuis le ${source.startDate}`
-                : `, en vigueur du ${source.startDate} au ${source.endDate}`)
+              : articleRecap.endDate === undefined ||
+                  articleRecap.endDate === "2999-01-01"
+                ? `, en vigueur depuis le ${articleRecap.startDate}`
+                : `, en vigueur du ${articleRecap.startDate} au ${articleRecap.endDate}`)
 
-          const { texte } = source
+          const texte = articleRecap.texte as TexteRecap | undefined
           const texteTitleFragment =
             texte === undefined
               ? undefined
@@ -1116,11 +1119,11 @@ function htmlFromSourceArticles(sources: SourceArticle[]): string {
                 : texte.title
           return dedent`
             <li>
-              <a href="${escapeHtml(source.url, true)}">${escapeHtml(
+              <a href="${escapeHtml(gitPathFromId(articleRecap.id, ".md"), true)}">${escapeHtml(
                 [texteTitleFragment, articleTitleFragment]
                   .filter((fragment) => fragment !== undefined)
                   .join(" - "),
-              )}</a> ${source.linkType} ${source.direction}
+              )}</a> ${edge.linkType} ${edge.direction}
             </li>
           `
         })
@@ -1130,28 +1133,31 @@ function htmlFromSourceArticles(sources: SourceArticle[]): string {
   `
 }
 
-function htmlFromSourceTextesVersions(sources: SourceTexteVersion[]): string {
+function htmlFromIncomingTextesEdges(edges: Edge[]): string {
   return dedent`
     <ul>
-      ${sources
-        .map((source) => {
+      ${edges
+        .map((edge) => {
+          const texteRecap = edge.node as RelationTexte
           const texteTitleFragment =
-            (source.title === undefined
-              ? `${source.nature ?? "Texte"} ${source.id} manquant`
-              : source.title) +
-            (source.state === undefined ? "" : ` ${source.state}`) +
-            ((source.startDate === undefined ||
-              source.startDate === "2999-01-01") &&
-            (source.endDate === undefined || source.endDate === "2999-01-01")
+            (texteRecap.title === undefined
+              ? `${texteRecap.nature ?? "Texte"} ${texteRecap.id} manquant`
+              : texteRecap.title) +
+            (texteRecap.state === undefined ? "" : ` ${texteRecap.state}`) +
+            ((texteRecap.startDate === undefined ||
+              texteRecap.startDate === "2999-01-01") &&
+            (texteRecap.endDate === undefined ||
+              texteRecap.endDate === "2999-01-01")
               ? ""
-              : source.endDate === undefined || source.endDate === "2999-01-01"
-                ? `, en vigueur depuis le ${source.startDate}`
-                : `, en vigueur du ${source.startDate} au ${source.endDate}`)
+              : texteRecap.endDate === undefined ||
+                  texteRecap.endDate === "2999-01-01"
+                ? `, en vigueur depuis le ${texteRecap.startDate}`
+                : `, en vigueur du ${texteRecap.startDate} au ${texteRecap.endDate}`)
           return dedent`
             <li>
-              <a href="${escapeHtml(source.url, true)}">${escapeHtml(
+              <a href="${escapeHtml(gitPathFromId(texteRecap.id, ".md"), true)}">${escapeHtml(
                 texteTitleFragment,
-              )}</a> ${source.linkType} ${source.direction}
+              )}</a> ${edge.linkType} ${edge.direction}
             </li>
           `
         })
@@ -1161,11 +1167,44 @@ function htmlFromSourceTextesVersions(sources: SourceTexteVersion[]): string {
   `
 }
 
-async function loadReferencesChanges(
+async function loadLegalObjectRelations(
+  relationsTree: nodegit.Tree,
+  relationsOrNullById: RelationsOrNullById,
+  id: string,
+): Promise<LegalObjectRelations | null> {
+  const idMatch = id.match(idRegExp)
+  if (idMatch === null) {
+    console.warn(
+      `loadLegalObjectRelations: Skipping unexpected ID format: ${id}`,
+    )
+    return null
+  }
+
+  let entry: nodegit.TreeEntry
+  try {
+    let relationsSubTree = relationsTree
+    for (const targetDirName of idMatch!.slice(1, -1)) {
+      entry = await relationsSubTree.getEntry(targetDirName)
+      relationsSubTree = await entry.getTree()
+    }
+    const targetFilename = id + ".json"
+    entry = await relationsSubTree.getEntry(targetFilename)
+  } catch {
+    relationsOrNullById.set(id, null)
+    return null
+  }
+  const relations = JSON.parse(
+    (await entry.getBlob()).content().toString("utf-8"),
+  ) as LegalObjectRelations
+  relationsOrNullById.set(id, relations)
+  return relations
+}
+
+async function loadRelationsChanges(
   sourcePreviousTree: nodegit.Tree | undefined,
   sourceTree: nodegit.Tree,
-  referencesOrNullByTargetId: ReferencesOrNullByTargetId = new Map(),
-): Promise<ReferencesOrNullByTargetId> {
+  relationsOrNullById: RelationsOrNullById = new Map(),
+): Promise<RelationsOrNullById> {
   const sourcePreviousEntryByName =
     sourcePreviousTree === undefined
       ? undefined
@@ -1181,25 +1220,22 @@ async function loadReferencesChanges(
       delete sourcePreviousEntryByName![sourceEntryName]
     }
     if (sourceEntry.oid() === sourcePreviousEntry?.oid()) {
-      // Entry has not changed => No reference to change.
+      // Entry has not changed => No relation to change.
       continue
     }
     if (sourceEntry.isTree()) {
       // When sourcePreviousEntry is not undefined, it is also a tree.
-      await loadReferencesChanges(
+      await loadRelationsChanges(
         await sourcePreviousEntry?.getTree(),
         await sourceEntry.getTree(),
-        referencesOrNullByTargetId,
+        relationsOrNullById,
       )
     } else {
       // When sourcePreviousEntry is not undefined, it is also a blob.
-      const referencesToLegalObject = JSON.parse(
+      const relation = JSON.parse(
         (await sourceEntry.getBlob()).content().toString("utf-8"),
-      ) as ReferencesToLegalObject
-      referencesOrNullByTargetId.set(
-        referencesToLegalObject.targetId,
-        referencesToLegalObject,
-      )
+      ) as LegalObjectRelations
+      relationsOrNullById.set(relation.id, relation)
     }
   }
 
@@ -1208,66 +1244,30 @@ async function loadReferencesChanges(
     for (const sourcePreviousEntry of Object.values(
       sourcePreviousEntryByName,
     )) {
-      await loadReferencesDeletions(
-        sourcePreviousEntry,
-        referencesOrNullByTargetId,
-      )
+      await loadRelationsDeletions(sourcePreviousEntry, relationsOrNullById)
     }
   }
 
-  return referencesOrNullByTargetId
+  return relationsOrNullById
 }
 
-async function loadReferencesDeletions(
+async function loadRelationsDeletions(
   sourcePreviousEntry: nodegit.TreeEntry,
-  referencesOrNullByTargetId: ReferencesOrNullByTargetId,
+  relationsOrNullById: RelationsOrNullById,
 ): Promise<void> {
   if (sourcePreviousEntry.isTree()) {
     for (const sourcePreviousChildEntry of (
       await sourcePreviousEntry.getTree()
     ).entries()) {
-      await loadReferencesDeletions(
+      await loadRelationsDeletions(
         sourcePreviousChildEntry,
-        referencesOrNullByTargetId,
+        relationsOrNullById,
       )
     }
   } else {
     const targetId = sourcePreviousEntry.name().replace(/\.json$/, "")
-    referencesOrNullByTargetId.set(targetId, null)
+    relationsOrNullById.set(targetId, null)
   }
-}
-
-async function loadReferencesToTargetId(
-  referencesTree: nodegit.Tree,
-  referencesOrNullByTargetId: ReferencesOrNullByTargetId,
-  targetId: string,
-): Promise<ReferencesToLegalObject | null> {
-  const targetIdMatch = targetId.match(idRegExp)
-  if (targetIdMatch === null) {
-    console.warn(
-      `loadReferencesToTargetId: Skipping unexpected ID format: ${targetId}`,
-    )
-    return null
-  }
-
-  let entry: nodegit.TreeEntry
-  try {
-    let referencesSubTree = referencesTree
-    for (const targetDirName of targetIdMatch!.slice(1, -1)) {
-      entry = await referencesSubTree.getEntry(targetDirName)
-      referencesSubTree = await entry.getTree()
-    }
-    const targetFilename = targetId + ".json"
-    entry = await referencesSubTree.getEntry(targetFilename)
-  } catch {
-    referencesOrNullByTargetId.set(targetId, null)
-    return null
-  }
-  const referencesToTargetId = JSON.parse(
-    (await entry.getBlob()).content().toString("utf-8"),
-  ) as ReferencesToLegalObject
-  referencesOrNullByTargetId.set(targetId, referencesToTargetId)
-  return referencesToTargetId
 }
 
 sade("git_xml_to_git_markdown <dilaDir>", true)

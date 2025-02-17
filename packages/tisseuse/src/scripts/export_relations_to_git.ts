@@ -12,31 +12,30 @@ import path from "path"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts"
-import { auditJorfTexteVersion } from "$lib/auditors/jorf"
+import {
+  auditJo,
+  auditJorfArticle,
+  auditJorfTexteVersion,
+} from "$lib/auditors/jorf"
 import { auditLegiArticle, auditLegiTexteVersion } from "$lib/auditors/legi"
-import type {
-  Source,
-  ReferencesByTargetId,
-  Versions,
-  XmlHeader,
-  SourceArticleTexte,
-} from "$lib/legal"
 import type {
   Jo,
   JorfArticle,
   JorfCategorieTag,
-  JorfSectionTa,
-  JorfTextelr,
   JorfTexteVersion,
 } from "$lib/legal/jorf"
 import type {
   LegiArticle,
   LegiCategorieTag,
-  LegiSectionTa,
-  LegiTextelr,
   LegiTexteVersion,
 } from "$lib/legal/legi"
 import { xmlParser } from "$lib/parsers/shared"
+import {
+  type EdgesById,
+  type EdgeWithoutNode,
+  type LegalObjectRelations,
+  type RelationNodeById,
+} from "$lib/relations"
 import config from "$lib/server/config"
 import {
   dilaDateRegExp,
@@ -55,36 +54,42 @@ import {
 
 const { forgejo } = config
 
-function addOrRemoveReferenceToTarget(
-  changedIds: Set<string>,
-  referencesByTargetId: ReferencesByTargetId,
+function addOrRemoveRelation(
+  incomingEdgesById: EdgesById,
+  outgoingEdgesById: EdgesById,
   add: boolean, // false => remove
-  source: Source,
-  targetId: string,
-) {
-  let referencesToTarget = referencesByTargetId.get(targetId)
-  if (add) {
-    if (referencesToTarget === undefined) {
-      referencesToTarget = { sources: [], targetId }
-      referencesByTargetId.set(targetId, referencesToTarget)
-    }
-    if (
-      referencesToTarget.sources.every(
-        (existingSource) => existingSource.id !== source.id,
-      )
-    ) {
-      referencesToTarget.sources.push(source)
-    }
-  } else if (referencesToTarget !== undefined) {
-    // Remove reference from source to target.
-    referencesToTarget.sources = referencesToTarget.sources.filter(
-      (existingSource) => existingSource.id !== source.id,
-    )
-    if (referencesToTarget.sources.length === 0) {
-      referencesByTargetId.delete(targetId)
+  fromId: string,
+  edgeWithoutNode: EdgeWithoutNode,
+  toId: string,
+): boolean {
+  let changed = false
+  for (const { edgesById, sourceId, targetId } of [
+    { edgesById: outgoingEdgesById, sourceId: fromId, targetId: toId },
+    { edgesById: incomingEdgesById, sourceId: toId, targetId: fromId },
+  ]) {
+    let edges = edgesById.get(sourceId)
+    if (add) {
+      if (edges === undefined) {
+        edges = []
+        edgesById.set(sourceId, edges)
+      }
+      if (edges.every(({ node }) => node.id !== targetId)) {
+        edges.push({ ...edgeWithoutNode, node: { id: targetId } })
+        changed = true
+      }
+    } else if (edges !== undefined) {
+      // Remove edge from node.
+      const index = edges.findIndex(({ node }) => node.id === targetId)
+      if (index !== -1) {
+        edges.splice(index, 1)
+        if (edges.length === 0) {
+          edgesById.delete(sourceId)
+          changed = true
+        }
+      }
     }
   }
-  changedIds.add(targetId)
+  return changed
 }
 
 async function exportBackLinksToGit(
@@ -133,13 +138,15 @@ async function exportBackLinksToGit(
       ]),
     ),
   )
-  const targetGitDir = path.join(dilaDir, "liens_donnees_juridiques.git")
+  const targetGitDir = path.join(dilaDir, "relations_donnees_juridiques.git")
   const targetRepository = (await fs.pathExists(targetGitDir))
     ? await nodegit.Repository.open(targetGitDir)
     : await nodegit.Repository.init(targetGitDir, 1 /* bare */)
 
   let commitsChanged = false
-  const referencesByTargetId: ReferencesByTargetId = new Map()
+  const incomingEdgesById: EdgesById = new Map()
+  const nodeById: RelationNodeById = new Map()
+  const outgoingEdgesById: EdgesById = new Map()
   let skip = true
   let sourcePreviousCommitByOrigine:
     | Record<Origine, nodegit.Commit>
@@ -149,7 +156,6 @@ async function exportBackLinksToGit(
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
   const targetOidByIdTree: OidByIdTree = new Map()
-  const texteInfosById: Map<string, SourceArticleTexte> = new Map()
   for await (const {
     dilaDate,
     sourceCommitByOrigine,
@@ -219,7 +225,7 @@ async function exportBackLinksToGit(
     }
 
     steps.push({
-      label: "Extract references from legal objects",
+      label: "Extract relations from legal objects",
       start: performance.now(),
     })
     console.log(
@@ -249,10 +255,11 @@ async function exportBackLinksToGit(
       console.log(`Loading source ${origine}`)
       const sourcePreviousCommit = sourcePreviousCommitByOrigine?.[origine]
       const sourcePreviousTree = await sourcePreviousCommit?.getTree()
-      await extractSourceTreeReferencesChanges(
+      await extractSourceTreeRelationsChanges(
         changedIds,
-        referencesByTargetId,
-        texteInfosById,
+        nodeById,
+        incomingEdgesById,
+        outgoingEdgesById,
         origine,
         sourcePreviousTree,
         sourceTree,
@@ -264,19 +271,22 @@ async function exportBackLinksToGit(
 
     // Add titles of texts to sources, when source is an article.
     steps.push({
-      label: "Add title of texts to sources",
+      label: "Add texts recaps to recaps of articles & sections TA",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    for (const references of referencesByTargetId.values()) {
-      for (const source of references.sources) {
-        if (source.kind === "ARTICLE" && source.texte !== undefined) {
-          const sourceTexteInfos = texteInfosById.get(source.texte.id)
-          if (sourceTexteInfos !== undefined) {
-            source.texte = sourceTexteInfos
-          }
+    for (const node of nodeById.values()) {
+      if (node.kind === "ARTICLE" && node.texte !== undefined) {
+        const texteRecap = nodeById.get(node.texte.id)
+        if (texteRecap !== undefined) {
+          node.texte = texteRecap
+        }
+      } else if (node.kind === "SECTION_TA" && node.texte !== undefined) {
+        const texteRecap = nodeById.get(node.texte.id)
+        if (texteRecap !== undefined) {
+          node.texte = texteRecap
         }
       }
     }
@@ -297,32 +307,36 @@ async function exportBackLinksToGit(
       }
     }
 
-    // Update oidByIdTree with modified references.
+    // Update oidByIdTree with modified relations.
     steps.push({
-      label: "Update oidByIdTree with modified references",
+      label: "Update oidByIdTree with modified relations",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
     let commitChanged = false
-    for (const targetId of changedIds) {
-      const references = referencesByTargetId.get(targetId)
+    for (const id of changedIds) {
+      const incoming = incomingEdgesById.get(id)
+      const outgoing = outgoingEdgesById.get(id)
       if (
         setOidInIdTree(
           targetOidByIdTree,
-          targetId,
-          references === undefined
+          id,
+          incoming === undefined && outgoing === undefined
             ? undefined
             : await targetRepository.createBlobFromBuffer(
                 Buffer.from(
                   JSON.stringify(
                     {
-                      sources: references.sources.toSorted((source1, source2) =>
-                        source1.id.localeCompare(source2.id),
+                      id,
+                      incoming: incoming?.toSorted((edge1, edge2) =>
+                        edge1.node.id.localeCompare(edge2.node.id),
                       ),
-                      targetId,
-                    },
+                      outgoing: outgoing?.toSorted((edge1, edge2) =>
+                        edge1.node.id.localeCompare(edge2.node.id),
+                      ),
+                    } as LegalObjectRelations,
                     null,
                     2,
                   ),
@@ -429,7 +443,7 @@ async function exportBackLinksToGit(
         if (
           (error as Error).message.includes("remote 'origin' does not exist")
         ) {
-          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/liens_donnees_juridiques.git`
+          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/relations_donnees_juridiques.git`
           targetRemote = await nodegit.Remote.create(
             targetRepository,
             "origin",
@@ -466,10 +480,11 @@ async function exportBackLinksToGit(
   return exitCode
 }
 
-async function extractJorfObjectReferences(
+async function extractJorfObjectRelations(
   changedIds: Set<string>,
-  referencesByTargetId: ReferencesByTargetId,
-  texteInfosById: Map<string, SourceArticleTexte>,
+  nodeById: RelationNodeById,
+  incomingEdgesById: EdgesById,
+  outgoingEdgesById: EdgesById,
   sourceBlobEntry: nodegit.TreeEntry,
   add: boolean, // When false => remove
 ) {
@@ -484,19 +499,35 @@ async function extractJorfObjectReferences(
       }
 
       case "ARTICLE": {
-        // const [article, error] = auditChain(auditJorfArticle, auditRequire)(
-        //   strictAudit,
-        //   element,
-        // ) as [JorfArticle, unknown]
-        // assert.strictEqual(
-        //   error,
-        //   null,
-        //   `Unexpected format for ARTICLE:\n${JSON.stringify(
-        //     article,
-        //     null,
-        //     2,
-        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-        // )
+        const [article, error] = auditChain(auditJorfArticle, auditRequire)(
+          strictAudit,
+          element,
+        ) as [JorfArticle, unknown]
+        assert.strictEqual(
+          error,
+          null,
+          `Unexpected format for ARTICLE:\n${JSON.stringify(
+            article,
+            null,
+            2,
+          )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        )
+        const metaArticle = article.META.META_SPEC.META_ARTICLE
+        const metaCommun = article.META.META_COMMUN
+        const articleId = metaCommun.ID
+        nodeById.set(articleId, {
+          endDate: metaArticle.DATE_FIN,
+          id: articleId,
+          kind: "ARTICLE",
+          number: metaArticle.NUM,
+          // state: metaArticle.ETAT,
+          startDate: metaArticle.DATE_DEBUT,
+          texte:
+            article.CONTEXTE.TEXTE["@cid"] === undefined
+              ? undefined
+              : { id: article.CONTEXTE.TEXTE["@cid"] },
+          type: metaArticle.TYPE,
+        })
         break
       }
 
@@ -523,27 +554,37 @@ async function extractJorfObjectReferences(
       }
 
       case "JO": {
-        // const [jo, error] = auditChain(auditJo, auditRequire)(
-        //   strictAudit,
-        //   element,
-        // ) as [Jo, unknown]
-        // assert.strictEqual(
-        //   error,
-        //   null,
-        //   `Unexpected format for JO:\n${JSON.stringify(
-        //     jo,
-        //     null,
-        //     2,
-        //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
-        // )
+        const [jo, error] = auditChain(auditJo, auditRequire)(
+          strictAudit,
+          element,
+        ) as [Jo, unknown]
+        assert.strictEqual(
+          error,
+          null,
+          `Unexpected format for JO:\n${JSON.stringify(
+            jo,
+            null,
+            2,
+          )}\nError:\n${JSON.stringify(error, null, 2)}`,
+        )
+        const metaConteneur = jo.META.META_SPEC.META_CONTENEUR
+        const metaCommun = jo.META.META_COMMUN
+        const joId = metaCommun.ID
+        nodeById.set(joId, {
+          date: metaConteneur.DATE_PUBLI,
+          id: joId,
+          kind: "JO",
+          number: metaConteneur.NUM,
+          title: metaConteneur.TITRE,
+        })
         break
       }
 
       case "SECTION_TA": {
-        // const [sectionTa, error] = auditChain(
-        //   auditJorfSectionTa,
-        //   auditRequire,
-        // )(strictAudit, element) as [JorfSectionTa, unknown]
+        // const [sectionTa, error] = auditChain(auditJorfSectionTa, auditRequire)(
+        //   strictAudit,
+        //   element,
+        // ) as [JorfSectionTa, unknown]
         // assert.strictEqual(
         //   error,
         //   null,
@@ -553,6 +594,14 @@ async function extractJorfObjectReferences(
         //     2,
         //   )}\nError:\n${JSON.stringify(error, null, 2)}`,
         // )
+        // const sectionTaId = sectionTa.ID
+        // nodeById.set(sectionTaId, {
+        //   // startDate: metaConteneur.DATE_PUBLI,
+        //   // id: sectionTaId,
+        //   // kind: "SECTION_TA",
+        //   // number: metaConteneur.NUM,
+        //   // title: metaConteneur.TITRE,
+        // })
         break
       }
 
@@ -579,9 +628,10 @@ async function extractJorfObjectReferences(
           ?.replace(/\s+/g, " ")
           .trim()
           .replace(/\s+\(\d+\)$/, "")
-        texteInfosById.set(texteId, {
+        nodeById.set(texteId, {
           endDate: metaTexteVersion.DATE_FIN,
           id: texteId,
+          kind: "TEXTE",
           nature: metaCommun.NATURE,
           // state: metaTexteVersion.ETAT,
           startDate: metaTexteVersion.DATE_DEBUT,
@@ -592,24 +642,21 @@ async function extractJorfObjectReferences(
           for (const lien of liens) {
             const targetId = lien["@id"]
             if (targetId !== undefined) {
-              addOrRemoveReferenceToTarget(
-                changedIds,
-                referencesByTargetId,
-                add,
-                {
-                  direction: lien["@sens"],
-                  endDate: metaTexteVersion.DATE_FIN,
-                  id: texteId,
-                  kind: "TEXTE_VERSION",
-                  linkType: lien["@typelien"],
-                  nature: metaCommun.NATURE,
-                  // state: metaTexteVersion.ETAT,
-                  startDate: metaTexteVersion.DATE_DEBUT,
-                  title: texteTitle,
-                  url: metaCommun.URL,
-                },
-                targetId,
-              )
+              if (
+                addOrRemoveRelation(
+                  incomingEdgesById,
+                  outgoingEdgesById,
+                  add,
+                  texteId,
+                  {
+                    direction: lien["@sens"],
+                    linkType: lien["@typelien"],
+                  },
+                  targetId,
+                )
+              ) {
+                changedIds.add(targetId)
+              }
             }
           }
         }
@@ -665,30 +712,33 @@ async function extractJorfObjectReferences(
   }
 }
 
-async function extractLegalObjectReferences(
+async function extractLegalObjectRelations(
   changedIds: Set<string>,
-  referencesByTargetId: ReferencesByTargetId,
-  texteInfosById: Map<string, SourceArticleTexte>,
+  nodeById: RelationNodeById,
+  incomingEdgesById: EdgesById,
+  outgoingEdgesById: EdgesById,
   origine: Origine,
   sourceBlobEntry: nodegit.TreeEntry,
   add: boolean, // When false => remove
 ) {
   switch (origine) {
     case "JORF": {
-      await extractJorfObjectReferences(
+      await extractJorfObjectRelations(
         changedIds,
-        referencesByTargetId,
-        texteInfosById,
+        nodeById,
+        incomingEdgesById,
+        outgoingEdgesById,
         sourceBlobEntry,
         add,
       )
       break
     }
     case "LEGI": {
-      await extractLegiObjectReferences(
+      await extractLegiObjectRelations(
         changedIds,
-        referencesByTargetId,
-        texteInfosById,
+        nodeById,
+        incomingEdgesById,
+        outgoingEdgesById,
         sourceBlobEntry,
         add,
       )
@@ -699,10 +749,11 @@ async function extractLegalObjectReferences(
   }
 }
 
-async function extractLegiObjectReferences(
+async function extractLegiObjectRelations(
   changedIds: Set<string>,
-  referencesByTargetId: ReferencesByTargetId,
-  texteInfosById: Map<string, SourceArticleTexte>,
+  nodeById: RelationNodeById,
+  incomingEdgesById: EdgesById,
+  outgoingEdgesById: EdgesById,
   sourceBlobEntry: nodegit.TreeEntry,
   add: boolean, // When false => remove
 ) {
@@ -733,33 +784,39 @@ async function extractLegiObjectReferences(
         const metaArticle = article.META.META_SPEC.META_ARTICLE
         const metaCommun = article.META.META_COMMUN
         const articleId = metaCommun.ID
+        nodeById.set(articleId, {
+          endDate: metaArticle.DATE_FIN,
+          id: articleId,
+          kind: "ARTICLE",
+          number: metaArticle.NUM,
+          state: metaArticle.ETAT,
+          startDate: metaArticle.DATE_DEBUT,
+          texte:
+            article.CONTEXTE.TEXTE["@cid"] === undefined
+              ? undefined
+              : { id: article.CONTEXTE.TEXTE["@cid"] },
+          type: metaArticle.TYPE,
+        })
         const liens = article.LIENS?.LIEN
         if (liens !== undefined) {
           for (const lien of liens) {
             const targetId = lien["@id"]
             if (targetId !== undefined) {
-              addOrRemoveReferenceToTarget(
-                changedIds,
-                referencesByTargetId,
-                add,
-                {
-                  direction: lien["@sens"],
-                  endDate: metaArticle.DATE_FIN,
-                  id: articleId,
-                  kind: "ARTICLE",
-                  linkType: lien["@typelien"],
-                  number: metaArticle.NUM,
-                  state: metaArticle.ETAT,
-                  startDate: metaArticle.DATE_DEBUT,
-                  texte:
-                    article.CONTEXTE.TEXTE["@cid"] === undefined
-                      ? undefined
-                      : { id: article.CONTEXTE.TEXTE["@cid"] },
-                  type: metaArticle.TYPE,
-                  url: metaCommun.URL,
-                },
-                targetId,
-              )
+              if (
+                addOrRemoveRelation(
+                  incomingEdgesById,
+                  outgoingEdgesById,
+                  add,
+                  articleId,
+                  {
+                    direction: lien["@sens"],
+                    linkType: lien["@typelien"],
+                  },
+                  targetId,
+                )
+              ) {
+                changedIds.add(targetId)
+              }
             }
           }
         }
@@ -828,9 +885,10 @@ async function extractLegiObjectReferences(
           ?.replace(/\s+/g, " ")
           .trim()
           .replace(/\s+\(\d+\)$/, "")
-        texteInfosById.set(texteId, {
+        nodeById.set(texteId, {
           endDate: metaTexteVersion.DATE_FIN,
           id: texteId,
+          kind: "TEXTE",
           nature: metaCommun.NATURE,
           state: metaTexteVersion.ETAT,
           startDate: metaTexteVersion.DATE_DEBUT,
@@ -841,24 +899,21 @@ async function extractLegiObjectReferences(
           for (const lien of liens) {
             const targetId = lien["@id"]
             if (targetId !== undefined) {
-              addOrRemoveReferenceToTarget(
-                changedIds,
-                referencesByTargetId,
-                add,
-                {
-                  direction: lien["@sens"],
-                  endDate: metaTexteVersion.DATE_FIN,
-                  id: texteId,
-                  kind: "TEXTE_VERSION",
-                  linkType: lien["@typelien"],
-                  nature: metaCommun.NATURE,
-                  state: metaTexteVersion.ETAT,
-                  startDate: metaTexteVersion.DATE_DEBUT,
-                  title: texteTitle,
-                  url: metaCommun.URL,
-                },
-                targetId,
-              )
+              if (
+                addOrRemoveRelation(
+                  incomingEdgesById,
+                  outgoingEdgesById,
+                  add,
+                  texteId,
+                  {
+                    direction: lien["@sens"],
+                    linkType: lien["@typelien"],
+                  },
+                  targetId,
+                )
+              ) {
+                changedIds.add(targetId)
+              }
             }
           }
         }
@@ -914,10 +969,11 @@ async function extractLegiObjectReferences(
   }
 }
 
-async function extractSourceTreeReferencesChanges(
+async function extractSourceTreeRelationsChanges(
   changedIds: Set<string>,
-  referencesByTargetId: ReferencesByTargetId,
-  texteInfosById: Map<string, SourceArticleTexte>,
+  nodeById: RelationNodeById,
+  incomingEdgesById: EdgesById,
+  outgoingEdgesById: EdgesById,
   origine: Origine,
   sourcePreviousTree: nodegit.Tree | undefined,
   sourceTree: nodegit.Tree,
@@ -937,26 +993,28 @@ async function extractSourceTreeReferencesChanges(
       delete sourcePreviousEntryByName![sourceEntryName]
     }
     if (sourceEntry.oid() === sourcePreviousEntry?.oid()) {
-      // Entry has not changed => No reference to change.
+      // Entry has not changed => No relation to change.
       continue
     }
     if (sourceEntry.isTree()) {
       // If sourcePreviousEntry is a blob,
       // first remove its links from the back links.
       if (sourcePreviousEntry?.isBlob()) {
-        await extractLegalObjectReferences(
+        await extractLegalObjectRelations(
           changedIds,
-          referencesByTargetId,
-          texteInfosById,
+          nodeById,
+          incomingEdgesById,
+          outgoingEdgesById,
           origine,
           sourcePreviousEntry,
           false /* remove */,
         )
       }
-      await extractSourceTreeReferencesChanges(
+      await extractSourceTreeRelationsChanges(
         changedIds,
-        referencesByTargetId,
-        texteInfosById,
+        nodeById,
+        incomingEdgesById,
+        outgoingEdgesById,
         origine,
         sourcePreviousEntry?.isTree()
           ? await sourcePreviousEntry?.getTree()
@@ -967,31 +1025,34 @@ async function extractSourceTreeReferencesChanges(
       // SourceEntry is a blob.
       if (sourcePreviousEntry !== undefined) {
         // Source entry has changed.
-        // First, remove the links of previous entry from the back links
-        // of the entries it references.
+        // First, remove the relations of previous entry from the legal objects
+        // that it references.
         if (sourcePreviousEntry.isTree()) {
-          await removeSourceTreeReferences(
+          await removeSourceTreeRelations(
             changedIds,
-            referencesByTargetId,
-            texteInfosById,
+            nodeById,
+            incomingEdgesById,
+            outgoingEdgesById,
             origine,
             await sourcePreviousEntry.getTree(),
           )
         } else {
-          await extractLegalObjectReferences(
+          await extractLegalObjectRelations(
             changedIds,
-            referencesByTargetId,
-            texteInfosById,
+            nodeById,
+            incomingEdgesById,
+            outgoingEdgesById,
             origine,
             sourcePreviousEntry,
             false /* remove */,
           )
         }
       }
-      await extractLegalObjectReferences(
+      await extractLegalObjectRelations(
         changedIds,
-        referencesByTargetId,
-        texteInfosById,
+        nodeById,
+        incomingEdgesById,
+        outgoingEdgesById,
         origine,
         sourceEntry,
         true /* add */,
@@ -1004,21 +1065,23 @@ async function extractSourceTreeReferencesChanges(
     for (const sourcePreviousEntry of Object.values(
       sourcePreviousEntryByName,
     )) {
-      // Remove the links of previous entry from the back links
-      // of the entries it references.
+      // Remove the relations of previous entry from the legal objects
+      // that it references
       if (sourcePreviousEntry.isTree()) {
-        await removeSourceTreeReferences(
+        await removeSourceTreeRelations(
           changedIds,
-          referencesByTargetId,
-          texteInfosById,
+          nodeById,
+          incomingEdgesById,
+          outgoingEdgesById,
           origine,
           await sourcePreviousEntry.getTree(),
         )
       } else {
-        await extractLegalObjectReferences(
+        await extractLegalObjectRelations(
           changedIds,
-          referencesByTargetId,
-          texteInfosById,
+          nodeById,
+          incomingEdgesById,
+          outgoingEdgesById,
           origine,
           sourcePreviousEntry,
           false /* remove */,
@@ -1028,27 +1091,42 @@ async function extractSourceTreeReferencesChanges(
   }
 }
 
-async function removeSourceTreeReferences(
+// function* iterChain<Type>(
+//   iterable1: Iterable<Type> | undefined,
+//   iterable2: Iterable<Type> | undefined,
+// ): Generator<Type, void> {
+//   if (iterable1 !== undefined) {
+//     yield* iterable1
+//   }
+//   if (iterable2 !== undefined) {
+//     yield* iterable2
+//   }
+// }
+
+async function removeSourceTreeRelations(
   changedIds: Set<string>,
-  referencesByTargetId: ReferencesByTargetId,
-  texteInfosById: Map<string, SourceArticleTexte>,
+  nodeById: RelationNodeById,
+  incomingEdgesById: EdgesById,
+  outgoingEdgesById: EdgesById,
   origine: Origine,
   sourceTree: nodegit.Tree,
 ): Promise<void> {
   for (const sourceEntry of sourceTree.entries()) {
     if (sourceEntry.isTree()) {
-      await removeSourceTreeReferences(
+      await removeSourceTreeRelations(
         changedIds,
-        referencesByTargetId,
-        texteInfosById,
+        nodeById,
+        incomingEdgesById,
+        outgoingEdgesById,
         origine,
         await sourceEntry.getTree(),
       )
     } else {
-      await extractLegalObjectReferences(
+      await extractLegalObjectRelations(
         changedIds,
-        referencesByTargetId,
-        texteInfosById,
+        nodeById,
+        incomingEdgesById,
+        outgoingEdgesById,
         origine,
         sourceEntry,
         false /* remove */,

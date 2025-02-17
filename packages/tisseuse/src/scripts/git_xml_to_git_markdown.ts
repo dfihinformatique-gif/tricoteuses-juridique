@@ -509,24 +509,22 @@ async function convertSourceTreeToMarkdown(
     } else {
       // SourceEntry is a blob.
       const id = sourceEntry.name().replace(/\.xml$/, "")
-      // Caution: There are a lot of "versions" value for id (for ELI files).
+      if (id === "versions") {
+        continue
+      }
       let referencesToLegalObject = referencesOrNullByTargetId.get(id)
-      const targetExistingOid =
-        id === "versions" ? null : getOidFromIdTree(targetOidByIdTree, id)
+      const targetExistingOid = getOidFromIdTree(targetOidByIdTree, id)
       if (
         sourceEntry.oid() !== sourcePreviousEntry?.oid() ||
         referencesToLegalObject !== undefined ||
         targetExistingOid === undefined
       ) {
         if (referencesToLegalObject === undefined) {
-          referencesToLegalObject =
-            id === "versions"
-              ? null
-              : await loadReferencesToTargetId(
-                  referencesTree,
-                  referencesOrNullByTargetId,
-                  id,
-                )
+          referencesToLegalObject = await loadReferencesToTargetId(
+            referencesTree,
+            referencesOrNullByTargetId,
+            id,
+          )
         }
         if (
           setOidInIdTree(

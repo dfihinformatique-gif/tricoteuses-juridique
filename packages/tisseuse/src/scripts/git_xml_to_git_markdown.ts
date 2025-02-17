@@ -512,6 +512,12 @@ async function convertSourceTreeToMarkdown(
       if (id === "versions") {
         continue
       }
+      if (id.match(idRegExp) === null) {
+        console.warn(
+          `Ignoring source entry "${sourceEntry.path()}" with unknown ID format: ${id}`,
+        )
+        continue
+      }
       let relations = relationsOrNullById.get(id)
       const targetExistingOid = getOidFromIdTree(targetOidByIdTree, id)
       if (

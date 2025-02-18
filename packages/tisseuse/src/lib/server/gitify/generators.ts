@@ -1375,7 +1375,7 @@ async function htmlFromReferredLiens(
             let referredA: string | undefined = undefined
             const referredId = referredLien["@id"] ?? referredLien["@cidtexte"]
             if (referredId !== undefined) {
-              if (/^(JORF|LEGI)ARTI\d{12}$/.test(referredId)) {
+              if (/^(CNIL|DOLE|JORF|KALI|LEGI)ARTI\d{12}$/.test(referredId)) {
                 const referredArticle = await getOrLoadArticle(
                   context,
                   referredId,
@@ -1418,7 +1418,7 @@ async function htmlFromReferredLiens(
                 }
               }
 
-              if (/^(JORF|LEGI)SCTA\d{12}$/.test(referredId)) {
+              if (/^(CNIL|DOLE|JORF|KALI|LEGI)SCTA\d{12}$/.test(referredId)) {
                 const referredSectionTa = await getOrLoadSectionTa(
                   context,
                   referredId,
@@ -1447,7 +1447,7 @@ async function htmlFromReferredLiens(
                 }
               }
 
-              if (/^(JORF|LEGI)TEXT\d{12}$/.test(referredId)) {
+              if (/^(CNIL|DOLE|JORF|KALI|LEGI)TEXT\d{12}$/.test(referredId)) {
                 const referredTexteVersion = await getOrLoadTexteVersion(
                   context,
                   referredId,

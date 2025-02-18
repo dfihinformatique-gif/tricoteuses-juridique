@@ -330,12 +330,22 @@ async function exportBackLinksToGit(
                   JSON.stringify(
                     {
                       id,
-                      incoming: incoming?.toSorted((edge1, edge2) =>
-                        edge1.node.id.localeCompare(edge2.node.id),
-                      ),
-                      outgoing: outgoing?.toSorted((edge1, edge2) =>
-                        edge1.node.id.localeCompare(edge2.node.id),
-                      ),
+                      incoming: incoming
+                        ?.toSorted((edge1, edge2) =>
+                          edge1.node.id.localeCompare(edge2.node.id),
+                        )
+                        .map((edge) => {
+                          const node = nodeById.get(edge.node.id)
+                          return node === undefined ? edge : { ...edge, node }
+                        }),
+                      outgoing: outgoing
+                        ?.toSorted((edge1, edge2) =>
+                          edge1.node.id.localeCompare(edge2.node.id),
+                        )
+                        .map((edge) => {
+                          const node = nodeById.get(edge.node.id)
+                          return node === undefined ? edge : { ...edge, node }
+                        }),
                     } as LegalObjectRelations,
                     null,
                     2,

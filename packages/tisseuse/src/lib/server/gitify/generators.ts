@@ -193,7 +193,7 @@ async function generateArticlesGit(
           ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
         `
 
-        let referringArticlesLiensHtml: string | undefined
+        let referringArticlesLiensHtml: string | undefined = undefined
         const referringArticlesLiens =
           context.referringArticlesLiensById[articleId]
         if (referringArticlesLiens !== undefined) {
@@ -204,7 +204,7 @@ async function generateArticlesGit(
           `
         }
 
-        let referringTextsLiensHtml: string | undefined
+        let referringTextsLiensHtml: string | undefined = undefined
         const referringTextsLiens = context.referringTextsLiensById[articleId]
         if (referringTextsLiens !== undefined) {
           referringTextsLiensHtml = dedent`
@@ -214,7 +214,7 @@ async function generateArticlesGit(
           `
         }
 
-        let referredLiensHtml: string | undefined
+        let referredLiensHtml: string | undefined = undefined
         const referredLiens = (article as LegiArticle).LIENS?.LIEN
         if (referredLiens !== undefined) {
           referredLiensHtml = dedent`

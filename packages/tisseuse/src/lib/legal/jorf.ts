@@ -629,39 +629,17 @@ export const allJorfTexteOrigines = ["JORF"] as const
 
 export const allJorfTexteVersionLienNatures = [
   "ABROGATION", // 5
+  "Accord autonome", // 3
   "ACCORD CADRE INTERSECTEURS",
   "ACCORD CADRE NATIONAL",
   "ACCORD CADRE", // 1
-  "ACCORD COLLECTIF NATIONAL", // 57
-  "ACCORD COLLECTIF",
-  "ACCORD DE BRANCHE", // 1
-  "ACCORD NATIONAL PARITAIRE", // 16
-  "ACCORD NATIONAL PROFESSIONNEL", // 11
-  "ACCORD NATIONAL", // 101
-  "ACCORD PARITAIRE", // 5
-  "ACCORD PROFESSIONNEL", // 4
-  "ACCORD", // 1048
-  "ACCORD-CADRE", // 20
-  "ACCORD_FONCTION_PUBLIQUE", // 12
-  "ACTE", // 5
-  "ADDITIF", // 39
-  "ANNEXE", // 149
-  "ANNEXES", // 3
-  "ANNONCES", // 4
-  "ARRET", // 48
-  "ARRETE", // 547820
-  "ARRETEEURO", // 15
-  "ARRETEURO", // 599
-  "ATTESTATION", // 2
-  "AVENANT", // 858
-  "AVIS D'INTERPRETATION", // 2
-  "AVIS", // 30500
-  "AVISEURO", // 3645
-  "Accord autonome", // 3
   "Accord collectif interbranche",
   "Accord collectif national sectoriel", // 7
   "Accord collectif national", // 50
+  "ACCORD COLLECTIF NATIONAL", // 57
+  "ACCORD COLLECTIF",
   "Accord collectif", // 6
+  "ACCORD DE BRANCHE", // 1
   "Accord de branche", // 24
   "Accord de champ", // 1
   "Accord de convergence", // 3
@@ -675,45 +653,72 @@ export const allJorfTexteVersionLienNatures = [
   "Accord interprétatif", // 3
   "Accord national de branche", // 45
   "Accord national interprofessionnel", // 6
+  "ACCORD NATIONAL PARITAIRE", // 16
   "Accord national professionnel", // 1
+  "ACCORD NATIONAL PROFESSIONNEL", // 11
+  "ACCORD NATIONAL", // 101
   "Accord national", // 20
   "Accord paritaire national", // 4
+  "ACCORD PARITAIRE", // 5
   "Accord paritaire", // 8
+  "ACCORD PROFESSIONNEL", // 4
   "Accord professionnel", // 56
   "Accord régional", // 2
   "Accord territorial",
+  "Accord tripartite",
+  "ACCORD", // 1048
+  "accord", // 130
   "Accord", // 22442
   "Accord-cadre interbranches", // 2
+  "ACCORD-CADRE", // 20
   "Accord-cadre", // 7
   "Accord-type", // 1
+  "ACCORD_FONCTION_PUBLIQUE", // 12
+  "ACTE", // 5
   "Additif", // 24
+  "ADDITIF", // 39
   "Adhésion par lettre", // 8
   "Adhésion", // 1
   "Annexe spécifique", // 2
+  "ANNEXE", // 149
   "Annexe", // 367
+  "ANNEXES", // 3
+  "ANNONCES", // 4
+  "ARRET", // 48
+  "ARRETE", // 547820
+  "ARRETEEURO", // 15
+  "ARRETEURO", // 599
+  "ATTESTATION", // 2
   "Avenant de révision", // 36
   "Avenant rectificatif", // 1
   "Avenant", // 18057
+  "avenant", // 185
+  "AVENANT", // 858
+  "AVIS D'INTERPRETATION", // 2
   "Avis d'interprétation", // 8
   "Avis interprétatif", // 4
+  "AVIS", // 30500
+  "AVISEURO", // 3645
   "CIRCULAIRE", // 4362
   "CODE", // 535600
   "COMMUNIQUE", // 4
   "COMPOSITION", // 7
   "CONSTITUTION", // 13896
-  "CONVENTION COLLECTIVE INTERREGIONALE", // 217
-  "CONVENTION COLLECTIVE NATIONALE", // 6
-  "CONVENTION COLLECTIVE", // 148
-  "CONVENTION", // 329
   "Convention collective de travail", // 4
   "Convention collective départementale", // 36
+  "CONVENTION COLLECTIVE INTERREGIONALE", // 217
   "Convention collective interrégionale", // 7
   "Convention collective nationale de travail", // 1
+  "CONVENTION COLLECTIVE NATIONALE", // 6
   "Convention collective nationale", // 6077
   "Convention collective régionale", // 148
+  "convention collective", // 106
+  "CONVENTION COLLECTIVE", // 148
   "Convention collective", // 666
   "Convention de référencement", // 1
   "Convention", // 1
+  "convention", // 1
+  "CONVENTION", // 329
   "DECISION", // 109937
   "DECISION_CC", // 116
   "DECISION_EURO", // 243
@@ -735,46 +740,42 @@ export const allJorfTexteVersionLienNatures = [
   "INFORMATIONS_PARLEMENTAIRES", // 2576
   "INSTRUCTION", // 218
   "INSTRUCTIONEURO", // 700
+  "Lettre de dénonciation", // 1
   "LETTREEURO", // 5
   "LISTE", // 262
   "LOI", // 216342
   "LOI_CONSTIT", // 30
   "LOI_ORGANIQUE", // 2899
   "LOI_PROGRAMME", // 55
-  "Lettre de dénonciation", // 1
   "MEMOIRE", // 21
   "MODIFICATION", // 125
   "NOTE", // 3
   "OBSERVATION", // 256
   "ORDONNANCE", // 35340
+  "Procès-verbal de désaccord", // 4
   "PROJET", // 93
   "PROTOCOLE D'ACCORD COLLECTIF", // 7
-  "PROTOCOLE D'ACCORD INTERBRANCHE", // 3
-  "PROTOCOLE D'ACCORD", // 33
-  "PROTOCOLE", // 7
-  "PUBLICATION", // 1
-  "Procès-verbal de désaccord", // 4
-  "Protocole D'accord", // 1
   "Protocole d'accord de méthode", // 1
+  "PROTOCOLE D'ACCORD INTERBRANCHE", // 3
+  "Protocole D'accord", // 1
+  "PROTOCOLE D'ACCORD", // 33
   "Protocole d'accord", // 62
   "Protocole", // 55
+  "PROTOCOLE", // 7
+  "PUBLICATION", // 1
   "RAPPORT", // 1756
+  "Recommandation patronale", // 2
   "RECOMMANDATION", // 243
   "RECOMMANDATION_EURO", // 1
+  "Rectificatif au Bulletin officiel n°", // 4
   "REGLEMENT", // 800
   "REGLEMENTEUROPEEN", // 1897
   "RESULTATS", // 3901
-  "Recommandation patronale", // 2
-  "Rectificatif au Bulletin officiel n°", // 4
   "SAISINE", // 352
   "SALAIRES", // 4
   "SENATUS", // 4
   "SUSPENSION", // 1
   "TABLEAU", // 12
-  "accord", // 130
-  "avenant", // 185
-  "convention collective", // 106
-  "convention", // 1
 ] as const
 
 export const allJorfTexteVersionLienTypes = [

@@ -42,6 +42,7 @@ import type {
 } from "$lib/legal/jorf"
 import type {
   LegiArticle,
+  LegiArticleMetaArticle,
   LegiArticleTm,
   LegiCategorieTag,
   LegiSectionTa,
@@ -223,6 +224,13 @@ async function convertArticleElementToMarkdown(
 
             ${htmlFromIncomingTextesEdges(incomingTextesEdges)}
           `,
+      relations?.outgoing === undefined
+        ? undefined
+        : dedent`
+              <h2>Références faites par l'article</h2>
+
+              ${htmlFromOutgoingEdges(relations.outgoing)}
+            `,
   ]
     .filter((block) => block !== undefined)
     .join("\n\n")
@@ -917,7 +925,7 @@ async function gitXmlToGitMarkdown(
         if (
           (error as Error).message.includes("remote 'origin' does not exist")
         ) {
-          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/relations_donnees_juridiques.git`
+          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/textes_juridiques.git`
           targetRemote = await nodegit.Remote.create(
             targetRepository,
             "origin",
@@ -1167,6 +1175,172 @@ function htmlFromIncomingTextesEdges(edges: Edge[]): string {
             </li>
           `
         })
+        .join("\n")
+        .replaceAll("\n", "\n  ")}
+    </ul>
+  `
+}
+
+function htmlFromOutgoingEdges(edges: Edge[]): string {
+  return dedent`
+    <ul>
+      ${(
+        edges.map(async (edge) => {
+          const {node} = edge
+          let a: string | undefined = undefined
+            switch (node.kind) {
+              case undefined: {
+                // Incomplete edge with only one ID (ie legal object was not found)
+                return `<li>${node.id}</li>`
+              }
+
+              case "ARTICLE": {
+                const articleTitleFragment =
+                  "article" +
+                  [
+                    node.number,
+                    node.type,
+                    node.state,
+                  ]
+                    .filter((value) => value !== undefined)
+                    .map((value) => ` ${value}`)
+                    .join("") +
+                  ((node.startDate === undefined || node.startDate === "2999-01-01") &&
+                    (node.endDate === undefined || node.endDate === "2999-01-01")
+                    ? ""
+                    : (node.endDate === undefined || node.endDate === "2999-01-01")
+                      ? `, en vigueur depuis le ${node.startDate}`
+                      : `, en vigueur du ${node.startDate} au ${node.endDate}`)
+
+                const texte = node.texte as TexteRecap | undefined
+                const texteTitleFragment = texte === undefined ? undefined : texte.title ?? `${texte.nature ?? "Texte"} ${texte.id} manquant`
+                a = `<a href="${escapeHtml(gitPathFromId(node.id, ".md"), true)}">${escapeHtml([texteTitleFragment, articleTitleFragment].filter(fragment => fragment !== undefined).join(" - "))}</a>`
+                break
+              }
+
+              case "JO": {
+                break
+              }
+
+              default: {
+                assertNever("RelationNode.kind", node.kind)
+              }
+            }
+          const referredId = referredLien["@id"] ?? referredLien["@cidtexte"]
+          if (referredId !== undefined) {
+            if (/^(CNIL|DOLE|JORF|KALI|LEGI)ARTI\d{12}$/.test(referredId)) {
+              const article = await getOrLoadArticle(
+                context,
+                referredId,
+              )
+              if (article !== null) {
+                const metaArticle =
+                  article.META.META_SPEC.META_ARTICLE
+                const articleTitleFragment =
+                  "article" +
+                  [
+                    metaArticle.NUM,
+                    metaArticle.TYPE,
+                    (metaArticle as LegiArticleMetaArticle).ETAT,
+                  ]
+                    .filter((value) => value !== undefined)
+                    .map((value) => ` ${value}`)
+                    .join("") +
+                  (metaArticle.DATE_DEBUT === "2999-01-01" &&
+                  metaArticle.DATE_FIN === "2999-01-01"
+                    ? ""
+                    : metaArticle.DATE_FIN === "2999-01-01"
+                      ? `, en vigueur depuis le ${metaArticle.DATE_DEBUT}`
+                      : `, en vigueur du ${metaArticle.DATE_DEBUT} au ${metaArticle.DATE_FIN}`)
+
+                const articleTexte = article.CONTEXTE.TEXTE
+                const referredTextTitreTxt = bestItemForDate(
+                  articleTexte.TITRE_TXT,
+                  metaArticle.DATE_DEBUT,
+                )
+                const referredTextTitleFragment =
+                  referredTextTitreTxt === undefined
+                    ? `${articleTexte["@nature"] ?? "Texte"} ${articleTexte["@cid"]} manquant`
+                    : (referredTextTitreTxt["#text"]
+                        ?.replace(/\s+/g, " ")
+                        .trim()
+                        .replace(/\s+\(\d+\)$/, "") ??
+                      referredTextTitreTxt["@c_titre_court"] ??
+                      `${articleTexte["@nature"] ?? "Texte"} ${articleTexte["@cid"]} sans titre`)
+                a = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(articleTitleFragment)}</a>`
+              }
+            }
+
+            if (/^(CNIL|DOLE|JORF|KALI|LEGI)SCTA\d{12}$/.test(referredId)) {
+              const referredSectionTa = await getOrLoadSectionTa(
+                context,
+                referredId,
+              )
+              if (referredSectionTa !== null) {
+                const referredSectionTaTitleFragment =
+                  referredSectionTa.TITRE_TA?.replace(/\s+/g, " ").trim() ??
+                  "Section sans titre"
+
+                const referredSectionTaTexte =
+                  referredSectionTa.CONTEXTE.TEXTE
+                const referredTextTitreTxt = bestItemForDate(
+                  referredSectionTaTexte.TITRE_TXT,
+                  today, // TODO: Use a better date?
+                )
+                const referredTextTitleFragment =
+                  referredTextTitreTxt === undefined
+                    ? `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} manquant`
+                    : (referredTextTitreTxt["#text"]
+                        ?.replace(/\s+/g, " ")
+                        .trim()
+                        .replace(/\s+\(\d+\)$/, "") ??
+                      referredTextTitreTxt["@c_titre_court"] ??
+                      `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} sans titre`)
+                a = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredSectionTaTitleFragment)}</a>`
+              }
+            }
+
+            if (/^(CNIL|DOLE|JORF|KALI|LEGI)TEXT\d{12}$/.test(referredId)) {
+              const referredTexteVersion = await getOrLoadTexteVersion(
+                context,
+                referredId,
+              )
+              if (referredTexteVersion !== null) {
+                const metaTexteVersion =
+                  referredTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                const referredTextTitle =
+                  (
+                    metaTexteVersion.TITREFULL ??
+                    metaTexteVersion.TITRE ??
+                    referredId
+                  )
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .replace(/\s+\(\d+\)$/, "") +
+                  ((metaTexteVersion as LegiMetaTexteVersion).ETAT ===
+                  undefined
+                    ? ""
+                    : ` ${(metaTexteVersion as LegiMetaTexteVersion).ETAT}`) +
+                  (((metaTexteVersion.DATE_DEBUT === undefined ||
+                    metaTexteVersion.DATE_DEBUT === "2999-01-01") &&
+                    metaTexteVersion.DATE_FIN === undefined) ||
+                  metaTexteVersion.DATE_FIN === "2999-01-01"
+                    ? ""
+                    : metaTexteVersion.DATE_FIN === undefined ||
+                        metaTexteVersion.DATE_FIN === "2999-01-01"
+                      ? `, en vigueur depuis le ${metaTexteVersion.DATE_DEBUT}`
+                      : `, en vigueur du ${metaTexteVersion.DATE_DEBUT} au ${metaTexteVersion.DATE_FIN}`)
+                a = `<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitle)}</a>`
+              }
+            }
+          }
+          return dedent`
+            <li>
+              ${[referredLien["@datesignatexte"], referredLien["@typelien"], referredLien["@sens"]].filter((item) => item !== undefined).join(" ")} ${a ?? escapeHtml(referredLien["#text"] ?? "lien sans titre")}
+            </li>
+          `
+        }),
+      )
         .join("\n")
         .replaceAll("\n", "\n  ")}
     </ul>

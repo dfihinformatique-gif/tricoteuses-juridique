@@ -995,6 +995,9 @@ async function extractSourceTreeRelationsChanges(
           sourcePreviousTree.entries().map((entry) => [entry.name(), entry]),
         )
   for (const sourceEntry of sourceTree.entries()) {
+    if (sourceEntry.path() === "global/eli") {
+      continue
+    }
     const sourceEntryName = sourceEntry.name()
     const sourcePreviousEntry = sourcePreviousEntryByName?.[sourceEntryName]
     if (sourcePreviousEntry !== undefined) {

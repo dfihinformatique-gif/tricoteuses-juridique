@@ -36,7 +36,7 @@ import {
   dilaDateRegExp,
   iterCommitsOids,
   iterSourceCommitsWithSameDilaDate,
-  originesEtendues,
+  origines,
   type Origine,
 } from "$lib/server/nodegit/commits"
 import {
@@ -331,7 +331,7 @@ async function gitXmlToGitJson(
 
   const sourceRepositoryByOrigine = Object.fromEntries(
     await Promise.all(
-      originesEtendues.map(async (origine) => [
+      origines.map(async (origine) => [
         origine,
         await nodegit.Repository.open(
           path.join(dilaDir, origine.toLowerCase(), ".git"),

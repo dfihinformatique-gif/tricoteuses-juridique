@@ -28,8 +28,8 @@ import {
   auditLegiTexteVersion,
 } from "$lib/auditors/legi"
 import { idRegExp } from "$lib/legal/ids"
-import type { JorfCategorieTag } from "$lib/legal/jorf"
-import type { LegiCategorieTag } from "$lib/legal/legi"
+import type { JorfCategorieTag, JorfTexte, JorfTextelr } from "$lib/legal/jorf"
+import type { LegiCategorieTag, LegiTexte, LegiTextelr } from "$lib/legal/legi"
 import { xmlParser } from "$lib/parsers/shared"
 import config from "$lib/server/config"
 import {
@@ -50,33 +50,9 @@ import {
 
 const { forgejo } = config
 
-async function auditAndConvertLegalObjectToJson(
-  element: unknown,
-  auditor: Auditor,
-  targetRepository: nodegit.Repository,
-): Promise<nodegit.Oid> {
-  const [article, error] = auditChain(auditor, auditRequire)(
-    strictAudit,
-    element,
-  )
-  assert.strictEqual(
-    error,
-    null,
-    `Unexpected format for:\n${JSON.stringify(
-      article,
-      null,
-      2,
-    )}\nError:\n${JSON.stringify(error, null, 2)}`,
-  )
-  return await targetRepository.createBlobFromBuffer(
-    Buffer.from(JSON.stringify(article, null, 2), "utf-8"),
-  )
-}
-
-async function convertJorfObjectToJson(
+async function convertJorfEntryToJson<LegalType>(
   sourceBlobEntry: nodegit.TreeEntry,
-  targetRepository: nodegit.Repository,
-): Promise<nodegit.Oid | undefined> {
+): Promise<LegalType | undefined> {
   const xmlData = xmlParser.parse((await sourceBlobEntry.getBlob()).content())
   for (const [tag, element] of Object.entries(xmlData) as [
     JorfCategorieTag | "?xml",
@@ -88,11 +64,7 @@ async function convertJorfObjectToJson(
       }
 
       case "ARTICLE": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditJorfArticle,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditJorfArticle)
       }
 
       case "ID": {
@@ -100,35 +72,20 @@ async function convertJorfObjectToJson(
       }
 
       case "JO": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditJo,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditJo)
       }
 
       case "SECTION_TA": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditJorfSectionTa,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditJorfSectionTa)
       }
 
       case "TEXTE_VERSION": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditJorfTexteVersion,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditJorfTexteVersion)
       }
 
       case "TEXTELR": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditJorfTextelr,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditJorfTextelr)
+        return undefined
       }
 
       case "VERSIONS": {
@@ -145,27 +102,45 @@ async function convertJorfObjectToJson(
   return undefined
 }
 
-async function convertLegalObjectToJson(
+function convertLegalElementToJson<LegalType>(
+  element: unknown,
+  auditor: Auditor,
+): LegalType {
+  const [legalObject, error] = auditChain(auditor, auditRequire)(
+    strictAudit,
+    element,
+  ) as [LegalType, unknown]
+  assert.strictEqual(
+    error,
+    null,
+    `Unexpected format for:\n${JSON.stringify(
+      legalObject,
+      null,
+      2,
+    )}\nError:\n${JSON.stringify(error, null, 2)}`,
+  )
+  return legalObject
+}
+
+async function convertLegalEntryToJson<LegalType>(
   origine: Origine,
   sourceBlobEntry: nodegit.TreeEntry,
-  targetRepository: nodegit.Repository,
-): Promise<nodegit.Oid | undefined> {
+): Promise<LegalType | undefined> {
   switch (origine) {
     case "JORF": {
-      return await convertJorfObjectToJson(sourceBlobEntry, targetRepository)
+      return await convertJorfEntryToJson(sourceBlobEntry)
     }
     case "LEGI": {
-      return await convertLegiObjectToJson(sourceBlobEntry, targetRepository)
+      return await convertLegiEntryToJson(sourceBlobEntry)
     }
     default:
       assertNever("Origine", origine)
   }
 }
 
-async function convertLegiObjectToJson(
+async function convertLegiEntryToJson<LegalType>(
   sourceBlobEntry: nodegit.TreeEntry,
-  targetRepository: nodegit.Repository,
-): Promise<nodegit.Oid | undefined> {
+): Promise<LegalType | undefined> {
   const xmlData = xmlParser.parse((await sourceBlobEntry.getBlob()).content())
   for (const [tag, element] of Object.entries(xmlData) as [
     LegiCategorieTag | "?xml",
@@ -177,11 +152,7 @@ async function convertLegiObjectToJson(
       }
 
       case "ARTICLE": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditLegiArticle,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditLegiArticle)
       }
 
       case "ID": {
@@ -189,27 +160,15 @@ async function convertLegiObjectToJson(
       }
 
       case "SECTION_TA": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditLegiSectionTa,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditLegiSectionTa)
       }
 
       case "TEXTE_VERSION": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditLegiTexteVersion,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditLegiTexteVersion)
       }
 
       case "TEXTELR": {
-        return await auditAndConvertLegalObjectToJson(
-          element,
-          auditLegiTextelr,
-          targetRepository,
-        )
+        return convertLegalElementToJson(element, auditLegiTextelr)
       }
 
       case "VERSIONS": {
@@ -228,7 +187,9 @@ async function convertLegiObjectToJson(
 
 async function convertSourceTreeToJson(
   origine: Origine,
+  sourcePreviousRootTree: nodegit.Tree | undefined,
   sourcePreviousTree: nodegit.Tree | undefined,
+  sourceRootTree: nodegit.Tree,
   sourceTree: nodegit.Tree,
   targetOidByIdTree: OidByIdTree,
   targetRepository: nodegit.Repository,
@@ -241,18 +202,25 @@ async function convertSourceTreeToJson(
           sourcePreviousTree.entries().map((entry) => [entry.name(), entry]),
         )
   for (const sourceEntry of sourceTree.entries()) {
-    if (sourceEntry.path() === "global/eli") {
+    const sourceEntryPath = sourceEntry.path()
+    if (sourceEntryPath === "global/eli") {
       continue
     }
     const sourceEntryName = sourceEntry.name()
+    if (sourceEntryName === "struct") {
+      // Textelr are ignored here and read in the same time as the TexteVersion.
+      continue
+    }
     const sourcePreviousEntry = sourcePreviousEntryByName?.[sourceEntryName]
     if (sourceEntry.isTree()) {
       if (
         await convertSourceTreeToJson(
           origine,
+          sourcePreviousRootTree,
           sourcePreviousEntry?.isTree()
             ? await sourcePreviousEntry?.getTree()
             : undefined,
+          sourceRootTree,
           await sourceEntry.getTree(),
           targetOidByIdTree,
           targetRepository,
@@ -268,26 +236,65 @@ async function convertSourceTreeToJson(
       }
       if (id.match(idRegExp) === null) {
         console.warn(
-          `Ignoring source entry "${sourceEntry.path()}" with unknown ID format: ${id}`,
+          `Ignoring source entry "${sourceEntryPath}" with unknown ID format: ${id}`,
         )
         continue
       }
+
       const targetExistingOid = getOidFromIdTree(targetOidByIdTree, id)
-      if (
+      if (sourceEntryPath.includes("/version/")) {
+        // Source entry contains a TexteVersion
+        const textelrPath = sourceEntry.path().replace("/version/", "/struct/")
+        let structPreviousEntry: nodegit.TreeEntry | undefined
+        try {
+          structPreviousEntry =
+            await sourcePreviousRootTree?.entryByPath(textelrPath)
+        } catch {
+          structPreviousEntry = undefined
+        }
+        let structEntry: nodegit.TreeEntry | undefined
+        try {
+          structEntry = await sourceRootTree.entryByPath(textelrPath)
+        } catch (e) {
+          console.warn(`Textelr file not found at ${textelrPath}: Error ${e}`)
+          structEntry = undefined
+        }
+        if (
+          sourceEntry.oid() !== sourcePreviousEntry?.oid() ||
+          structEntry?.oid() !== structPreviousEntry?.oid() ||
+          targetExistingOid === undefined
+        ) {
+          const texte = (await convertLegalEntryToJson<JorfTexte | LegiTexte>(
+            origine,
+            sourceEntry,
+          ))!
+          const textelr =
+            structEntry === undefined
+              ? undefined
+              : await convertLegalEntryToJson<JorfTextelr | LegiTextelr>(
+                  origine,
+                  structEntry,
+                )
+          if (textelr !== undefined) {
+            texte.STRUCT = textelr.STRUCT
+            texte.VERSIONS = textelr.VERSIONS
+          }
+          const oid = await targetRepository.createBlobFromBuffer(
+            Buffer.from(JSON.stringify(texte, null, 2), "utf-8"),
+          )
+          if (setOidInIdTree(targetOidByIdTree, id, oid)) {
+            changed = true
+          }
+        }
+      } else if (
         sourceEntry.oid() !== sourcePreviousEntry?.oid() ||
         targetExistingOid === undefined
       ) {
-        if (
-          setOidInIdTree(
-            targetOidByIdTree,
-            id,
-            await convertLegalObjectToJson(
-              origine,
-              sourceEntry,
-              targetRepository,
-            ),
-          )
-        ) {
+        const legalObject = await convertLegalEntryToJson(origine, sourceEntry)
+        const oid = await targetRepository.createBlobFromBuffer(
+          Buffer.from(JSON.stringify(legalObject, null, 2), "utf-8"),
+        )
+        if (setOidInIdTree(targetOidByIdTree, id, oid)) {
           changed = true
         }
       }
@@ -491,6 +498,8 @@ async function gitXmlToGitJson(
         await convertSourceTreeToJson(
           origine,
           sourcePreviousTreeByOrigine?.[origine],
+          sourcePreviousTreeByOrigine?.[origine],
+          sourceTree,
           sourceTree,
           targetOidByIdTree,
           targetRepository,

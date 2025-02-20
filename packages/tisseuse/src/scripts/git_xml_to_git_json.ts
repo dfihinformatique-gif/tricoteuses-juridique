@@ -259,6 +259,12 @@ async function convertSourceTreeToJson(
           console.warn(`Textelr file not found at ${textelrPath}: Error ${e}`)
           structEntry = undefined
         }
+        if (structEntry?.isTree()) {
+          console.warn(
+            `Folder à ${textelrPath} should be a file => Ignoring Textelr`,
+          )
+          structEntry = undefined
+        }
         if (
           sourceEntry.oid() !== sourcePreviousEntry?.oid() ||
           structEntry?.oid() !== structPreviousEntry?.oid() ||

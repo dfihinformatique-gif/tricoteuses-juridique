@@ -244,17 +244,17 @@ async function convertSourceTreeToJson(
       const targetExistingOid = getOidFromIdTree(targetOidByIdTree, id)
       if (sourceEntryPath.includes("/version/")) {
         // Source entry contains a TexteVersion
-        const textelrPath = sourceEntry.path().replace("/version/", "/struct/")
+        const textelrPath = sourceEntryPath.replace("/version/", "/struct/")
         let structPreviousEntry: nodegit.TreeEntry | undefined
         try {
           structPreviousEntry =
-            await sourcePreviousRootTree?.entryByPath(textelrPath)
+            await sourcePreviousRootTree?.getEntry(textelrPath)
         } catch {
           structPreviousEntry = undefined
         }
         let structEntry: nodegit.TreeEntry | undefined
         try {
-          structEntry = await sourceRootTree.entryByPath(textelrPath)
+          structEntry = await sourceRootTree.getEntry(textelrPath)
         } catch (e) {
           console.warn(`Textelr file not found at ${textelrPath}: Error ${e}`)
           structEntry = undefined

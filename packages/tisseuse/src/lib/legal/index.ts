@@ -10,7 +10,16 @@ export {
   type Echeancier,
   type EcheancierLigne,
 } from "./dole"
-export { gitPathFromId, idRegExp } from "./ids"
+export {
+  extractOrigineFromId,
+  extractTypeFromId,
+  gitPathFromId,
+  idRegExp,
+  idsOrigines,
+  idsTypes,
+  type IdOrigine,
+  type IdType,
+} from "./ids"
 export {
   allJoNatures,
   allJoOrigines,
@@ -124,6 +133,7 @@ export {
   type LegiTexteVersionLienNature,
   type LegiTexteVersionLienType,
 } from "./legi"
+export type { LegalObjectReferences } from "./references"
 export {
   allArticleTypes,
   allSens,

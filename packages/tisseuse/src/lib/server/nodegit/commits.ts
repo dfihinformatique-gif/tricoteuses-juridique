@@ -1,14 +1,9 @@
 import nodegit from "nodegit"
 
 export type Origine = (typeof origines)[number]
-export type OrigineEtendue = (typeof originesEtendues)[number]
 
 export const dilaDateRegExp = /20\d\d[01]\d[0-3]\d-([0-6]\d){3}/
 export const origines = ["JORF", "LEGI"] as const
-export const originesEtendues = [
-  ...origines,
-  "RELATIONS_DONNEES_JURIDIQUES",
-] as const
 
 export async function* iterCommitsOids(
   repository: nodegit.Repository,
@@ -34,13 +29,15 @@ export async function* iterCommitsOids(
   }
 }
 
-export async function* iterSourceCommitsWithSameDilaDate(
-  repositoryByOrigine: Record<OrigineEtendue, nodegit.Repository>,
+export async function* iterSourceCommitsWithSameDilaDate<
+  OrigineType extends string,
+>(
+  repositoryByOrigine: Record<OrigineType, nodegit.Repository>,
   reverse: boolean,
 ): AsyncGenerator<
   {
     dilaDate: string
-    sourceCommitByOrigine: Record<OrigineEtendue, nodegit.Commit>
+    sourceCommitByOrigine: Record<OrigineType, nodegit.Commit>
   },
   void
 > {
@@ -48,8 +45,8 @@ export async function* iterSourceCommitsWithSameDilaDate(
   // When reverse is true, the first commit is the latest one.
   const commitsOidsIteratorByOrigine = Object.fromEntries(
     Object.entries(repositoryByOrigine).map(([origine, repository]) => [
-      origine,
-      iterCommitsOids(repository, reverse),
+      origine as OrigineType,
+      iterCommitsOids(repository as nodegit.Repository, reverse),
     ]),
   )
   iterCommitsWithSameDilaDate: while (true) {
@@ -64,7 +61,7 @@ export async function* iterSourceCommitsWithSameDilaDate(
               }
               return [
                 origine,
-                await repositoryByOrigine[origine as OrigineEtendue].getCommit(
+                await repositoryByOrigine[origine as OrigineType].getCommit(
                   value as nodegit.Oid,
                 ),
               ]
@@ -78,12 +75,12 @@ export async function* iterSourceCommitsWithSameDilaDate(
       return
     }
     const commitByOrigine = commitOrNullByOrigine as Record<
-      OrigineEtendue,
+      OrigineType,
       nodegit.Commit
     >
     const commitDilaDateByOrigine = Object.fromEntries(
       Object.entries(commitByOrigine).map(([origine, commit]) => {
-        const message = commit.message()
+        const message = (commit as nodegit.Commit).message()
         const dilaDate = message.match(dilaDateRegExp)?.[0] ?? null
         return [origine, dilaDate]
       }),
@@ -109,7 +106,9 @@ export async function* iterSourceCommitsWithSameDilaDate(
 
     // Iterate commits until each origin has the same commit date as the others.
     tryNextDilaDate: while (true) {
-      for (const origineAndCommitTuple of Object.entries(commitByOrigine)) {
+      for (const origineAndCommitTuple of Object.entries(
+        commitByOrigine,
+      ) as Array<[OrigineType, nodegit.Commit]>) {
         const origine = origineAndCommitTuple[0]
         let commit = origineAndCommitTuple[1]
         let commitDilaDate = commitDilaDateByOrigine[origine]
@@ -124,8 +123,8 @@ export async function* iterSourceCommitsWithSameDilaDate(
           if (done) {
             return
           }
-          commitByOrigine[origine as OrigineEtendue] = commit =
-            await repositoryByOrigine[origine as OrigineEtendue].getCommit(
+          commitByOrigine[origine as OrigineType] = commit =
+            await repositoryByOrigine[origine as OrigineType].getCommit(
               value as nodegit.Oid,
             )
           const message = commit.message()

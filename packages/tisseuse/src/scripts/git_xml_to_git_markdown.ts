@@ -51,13 +51,6 @@ import type {
   LegiTexteVersion,
 } from "$lib/legal/legi"
 import { xmlParser } from "$lib/parsers/shared"
-import type {
-  Edge,
-  LegalObjectRelations,
-  RelationArticle,
-  RelationTexte,
-  TexteRecap,
-} from "$lib/relations"
 import config from "$lib/server/config"
 import {
   dilaDateRegExp,

@@ -216,7 +216,7 @@ export interface JorfSectionTaStructure {
 export type JorfSectionTaTexteNature =
   (typeof allJorfSectionTaTexteNatures)[number]
 
-interface JorfSectionTaTm {
+export interface JorfSectionTaTm {
   TITRE_TM: {
     "#text"?: string
     "@debut": string
@@ -231,7 +231,7 @@ interface JorfSectionTaTm {
  */
 export type JorfTexte = JorfTexteVersion & {
   STRUCT?: JorfTextelrStructure
-  VERSIONS: JorfTextelrVersions
+  VERSIONS?: JorfTextelrVersions
 }
 
 export interface JorfTextelr {
@@ -265,22 +265,6 @@ export type JorfTextelrLienArtNature =
 export type JorfTextelrLienArtOrigine =
   (typeof allJorfTextelrLienArtOrigines)[number]
 
-export interface JorfTexteMetaCommun {
-  ANCIEN_ID?: string
-  ELI_ALIAS?: {
-    ID_ELI_ALIAS: string
-  }
-  ID: string
-  ID_ELI?: string
-  NATURE?: JorfTexteNature
-  ORIGINE: JorfTexteOrigine
-  URL: string
-}
-
-export type JorfTexteNature = (typeof allJorfTexteNatures)[number]
-
-export type JorfTexteOrigine = (typeof allJorfTexteOrigines)[number]
-
 export interface JorfTextelrLienSectionTa {
   "#text"?: string
   "@cid": string
@@ -310,6 +294,22 @@ export interface JorfTextelrVersions {
     }
   }>
 }
+
+export interface JorfTexteMetaCommun {
+  ANCIEN_ID?: string
+  ELI_ALIAS?: {
+    ID_ELI_ALIAS: string
+  }
+  ID: string
+  ID_ELI?: string
+  NATURE?: JorfTexteNature
+  ORIGINE: JorfTexteOrigine
+  URL: string
+}
+
+export type JorfTexteNature = (typeof allJorfTexteNatures)[number]
+
+export type JorfTexteOrigine = (typeof allJorfTexteOrigines)[number]
 
 export interface JorfTexteVersion {
   ABRO?: {

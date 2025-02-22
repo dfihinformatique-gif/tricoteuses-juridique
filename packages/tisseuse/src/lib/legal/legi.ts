@@ -208,7 +208,7 @@ export interface LegiSectionTaStructure {
 export type LegiSectionTaTexteNature =
   (typeof allLegiSectionTaTexteNatures)[number]
 
-interface LegiSectionTaTm {
+export interface LegiSectionTaTm {
   TITRE_TM: {
     "#text"?: string
     "@debut": string
@@ -223,7 +223,7 @@ interface LegiSectionTaTm {
  */
 export type LegiTexte = LegiTexteVersion & {
   STRUCT?: LegiTextelrStructure
-  VERSIONS: LegiTextelrVersions
+  VERSIONS?: LegiTextelrVersions
 }
 
 export interface LegiTextelr {

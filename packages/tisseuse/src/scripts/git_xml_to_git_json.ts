@@ -540,7 +540,7 @@ async function gitXmlToGitJson(
     const targetTreeOid = await writeOidByIdTree(
       targetRepository,
       targetOidByIdTree,
-      ".md",
+      ".json",
     )
     if (targetTreeOid.tostrS() === targetExistingTree?.id().tostrS()) {
       // No change to commit.

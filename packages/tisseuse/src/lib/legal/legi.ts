@@ -161,7 +161,7 @@ export interface LegiSectionTa {
         "@fin": string
         "@id_txt": string
       }>
-      TM?: LegiSectionTaTm[]
+      TM?: LegiSectionTaTm
     }
   }
   ID: string

@@ -112,7 +112,10 @@ async function exportReferencesToGit(
   const sourceRepository = await nodegit.Repository.open(
     path.join(dilaDir, "textes_juridiques_json.git"),
   )
-  const targetGitDir = path.join(dilaDir, "relations_donnees_juridiques.git")
+  const targetGitDir = path.join(
+    dilaDir,
+    "references_textes_juridiques_json.git",
+  )
   const targetRepository = (await fs.pathExists(targetGitDir))
     ? await nodegit.Repository.open(targetGitDir)
     : await nodegit.Repository.init(targetGitDir, 1 /* bare */)

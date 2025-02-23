@@ -170,7 +170,7 @@ export interface JorfSectionTa {
         "@fin": string
         "@id_txt": string
       }>
-      TM?: JorfSectionTaTm[]
+      TM?: JorfSectionTaTm
     }
   }
   TITRE_TA?: string

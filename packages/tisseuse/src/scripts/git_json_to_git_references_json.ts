@@ -509,11 +509,9 @@ function extractJorfObjectReferences(
           )
         }
       }
-      const tmArray = texte.TM
-      if (tmArray !== undefined) {
-        for (const tm of tmArray) {
-          extractJorfSectionTaTm(changedIds, referencesById, id, tm, add)
-        }
+      const tm = texte.TM
+      if (tm !== undefined) {
+        extractJorfSectionTaTm(changedIds, referencesById, id, tm, add)
       }
       break
     }

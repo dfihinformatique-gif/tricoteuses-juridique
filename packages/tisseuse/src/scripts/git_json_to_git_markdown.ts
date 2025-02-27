@@ -746,8 +746,13 @@ async function gitJsonToGitMarkdown(
 
         const targetTreeOid = await builder.write()
 
-        const referenceNames = await nodegit.Reference.list(targetRepository)
-        if (referenceNames.includes("HEAD")) {
+        const headExists = await nodegit.Reference.lookup(
+          targetRepository,
+          "HEAD",
+        )
+          .then(() => true)
+          .catch(() => false)
+        if (headExists) {
           nodegit.Reference.remove(targetRepository, "HEAD")
         }
 

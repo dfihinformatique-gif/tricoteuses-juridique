@@ -745,6 +745,12 @@ async function gitJsonToGitMarkdown(
         builder.insert("README.md", readmeOid, nodegit.TreeEntry.FILEMODE.BLOB) // 0o040000
 
         const targetTreeOid = await builder.write()
+
+        const referenceNames = await nodegit.Reference.list(targetRepository)
+        if (referenceNames.includes("HEAD")) {
+          nodegit.Reference.remove(targetRepository, "HEAD")
+        }
+
         targetCommitOid = await targetRepository.createCommit(
           "HEAD",
           nodegit.Signature.create(

@@ -3,7 +3,10 @@ import nodegit from "nodegit"
 
 import { idRegExp } from "$lib/legal/ids"
 
-export type OidByIdTree = Map<string, OidByIdTree | nodegit.Oid>
+export type OidByIdTree = {
+  childByKey?: Map<string, OidByIdTree>
+  oid?: nodegit.Oid
+}
 
 export function getOidFromIdTree(
   oidByIdTree: OidByIdTree,
@@ -12,46 +15,69 @@ export function getOidFromIdTree(
   const idMatch = id.match(idRegExp)
   assert.notStrictEqual(idMatch, null, `Unknown ID format: ${id}`)
 
-  let currentLevel = oidByIdTree
-  for (const targetDirName of idMatch!.slice(1, -1)) {
-    currentLevel = currentLevel.get(targetDirName) as OidByIdTree
-    if (currentLevel === undefined) {
+  let { childByKey } = oidByIdTree
+  for (const key of idMatch!.slice(1, -1)) {
+    if (childByKey === undefined) {
       return undefined
     }
+    childByKey = childByKey.get(key)?.childByKey
   }
 
-  return currentLevel.get(id) as nodegit.Oid | undefined
+  return childByKey?.get(id)?.oid
 }
 
+/**
+ * Update an existing OidByIdTree or create a new one.
+ */
 export async function readOidByIdTree(
   repository: nodegit.Repository,
   tree: nodegit.Tree | undefined,
+  extension: ".json" | ".md",
+  oidByTree?: OidByIdTree | undefined,
 ): Promise<OidByIdTree> {
-  const oidByIdTree: OidByIdTree = new Map()
-  if (tree !== undefined) {
-    const entries = tree.entries()
-
-    for (const entry of entries) {
-      if (entry.isTree()) {
-        const subtree = await nodegit.Tree.lookup(repository, entry.oid())
-        oidByIdTree.set(
-          entry.name(),
-          await readOidByIdTree(repository, subtree),
-        )
-      } else {
-        oidByIdTree.set(entry.name(), entry.id())
-      }
+  if (oidByTree === undefined) {
+    oidByTree = {}
+  }
+  if (tree === undefined) {
+    return oidByTree
+  }
+  const oid = tree.id()
+  if (oidByTree.oid !== undefined && oid.equal(oidByTree.oid)) {
+    return oidByTree
+  }
+  const childByKey: Map<string, OidByIdTree> = new Map()
+  for (const entry of tree.entries()) {
+    if (entry.isTree()) {
+      const key = entry.name()
+      const subTree = await nodegit.Tree.lookup(repository, entry.id())
+      childByKey.set(
+        key,
+        await readOidByIdTree(
+          repository,
+          subTree,
+          extension,
+          oidByTree.childByKey?.get(key),
+        ),
+      )
+    } else {
+      childByKey.set(entry.name().replace(extension, ""), { oid: entry.id() })
     }
   }
-  return oidByIdTree
+  return {
+    childByKey,
+    oid,
+  }
 }
 
 export function removeOidByIdTreeEmptyNodes(oidByIdTree: OidByIdTree): void {
-  for (const [name, entry] of oidByIdTree.entries()) {
-    if (!(entry instanceof nodegit.Oid)) {
-      removeOidByIdTreeEmptyNodes(entry)
-      if (entry.size === 0) {
-        oidByIdTree.delete(name)
+  const { childByKey } = oidByIdTree
+  if (childByKey !== undefined) {
+    for (const [key, child] of childByKey.entries()) {
+      if (child.childByKey !== undefined) {
+        removeOidByIdTreeEmptyNodes(child)
+        if (child.childByKey.size === 0) {
+          childByKey!.delete(key)
+        }
       }
     }
   }
@@ -65,24 +91,43 @@ export function setOidInIdTree(
   const idMatch = id.match(idRegExp)
   assert.notStrictEqual(idMatch, null, `Unknown ID format: ${id}`)
 
+  const levels: OidByIdTree[] = []
   let currentLevel = oidByIdTree
-  for (const targetDirName of idMatch!.slice(1, -1)) {
-    let subLevel = currentLevel.get(targetDirName) as OidByIdTree
+  for (const key of idMatch!.slice(1, -1)) {
+    levels.push(currentLevel)
+    const childByKey = (currentLevel.childByKey ??= new Map()) as Map<
+      string,
+      OidByIdTree
+    >
+    let subLevel = childByKey.get(key) as OidByIdTree
     if (subLevel === undefined) {
-      subLevel = new Map()
-      currentLevel.set(targetDirName, subLevel)
+      subLevel = {}
+      childByKey.set(key, subLevel)
     }
     currentLevel = subLevel
   }
 
-  const existingOid = currentLevel.get(id)
-  if (oid === existingOid) {
-    return false // Not changed
-  }
+  const childByKey = (currentLevel.childByKey ??= new Map()) as Map<
+    string,
+    OidByIdTree
+  >
+  const leaf = childByKey.get(id)
   if (oid === undefined) {
-    currentLevel.delete(id)
-  } else {
-    currentLevel.set(id, oid)
+    if (leaf !== undefined) {
+      childByKey.delete(id)
+      for (const level of levels) {
+        delete level.oid
+      }
+      return true // changed
+    }
+    return false
+  }
+  if (leaf?.oid !== undefined && oid.equal(leaf.oid)) {
+    return false
+  }
+  childByKey.set(id, { oid })
+  for (const level of levels) {
+    delete level.oid
   }
   return true // changed
 }
@@ -92,19 +137,57 @@ export async function writeOidByIdTree(
   oidByIdTree: OidByIdTree,
   extension: ".json" | ".md",
 ): Promise<nodegit.Oid> {
-  const builder = await nodegit.Treebuilder.create(repository)
+  if (oidByIdTree.oid === undefined) {
+    const builder = await nodegit.Treebuilder.create(repository)
+    const { childByKey } = oidByIdTree
+    if (childByKey !== undefined) {
+      for (const [key, child] of childByKey.entries()) {
+        if (child.childByKey === undefined) {
+          // Child is a blob and key is an ID.
+          assert.notStrictEqual(child.oid, undefined)
+          const filename = key + extension
+          builder.insert(filename, child.oid!, nodegit.TreeEntry.FILEMODE.BLOB) // 0o040000
+        } else {
+          const childOid = await writeOidByIdTree(repository, child, extension)
+          builder.insert(key, childOid, nodegit.TreeEntry.FILEMODE.TREE) // 0o100644
+        }
+      }
+    }
+    oidByIdTree.oid = await builder.write()
+  }
+  return oidByIdTree.oid
+}
 
-  for (const [key, entry] of oidByIdTree.entries()) {
-    if (entry instanceof nodegit.Oid) {
-      // `key` is a Légifrance ID.
-      const filename = key + extension
-      builder.insert(filename, entry, nodegit.TreeEntry.FILEMODE.BLOB) // 0o040000
-    } else {
-      // `key` is a fragment of a Légifrance ID.
-      const subtreeOid = await writeOidByIdTree(repository, entry, extension)
-      builder.insert(key, subtreeOid, nodegit.TreeEntry.FILEMODE.TREE) // 0o100644
+export function* walkPreviousAndCurrentOidByIdTrees(
+  previousOidByIdTree: OidByIdTree | undefined,
+  oidByIdTree: OidByIdTree | undefined,
+  key: string | undefined = undefined,
+): Generator<
+  { blobOid?: nodegit.Oid; id: string; previousBlobOid?: nodegit.Oid },
+  void
+> {
+  if (
+    oidByIdTree?.childByKey !== undefined ||
+    (oidByIdTree === undefined && previousOidByIdTree?.childByKey !== undefined)
+  ) {
+    // Trees
+    const keys = [
+      ...new Set(...(previousOidByIdTree?.childByKey?.keys() ?? [])),
+      ...(oidByIdTree?.childByKey?.keys() ?? []),
+    ].sort() as string[]
+    for (const key of keys) {
+      yield* walkPreviousAndCurrentOidByIdTrees(
+        previousOidByIdTree?.childByKey?.get(key),
+        oidByIdTree?.childByKey?.get(key),
+        key,
+      )
+    }
+  } else {
+    // Blobs
+    yield {
+      blobOid: oidByIdTree?.oid,
+      id: key!,
+      previousBlobOid: previousOidByIdTree?.oid,
     }
   }
-
-  return builder.write()
 }

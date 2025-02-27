@@ -128,7 +128,7 @@ async function exportReferencesToGit(
   let targetCommitOid: nodegit.Oid | undefined = undefined
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
-  const targetOidByIdTree: OidByIdTree = new Map()
+  let targetOidByIdTree: OidByIdTree = { childByKey: new Map() }
   for await (const sourceCommitOid of iterCommitsOids(sourceRepository, true)) {
     const sourceCommit = await sourceRepository.getCommit(sourceCommitOid)
     const sourceMessage = sourceCommit.message()
@@ -233,7 +233,7 @@ async function exportReferencesToGit(
     sourcePreviousCommit = sourceCommit
 
     // Read oidByIdTree if it has not been read yet.
-    if (targetOidByIdTree.size === 0) {
+    if (targetOidByIdTree.oid === undefined) {
       steps.push({
         label: "Read oidByIdTree",
         start: performance.now(),
@@ -241,11 +241,12 @@ async function exportReferencesToGit(
       console.log(
         `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
       )
-      for (const [name, subOidByIdTree] of (
-        await readOidByIdTree(targetRepository, targetExistingTree)
-      ).entries()) {
-        targetOidByIdTree.set(name, subOidByIdTree)
-      }
+      targetOidByIdTree = await readOidByIdTree(
+        targetRepository,
+        targetExistingTree,
+        ".json",
+        targetOidByIdTree,
+      )
     }
 
     // Update oidByIdTree with modified relations.

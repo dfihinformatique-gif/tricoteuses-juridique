@@ -587,7 +587,7 @@ export async function generateConsolidatedTextGit(
         timestamp: 0,
         timezoneOffset: -60,
       },
-      message: "Création du dépôt Git",
+      message: "Création du dépôt git",
       parent: [],
       tree: treeOid,
     },

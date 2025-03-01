@@ -172,10 +172,10 @@ export function* walkPreviousAndCurrentOidByIdTrees(
   ) {
     // Trees
     const keys = [
-      ...new Set(
+      ...new Set([
         ...(previousOidByIdTree?.childByKey?.keys() ?? []),
         ...(oidByIdTree?.childByKey?.keys() ?? []),
-      ),
+      ]),
     ].sort() as string[]
     for (const key of keys) {
       yield* walkPreviousAndCurrentOidByIdTrees(

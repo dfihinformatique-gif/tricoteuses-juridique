@@ -406,7 +406,12 @@ async function gitXmlToGitJson(
       }
       if (targetBaseCommitOid !== undefined) {
         // Start targetCommitsOidsIterator at targetBaseCommitOid.
-        for await (targetCommitOid of targetCommitsOidsIterator) {
+        while (true) {
+          const { done, value } = await targetCommitsOidsIterator.next()
+          if (done) {
+            break
+          }
+          targetCommitOid = value
           if (targetCommitOid.equal(targetBaseCommitOid)) {
             break
           }

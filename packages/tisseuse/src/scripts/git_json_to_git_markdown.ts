@@ -976,6 +976,8 @@ async function gitJsonToGitMarkdown(
           (oid) => oid !== undefined,
         ) as nodegit.Oid[],
       )
+      await targetRepository.createBranch("main", targetCommitOid!, true)
+      await targetRepository.setHead("refs/heads/main")
       commitsChanged = true
     }
   }
@@ -987,9 +989,6 @@ async function gitJsonToGitMarkdown(
   )
 
   if (commitsChanged) {
-    await targetRepository.createBranch("main", targetCommitOid!, true)
-    await targetRepository.setHead("refs/heads/main")
-
     if (forgejo !== undefined && push) {
       steps.push({
         label: "Push new commits",

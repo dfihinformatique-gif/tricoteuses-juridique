@@ -675,6 +675,9 @@ async function gitJsonToGitMarkdown(
 
   let commitsChanged = false
   let jsonOidByIdTree: OidByIdTree = { childByKey: new Map() }
+  let previousSourceCommitBySymbol:
+    | Record<SourceRepositorySymbol, nodegit.Commit>
+    | undefined = undefined
   let referencesOidByIdTree: OidByIdTree = { childByKey: new Map() }
   let skip = true
   let targetBaseCommitFound = false
@@ -801,11 +804,34 @@ async function gitJsonToGitMarkdown(
           )
           targetCommitsOidsIterationsDone = true
         } else {
+          previousSourceCommitBySymbol = sourceCommitBySymbol
           continue
         }
       }
       if (!silent) {
         console.log(`Resuming conversion at date ${dilaDate}…`)
+      }
+      if (previousSourceCommitBySymbol !== undefined) {
+        // Read the jsonOidByIdTree & referencesOidByIdTree of the previous commi
+        // to ensure that the first call to convertJsonTreeToMarkdown will only
+        // convert the changes.
+        const jsonCommit = previousSourceCommitBySymbol.json
+        const jsonTree = await jsonCommit.getTree()
+        jsonOidByIdTree = await readOidByIdTree(
+          jsonRepository,
+          jsonTree,
+          ".json",
+          jsonOidByIdTree,
+        )
+
+        const referencesCommit = previousSourceCommitBySymbol.references
+        const referencesTree = await referencesCommit.getTree()
+        referencesOidByIdTree = await readOidByIdTree(
+          referencesRepository,
+          referencesTree,
+          ".json",
+          referencesOidByIdTree,
+        )
       }
     }
 

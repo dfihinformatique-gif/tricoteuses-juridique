@@ -1034,6 +1034,11 @@ async function convertJsonTreeToMarkdown(
   referencesRepository: nodegit.Repository,
   targetOidByIdTree: OidByIdTree,
   targetRepository: nodegit.Repository,
+  {
+    verbose,
+  }: {
+    verbose?: boolean
+  } = {},
 ): Promise<boolean> {
   let changed = false
   for (const {
@@ -1044,6 +1049,9 @@ async function convertJsonTreeToMarkdown(
     previousJsonOidByIdTree,
     jsonOidByIdTree,
   )) {
+    if (verbose) {
+      console.log(`Converting ID ${id} (blob OID: ${blobOid}) to Markdown…`)
+    }
     const previousReferences = (
       await loadJsonObject<LegalObjectReferences>(
         previousReferencesOidByIdTree,
@@ -1616,17 +1624,24 @@ async function gitJsonToGitMarkdown(
     init,
     push,
     silent,
+    verbose,
   }: {
     force?: boolean
     init?: string
     push?: boolean
     silent?: boolean
+    verbose?: boolean
   } = {},
 ): Promise<number> {
   const steps: Array<{ label: string; start: number }> = []
   steps.push({ label: "Resuming", start: performance.now() })
 
   const exitCode = 0
+  assert.notStrictEqual(
+    silent && verbose,
+    true,
+    "Options --quiet and --verbose are incompatible.",
+  )
   const [dilaStartDate, dilaStartDateError] = auditChain(
     auditTest(
       (value: string) => dilaDateRegExp.test(value),
@@ -1906,6 +1921,7 @@ async function gitJsonToGitMarkdown(
         referencesRepository,
         targetOidByIdTree,
         targetRepository,
+        { verbose },
       )
     ) {
       commitChanged = true
@@ -2401,6 +2417,7 @@ sade("git_json_to_git_markdown <dilaDir>", true)
   )
   .option("-p, --push", "Push generated repository")
   .option("-s, --silent", "Hide log messages")
+  .option("-v, --verbose", "Show more log messages")
   .example("/var/tmp")
   .action(async (dilaDir, options) => {
     process.exit(await gitJsonToGitMarkdown(dilaDir, options))

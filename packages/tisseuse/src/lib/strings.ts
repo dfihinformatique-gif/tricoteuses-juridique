@@ -86,6 +86,30 @@ export function escapeHtml<StringOrUndefined extends string | undefined>(
   return (escaped + s.substring(last)) as StringOrUndefined
 }
 
+export function escapeMarkdown<StringOrUndefined extends string | undefined>(
+  s: StringOrUndefined,
+): StringOrUndefined {
+  return s
+    ?.replaceAll("\\", "\\\\")
+    .replaceAll("`", "\\`")
+    .replaceAll("*", "\\*")
+    .replaceAll("_", "\\_")
+    .replaceAll("{", "\\{")
+    .replaceAll("}", "\\}")
+    .replaceAll("[", "\\[")
+    .replaceAll("]", "\\]")
+    .replaceAll("<", "\\<")
+    .replaceAll(">", "\\>")
+    .replaceAll("(", "\\(")
+    .replaceAll(")", "\\)")
+    .replaceAll("#", "\\#")
+    .replaceAll("+", "\\+")
+    .replaceAll("-", "\\-")
+    .replaceAll(".", "\\.")
+    .replaceAll("!", "\\!")
+    .replaceAll("|", "\\|") as StringOrUndefined
+}
+
 export function slugify(string: string, replacement?: string | null) {
   const options: {
     charmap: { [character: string]: string }

@@ -13,19 +13,34 @@ import path from "path"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts"
-import { bestItemForDate } from "$lib/legal"
+import { bestItemForDate, walkContexteTexteTm, walkJoTm } from "$lib/legal"
 import {
   extractOrigineFromId,
   extractTypeFromId,
   gitPathFromId,
   type IdType,
 } from "$lib/legal/ids"
-import type { JorfArticle, JorfArticleTm, JorfTexte } from "$lib/legal/jorf"
+import type {
+  Jo,
+  JoLienTxt,
+  JorfArticle,
+  JorfArticleTm,
+  JorfSectionTa,
+  JorfSectionTaLienSectionTa,
+  JorfSectionTaTm,
+  JorfTexte,
+  JoTm,
+} from "$lib/legal/jorf"
 import type {
   LegiArticle,
-  LegiArticleMetaArticle,
   LegiArticleTm,
+  LegiMetaTexteVersion,
+  LegiSectionTa,
+  LegiSectionTaLienArt,
+  LegiSectionTaLienSectionTa,
+  LegiSectionTaTm,
   LegiTexte,
+  LegiTextelrLienArt,
 } from "$lib/legal/legi"
 import type { LegalObjectReferences } from "$lib/legal/references"
 import config from "$lib/server/config"
@@ -45,97 +60,146 @@ import {
   writeOidByIdTree,
   type OidByIdTree,
 } from "$lib/server/nodegit/trees"
-import { cleanHtmlFragment, escapeHtml } from "$lib/strings"
+import { cleanHtmlFragment, escapeMarkdown } from "$lib/strings"
 
-interface ReferenceMarkdown {
-  id: string
-  markdown: string
-}
-
-type ReferencesOrNullById = Map<string, LegalObjectReferences | null>
+type ReferenceMarkdown =
+  | {
+      children?: undefined
+      id?: string
+      markdown: string
+    }
+  | {
+      children: ReferenceMarkdown[]
+      id?: string
+      markdown: string
+    }
 
 type SourceRepositorySymbol = "references" | "json"
 
 const { forgejo } = config
 
 async function* convertArticleOutgoingReferencesToMarkdown(
-  origine: Origine,
-  article: JorfArticle | LegiArticle,
   referenceById: Record<string, unknown>,
   jsonOidByIdTree: OidByIdTree,
   jsonRepository: nodegit.Repository,
+  origine: Origine,
+  articleDir: string,
+  article: JorfArticle | LegiArticle,
 ): AsyncGenerator<ReferenceMarkdown, void> {
   const texte = article.CONTEXTE.TEXTE
-  if (texte["@cid"] !== undefined) {
-    const referrent = await getOrLoadJsonObject(
+  yield* convertOutgoingReferenceToMarkdown(
+    referenceById,
+    jsonOidByIdTree,
+    jsonRepository,
+    articleDir,
+    texte["@cid"],
+    { label: "Texte" },
+  )
+  const titreTxtArray = texte.TITRE_TXT
+  if (titreTxtArray !== undefined) {
+    for (const titreTxt of titreTxtArray) {
+      yield* convertOutgoingReferenceToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        articleDir,
+        titreTxt["@id_txt"],
+        { label: "Titre texte" },
+      )
+    }
+  }
+  const tm = texte.TM
+  if (tm !== undefined) {
+    yield* convertContexteTexteTmOutgoingReferencesToMarkdown(
       referenceById,
       jsonOidByIdTree,
       jsonRepository,
-      texte["@cid"],
+      origine,
+      articleDir,
+      tm,
+      { label: "Fil d'ariane" },
     )
-    yield {
-      id: texte["@cid"],
-      markdown: `Texte : <a href="${escapeHtml(gitPathFromId(texte["@cid"], ".md"), true)}">${escapeHtml(referrent === undefined ? `Objet ${texte["@cid"]} manquant` : linkTitleFromIdAndLegalObject(texte["@cid"], referrent))}</a>`,
+  }
+  const liens = (article as LegiArticle).LIENS
+  if (liens !== undefined) {
+    for (const lien of liens.LIEN) {
+      yield* convertOutgoingReferenceToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        articleDir,
+        lien["@id"],
+        {
+          label: ["Lien", lien["@typelien"], lien["@sens"]]
+            .filter((item) => item !== undefined)
+            .join(" "),
+        },
+      )
+      yield* convertOutgoingReferenceToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        articleDir,
+        lien["@cidtexte"],
+        { label: "Lien texte" },
+      )
     }
   }
-
-  // TODO: continue
+  yield {
+    children: (
+      await Promise.all(
+        article.VERSIONS.VERSION.map(
+          async (version) =>
+            await Array.fromAsync(
+              convertOutgoingReferenceToMarkdown(
+                referenceById,
+                jsonOidByIdTree,
+                jsonRepository,
+                articleDir,
+                version.LIEN_ART["@id"],
+              ),
+            ),
+        ),
+      )
+    ).flat(),
+    markdown: "Versions",
+  }
 }
 
 async function convertArticleToMarkdown(
-  origine: Origine,
-  article: JorfArticle | LegiArticle,
   referrerById: Record<string, unknown>,
   jsonOidByIdTree: OidByIdTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
+  origine: Origine,
+  article: JorfArticle | LegiArticle,
 ): Promise<nodegit.Oid> {
-  const articleId = article.META.META_COMMUN.ID
-  const articleNumber = article.META.META_SPEC.META_ARTICLE.NUM
+  const metaArticle = article.META.META_SPEC.META_ARTICLE
+  const metaCommun = article.META.META_COMMUN
+  const articleId = metaCommun.ID
+  const articleDir = path.dirname(gitPathFromId(articleId, ".md"))
+  const referenceById = { ...referrerById }
+
+  const articleNumber = metaArticle.NUM
   const texte = article.CONTEXTE.TEXTE
-  const titresTexte = texte.TITRE_TXT
-  const texteTitle =
-    titresTexte === undefined
-      ? "Texte sans titre"
-      : titresTexte.length === 1
-        ? (
-            titresTexte[0]["#text"] ??
-            titresTexte[0]["@c_titre_court"] ??
-            "Texte sans titre"
-          )
-            .replace(/\s+/g, " ")
-            .trim()
-        : titresTexte
-            .map(
-              (titreTexte) =>
-                `${(
-                  titreTexte["#text"] ??
-                  titreTexte["@c_titre_court"] ??
-                  "Texte sans titre"
-                )
-                  .replace(/\s+/g, " ")
-                  .trim()}${
-                  titreTexte["@debut"] === "2999-01-01" &&
-                  titreTexte["@fin"] === "2999-01-01"
-                    ? ""
-                    : titreTexte["@fin"] === "2999-01-01"
-                      ? ` (depuis le ${titreTexte["@debut"]})`
-                      : ` (du ${titreTexte["@debut"]} au ${titreTexte["@debut"]})`
-                }`,
-            )
-            .join("<br />\n")
+  const markdownContexteTexteTitleContentArray =
+    markdownTitleContentArrayFromContexteTexte(articleDir, texte)
   const tm = texte.TM
   let tmBreadcrumb: string | undefined = undefined
   if (tm !== undefined) {
     switch (origine) {
       case "JORF": {
-        tmBreadcrumb = generateJorfArticleTmBreadcrumb(tm as JorfArticleTm)
+        tmBreadcrumb = markdownTreeFromTmWithTitre(
+          articleDir,
+          tm as JorfArticleTm,
+        )
         break
       }
       case "LEGI": {
-        tmBreadcrumb = generateLegiArticleTmBreadcrumb(
+        tmBreadcrumb = markdownTreeFromTmWithTitreArray(
+          articleDir,
           tm as LegiArticleTm,
-          article.META.META_SPEC.META_ARTICLE.DATE_DEBUT,
+          metaArticle.DATE_DEBUT,
         )
         break
       }
@@ -145,92 +209,61 @@ async function convertArticleToMarkdown(
     }
   }
 
-  const incomingReferencesMarkdownByIdType: Partial<Record<IdType, string[]>> =
-    {}
-  for (const incomingReferenceMarkdown of await convertIncomingReferencesToMarkdown(
-    referrerById,
-  )) {
-    ;(incomingReferencesMarkdownByIdType[
-      extractTypeFromId(incomingReferenceMarkdown.id)
-    ] ??= []).push(incomingReferenceMarkdown.markdown)
-  }
-  assert(
-    Object.keys(incomingReferencesMarkdownByIdType).every((idType) =>
-      ["ARTI", "TEXT"].includes(idType),
+  const outgoingReferenceMarkdownArray = await Array.fromAsync(
+    convertArticleOutgoingReferencesToMarkdown(
+      referenceById,
+      jsonOidByIdTree,
+      jsonRepository,
+      origine,
+      articleDir,
+      article,
     ),
   )
-
-  const outgoingReferencesMarkdown: string[] = []
-  const referenceById = { ...referrerById }
-  for await (const outgoingReferenceMarkdown of convertArticleOutgoingReferencesToMarkdown(
-    origine,
-    article,
-    referenceById,
-    jsonOidByIdTree,
-    jsonRepository,
-  )) {
-    outgoingReferencesMarkdown.push(outgoingReferenceMarkdown.markdown)
-  }
 
   const articleMarkdown = [
     dedent`
       ---
       ${[
         // ["État", (article as LegiArticle).META.META_SPEC.META_ARTICLE.ETAT],
-        ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-        ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-        ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+        ["Nature", metaCommun.NATURE],
+        ["Type", metaArticle.TYPE],
+        ["Numéro", metaArticle.NUM],
+        ["Date de début", metaArticle.DATE_DEBUT],
+        ["Date de fin", metaArticle.DATE_FIN],
         ["Identifiant", articleId],
-        ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
+        ["Ancien identifiant", metaCommun.ANCIEN_ID],
+        ["Origine", metaCommun.ORIGINE],
         // TODO: Mettre l'URL dans le Git Tricoteuses
-        ["URL", article.META.META_COMMUN.URL],
+        ["URL", metaCommun.URL],
       ]
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)
         .join("\n")}
       ---
     `,
-    tmBreadcrumb === undefined
-      ? dedent`
-          <h2>
-            ${escapeHtml(texteTitle).replaceAll("\n", "\n  ")}
-          </h2>
-        `
-      : dedent`
-          <ul>
-            <li>
-              <h2>
-                ${escapeHtml(texteTitle).replaceAll("\n", "\n      ")}
-              </h2>
-              ${tmBreadcrumb.replaceAll("\n", "\n    ")}
-            </li>
-          </ul>
-        `,
+    markdownContexteTexteTitleContentArray
+      .map((title) => `## ${title}`)
+      .join("\n"),
+    tmBreadcrumb,
     articleNumber === undefined
       ? undefined
-      : `<h1>${escapeHtml(`Article ${articleNumber}`)}</h1>`,
+      : `# ${escapeMarkdown(`Article ${articleNumber}`)}`,
     await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU),
-    incomingReferencesMarkdownByIdType.ARTI === undefined
-      ? undefined
-      : dedent`
-          <h2>Articles faisant référence à l'article</h2>
-
-          ${htmlListFromHtmlItems(incomingReferencesMarkdownByIdType.ARTI)}
-        `,
-    incomingReferencesMarkdownByIdType.TEXT === undefined
-      ? undefined
-      : dedent`
-            <h2>Textes faisant référence à l'article</h2>
-
-            ${htmlListFromHtmlItems(incomingReferencesMarkdownByIdType.TEXT)}
-          `,
-    outgoingReferencesMarkdown.length === 0
-      ? undefined
-      : dedent`
-              <h2>Références faites par l'article</h2>
-
-              ${htmlListFromHtmlItems(outgoingReferencesMarkdown)}
-            `,
+    ...(await Array.fromAsync(
+      markdownBlocksFromLegalObjectReferences(
+        referrerById,
+        outgoingReferenceMarkdownArray,
+        "Références faites par l'article",
+        {
+          ARTI: "Articles faisant référence à l'article",
+          CONT: "Journaux officiels faisant référence à l'article",
+          SCTA: "Sections faisant référence à l'article",
+          TEXT: "Textes faisant référence à l'article",
+        },
+        articleDir,
+        articleId,
+      ),
+    )),
   ]
     .filter((block) => block !== undefined)
     .join("\n\n")
@@ -239,17 +272,193 @@ async function convertArticleToMarkdown(
   )
 }
 
-function* convertIncomingArticleReferencesToMarkdown(
+async function* convertContexteTexteTmOutgoingReferencesToMarkdown(
+  referenceById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  origine: Origine,
+  articleDir: string,
+  articleTm: JorfArticleTm | JorfSectionTaTm | LegiArticleTm | LegiSectionTaTm,
+  {
+    label,
+  }: {
+    label?: string
+  } = {},
+): AsyncGenerator<ReferenceMarkdown, void> {
+  for (const tm of walkContexteTexteTm(articleTm)) {
+    if (Array.isArray(tm.TITRE_TM)) {
+      // LegiArticleTm
+      if (tm.TITRE_TM.length === 1) {
+        yield* convertOutgoingReferenceToMarkdown(
+          referenceById,
+          jsonOidByIdTree,
+          jsonRepository,
+          articleDir,
+          tm.TITRE_TM[0]["@id"],
+          {
+            label,
+          },
+        )
+      } else {
+        yield {
+          children: (
+            await Promise.all(
+              tm.TITRE_TM.map(
+                async (titreTm) =>
+                  await Array.fromAsync(
+                    convertOutgoingReferenceToMarkdown(
+                      referenceById,
+                      jsonOidByIdTree,
+                      jsonRepository,
+                      articleDir,
+                      titreTm["@id"],
+                    ),
+                  ),
+              ),
+            )
+          ).flat(),
+          markdown: label ?? "Sections alternatives",
+        }
+      }
+    } else {
+      // JorfArticleTm
+      yield* convertOutgoingReferenceToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        articleDir,
+        tm.TITRE_TM["@id"],
+        {
+          label,
+        },
+      )
+    }
+  }
+}
+
+async function convertIncomingArticleReferencesToMarkdown(
   articleId: string,
   article: JorfArticle | LegiArticle,
-): Generator<ReferenceMarkdown, void> {
-  if (false) {
-    yield { id: "TODO", markdown: "TODO" }
+  referrentDir: string,
+  referrentId: string,
+): Promise<ReferenceMarkdown> {
+  const children: ReferenceMarkdown[] = []
+
+  const texte = article.CONTEXTE.TEXTE
+  if (texte["@cid"] === referrentId) {
+    children.push({ markdown: "Texte" })
+  }
+  const titreTxtArray = texte.TITRE_TXT
+  if (titreTxtArray !== undefined) {
+    for (const titreTxt of titreTxtArray) {
+      if (titreTxt["@id_txt"] === referrentId) {
+        children.push({ markdown: "Titre texte" })
+      }
+    }
+  }
+  if (texte.TM !== undefined) {
+    for (const tm of walkContexteTexteTm(texte.TM)) {
+      if (Array.isArray(tm.TITRE_TM)) {
+        // LegiArticle
+        for (const titreTm of tm.TITRE_TM) {
+          if (titreTm["@id"] === referrentId) {
+            children.push({ markdown: "Fil d'ariane" })
+          }
+        }
+      } else if (tm.TITRE_TM["@id"] === referrentId) {
+        children.push({ markdown: "Fil d'ariane" })
+      }
+    }
+  }
+  const liens = (article as LegiArticle).LIENS
+  if (liens !== undefined) {
+    for (const lien of liens.LIEN) {
+      if (lien["@id"] === referrentId) {
+        children.push({
+          markdown: ["Lien", lien["@typelien"], lien["@sens"]]
+            .filter((item) => item !== undefined)
+            .join(" "),
+        })
+      }
+      if (lien["@cidtexte"] === referrentId) {
+        children.push({
+          markdown: "Lien texte",
+        })
+      }
+    }
+  }
+  for (const version of article.VERSIONS.VERSION) {
+    if (version.LIEN_ART["@id"] === referrentId) {
+      children.push({
+        markdown: "Version",
+      })
+    }
+  }
+
+  return {
+    children,
+    id: articleId,
+    markdown: markdownLinkFromIdAndTitle(
+      referrentDir,
+      articleId,
+      markdownLinkTitleFromIdAndLegalObject(articleId, article),
+    ),
+  }
+}
+
+async function convertIncomingJoReferencesToMarkdown(
+  joId: string,
+  jo: Jo,
+  referrentDir: string,
+  referrentId: string,
+): Promise<ReferenceMarkdown> {
+  const children: ReferenceMarkdown[] = []
+
+  const structureTxt = jo.STRUCTURE_TXT
+  if (structureTxt !== undefined) {
+    let referenceFound = false
+    const lienTxtArray = structureTxt.LIEN_TXT
+    if (lienTxtArray !== undefined) {
+      for (const lienTxt of lienTxtArray) {
+        if (lienTxt["@idtxt"] === referrentId) {
+          referenceFound = true
+          break
+        }
+      }
+    }
+    if (!referenceFound && structureTxt.TM !== undefined) {
+      iterTms: for (const tm of walkJoTm(structureTxt.TM)) {
+        const lienTxtArray = tm.LIEN_TXT
+        if (lienTxtArray !== undefined) {
+          for (const lienTxt of lienTxtArray) {
+            if (lienTxt["@idtxt"] === referrentId) {
+              referenceFound = true
+              break iterTms
+            }
+          }
+        }
+      }
+    }
+    if (referenceFound) {
+      children.push({ markdown: "Table des matières" })
+    }
+  }
+
+  return {
+    children,
+    id: joId,
+    markdown: markdownLinkFromIdAndTitle(
+      referrentDir,
+      joId,
+      markdownLinkTitleFromIdAndLegalObject(joId, jo),
+    ),
   }
 }
 
 async function convertIncomingReferencesToMarkdown(
   referrerById: Record<string, unknown>,
+  referrentDir: string,
+  referrentId: string,
 ): Promise<ReferenceMarkdown[]> {
   const incomingReferencesMarkdown: ReferenceMarkdown[] = []
   for (const [referrerId, referrer] of Object.entries(referrerById)) {
@@ -257,25 +466,48 @@ async function convertIncomingReferencesToMarkdown(
     switch (referrerIdType) {
       case "ARTI": {
         incomingReferencesMarkdown.push(
-          ...convertIncomingArticleReferencesToMarkdown(
+          await convertIncomingArticleReferencesToMarkdown(
             referrerId,
             referrer as JorfArticle | LegiArticle,
+            referrentDir,
+            referrentId,
           ),
         )
         break
       }
       case "CONT": {
-        // TODO
+        incomingReferencesMarkdown.push(
+          await convertIncomingJoReferencesToMarkdown(
+            referrerId,
+            referrer as Jo,
+            referrentDir,
+            referrentId,
+          ),
+        )
         break
       }
 
       case "SCTA": {
-        // TODO
+        incomingReferencesMarkdown.push(
+          await convertIncomingSectionTaReferencesToMarkdown(
+            referrerId,
+            referrer as JorfSectionTa | LegiSectionTa,
+            referrentDir,
+            referrentId,
+          ),
+        )
         break
       }
 
       case "TEXT": {
-        // TODO
+        incomingReferencesMarkdown.push(
+          await convertIncomingTexteReferencesToMarkdown(
+            referrerId,
+            referrer as JorfTexte | LegiTexte,
+            referrentDir,
+            referrentId,
+          ),
+        )
         break
       }
 
@@ -288,36 +520,228 @@ async function convertIncomingReferencesToMarkdown(
   return incomingReferencesMarkdown
 }
 
+async function convertIncomingSectionTaReferencesToMarkdown(
+  sectionTaId: string,
+  sectionTa: JorfSectionTa | LegiSectionTa,
+  referrentDir: string,
+  referrentId: string,
+): Promise<ReferenceMarkdown> {
+  const children: ReferenceMarkdown[] = []
+
+  const texte = sectionTa.CONTEXTE.TEXTE
+  if (texte["@cid"] === referrentId) {
+    children.push({ markdown: "Texte" })
+  }
+  const titreTxtArray = texte.TITRE_TXT
+  if (titreTxtArray !== undefined) {
+    for (const titreTxt of titreTxtArray) {
+      if (titreTxt["@id_txt"] === referrentId) {
+        children.push({ markdown: "Titre texte" })
+      }
+    }
+  }
+  if (texte.TM !== undefined) {
+    for (const tm of walkContexteTexteTm(texte.TM)) {
+      if (Array.isArray(tm.TITRE_TM)) {
+        // LegiArticle
+        for (const titreTm of tm.TITRE_TM) {
+          if (titreTm["@id"] === referrentId) {
+            children.push({ markdown: "Fil d'ariane" })
+          }
+        }
+      } else if (tm.TITRE_TM["@id"] === referrentId) {
+        children.push({ markdown: "Fil d'ariane" })
+      }
+    }
+  }
+  const structure = sectionTa.STRUCTURE_TA
+  if (structure !== undefined) {
+    const lienArtArray = structure.LIEN_ART
+    if (lienArtArray !== undefined) {
+      for (const lienArt of lienArtArray) {
+        if (lienArt["@id"] === referrentId) {
+          children.push({ markdown: "Table des matières" })
+          break
+        }
+      }
+    }
+    const lienSectionTaArray = structure.LIEN_SECTION_TA
+    if (lienSectionTaArray !== undefined) {
+      for (const lienSectionTa of lienSectionTaArray) {
+        if (lienSectionTa["@cid"] === referrentId) {
+          children.push({ markdown: "Table des matières" })
+          break
+        }
+        if (lienSectionTa["@id"] === referrentId) {
+          children.push({ markdown: "Table des matières" })
+          break
+        }
+      }
+    }
+  }
+  return {
+    children,
+    id: sectionTaId,
+    markdown: markdownLinkFromIdAndTitle(
+      referrentDir,
+      sectionTaId,
+      markdownLinkTitleFromIdAndLegalObject(sectionTaId, sectionTa),
+    ),
+  }
+}
+
+async function convertIncomingTexteReferencesToMarkdown(
+  texteId: string,
+  texte: JorfTexte | LegiTexte,
+  referrentDir: string,
+  referrentId: string,
+): Promise<ReferenceMarkdown> {
+  const children: ReferenceMarkdown[] = []
+
+  const structure = texte.STRUCT
+  if (structure !== undefined) {
+    const lienArtArray = structure.LIEN_ART
+    if (lienArtArray !== undefined) {
+      for (const lienArt of lienArtArray) {
+        if (lienArt["@id"] === referrentId) {
+          children.push({ markdown: "Table des matières" })
+          break
+        }
+      }
+    }
+    const lienSectionTaArray = structure.LIEN_SECTION_TA
+    if (lienSectionTaArray !== undefined) {
+      for (const lienSectionTa of lienSectionTaArray) {
+        if (lienSectionTa["@cid"] === referrentId) {
+          children.push({ markdown: "Table des matières" })
+          break
+        }
+        if (lienSectionTa["@id"] === referrentId) {
+          children.push({ markdown: "Table des matières" })
+          break
+        }
+      }
+    }
+  }
+  const versions = texte.VERSIONS?.VERSION
+  if (versions !== undefined) {
+    for (const version of versions) {
+      if (version.LIEN_TXT["@id"] === referrentId) {
+        children.push({
+          markdown: "Version",
+        })
+      }
+    }
+  }
+  return {
+    children,
+    id: texteId,
+    markdown: markdownLinkFromIdAndTitle(
+      referrentDir,
+      texteId,
+      markdownLinkTitleFromIdAndLegalObject(texteId, texte),
+    ),
+  }
+}
+
+async function* convertJoOutgoingReferencesToMarkdown(
+  referenceById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  origine: Origine,
+  joDir: string,
+  jo: Jo,
+): AsyncGenerator<ReferenceMarkdown, void> {
+  const structureTxt = jo.STRUCTURE_TXT
+  if (structureTxt?.TM !== undefined) {
+    const children = [
+      ...(
+        await Array.fromAsync(
+          structureTxt.LIEN_TXT ?? [],
+          async (lienTxt: JoLienTxt) => {
+            return await Array.fromAsync(
+              convertOutgoingReferenceToMarkdown(
+                referenceById,
+                jsonOidByIdTree,
+                jsonRepository,
+                joDir,
+                lienTxt["@idtxt"],
+              ),
+            )
+          },
+        )
+      ).flat(),
+      ...(await Array.fromAsync(
+        convertJoTmOutgoingReferencesToMarkdown(
+          referenceById,
+          jsonOidByIdTree,
+          jsonRepository,
+          joDir,
+          structureTxt?.TM,
+          {
+            useLinkTitle: false,
+          },
+        ),
+      )),
+    ]
+    yield {
+      children: children.length === 0 ? undefined : children,
+      markdown: "Table des matières",
+    }
+  }
+}
+
 async function convertJorfObjectToMarkdown(
-  id: string,
-  legalObject: unknown,
   referrerById: Record<string, unknown>,
   jsonOidByIdTree: OidByIdTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
+  id: string,
+  legalObject: unknown,
 ): Promise<nodegit.Oid | undefined> {
   const idType = extractTypeFromId(id)
   switch (idType) {
     case "ARTI": {
       return await convertArticleToMarkdown(
-        "JORF",
-        legalObject as JorfArticle,
         referrerById,
         jsonOidByIdTree,
         jsonRepository,
         targetRepository,
+        "JORF",
+        legalObject as JorfArticle,
       )
     }
     case "CONT": {
-      return undefined
+      return await convertJoToMarkdown(
+        referrerById,
+        jsonOidByIdTree,
+        jsonRepository,
+        targetRepository,
+        "JORF",
+        legalObject as Jo,
+      )
     }
 
     case "SCTA": {
-      return undefined
+      return await convertSectionTaToMarkdown(
+        referrerById,
+        jsonOidByIdTree,
+        jsonRepository,
+        targetRepository,
+        "JORF",
+        legalObject as JorfSectionTa,
+      )
     }
 
     case "TEXT": {
-      return undefined
+      return await convertTexteToMarkdown(
+        referrerById,
+        jsonOidByIdTree,
+        jsonRepository,
+        targetRepository,
+        "JORF",
+        legalObject as JorfTexte,
+      )
     }
 
     default: {
@@ -329,25 +753,184 @@ async function convertJorfObjectToMarkdown(
   return undefined
 }
 
-async function convertLegalObjectToMarkdown(
-  id: string,
-  legalObject: unknown,
+async function* convertJoTmOutgoingReferencesToMarkdown(
+  referenceById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  joDir: string,
+  joTmArray: JoTm[],
+  {
+    useLinkTitle,
+  }: {
+    useLinkTitle: boolean
+  },
+): AsyncGenerator<ReferenceMarkdown, void> {
+  for (const joTm of joTmArray) {
+    const children: ReferenceMarkdown[] = []
+    if (joTm.LIEN_TXT !== undefined) {
+      for (const lienTxt of joTm.LIEN_TXT) {
+        if (useLinkTitle) {
+          children.push({
+            id: lienTxt["@idtxt"],
+            markdown: markdownLinkFromIdAndTitle(
+              joDir,
+              lienTxt["@idtxt"],
+              lienTxt["@titretxt"] ?? "Texte sans titre",
+            ),
+          })
+        } else {
+          for await (const referenceMarkdown of convertOutgoingReferenceToMarkdown(
+            referenceById,
+            jsonOidByIdTree,
+            jsonRepository,
+            joDir,
+            lienTxt["@idtxt"],
+          )) {
+            children.push(referenceMarkdown)
+          }
+        }
+      }
+      if (joTm.TM !== undefined) {
+        for await (const referenceMarkdown of convertJoTmOutgoingReferencesToMarkdown(
+          referenceById,
+          jsonOidByIdTree,
+          jsonRepository,
+          joDir,
+          joTm.TM,
+          {
+            useLinkTitle,
+          },
+        )) {
+          children.push(referenceMarkdown)
+        }
+      }
+    }
+    yield {
+      children: children.length === 0 ? undefined : children,
+      markdown: escapeMarkdown(joTm.TITRE_TM),
+    }
+  }
+}
+
+async function convertJoToMarkdown(
   referrerById: Record<string, unknown>,
   jsonOidByIdTree: OidByIdTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
+  origine: Origine,
+  jo: Jo,
+): Promise<nodegit.Oid> {
+  const metaCommun = jo.META.META_COMMUN
+  const metaConteneur = jo.META.META_SPEC.META_CONTENEUR
+  const joId = metaCommun.ID
+  const joDir = path.dirname(gitPathFromId(joId, ".md"))
+  const referenceById = { ...referrerById }
+
+  const structureTxt = jo.STRUCTURE_TXT
+  let tmMarkdown: string | undefined = undefined
+  if (structureTxt?.TM !== undefined) {
+    const tmReferenceMarkdownArray = [
+      ...(structureTxt.LIEN_TXT ?? []).map((lienTxt) => ({
+        id: lienTxt["@idtxt"],
+        markdown: markdownLinkFromIdAndTitle(
+          joDir,
+          lienTxt["@idtxt"],
+          lienTxt["@titretxt"] ?? "Texte sans titre",
+        ),
+      })),
+      ...(await Array.fromAsync(
+        convertJoTmOutgoingReferencesToMarkdown(
+          referenceById,
+          jsonOidByIdTree,
+          jsonRepository,
+          joDir,
+          structureTxt.TM,
+          {
+            useLinkTitle: true,
+          },
+        ),
+      )),
+    ]
+    if (tmReferenceMarkdownArray.length !== 0) {
+      tmMarkdown = markdownTreeFromReferenceMarkdownArray(
+        tmReferenceMarkdownArray,
+      )
+    }
+  }
+
+  const outgoingReferenceMarkdownArray = await Array.fromAsync(
+    convertJoOutgoingReferencesToMarkdown(
+      referenceById,
+      jsonOidByIdTree,
+      jsonRepository,
+      origine,
+      joDir,
+      jo,
+    ),
+  )
+
+  const joMarkdown = [
+    dedent`
+      ---
+      ${[
+        ["Nature", metaCommun.NATURE],
+        ["Date de publication", metaConteneur.DATE_PUBLI],
+        ["Numéro", metaConteneur.NUM],
+        ["Identifiant", joId],
+        ["ELI", metaCommun.ID_ELI],
+        ["Origine", metaCommun.ORIGINE],
+        // TODO: Mettre l'URL dans le Git Tricoteuses
+        ["URL", jo.META.META_COMMUN.URL],
+      ]
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n")}
+      ---
+    `,
+    `# ${metaConteneur.TITRE}`,
+    tmMarkdown,
+    ...(await Array.fromAsync(
+      markdownBlocksFromLegalObjectReferences(
+        referrerById,
+        outgoingReferenceMarkdownArray,
+        "Références faites par le Journal officiel",
+        {
+          ARTI: "Articles faisant référence au Journal officiel",
+          CONT: "Journaux officiels faisant référence au Journal officiel",
+          SCTA: "Sections faisant référence au Journal officiel",
+          TEXT: "Textes faisant référence au Journal officiel",
+        },
+        joDir,
+        joId,
+      ),
+    )),
+  ]
+    .filter((block) => block !== undefined)
+    .join("\n\n")
+  return await targetRepository.createBlobFromBuffer(
+    Buffer.from(joMarkdown, "utf-8"),
+  )
+}
+
+async function convertLegalObjectToMarkdown(
+  referrerById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  targetRepository: nodegit.Repository,
+  id: string,
+  legalObject: unknown,
 ): Promise<nodegit.Oid | undefined> {
   const origine = extractOrigineFromId(id)
   switch (origine) {
     case "CNIL":
     case "JORF": {
       return convertJorfObjectToMarkdown(
-        id,
-        legalObject,
         referrerById,
         jsonOidByIdTree,
         jsonRepository,
         targetRepository,
+        id,
+        legalObject,
       )
     }
 
@@ -375,12 +958,12 @@ async function convertLegalObjectToMarkdown(
 
     case "LEGI": {
       return convertLegiObjectToMarkdown(
-        id,
-        legalObject,
         referrerById,
         jsonOidByIdTree,
         jsonRepository,
         targetRepository,
+        id,
+        legalObject,
       )
     }
 
@@ -391,36 +974,46 @@ async function convertLegalObjectToMarkdown(
 }
 
 async function convertLegiObjectToMarkdown(
-  id: string,
-  legalObject: unknown,
   referrerById: Record<string, unknown>,
   jsonOidByIdTree: OidByIdTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
+  id: string,
+  legalObject: unknown,
 ): Promise<nodegit.Oid | undefined> {
   const idType = extractTypeFromId(id)
   switch (idType) {
     case "ARTI": {
       return await convertArticleToMarkdown(
-        "LEGI",
-        legalObject as LegiArticle,
         referrerById,
         jsonOidByIdTree,
         jsonRepository,
         targetRepository,
+        "LEGI",
+        legalObject as LegiArticle,
       )
     }
 
-    case "CONT": {
-      return undefined
-    }
-
     case "SCTA": {
-      return undefined
+      return await convertSectionTaToMarkdown(
+        referrerById,
+        jsonOidByIdTree,
+        jsonRepository,
+        targetRepository,
+        "LEGI",
+        legalObject as LegiSectionTa,
+      )
     }
 
     case "TEXT": {
-      return undefined
+      return await convertTexteToMarkdown(
+        referrerById,
+        jsonOidByIdTree,
+        jsonRepository,
+        targetRepository,
+        "LEGI",
+        legalObject as LegiTexte,
+      )
     }
 
     default: {
@@ -534,12 +1127,12 @@ async function convertJsonTreeToMarkdown(
         targetOidByIdTree,
         id,
         await convertLegalObjectToMarkdown(
-          id,
-          legalObject,
           referrerById,
           jsonOidByIdTree,
           jsonRepository,
           targetRepository,
+          id,
+          legalObject,
         ),
       )
     ) {
@@ -550,58 +1143,455 @@ async function convertJsonTreeToMarkdown(
   return changed
 }
 
-function generateJorfArticleTmBreadcrumb(
-  tm: JorfArticleTm,
-  headingLevel = 3,
-): string {
-  return tm.TM === undefined
-    ? dedent`
-        <ul>
-          <li>
-            <h${headingLevel}>
-              ${escapeHtml(tm.TITRE_TM["#text"] ?? "Section sans titre").replaceAll("\n", "\n      ")}
-            </h${headingLevel}>
-          </li>
-        </ul>
-      `
-    : dedent`
-        <ul>
-          <li>
-            <h${headingLevel}>
-              ${escapeHtml(tm.TITRE_TM["#text"] ?? "Section sans titre").replaceAll("\n", "\n      ")}
-            </h${headingLevel}>
-            ${generateJorfArticleTmBreadcrumb(tm.TM, Math.min(headingLevel + 1, 6)).replaceAll("\n", "\n    ")}
-          </li>
-        </ul>
-      `
+async function* convertOutgoingReferenceToMarkdown(
+  referenceById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  referrerDir: string,
+  referrentId: string | undefined,
+  {
+    label,
+    prefix,
+    suffix,
+  }: {
+    label?: string
+    prefix?: string
+    suffix?: string
+  } = {},
+): AsyncGenerator<ReferenceMarkdown, void> {
+  if (referrentId !== undefined) {
+    yield {
+      id: referrentId,
+      markdown: `${label === undefined ? "" : `${escapeMarkdown(label)} : `}${await markdownLinkFromOutgoingReference(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        referrerDir,
+        referrentId,
+        {
+          prefix,
+          suffix,
+        },
+      )}`,
+    }
+  }
 }
 
-function generateLegiArticleTmBreadcrumb(
-  tm: LegiArticleTm,
-  dateDebutArticle: string,
-  headingLevel = 3,
-): string {
-  const titreTm = bestItemForDate(tm.TITRE_TM, dateDebutArticle)
-  return tm.TM === undefined
-    ? dedent`
-        <ul>
-          <li>
-            <h${headingLevel}>
-              ${escapeHtml(titreTm?.["#text"] ?? "Section sans titre").replaceAll("\n", "\n      ")}
-            </h${headingLevel}>
-          </li>
-        </ul>
-      `
-    : dedent`
-        <ul>
-          <li>
-            <h${headingLevel}>
-              ${escapeHtml(titreTm?.["#text"] ?? "Section sans titre").replaceAll("\n", "\n      ")}
-            </h${headingLevel}>
-            ${generateLegiArticleTmBreadcrumb(tm.TM, dateDebutArticle, Math.min(headingLevel + 1, 6)).replaceAll("\n", "\n    ")}
-          </li>
-        </ul>
-      `
+async function* convertSectionTaOutgoingReferencesToMarkdown(
+  referenceById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  origine: Origine,
+  sectionTaDir: string,
+  sectionTa: JorfSectionTa | LegiSectionTa,
+): AsyncGenerator<ReferenceMarkdown, void> {
+  const texte = sectionTa.CONTEXTE.TEXTE
+  yield* convertOutgoingReferenceToMarkdown(
+    referenceById,
+    jsonOidByIdTree,
+    jsonRepository,
+    sectionTaDir,
+    texte["@cid"],
+    { label: "Texte" },
+  )
+  const titreTxtArray = texte.TITRE_TXT
+  if (titreTxtArray !== undefined) {
+    for (const titreTxt of titreTxtArray) {
+      yield* convertOutgoingReferenceToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        sectionTaDir,
+        titreTxt["@id_txt"],
+        { label: "Titre texte" },
+      )
+    }
+  }
+  const tm = texte.TM
+  if (tm !== undefined) {
+    yield* convertContexteTexteTmOutgoingReferencesToMarkdown(
+      referenceById,
+      jsonOidByIdTree,
+      jsonRepository,
+      origine,
+      sectionTaDir,
+      tm,
+      { label: "Fil d'ariane" },
+    )
+  }
+  const structure = sectionTa.STRUCTURE_TA
+  if (structure !== undefined) {
+    const children = [
+      ...(await Array.fromAsync(
+        (structure.LIEN_ART ??
+          []) as /* JorfSectionTaLienArt[] | */ LegiSectionTaLienArt[],
+        async (lienArt) => ({
+          id: lienArt["@id"],
+          markdown: await markdownLinkFromOutgoingReference(
+            referenceById,
+            jsonOidByIdTree,
+            jsonRepository,
+            sectionTaDir,
+            lienArt["@id"],
+          ),
+        }),
+      )),
+      ...(await Array.fromAsync(
+        (structure.LIEN_SECTION_TA ?? []) as
+          | JorfSectionTaLienSectionTa[]
+          | LegiSectionTaLienSectionTa[],
+        async (lienSectionTa) => ({
+          id: lienSectionTa["@id"],
+          markdown: await markdownLinkFromOutgoingReference(
+            referenceById,
+            jsonOidByIdTree,
+            jsonRepository,
+            sectionTaDir,
+            lienSectionTa["@id"],
+          ),
+        }),
+      )),
+    ]
+    yield {
+      children,
+      markdown: "Table des matières",
+    }
+  }
+}
+
+async function convertSectionTaToMarkdown(
+  referrerById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  targetRepository: nodegit.Repository,
+  origine: Origine,
+  sectionTa: JorfSectionTa | LegiSectionTa,
+): Promise<nodegit.Oid> {
+  const sectionTaId = sectionTa.ID
+  const sectionTaDir = path.dirname(gitPathFromId(sectionTaId, ".md"))
+  const referenceById = { ...referrerById }
+
+  const texte = sectionTa.CONTEXTE.TEXTE
+  const markdownContexteTexteTitleContentArray =
+    markdownTitleContentArrayFromContexteTexte(sectionTaDir, texte)
+  const tm = texte.TM
+  let tmBreadcrumb: string | undefined = undefined
+  if (tm !== undefined) {
+    tmBreadcrumb = markdownTreeFromTmWithTitre(sectionTaDir, tm)
+  }
+
+  let structureMarkdown: string | undefined = undefined
+  const structure = sectionTa.STRUCTURE_TA
+  if (structure !== undefined) {
+    const structureReferenceMarkdownArray = [
+      ...(await Array.fromAsync(
+        (structure.LIEN_ART ??
+          []) as /* JorfSectionTaLienArt[] | */ LegiSectionTaLienArt[],
+        async (lienArt) => ({
+          id: lienArt["@id"],
+          markdown: await markdownLinkFromOutgoingReference(
+            referenceById,
+            jsonOidByIdTree,
+            jsonRepository,
+            sectionTaDir,
+            lienArt["@id"],
+          ),
+        }),
+      )),
+      ...(await Array.fromAsync(
+        structure.LIEN_SECTION_TA ?? [],
+        async (lienSectionTa) => {
+          let title = lienSectionTa["#text"] ?? "Section sans titre"
+          if (
+            lienSectionTa["@debut"] === "2999-01-01" &&
+            lienSectionTa["@fin"] === "2999-01-01"
+          ) {
+            // pass
+          } else if (lienSectionTa["@fin"] === "2999-01-01") {
+            title += ` (depuis le ${lienSectionTa["@debut"]})`
+          } else {
+            title += ` (du ${lienSectionTa["@debut"]} au ${lienSectionTa["@fin"]})`
+          }
+          return {
+            id: lienSectionTa["@id"],
+            markdown: markdownLinkFromIdAndTitle(
+              sectionTaDir,
+              lienSectionTa["@id"],
+              title,
+            ),
+          }
+        },
+      )),
+    ]
+    if (structureReferenceMarkdownArray.length !== 0) {
+      structureMarkdown = markdownTreeFromReferenceMarkdownArray(
+        structureReferenceMarkdownArray,
+      )
+    }
+  }
+
+  const outgoingReferenceMarkdownArray = await Array.fromAsync(
+    convertSectionTaOutgoingReferencesToMarkdown(
+      referenceById,
+      jsonOidByIdTree,
+      jsonRepository,
+      origine,
+      sectionTaDir,
+      sectionTa,
+    ),
+  )
+
+  const sectionTaMarkdown = [
+    dedent`
+      ---
+      ${[["Identifiant", sectionTaId]]
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n")}
+      ---
+    `,
+    markdownContexteTexteTitleContentArray
+      .map((title) => `## ${title}`)
+      .join("\n"),
+    tmBreadcrumb,
+    `# ${escapeMarkdown(sectionTa.TITRE_TA ?? "Section sans titre")}`,
+    sectionTa.COMMENTAIRE === undefined
+      ? undefined
+      : await cleanHtmlFragment(sectionTa.COMMENTAIRE),
+    structureMarkdown,
+    ...(await Array.fromAsync(
+      markdownBlocksFromLegalObjectReferences(
+        referrerById,
+        outgoingReferenceMarkdownArray,
+        "Références faites par la section",
+        {
+          ARTI: "Articles faisant référence à la section",
+          CONT: "Journaux officiels faisant référence à la section",
+          SCTA: "Sections faisant référence à la section",
+          TEXT: "Textes faisant référence à la section",
+        },
+        sectionTaDir,
+        sectionTaId,
+      ),
+    )),
+  ]
+    .filter((block) => block !== undefined)
+    .join("\n\n")
+  return await targetRepository.createBlobFromBuffer(
+    Buffer.from(sectionTaMarkdown, "utf-8"),
+  )
+}
+
+async function* convertTexteOutgoingReferencesToMarkdown(
+  referenceById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  origine: Origine,
+  texteDir: string,
+  texte: JorfTexte | LegiTexte,
+): AsyncGenerator<ReferenceMarkdown, void> {
+  const structure = texte.STRUCT
+  if (structure !== undefined) {
+    const children = [
+      ...(await Array.fromAsync(
+        (structure.LIEN_ART ??
+          []) as /* JorfSectionTaLienArt[] | */ LegiSectionTaLienArt[],
+        async (lienArt) => ({
+          id: lienArt["@id"],
+          markdown: await markdownLinkFromOutgoingReference(
+            referenceById,
+            jsonOidByIdTree,
+            jsonRepository,
+            texteDir,
+            lienArt["@id"],
+          ),
+        }),
+      )),
+      ...(await Array.fromAsync(
+        (structure.LIEN_SECTION_TA ?? []) as
+          | JorfSectionTaLienSectionTa[]
+          | LegiSectionTaLienSectionTa[],
+        async (lienSectionTa) => ({
+          id: lienSectionTa["@id"],
+          markdown: await markdownLinkFromOutgoingReference(
+            referenceById,
+            jsonOidByIdTree,
+            jsonRepository,
+            texteDir,
+            lienSectionTa["@id"],
+          ),
+        }),
+      )),
+    ]
+    yield {
+      children,
+      markdown: "Table des matières",
+    }
+  }
+  const versions = texte.VERSIONS?.VERSION
+  if (versions !== undefined) {
+    yield {
+      children: (
+        await Promise.all(
+          versions.map(
+            async (version) =>
+              await Array.fromAsync(
+                convertOutgoingReferenceToMarkdown(
+                  referenceById,
+                  jsonOidByIdTree,
+                  jsonRepository,
+                  texteDir,
+                  version.LIEN_TXT["@id"],
+                ),
+              ),
+          ),
+        )
+      ).flat(),
+      markdown: "Versions",
+    }
+  }
+}
+
+async function convertTexteToMarkdown(
+  referrerById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  targetRepository: nodegit.Repository,
+  origine: Origine,
+  texte: JorfTexte | LegiTexte,
+): Promise<nodegit.Oid> {
+  const metaCommun = texte.META.META_COMMUN
+  const metaTexteChronicle = texte.META.META_SPEC.META_TEXTE_CHRONICLE
+  const metaTexteVersion = texte.META.META_SPEC.META_TEXTE_VERSION
+  const texteId = metaCommun.ID
+  const texteDir = path.dirname(gitPathFromId(texteId, ".md"))
+  const referenceById = { ...referrerById }
+
+  let titles = [metaTexteVersion.TITREFULL].filter(
+    (title) => title !== undefined,
+  )
+  if (
+    metaTexteVersion.TITRE !== undefined &&
+    metaTexteVersion.TITRE !== metaTexteVersion.TITREFULL
+  ) {
+    titles.push(metaTexteVersion.TITRE)
+  }
+  if (titles.length === 0) {
+    titles.push("Texte sans titre")
+  }
+  titles = titles.map((title) =>
+    title
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\s+\(\d+\)$/, ""),
+  )
+
+  let structureMarkdown: string | undefined = undefined
+  const structure = texte.STRUCT
+  if (structure !== undefined) {
+    const structureReferenceMarkdownArray = [
+      ...(await Array.fromAsync(
+        (structure.LIEN_ART ??
+          []) as /* JorfTextelrLienArt[] | */ LegiTextelrLienArt[],
+        async (lienArt) => ({
+          id: lienArt["@id"],
+          markdown: await markdownLinkFromOutgoingReference(
+            referenceById,
+            jsonOidByIdTree,
+            jsonRepository,
+            texteDir,
+            lienArt["@id"],
+          ),
+        }),
+      )),
+      ...(await Array.fromAsync(
+        structure.LIEN_SECTION_TA ?? [],
+        async (lienSectionTa) => {
+          let title = lienSectionTa["#text"] ?? "Section sans titre"
+          if (
+            lienSectionTa["@debut"] === "2999-01-01" &&
+            lienSectionTa["@fin"] === "2999-01-01"
+          ) {
+            // pass
+          } else if (lienSectionTa["@fin"] === "2999-01-01") {
+            title += ` (depuis le ${lienSectionTa["@debut"]})`
+          } else {
+            title += ` (du ${lienSectionTa["@debut"]} au ${lienSectionTa["@fin"]})`
+          }
+          return {
+            id: lienSectionTa["@id"],
+            markdown: markdownLinkFromIdAndTitle(
+              texteDir,
+              lienSectionTa["@id"],
+              title,
+            ),
+          }
+        },
+      )),
+    ]
+    if (structureReferenceMarkdownArray.length !== 0) {
+      structureMarkdown = markdownTreeFromReferenceMarkdownArray(
+        structureReferenceMarkdownArray,
+      )
+    }
+  }
+
+  const outgoingReferenceMarkdownArray = await Array.fromAsync(
+    convertTexteOutgoingReferencesToMarkdown(
+      referenceById,
+      jsonOidByIdTree,
+      jsonRepository,
+      origine,
+      texteDir,
+      texte,
+    ),
+  )
+
+  const texteMarkdown = [
+    dedent`
+      ---
+      ${[
+        ["État", (metaTexteVersion as LegiMetaTexteVersion)?.ETAT],
+        ["Nature", metaCommun.NATURE],
+        ["Date de début", metaTexteVersion.DATE_DEBUT],
+        ["Date de fin", metaTexteVersion.DATE_FIN],
+        ["Identifiant", texteId],
+        ["NOR", metaTexteChronicle.NOR],
+        ["Ancien identifiant", metaCommun.ANCIEN_ID],
+        // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
+        ["URL", metaCommun.URL],
+      ]
+        .filter(([, value]) => value !== undefined)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n")}
+      ---
+    `,
+    titles.map((title) => `## ${escapeMarkdown(title)}`).join("\n"),
+    // TODO: Ajouter ABRO, ENREPRISE, NOTA, NOTICE, RECT, SM & TP
+    await cleanHtmlFragment(texte.VISAS?.CONTENU),
+    structureMarkdown,
+    await cleanHtmlFragment(texte.SIGNATAIRES?.CONTENU),
+    ...(await Array.fromAsync(
+      markdownBlocksFromLegalObjectReferences(
+        referrerById,
+        outgoingReferenceMarkdownArray,
+        "Références faites par le texte",
+        {
+          ARTI: "Articles faisant référence au texte",
+          CONT: "Journaux officiels faisant référence au texte",
+          SCTA: "Sections faisant référence au texte",
+          TEXT: "Textes faisant référence au texte",
+        },
+        texteDir,
+        texteId,
+      ),
+    )),
+  ]
+    .filter((block) => block !== undefined)
+    .join("\n\n")
+  return await targetRepository.createBlobFromBuffer(
+    Buffer.from(texteMarkdown, "utf-8"),
+  )
 }
 
 async function getOrLoadJsonObject<ObjectType>(
@@ -736,7 +1726,7 @@ async function gitJsonToGitMarkdown(
         const readmeOid = await targetRepository.createBlobFromBuffer(
           Buffer.from(
             dedent`
-              <h1>Textes juridiques</h1>
+              # Textes juridiques
 
               > **Avertissement** : Ce dépôt fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
               > de conversion à git des textes juridiques français.
@@ -1046,263 +2036,101 @@ async function gitJsonToGitMarkdown(
   return exitCode
 }
 
-// function htmlFromIncomingArticlesEdges(edges: Edge[]): string {
-//   return dedent`
-//     <ul>
-//       ${edges
-//         .map((edge) => {
-//           const articleRecap = edge.node as RelationArticle
-//           const articleTitleFragment =
-//             "article" +
-//             [articleRecap.number, articleRecap.type, articleRecap.state]
-//               .filter((value) => value !== undefined)
-//               .map((value) => ` ${value}`)
-//               .join("") +
-//             ((articleRecap.startDate === undefined ||
-//               articleRecap.startDate === "2999-01-01") &&
-//             (articleRecap.endDate === undefined ||
-//               articleRecap.endDate === "2999-01-01")
-//               ? ""
-//               : articleRecap.endDate === undefined ||
-//                   articleRecap.endDate === "2999-01-01"
-//                 ? `, en vigueur depuis le ${articleRecap.startDate}`
-//                 : `, en vigueur du ${articleRecap.startDate} au ${articleRecap.endDate}`)
+async function* markdownBlocksFromLegalObjectReferences(
+  referrerById: Record<string, unknown>,
+  outgoingReferenceMarkdownArray: ReferenceMarkdown[],
+  outgoingDesignation: string,
+  incomingReferencesDesignationByIdType: Partial<Record<IdType, string>>,
+  referrentDir: string,
+  referrentId: string,
+): AsyncGenerator<string, void> {
+  if (outgoingReferenceMarkdownArray.length !== 0) {
+    yield dedent`
+        ## ${escapeMarkdown(outgoingDesignation)}
 
-//           const texte = articleRecap.texte as TexteRecap | undefined
-//           const texteTitleFragment =
-//             texte === undefined
-//               ? undefined
-//               : texte.title === undefined
-//                 ? `${texte.nature ?? "Texte"} ${texte.id} manquant`
-//                 : texte.title
-//           return dedent`
-//             <li>
-//               <a href="${escapeHtml(gitPathFromId(articleRecap.id, ".md"), true)}">${escapeHtml(
-//                 [texteTitleFragment, articleTitleFragment]
-//                   .filter((fragment) => fragment !== undefined)
-//                   .join(" - "),
-//               )}</a> ${edge.linkType} ${edge.direction}
-//             </li>
-//           `
-//         })
-//         .join("\n")
-//         .replaceAll("\n", "\n  ")}
-//     </ul>
-//   `
-// }
+        ${markdownTreeFromReferenceMarkdownArray(outgoingReferenceMarkdownArray)}
+      `
+  }
 
-// function htmlFromIncomingTextesEdges(edges: Edge[]): string {
-//   return dedent`
-//     <ul>
-//       ${edges
-//         .map((edge) => {
-//           const texteRecap = edge.node as RelationTexte
-//           const texteTitleFragment =
-//             (texteRecap.title === undefined
-//               ? `${texteRecap.nature ?? "Texte"} ${texteRecap.id} manquant`
-//               : texteRecap.title) +
-//             (texteRecap.state === undefined ? "" : ` ${texteRecap.state}`) +
-//             ((texteRecap.startDate === undefined ||
-//               texteRecap.startDate === "2999-01-01") &&
-//             (texteRecap.endDate === undefined ||
-//               texteRecap.endDate === "2999-01-01")
-//               ? ""
-//               : texteRecap.endDate === undefined ||
-//                   texteRecap.endDate === "2999-01-01"
-//                 ? `, en vigueur depuis le ${texteRecap.startDate}`
-//                 : `, en vigueur du ${texteRecap.startDate} au ${texteRecap.endDate}`)
-//           return dedent`
-//             <li>
-//               <a href="${escapeHtml(gitPathFromId(texteRecap.id, ".md"), true)}">${escapeHtml(
-//                 texteTitleFragment,
-//               )}</a> ${edge.linkType} ${edge.direction}
-//             </li>
-//           `
-//         })
-//         .join("\n")
-//         .replaceAll("\n", "\n  ")}
-//     </ul>
-//   `
-// }
+  const incomingReferenceMarkdownArrayByIdType: Partial<
+    Record<IdType, ReferenceMarkdown[]>
+  > = {}
+  for (const incomingReferenceMarkdown of await convertIncomingReferencesToMarkdown(
+    referrerById,
+    referrentDir,
+    referrentId,
+  )) {
+    ;(incomingReferenceMarkdownArrayByIdType[
+      extractTypeFromId(incomingReferenceMarkdown.id!)
+    ] ??= []).push(incomingReferenceMarkdown)
+  }
 
-// function htmlFromOutgoingEdges(edges: Edge[]): string {
-//   return dedent`
-//     <ul>
-//       ${edges
-//         .map(async (edge) => {
-//           const { node } = edge
-//           let a: string | undefined = undefined
-//           switch (node.kind) {
-//             case undefined: {
-//               // Incomplete edge with only one ID (ie legal object was not found)
-//               return `<li>${node.id}</li>`
-//             }
+  if (incomingReferenceMarkdownArrayByIdType.CONT !== undefined) {
+    yield dedent`
+      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.CONT)}
 
-//             case "ARTICLE": {
-//               const articleTitleFragment =
-//                 "article" +
-//                 [node.number, node.type, node.state]
-//                   .filter((value) => value !== undefined)
-//                   .map((value) => ` ${value}`)
-//                   .join("") +
-//                 ((node.startDate === undefined ||
-//                   node.startDate === "2999-01-01") &&
-//                 (node.endDate === undefined || node.endDate === "2999-01-01")
-//                   ? ""
-//                   : node.endDate === undefined || node.endDate === "2999-01-01"
-//                     ? `, en vigueur depuis le ${node.startDate}`
-//                     : `, en vigueur du ${node.startDate} au ${node.endDate}`)
+      ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.CONT)}
+    `
+  }
+  if (incomingReferenceMarkdownArrayByIdType.TEXT !== undefined) {
+    yield dedent`
+      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.TEXT)}
 
-//               const texte = node.texte as TexteRecap | undefined
-//               const texteTitleFragment =
-//                 texte === undefined
-//                   ? undefined
-//                   : (texte.title ??
-//                     `${texte.nature ?? "Texte"} ${texte.id} manquant`)
-//               a = `<a href="${escapeHtml(gitPathFromId(node.id, ".md"), true)}">${escapeHtml([texteTitleFragment, articleTitleFragment].filter((fragment) => fragment !== undefined).join(" - "))}</a>`
-//               break
-//             }
+      ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.TEXT)}
+    `
+  }
+  if (incomingReferenceMarkdownArrayByIdType.SCTA !== undefined) {
+    yield dedent`
+      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.SCTA)}
 
-//             case "JO": {
-//               break
-//             }
+      ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.SCTA)}
+    `
+  }
+  if (incomingReferenceMarkdownArrayByIdType.ARTI !== undefined) {
+    yield dedent`
+      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.ARTI)}
 
-//             default: {
-//               assertNever("RelationNode.kind", node.kind)
-//             }
-//           }
-//           const referredId = referredLien["@id"] ?? referredLien["@cidtexte"]
-//           if (referredId !== undefined) {
-//             if (/^(CNIL|DOLE|JORF|KALI|LEGI)ARTI\d{12}$/.test(referredId)) {
-//               const article = await getOrLoadArticle(context, referredId)
-//               if (article !== null) {
-//                 const metaArticle = article.META.META_SPEC.META_ARTICLE
-//                 const articleTitleFragment =
-//                   "article" +
-//                   [
-//                     metaArticle.NUM,
-//                     metaArticle.TYPE,
-//                     (metaArticle as LegiArticleMetaArticle).ETAT,
-//                   ]
-//                     .filter((value) => value !== undefined)
-//                     .map((value) => ` ${value}`)
-//                     .join("") +
-//                   (metaArticle.DATE_DEBUT === "2999-01-01" &&
-//                   metaArticle.DATE_FIN === "2999-01-01"
-//                     ? ""
-//                     : metaArticle.DATE_FIN === "2999-01-01"
-//                       ? `, en vigueur depuis le ${metaArticle.DATE_DEBUT}`
-//                       : `, en vigueur du ${metaArticle.DATE_DEBUT} au ${metaArticle.DATE_FIN}`)
-
-//                 const articleTexte = article.CONTEXTE.TEXTE
-//                 const referredTextTitreTxt = bestItemForDate(
-//                   articleTexte.TITRE_TXT,
-//                   metaArticle.DATE_DEBUT,
-//                 )
-//                 const referredTextTitleFragment =
-//                   referredTextTitreTxt === undefined
-//                     ? `${articleTexte["@nature"] ?? "Texte"} ${articleTexte["@cid"]} manquant`
-//                     : (referredTextTitreTxt["#text"]
-//                         ?.replace(/\s+/g, " ")
-//                         .trim()
-//                         .replace(/\s+\(\d+\)$/, "") ??
-//                       referredTextTitreTxt["@c_titre_court"] ??
-//                       `${articleTexte["@nature"] ?? "Texte"} ${articleTexte["@cid"]} sans titre`)
-//                 a = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(articleTitleFragment)}</a>`
-//               }
-//             }
-
-//             if (/^(CNIL|DOLE|JORF|KALI|LEGI)SCTA\d{12}$/.test(referredId)) {
-//               const referredSectionTa = await getOrLoadSectionTa(
-//                 context,
-//                 referredId,
-//               )
-//               if (referredSectionTa !== null) {
-//                 const referredSectionTaTitleFragment =
-//                   referredSectionTa.TITRE_TA?.replace(/\s+/g, " ").trim() ??
-//                   "Section sans titre"
-
-//                 const referredSectionTaTexte = referredSectionTa.CONTEXTE.TEXTE
-//                 const referredTextTitreTxt = bestItemForDate(
-//                   referredSectionTaTexte.TITRE_TXT,
-//                   today, // TODO: Use a better date?
-//                 )
-//                 const referredTextTitleFragment =
-//                   referredTextTitreTxt === undefined
-//                     ? `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} manquant`
-//                     : (referredTextTitreTxt["#text"]
-//                         ?.replace(/\s+/g, " ")
-//                         .trim()
-//                         .replace(/\s+\(\d+\)$/, "") ??
-//                       referredTextTitreTxt["@c_titre_court"] ??
-//                       `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} sans titre`)
-//                 a = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredSectionTaTitleFragment)}</a>`
-//               }
-//             }
-
-//             if (/^(CNIL|DOLE|JORF|KALI|LEGI)TEXT\d{12}$/.test(referredId)) {
-//               const referredTexteVersion = await getOrLoadTexteVersion(
-//                 context,
-//                 referredId,
-//               )
-//               if (referredTexteVersion !== null) {
-//                 const metaTexteVersion =
-//                   referredTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-//                 const referredTextTitle =
-//                   (
-//                     metaTexteVersion.TITREFULL ??
-//                     metaTexteVersion.TITRE ??
-//                     referredId
-//                   )
-//                     .replace(/\s+/g, " ")
-//                     .trim()
-//                     .replace(/\s+\(\d+\)$/, "") +
-//                   ((metaTexteVersion as LegiMetaTexteVersion).ETAT === undefined
-//                     ? ""
-//                     : ` ${(metaTexteVersion as LegiMetaTexteVersion).ETAT}`) +
-//                   (((metaTexteVersion.DATE_DEBUT === undefined ||
-//                     metaTexteVersion.DATE_DEBUT === "2999-01-01") &&
-//                     metaTexteVersion.DATE_FIN === undefined) ||
-//                   metaTexteVersion.DATE_FIN === "2999-01-01"
-//                     ? ""
-//                     : metaTexteVersion.DATE_FIN === undefined ||
-//                         metaTexteVersion.DATE_FIN === "2999-01-01"
-//                       ? `, en vigueur depuis le ${metaTexteVersion.DATE_DEBUT}`
-//                       : `, en vigueur du ${metaTexteVersion.DATE_DEBUT} au ${metaTexteVersion.DATE_FIN}`)
-//                 a = `<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitle)}</a>`
-//               }
-//             }
-//           }
-//           return dedent`
-//             <li>
-//               ${[referredLien["@datesignatexte"], referredLien["@typelien"], referredLien["@sens"]].filter((item) => item !== undefined).join(" ")} ${a ?? escapeHtml(referredLien["#text"] ?? "lien sans titre")}
-//             </li>
-//           `
-//         })
-//         .join("\n")
-//         .replaceAll("\n", "\n  ")}
-//     </ul>
-//   `
-// }
-
-function htmlListFromHtmlItems(items: string[]): string {
-  return dedent`
-    <ul>
-      ${items
-        .map(
-          (item) => dedent`
-            <li>
-              ${item.replaceAll("\n", "\n  ")}
-            </li>
-          `,
-        )
-        .join("\n")
-        .replaceAll("\n", "\n  ")}
-    </ul>
-  `
+      ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.ARTI)}
+    `
+  }
 }
 
-function linkTitleFromIdAndLegalObject(
+function markdownLinkFromIdAndTitle(
+  referrerDir: string,
+  id: string,
+  title: string,
+): string {
+  return `[${escapeMarkdown(title)}](${escapeMarkdown(path.relative(referrerDir, gitPathFromId(id, ".md")))})`
+}
+
+async function markdownLinkFromOutgoingReference(
+  referenceById: Record<string, unknown>,
+  jsonOidByIdTree: OidByIdTree,
+  jsonRepository: nodegit.Repository,
+  referrerDir: string,
+  referrentId: string,
+  {
+    prefix,
+    suffix,
+  }: {
+    prefix?: string
+    suffix?: string
+  } = {},
+): Promise<string> {
+  const referrent = await getOrLoadJsonObject(
+    referenceById,
+    jsonOidByIdTree,
+    jsonRepository,
+    referrentId,
+  )
+  return markdownLinkFromIdAndTitle(
+    referrerDir,
+    referrentId,
+    `${prefix === undefined ? "" : `${escapeMarkdown(prefix)} `}${escapeMarkdown(referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent))}${suffix === undefined ? "" : ` ${escapeMarkdown(suffix)}`}`,
+  )
+}
+
+function markdownLinkTitleFromIdAndLegalObject(
   id: string,
   legalObject: unknown,
 ): string {
@@ -1352,21 +2180,199 @@ function linkTitleFromIdAndLegalObject(
     }
 
     case "CONT": {
-      return `absoluteTitleFromIdAndLegalObject TODO: ${id}`
+      const jo = legalObject as Jo
+      return jo.META.META_SPEC.META_CONTENEUR.TITRE
     }
 
     case "SCTA": {
-      return `absoluteTitleFromIdAndLegalObject TODO: ${id}`
+      const sectionTa = legalObject as JorfSectionTa | LegiSectionTa
+      const texte = sectionTa.CONTEXTE.TEXTE
+      const titresTexte = texte.TITRE_TXT
+      const texteTitle =
+        titresTexte === undefined
+          ? "Texte sans titre"
+          : titresTexte.length === 1
+            ? (
+                titresTexte[0]["#text"] ??
+                titresTexte[0]["@c_titre_court"] ??
+                "Texte sans titre"
+              )
+                .replace(/\s+/g, " ")
+                .trim()
+            : titresTexte
+                .map(
+                  (titreTexte) =>
+                    `${(
+                      titreTexte["#text"] ??
+                      titreTexte["@c_titre_court"] ??
+                      "Texte sans titre"
+                    )
+                      .replace(/\s+/g, " ")
+                      .trim()}${
+                      titreTexte["@debut"] === "2999-01-01" &&
+                      titreTexte["@fin"] === "2999-01-01"
+                        ? ""
+                        : titreTexte["@fin"] === "2999-01-01"
+                          ? ` (depuis le ${titreTexte["@debut"]})`
+                          : ` (du ${titreTexte["@debut"]} au ${titreTexte["@debut"]})`
+                    }`,
+                )
+                .join(", ")
+      return [
+        texteTitle,
+        // TODO: Add title of each section in CONTEXTE.TEXTE.TM
+        sectionTa.TITRE_TA ?? "Section sans titre",
+      ]
+        .filter((fragment) => fragment !== undefined)
+        .join(", ")
     }
 
     case "TEXT": {
-      return `absoluteTitleFromIdAndLegalObject TODO: ${id}`
+      const texte = legalObject as JorfTexte | LegiTexte
+      const metaTexteVersion = texte.META.META_SPEC.META_TEXTE_VERSION
+      return (
+        metaTexteVersion.TITREFULL ??
+        metaTexteVersion.TITRE ??
+        "Texte sans titre"
+      )
+        .replace(/\s+/g, " ")
+        .trim()
+        .replace(/\s+\(\d+\)$/, "")
     }
 
     default: {
       assertNever("ID Type", idType)
     }
   }
+}
+
+function markdownTitleContentArrayFromContexteTexte(
+  referrerDir: string,
+  texte:
+    | JorfArticle["CONTEXTE"]["TEXTE"]
+    | JorfSectionTa["CONTEXTE"]["TEXTE"]
+    | LegiSectionTa["CONTEXTE"]["TEXTE"]
+    | LegiArticle["CONTEXTE"]["TEXTE"],
+): string[] {
+  const titresTexte = texte.TITRE_TXT
+  return titresTexte === undefined
+    ? ["Texte sans titre"]
+    : titresTexte.length === 1
+      ? titresTexte.map((titreTexte) =>
+          markdownLinkFromIdAndTitle(
+            referrerDir,
+            titreTexte["@id_txt"],
+            (
+              titreTexte["#text"] ??
+              titreTexte["@c_titre_court"] ??
+              "Texte sans titre"
+            )
+              .replace(/\s+/g, " ")
+              .trim(),
+          ),
+        )
+      : titresTexte.map((titreTexte) =>
+          markdownLinkFromIdAndTitle(
+            referrerDir,
+            titreTexte["@id_txt"],
+            `${(
+              titreTexte["#text"] ??
+              titreTexte["@c_titre_court"] ??
+              "Texte sans titre"
+            )
+              .replace(/\s+/g, " ")
+              .trim()}${
+              titreTexte["@debut"] === "2999-01-01" &&
+              titreTexte["@fin"] === "2999-01-01"
+                ? ""
+                : titreTexte["@fin"] === "2999-01-01"
+                  ? ` (depuis le ${titreTexte["@debut"]})`
+                  : ` (du ${titreTexte["@debut"]} au ${titreTexte["@debut"]})`
+            }`,
+          ),
+        )
+}
+
+function markdownTreeFromReferenceMarkdownArray(
+  referenceMarkdownArray: ReferenceMarkdown[],
+  {
+    indent,
+  }: {
+    indent?: number
+  } = {},
+): string {
+  return referenceMarkdownArray
+    .map((referenceMarkdown) =>
+      [
+        dedent`
+            ${"  ".repeat(indent ?? 0)}* ${referenceMarkdown.markdown}
+          `,
+        referenceMarkdown.children === undefined
+          ? undefined
+          : markdownTreeFromReferenceMarkdownArray(referenceMarkdown.children, {
+              indent: (indent ?? 0) + 1,
+            }),
+      ]
+        .filter((fragment) => fragment !== undefined)
+        .join("\n"),
+    )
+    .join("\n")
+}
+
+function markdownTreeFromTmWithTitre(
+  referrerDir: string,
+  tm: JorfArticleTm | JorfSectionTaTm | LegiSectionTaTm,
+  {
+    indent,
+  }: {
+    indent?: number
+  } = {},
+): string {
+  return [
+    dedent`
+      ${"  ".repeat(indent ?? 0)}* ${markdownLinkFromIdAndTitle(
+        referrerDir,
+        tm.TITRE_TM["@id"],
+        tm.TITRE_TM["#text"] ?? "Section sans titre",
+      )}
+    `,
+    tm.TM === undefined
+      ? undefined
+      : markdownTreeFromTmWithTitre(referrerDir, tm.TM, {
+          indent: (indent ?? 0) + 1,
+        }),
+  ]
+    .filter((fragment) => fragment !== undefined)
+    .join("\n")
+}
+
+function markdownTreeFromTmWithTitreArray(
+  referrerDir: string,
+  tm: LegiArticleTm,
+  dateDebutArticle: string,
+  {
+    indent,
+  }: {
+    indent?: number
+  } = {},
+): string {
+  const titreTm = bestItemForDate(tm.TITRE_TM, dateDebutArticle)!
+  return [
+    dedent`
+      ${"  ".repeat(indent ?? 0)}* ${markdownLinkFromIdAndTitle(
+        referrerDir,
+        titreTm["@id"],
+        titreTm["#text"] ?? "Section sans titre",
+      )}
+    `,
+    tm.TM === undefined
+      ? undefined
+      : markdownTreeFromTmWithTitreArray(referrerDir, tm.TM, dateDebutArticle, {
+          indent: (indent ?? 0) + 1,
+        }),
+  ]
+    .filter((fragment) => fragment !== undefined)
+    .join("\n")
 }
 
 async function loadJsonObject<ObjectType>(
@@ -1383,76 +2389,6 @@ async function loadJsonObject<ObjectType>(
     (await repository.getBlob(oid)).content().toString("utf-8"),
   ) as ObjectType
 }
-
-// async function loadRelationsChanges(
-//   sourcePreviousTree: nodegit.Tree | undefined,
-//   sourceTree: nodegit.Tree,
-//   referencesOrNullById: ReferencesOrNullById = new Map(),
-// ): Promise<ReferencesOrNullById> {
-//   const sourcePreviousEntryByName =
-//     sourcePreviousTree === undefined
-//       ? undefined
-//       : Object.fromEntries(
-//           sourcePreviousTree.entries().map((entry) => [entry.name(), entry]),
-//         )
-//   for (const sourceEntry of sourceTree.entries()) {
-//     const sourceEntryName = sourceEntry.name()
-//     const sourcePreviousEntry = sourcePreviousEntryByName?.[sourceEntryName]
-//     if (sourcePreviousEntry !== undefined) {
-//       // Ensure that at the end of the loop sourcePreviousEntryByName contains
-//       // only entries deleted from the source tree.
-//       delete sourcePreviousEntryByName![sourceEntryName]
-//     }
-//     if (sourceEntry.oid() === sourcePreviousEntry?.oid()) {
-//       // Entry has not changed => No relation to change.
-//       continue
-//     }
-//     if (sourceEntry.isTree()) {
-//       // When sourcePreviousEntry is not undefined, it is also a tree.
-//       await loadRelationsChanges(
-//         await sourcePreviousEntry?.getTree(),
-//         await sourceEntry.getTree(),
-//         referencesOrNullById,
-//       )
-//     } else {
-//       // When sourcePreviousEntry is not undefined, it is also a blob.
-//       const relation = JSON.parse(
-//         (await sourceEntry.getBlob()).content().toString("utf-8"),
-//       ) as LegalObjectReferences
-//       referencesOrNullById.set(relation.id, relation)
-//     }
-//   }
-
-//   // Entries remaining in sourcePreviousEntryByName are deleted.
-//   if (sourcePreviousEntryByName !== undefined) {
-//     for (const sourcePreviousEntry of Object.values(
-//       sourcePreviousEntryByName,
-//     )) {
-//       await loadRelationsDeletions(sourcePreviousEntry, referencesOrNullById)
-//     }
-//   }
-
-//   return referencesOrNullById
-// }
-
-// async function loadRelationsDeletions(
-//   sourcePreviousEntry: nodegit.TreeEntry,
-//   referencesOrNullById: ReferencesOrNullById,
-// ): Promise<void> {
-//   if (sourcePreviousEntry.isTree()) {
-//     for (const sourcePreviousChildEntry of (
-//       await sourcePreviousEntry.getTree()
-//     ).entries()) {
-//       await loadRelationsDeletions(
-//         sourcePreviousChildEntry,
-//         referencesOrNullById,
-//       )
-//     }
-//   } else {
-//     const targetId = sourcePreviousEntry.name().replace(/\.json$/, "")
-//     referencesOrNullById.set(targetId, null)
-//   }
-// }
 
 sade("git_json_to_git_markdown <dilaDir>", true)
   .describe(

@@ -1,7 +1,8 @@
 import type { MenuItem } from "@tricoteuses/explorer-tools"
 
 import type { DossierLegislatif } from "./dole"
-import type { Jo } from "./jorf"
+import { type Jo, type JorfArticleTm, type JorfSectionTaTm } from "./jorf"
+import type { LegiArticleTm, LegiSectionTaTm } from "./legi"
 
 export {
   allDossierLegislatifTypes,
@@ -40,6 +41,7 @@ export {
   allJorfTexteOrigines,
   allJorfTexteVersionLienNatures,
   allJorfTexteVersionLienTypes,
+  walkJoTm,
   type Jo,
   type JoNature,
   type JoOrigine,
@@ -790,4 +792,16 @@ export function rootTypeFromLegalId(id: string): LegalObjectType | undefined {
     return "texte_version"
   }
   throw new Error(`Unexpected legal ID: "${id}"`)
+}
+
+export function* walkContexteTexteTm(
+  tm: JorfArticleTm | JorfSectionTaTm | LegiArticleTm | LegiSectionTaTm,
+): Generator<
+  JorfArticleTm | JorfSectionTaTm | LegiArticleTm | LegiSectionTaTm,
+  void
+> {
+  yield tm
+  if (tm.TM !== undefined) {
+    yield* walkContexteTexteTm(tm.TM)
+  }
 }

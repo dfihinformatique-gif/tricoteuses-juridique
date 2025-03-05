@@ -823,3 +823,12 @@ export const allJorfTexteVersionLienTypes = [
   "TXT_ASSOCIE", // 11821
   "TXT_SOURCE", // 81350
 ] as const
+
+export function* walkJoTm(tmArray: JoTm[]): Generator<JoTm, void> {
+  for (const tm of tmArray) {
+    yield tm
+    if (tm.TM !== undefined) {
+      yield* walkJoTm(tm.TM)
+    }
+  }
+}

@@ -209,12 +209,12 @@ export type LegiSectionTaTexteNature =
   (typeof allLegiSectionTaTexteNatures)[number]
 
 export interface LegiSectionTaTm {
-  TITRE_TM: {
+  TITRE_TM: Array<{
     "#text"?: string
     "@debut": string
     "@fin": string
     "@id": string
-  }
+  }>
   TM?: LegiSectionTaTm
 }
 

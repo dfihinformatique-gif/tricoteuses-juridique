@@ -1279,17 +1279,53 @@ async function convertSectionTaToMarkdown(
   const sectionTaDir = path.dirname(gitPathFromId(sectionTaId, ".md"))
   const referenceById = { ...referrerById }
 
+  const structure = sectionTa.STRUCTURE_TA
   const texte = sectionTa.CONTEXTE.TEXTE
   const markdownContexteTexteTitleContentArray =
     markdownTitleContentArrayFromContexteTexte(sectionTaDir, texte)
   const tm = texte.TM
   let tmBreadcrumb: string | undefined = undefined
   if (tm !== undefined) {
-    tmBreadcrumb = markdownTreeFromTmWithTitre(sectionTaDir, tm)
+    switch (origine) {
+      case "JORF": {
+        tmBreadcrumb = markdownTreeFromTmWithTitre(
+          sectionTaDir,
+          tm as JorfArticleTm,
+        )
+        break
+      }
+      case "LEGI": {
+        // Since a SectionTa has no start date, use the minimum start date of its children.
+        let startDate = "2999-01-01"
+        if (structure?.LIEN_ART !== undefined) {
+          for (const lienArt of structure.LIEN_ART) {
+            if (lienArt["@debut"] < startDate) {
+              startDate = lienArt["@debut"]
+            }
+          }
+        }
+        if (structure?.LIEN_SECTION_TA !== undefined) {
+          for (const lienSectionTa of structure.LIEN_SECTION_TA) {
+            if (lienSectionTa["@debut"] < startDate) {
+              startDate = lienSectionTa["@debut"]
+            }
+          }
+        }
+
+        tmBreadcrumb = markdownTreeFromTmWithTitreArray(
+          sectionTaDir,
+          tm as LegiArticleTm,
+          startDate,
+        )
+        break
+      }
+      default: {
+        assertNever("Symbol", origine)
+      }
+    }
   }
 
   let structureMarkdown: string | undefined = undefined
-  const structure = sectionTa.STRUCTURE_TA
   if (structure !== undefined) {
     const structureReferenceMarkdownArray = [
       ...(await Array.fromAsync(
@@ -2337,7 +2373,7 @@ function markdownTreeFromReferenceMarkdownArray(
 
 function markdownTreeFromTmWithTitre(
   referrerDir: string,
-  tm: JorfArticleTm | JorfSectionTaTm | LegiSectionTaTm,
+  tm: JorfArticleTm | JorfSectionTaTm,
   {
     indent,
   }: {
@@ -2364,7 +2400,7 @@ function markdownTreeFromTmWithTitre(
 
 function markdownTreeFromTmWithTitreArray(
   referrerDir: string,
-  tm: LegiArticleTm,
+  tm: LegiArticleTm | LegiSectionTaTm,
   dateDebutArticle: string,
   {
     indent,

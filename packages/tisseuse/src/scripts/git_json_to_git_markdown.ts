@@ -60,7 +60,13 @@ import {
   writeOidByIdTree,
   type OidByIdTree,
 } from "$lib/server/nodegit/trees"
-import { cleanHtmlFragment, escapeMarkdown } from "$lib/strings"
+import {
+  cleanHtmlFragment,
+  escapeMarkdownLinkTitle,
+  escapeMarkdownLinkUrl,
+  escapeMarkdownText,
+  escapeMarkdownTitle,
+} from "$lib/strings"
 
 type ReferenceMarkdown =
   | {
@@ -247,7 +253,7 @@ async function convertArticleToMarkdown(
     tmBreadcrumb,
     articleNumber === undefined
       ? undefined
-      : `# ${escapeMarkdown(`Article ${articleNumber}`)}`,
+      : `# ${escapeMarkdownTitle(`Article ${articleNumber}`)}`,
     await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU),
     ...(await Array.fromAsync(
       markdownBlocksFromLegalObjectReferences(
@@ -807,7 +813,7 @@ async function* convertJoTmOutgoingReferencesToMarkdown(
     }
     yield {
       children: children.length === 0 ? undefined : children,
-      markdown: escapeMarkdown(joTm.TITRE_TM),
+      markdown: escapeMarkdownText(joTm.TITRE_TM),
     }
   }
 }
@@ -1170,7 +1176,7 @@ async function* convertOutgoingReferenceToMarkdown(
   if (referrentId !== undefined) {
     yield {
       id: referrentId,
-      markdown: `${label === undefined ? "" : `${escapeMarkdown(label)} : `}${await markdownLinkFromOutgoingReference(
+      markdown: `${label === undefined ? "" : `${escapeMarkdownText(label)} : `}${await markdownLinkFromOutgoingReference(
         referenceById,
         jsonOidByIdTree,
         jsonRepository,
@@ -1398,7 +1404,7 @@ async function convertSectionTaToMarkdown(
       .map((title) => `## ${title}`)
       .join("\n"),
     tmBreadcrumb,
-    `# ${escapeMarkdown(sectionTa.TITRE_TA ?? "Section sans titre")}`,
+    `# ${escapeMarkdownText(sectionTa.TITRE_TA) ?? "Section sans titre"}`,
     sectionTa.COMMENTAIRE === undefined
       ? undefined
       : await cleanHtmlFragment(sectionTa.COMMENTAIRE),
@@ -1610,7 +1616,7 @@ async function convertTexteToMarkdown(
         .join("\n")}
       ---
     `,
-    titles.map((title) => `## ${escapeMarkdown(title)}`).join("\n"),
+    titles.map((title) => `## ${escapeMarkdownTitle(title)}`).join("\n"),
     // TODO: Ajouter ABRO, ENREPRISE, NOTA, NOTICE, RECT, SM & TP
     await cleanHtmlFragment(texte.VISAS?.CONTENU),
     structureMarkdown,
@@ -2098,7 +2104,7 @@ async function* markdownBlocksFromLegalObjectReferences(
 ): AsyncGenerator<string, void> {
   if (outgoingReferenceMarkdownArray.length !== 0) {
     yield dedent`
-        ## ${escapeMarkdown(outgoingDesignation)}
+        ## ${escapeMarkdownTitle(outgoingDesignation)}
 
         ${markdownTreeFromReferenceMarkdownArray(outgoingReferenceMarkdownArray)}
       `
@@ -2119,28 +2125,28 @@ async function* markdownBlocksFromLegalObjectReferences(
 
   if (incomingReferenceMarkdownArrayByIdType.CONT !== undefined) {
     yield dedent`
-      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.CONT)}
+      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.CONT)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.CONT)}
     `
   }
   if (incomingReferenceMarkdownArrayByIdType.TEXT !== undefined) {
     yield dedent`
-      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.TEXT)}
+      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.TEXT)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.TEXT)}
     `
   }
   if (incomingReferenceMarkdownArrayByIdType.SCTA !== undefined) {
     yield dedent`
-      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.SCTA)}
+      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.SCTA)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.SCTA)}
     `
   }
   if (incomingReferenceMarkdownArrayByIdType.ARTI !== undefined) {
     yield dedent`
-      ## ${escapeMarkdown(incomingReferencesDesignationByIdType.ARTI)}
+      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.ARTI)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.ARTI)}
     `
@@ -2152,7 +2158,7 @@ function markdownLinkFromIdAndTitle(
   id: string,
   title: string,
 ): string {
-  return `[${escapeMarkdown(title)}](${escapeMarkdown(path.relative(referrerDir, gitPathFromId(id, ".md")))})`
+  return `[${escapeMarkdownLinkTitle(title)}](${escapeMarkdownLinkUrl(path.relative(referrerDir, gitPathFromId(id, ".md")))})`
 }
 
 async function markdownLinkFromOutgoingReference(
@@ -2178,7 +2184,7 @@ async function markdownLinkFromOutgoingReference(
   return markdownLinkFromIdAndTitle(
     referrerDir,
     referrentId,
-    `${prefix === undefined ? "" : `${escapeMarkdown(prefix)} `}${escapeMarkdown(referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent))}${suffix === undefined ? "" : ` ${escapeMarkdown(suffix)}`}`,
+    `${prefix === undefined ? "" : `${escapeMarkdownText(prefix)} `}${referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent)}${suffix === undefined ? "" : ` ${escapeMarkdownText(suffix)}`}`,
   )
 }
 

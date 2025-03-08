@@ -30,5 +30,5 @@ export function gitPathFromId(id: string, extension: ".json" | ".md"): string {
   if (idMatch === null) {
     throw new Error(`Unknown ID format: ${id}`)
   }
-  return `${idMatch.slice(1, -1).join("/")}/${idMatch.at(-1)}${extension}`
+  return `${idMatch.slice(1, -1).join("/")}/${id}${extension}`
 }

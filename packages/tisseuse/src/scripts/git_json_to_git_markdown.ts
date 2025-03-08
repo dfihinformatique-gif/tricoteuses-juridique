@@ -1041,20 +1041,26 @@ async function convertJsonTreeToMarkdown(
   targetOidByIdTree: OidByIdTree,
   targetRepository: nodegit.Repository,
   {
+    only,
     verbose,
   }: {
+    only?: string
     verbose?: boolean
   } = {},
 ): Promise<boolean> {
   let changed = false
-  for (const {
-    blobOid,
-    id,
-    previousBlobOid,
-  } of walkPreviousAndCurrentOidByIdTrees(
-    previousJsonOidByIdTree,
-    jsonOidByIdTree,
-  )) {
+  for (const { blobOid, id, previousBlobOid } of only
+    ? [
+        {
+          blobOid: getOidFromIdTree(jsonOidByIdTree, only),
+          id: only,
+          previousBlobOid: getOidFromIdTree(previousJsonOidByIdTree, only),
+        },
+      ]
+    : walkPreviousAndCurrentOidByIdTrees(
+        previousJsonOidByIdTree,
+        jsonOidByIdTree,
+      )) {
     if (verbose) {
       console.log(`Converting ID ${id} (blob OID: ${blobOid}) to Markdown…`)
     }
@@ -1664,12 +1670,14 @@ async function gitJsonToGitMarkdown(
   {
     force,
     init,
+    only,
     push,
     silent,
     verbose,
   }: {
     force?: boolean
     init?: string
+    only?: string
     push?: boolean
     silent?: boolean
     verbose?: boolean
@@ -1963,7 +1971,7 @@ async function gitJsonToGitMarkdown(
         referencesRepository,
         targetOidByIdTree,
         targetRepository,
-        { verbose },
+        { only, verbose },
       )
     ) {
       commitChanged = true
@@ -2457,6 +2465,7 @@ sade("git_json_to_git_markdown <dilaDir>", true)
     "-i, --init",
     "Start conversion at given Dila export date (YYYYMMDD-HHMMSS format",
   )
+  .option("-o, --only", "Convert only the legal object whose ID is given")
   .option("-p, --push", "Push generated repository")
   .option("-s, --silent", "Hide log messages")
   .option("-v, --verbose", "Show more log messages")

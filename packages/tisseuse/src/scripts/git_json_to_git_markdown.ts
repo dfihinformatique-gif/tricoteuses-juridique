@@ -796,19 +796,19 @@ async function* convertJoTmOutgoingReferencesToMarkdown(
           }
         }
       }
-      if (joTm.TM !== undefined) {
-        for await (const referenceMarkdown of convertJoTmOutgoingReferencesToMarkdown(
-          referenceById,
-          jsonOidByIdTree,
-          jsonRepository,
-          joDir,
-          joTm.TM,
-          {
-            useLinkTitle,
-          },
-        )) {
-          children.push(referenceMarkdown)
-        }
+    }
+    if (joTm.TM !== undefined) {
+      for await (const referenceMarkdown of convertJoTmOutgoingReferencesToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        joDir,
+        joTm.TM,
+        {
+          useLinkTitle,
+        },
+      )) {
+        children.push(referenceMarkdown)
       }
     }
     yield {
@@ -1683,10 +1683,11 @@ async function gitJsonToGitMarkdown(
     verbose?: boolean
   } = {},
 ): Promise<number> {
+  const exitCode = 0
+
   const steps: Array<{ label: string; start: number }> = []
   steps.push({ label: "Resuming", start: performance.now() })
 
-  const exitCode = 0
   assert.notStrictEqual(
     silent && verbose,
     true,

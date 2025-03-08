@@ -884,7 +884,9 @@ function extractLegiSectionTaTm(
   if (tm === undefined) {
     return
   }
-  addOrRemoveLink(changedIds, referencesById, add, id, tm.TITRE_TM["@id"])
+  for (const titreTm of tm.TITRE_TM) {
+    addOrRemoveLink(changedIds, referencesById, add, id, titreTm["@id"])
+  }
   extractLegiSectionTaTm(changedIds, referencesById, id, tm.TM, add)
 }
 

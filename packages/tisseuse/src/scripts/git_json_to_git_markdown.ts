@@ -1351,6 +1351,7 @@ async function convertSectionTaToMarkdown(
             jsonRepository,
             sectionTaDir,
             lienArt["@id"],
+            { inParent: true },
           ),
         }),
       )),
@@ -1557,6 +1558,7 @@ async function convertTexteToMarkdown(
             jsonRepository,
             texteDir,
             lienArt["@id"],
+            { inParent: true },
           ),
         }),
       )),
@@ -2169,9 +2171,11 @@ async function markdownLinkFromOutgoingReference(
   referrerDir: string,
   referrentId: string,
   {
+    inParent,
     prefix,
     suffix,
   }: {
+    inParent?: boolean
     prefix?: string
     suffix?: string
   } = {},
@@ -2185,7 +2189,7 @@ async function markdownLinkFromOutgoingReference(
   return markdownLinkFromIdAndTitle(
     referrerDir,
     referrentId,
-    `${prefix === undefined ? "" : `${escapeMarkdownText(prefix)} `}${referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent)}${suffix === undefined ? "" : ` ${escapeMarkdownText(suffix)}`}`,
+    `${prefix === undefined ? "" : `${escapeMarkdownText(prefix)} `}${referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent, { inParent })}${suffix === undefined ? "" : ` ${escapeMarkdownText(suffix)}`}`,
   )
 }
 
@@ -2200,6 +2204,7 @@ function markdownLinkFromIdAndTitle(
 function markdownLinkTitleFromIdAndLegalObject(
   id: string,
   legalObject: unknown,
+  { inParent }: { inParent?: boolean } = {},
 ): string {
   const idType = extractTypeFromId(id)
   switch (idType) {
@@ -2208,8 +2213,9 @@ function markdownLinkTitleFromIdAndLegalObject(
       const articleNumber = article.META.META_SPEC.META_ARTICLE.NUM
       const texte = article.CONTEXTE.TEXTE
       const titresTexte = texte.TITRE_TXT
-      const texteTitle =
-        titresTexte === undefined
+      const texteTitle = inParent
+        ? undefined
+        : titresTexte === undefined
           ? "Texte sans titre"
           : titresTexte.length === 1
             ? (
@@ -2255,8 +2261,9 @@ function markdownLinkTitleFromIdAndLegalObject(
       const sectionTa = legalObject as JorfSectionTa | LegiSectionTa
       const texte = sectionTa.CONTEXTE.TEXTE
       const titresTexte = texte.TITRE_TXT
-      const texteTitle =
-        titresTexte === undefined
+      const texteTitle = inParent
+        ? undefined
+        : titresTexte === undefined
           ? "Texte sans titre"
           : titresTexte.length === 1
             ? (

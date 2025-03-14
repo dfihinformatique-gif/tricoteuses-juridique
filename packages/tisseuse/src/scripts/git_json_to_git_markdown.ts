@@ -2162,14 +2162,6 @@ async function* markdownBlocksFromLegalObjectReferences(
   }
 }
 
-function markdownLinkFromIdAndTitle(
-  referrerDir: string,
-  id: string,
-  title: string,
-): string {
-  return `[${escapeMarkdownLinkTitle(title)}](${escapeMarkdownLinkUrl(path.relative(referrerDir, gitPathFromId(id, ".md")))})`
-}
-
 async function markdownLinkFromOutgoingReference(
   referenceById: Record<string, unknown>,
   jsonOidByIdTree: OidByIdTree,
@@ -2195,6 +2187,14 @@ async function markdownLinkFromOutgoingReference(
     referrentId,
     `${prefix === undefined ? "" : `${escapeMarkdownText(prefix)} `}${referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent)}${suffix === undefined ? "" : ` ${escapeMarkdownText(suffix)}`}`,
   )
+}
+
+function markdownLinkFromIdAndTitle(
+  referrerDir: string,
+  id: string,
+  title: string,
+): string {
+  return `[${escapeMarkdownLinkTitle(title)}](${escapeMarkdownLinkUrl(path.relative(referrerDir, gitPathFromId(id, ".md")))})`
 }
 
 function markdownLinkTitleFromIdAndLegalObject(

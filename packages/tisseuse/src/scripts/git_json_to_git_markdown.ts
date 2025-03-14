@@ -195,7 +195,7 @@ async function convertArticleToMarkdown(
   if (tm !== undefined) {
     switch (origine) {
       case "JORF": {
-        tmBreadcrumb = markdownTreeFromTmWithTitre(
+        tmBreadcrumb = markdownTreeFromTmWithSingleTitre(
           articleDir,
           tm as JorfArticleTm,
         )
@@ -1300,7 +1300,7 @@ async function convertSectionTaToMarkdown(
   if (tm !== undefined) {
     switch (origine) {
       case "JORF": {
-        tmBreadcrumb = markdownTreeFromTmWithTitre(
+        tmBreadcrumb = markdownTreeFromTmWithSingleTitre(
           sectionTaDir,
           tm as JorfArticleTm,
         )
@@ -2386,7 +2386,7 @@ function markdownTreeFromReferenceMarkdownArray(
     .join("\n")
 }
 
-function markdownTreeFromTmWithTitre(
+function markdownTreeFromTmWithSingleTitre(
   referrerDir: string,
   tm: JorfArticleTm | JorfSectionTaTm,
   {
@@ -2405,7 +2405,7 @@ function markdownTreeFromTmWithTitre(
     `,
     tm.TM === undefined
       ? undefined
-      : markdownTreeFromTmWithTitre(referrerDir, tm.TM, {
+      : markdownTreeFromTmWithSingleTitre(referrerDir, tm.TM, {
           indent: (indent ?? 0) + 1,
         }),
   ]

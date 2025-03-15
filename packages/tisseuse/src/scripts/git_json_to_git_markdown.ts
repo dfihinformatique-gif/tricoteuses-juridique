@@ -2246,7 +2246,11 @@ function markdownLinkTitleFromIdAndLegalObject(
                 .join(", ")
       return [
         texteTitle,
-        articleNumber === undefined ? undefined : `article ${articleNumber}`,
+        articleNumber === undefined
+          ? article.BLOC_TEXTUEL === undefined
+            ? "_article vide_"
+            : "_article sans numéro_"
+          : `article ${articleNumber}`,
       ]
         .filter((fragment) => fragment !== undefined)
         .join(", ")

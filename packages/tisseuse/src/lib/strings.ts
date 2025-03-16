@@ -23,6 +23,12 @@ const slugifyCharmap = {
   ".": " ",
 }
 
+export function capitalizeFirstLetter<
+  StringOrNullish extends string | undefined | null,
+>(s: StringOrNullish): StringOrNullish {
+  return s ? ((s[0].toLocaleUpperCase() + s.slice(1)) as StringOrNullish) : s
+}
+
 export async function cleanHtmlFragment(
   fragment: string | undefined,
 ): Promise<string | undefined> {
@@ -114,8 +120,7 @@ export function escapeMarkdownLinkTitle<
   StringOrUndefined extends string | undefined,
 >(s: StringOrUndefined): StringOrUndefined {
   return s
-    ?.replaceAll("\\", "\\\\")
-    .replace(/\s+/g, " ")
+    ?.replace(/\s+/g, " ")
     .replaceAll("[", "\\[")
     .replaceAll("]", "\\]") as StringOrUndefined
 }
@@ -123,16 +128,13 @@ export function escapeMarkdownLinkTitle<
 export function escapeMarkdownLinkUrl<
   StringOrUndefined extends string | undefined,
 >(s: StringOrUndefined): StringOrUndefined {
-  return s
-    ?.replaceAll("\\", "\\\\")
-    .replaceAll("(", "\\(")
-    .replaceAll(")", "\\)") as StringOrUndefined
+  return s?.replaceAll("(", "\\(").replaceAll(")", "\\)") as StringOrUndefined
 }
 
 export function escapeMarkdownListItemOrTitle<
   StringOrUndefined extends string | undefined,
 >(s: StringOrUndefined): StringOrUndefined {
-  return s?.replaceAll("\\", "\\\\").replace(/\s+/g, " ") as StringOrUndefined
+  return s?.replace(/\s+/g, " ") as StringOrUndefined
 }
 
 export function escapeMarkdownText<
@@ -154,7 +156,7 @@ export function escapeMarkdownText<
 export function escapeMarkdownTitle<
   StringOrUndefined extends string | undefined,
 >(s: StringOrUndefined): StringOrUndefined {
-  return s?.replaceAll("\\", "\\\\").replace(/\s+/g, " ") as StringOrUndefined
+  return s?.replace(/\s+/g, " ") as StringOrUndefined
 }
 
 export function slugify(string: string, replacement?: string | null) {

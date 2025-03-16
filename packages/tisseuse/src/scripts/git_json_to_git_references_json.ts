@@ -33,11 +33,11 @@ import type { LegalObjectReferences } from "$lib/legal/references"
 import config from "$lib/server/config"
 import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits"
 import {
-  readOidByIdTree,
-  removeOidByIdTreeEmptyNodes,
+  readOidBySplitPathTree,
+  removeOidBySplitPathTreeEmptyNodes,
   setOidInIdTree,
-  writeOidByIdTree,
-  type OidByIdTree,
+  writeOidBySplitPathTree,
+  type OidBySplitPathTree,
 } from "$lib/server/nodegit/trees"
 import { extractOrigineFromId } from "$lib/legal"
 import { extractTypeFromId } from "$lib/legal/ids"
@@ -125,7 +125,7 @@ async function exportReferencesToGit(
   let targetCommitOid: nodegit.Oid | undefined = undefined
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
-  let targetOidByIdTree: OidByIdTree = { childByKey: new Map() }
+  let targetOidByIdTree: OidBySplitPathTree = { childByKey: new Map() }
   for await (const sourceCommitOid of iterCommitsOids(sourceRepository, true)) {
     const sourceCommit = await sourceRepository.getCommit(sourceCommitOid)
     const sourceMessage = sourceCommit.message()
@@ -243,7 +243,7 @@ async function exportReferencesToGit(
       console.log(
         `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
       )
-      targetOidByIdTree = await readOidByIdTree(
+      targetOidByIdTree = await readOidBySplitPathTree(
         targetRepository,
         targetExistingTree,
         ".json",
@@ -299,7 +299,7 @@ async function exportReferencesToGit(
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    removeOidByIdTreeEmptyNodes(targetOidByIdTree)
+    removeOidBySplitPathTreeEmptyNodes(targetOidByIdTree)
 
     // Write updated oidByIdTree.
     steps.push({
@@ -309,7 +309,7 @@ async function exportReferencesToGit(
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    const targetTreeOid = await writeOidByIdTree(
+    const targetTreeOid = await writeOidBySplitPathTree(
       targetRepository,
       targetOidByIdTree,
       ".json",

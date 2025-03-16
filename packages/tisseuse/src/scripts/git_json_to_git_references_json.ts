@@ -110,12 +110,9 @@ async function exportReferencesToGit(
   )
 
   const sourceRepository = await nodegit.Repository.open(
-    path.join(dilaDir, "textes_juridiques_json.git"),
+    path.join(dilaDir, "donnees_juridiques.git"),
   )
-  const targetGitDir = path.join(
-    dilaDir,
-    "references_textes_juridiques_json.git",
-  )
+  const targetGitDir = path.join(dilaDir, "references_donnees_juridiques.git")
   const targetRepository = (await fs.pathExists(targetGitDir))
     ? await nodegit.Repository.open(targetGitDir)
     : await nodegit.Repository.init(targetGitDir, 1 /* bare */)
@@ -383,7 +380,7 @@ async function exportReferencesToGit(
         if (
           (error as Error).message.includes("remote 'origin' does not exist")
         ) {
-          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/references_textes_juridiques_json.git`
+          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/references_donnees_juridiques.git`
           targetRemote = await nodegit.Remote.create(
             targetRepository,
             "origin",

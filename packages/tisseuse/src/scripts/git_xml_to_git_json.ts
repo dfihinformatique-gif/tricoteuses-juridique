@@ -355,7 +355,7 @@ async function gitXmlToGitJson(
       ]),
     ),
   )
-  const targetGitDir = path.join(dilaDir, "textes_juridiques_json.git")
+  const targetGitDir = path.join(dilaDir, "donnees_juridiques.git")
   const targetRepository = (await fs.pathExists(targetGitDir))
     ? await nodegit.Repository.open(targetGitDir)
     : await nodegit.Repository.init(targetGitDir, 1 /* bare */)
@@ -609,7 +609,7 @@ async function gitXmlToGitJson(
         if (
           (error as Error).message.includes("remote 'origin' does not exist")
         ) {
-          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/textes_juridiques_json.git`
+          const targetRemoteUrl = `ssh://${forgejo.sshAccount}:${forgejo.sshPort}/dila/donnees_juridiques.git`
           targetRemote = await nodegit.Remote.create(
             targetRepository,
             "origin",

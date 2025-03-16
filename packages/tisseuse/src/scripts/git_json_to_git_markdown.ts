@@ -1714,10 +1714,10 @@ async function gitJsonToGitMarkdown(
   )
 
   const jsonRepository = await nodegit.Repository.open(
-    path.join(dilaDir, "textes_juridiques_json.git"),
+    path.join(dilaDir, "donnees_juridiques.git"),
   )
   const referencesRepository = await nodegit.Repository.open(
-    path.join(dilaDir, "references_textes_juridiques_json.git"),
+    path.join(dilaDir, "references_donnees_juridiques.git"),
   )
   const sourceRepositoryBySymbol: Record<
     SourceRepositorySymbol,

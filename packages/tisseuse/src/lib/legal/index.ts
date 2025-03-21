@@ -1,7 +1,8 @@
 import type { MenuItem } from "@tricoteuses/explorer-tools"
 
 import type { DossierLegislatif } from "./dole"
-import type { Jo } from "./jorf"
+import { type Jo, type JorfArticleTm, type JorfSectionTaTm } from "./jorf"
+import type { LegiArticleTm, LegiSectionTaTm } from "./legi"
 
 export {
   allDossierLegislatifTypes,
@@ -11,6 +12,16 @@ export {
   type EcheancierLigne,
 } from "./dole"
 export {
+  extractOrigineFromId,
+  extractTypeFromId,
+  gitPathFromId,
+  idRegExp,
+  idsOrigines,
+  idsTypes,
+  type IdOrigine,
+  type IdType,
+} from "./ids"
+export {
   allJoNatures,
   allJoOrigines,
   allJorfArticleEtats,
@@ -18,7 +29,6 @@ export {
   allJorfArticleNatures,
   allJorfArticleOrigines,
   allJorfArticleTexteNatures,
-  allJorfArticleTypes,
   allJorfSectionTaLienArtEtats,
   allJorfSectionTaLienArtOrigines,
   allJorfSectionTaLienSectionTaEtats,
@@ -31,6 +41,7 @@ export {
   allJorfTexteOrigines,
   allJorfTexteVersionLienNatures,
   allJorfTexteVersionLienTypes,
+  walkJoTm,
   type Jo,
   type JoNature,
   type JoOrigine,
@@ -41,7 +52,6 @@ export {
   type JorfArticleNature,
   type JorfArticleOrigine,
   type JorfArticleTexteNature,
-  type JorfArticleType,
   type JorfSectionTa,
   type JorfMetaTexteChronicle,
   type JorfMetaTexteVersion,
@@ -51,6 +61,7 @@ export {
   type JorfSectionTaLienSectionTaEtat,
   type JorfSectionTaTexteNature,
   type JorfSectionTaStructure,
+  type JorfTexte,
   type JorfTextelr,
   type JorfTextelrEtat,
   type JorfTextelrLienArt,
@@ -58,6 +69,8 @@ export {
   type JorfTextelrLienArtNature,
   type JorfTextelrLienArtOrigine,
   type JorfTextelrLienSectionTa,
+  type JorfTextelrVersions,
+  type JorfTexteMetaCommun,
   type JorfTexteNature,
   type JorfTexteOrigine,
   type JorfTextelrStructure,
@@ -74,7 +87,6 @@ export {
   allLegiArticleNatures,
   allLegiArticleOrigines,
   allLegiArticleTexteNatures,
-  allLegiArticleTypes,
   allLegiSectionTaLienArtEtats,
   allLegiSectionTaLienArtOrigines,
   allLegiSectionTaLienSectionTaEtats,
@@ -97,7 +109,6 @@ export {
   type LegiArticleNature,
   type LegiArticleOrigine,
   type LegiArticleTexteNature,
-  type LegiArticleType,
   type LegiMetaTexteChronicle,
   type LegiMetaTexteVersion,
   type LegiSectionTa,
@@ -107,6 +118,7 @@ export {
   type LegiSectionTaLienSectionTaEtat,
   type LegiSectionTaStructure,
   type LegiSectionTaTexteNature,
+  type LegiTexte,
   type LegiTextelr,
   type LegiTexteEtat,
   type LegiTextelrLienArt,
@@ -117,12 +129,24 @@ export {
   type LegiTexteNature,
   type LegiTexteOrigine,
   type LegiTextelrStructure,
+  type LegiTextelrVersions,
   type LegiTexteVersion,
   type LegiTexteVersionLien,
   type LegiTexteVersionLienNature,
   type LegiTexteVersionLienType,
 } from "./legi"
-export { allSens, type Sens } from "./shared"
+export type { LegalObjectReferences } from "./references"
+export {
+  allArticleTypes,
+  allSens,
+  type ArticleGitDb,
+  type ArticleLienDb,
+  type ArticleType,
+  type SectionTaGitDb,
+  type Sens,
+  type TexteVersionGitDb,
+  type TexteVersionLienDb,
+} from "./shared"
 
 export interface Article {
   META: {
@@ -768,4 +792,16 @@ export function rootTypeFromLegalId(id: string): LegalObjectType | undefined {
     return "texte_version"
   }
   throw new Error(`Unexpected legal ID: "${id}"`)
+}
+
+export function* walkContexteTexteTm(
+  tm: JorfArticleTm | JorfSectionTaTm | LegiArticleTm | LegiSectionTaTm,
+): Generator<
+  JorfArticleTm | JorfSectionTaTm | LegiArticleTm | LegiSectionTaTm,
+  void
+> {
+  yield tm
+  if (tm.TM !== undefined) {
+    yield* walkContexteTexteTm(tm.TM)
+  }
 }

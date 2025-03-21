@@ -4,7 +4,6 @@ import fs from "fs-extra"
 import objectHash from "object-hash"
 import git, { type TreeEntry, type TreeObject } from "isomorphic-git"
 import path from "path"
-import * as prettier from "prettier"
 
 import { sortArticlesNumbers } from "$lib/articles"
 import { bestItemForDate } from "$lib/legal"
@@ -38,7 +37,7 @@ import type {
 } from "$lib/legal/shared"
 import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
-import { slugify } from "$lib/strings"
+import { cleanHtmlFragment, escapeHtml, slugify } from "$lib/strings"
 
 import {
   actions,
@@ -134,66 +133,6 @@ async function addLienArticleToCurrentArticles(
   }
 }
 
-async function cleanHtmlFragment(
-  fragment: string | undefined,
-): Promise<string | undefined> {
-  try {
-    return fragment === undefined
-      ? undefined
-      : (
-          await prettier.format(
-            fragment
-              .replaceAll("<<", "«")
-              .replaceAll(">>", "»")
-              .replace(/<p>(.*?)<\/p>/gs, "$1<br />\n\n")
-              .replace(/\s*(<br\s*\/>\s*)+/gs, "<br />\n\n")
-              // Remove <br /> at the beginning of fragment.
-              .replace(/^\s*(<br\s*\/>\s*)+/gs, "")
-              // Remove <br /> at the end of fragment.
-              .replace(/\s*(<br\s*\/>\s*)+$/gs, "")
-              .trim(),
-            {
-              parser: "html",
-            },
-          )
-        )
-          // Remove blank lines after a <br > when the text is indented,
-          // because it breaks Markdown rendering.
-          .replace(/<br \/>\n\n+ /g, "<br />\n ")
-  } catch (e) {
-    console.trace(`Cleanup of following text failed:\n${fragment}`)
-    console.error(e)
-    return fragment
-  }
-}
-
-// Taken from https://github.com/sveltejs/svelte/blob/main/packages/svelte/src/escaping.js
-function escapeHtml<StringOrUndefined extends string | undefined>(
-  s: StringOrUndefined,
-  isAttribute = false,
-): StringOrUndefined {
-  if (s === undefined) {
-    return undefined as StringOrUndefined
-  }
-
-  const pattern = isAttribute ? /[&"<]/g : /[&<]/g
-  pattern.lastIndex = 0
-
-  let escaped = ""
-  let last = 0
-
-  while (pattern.test(s)) {
-    const i = pattern.lastIndex - 1
-    const ch = s[i]
-    escaped +=
-      s.substring(last, i) +
-      (ch === "&" ? "&amp;" : ch === '"' ? "&quot;" : "&lt;")
-    last = i + 1
-  }
-
-  return (escaped + s.substring(last)) as StringOrUndefined
-}
-
 async function generateArticlesGit(
   context: Context,
   articles: Array<JorfArticle | LegiArticle> | undefined,
@@ -208,8 +147,10 @@ async function generateArticlesGit(
 
   if (articles !== undefined) {
     for (const article of articles) {
-      const articleId = article.META.META_COMMUN.ID
-      const articleNumber = article.META.META_SPEC.META_ARTICLE.NUM
+      const metaArticle = article.META.META_SPEC.META_ARTICLE
+      const metaCommun = article.META.META_COMMUN
+      const articleId = metaCommun.ID
+      const articleNumber = metaArticle.NUM
       const articleTitle = `Article ${articleNumber ?? articleId}`
       let articleSlug = slugify(articleTitle, "_")
       if (articleSlug.length > 252) {
@@ -235,14 +176,15 @@ async function generateArticlesGit(
         const articleMarkdown = dedent`
           ---
           ${[
-            ["État", (article as LegiArticle).META.META_SPEC.META_ARTICLE.ETAT],
-            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+            ["Nature", metaCommun.NATURE],
+            ["Numéro", metaArticle.NUM],
+            ["Type", metaArticle.TYPE],
+            ["État", (metaArticle as LegiArticleMetaArticle).ETAT],
+            ["Date de début", metaArticle.DATE_DEBUT],
+            ["Date de fin", metaArticle.DATE_FIN],
             ["Identifiant", articleId],
-            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
-            // TODO: Mettre l'URL dans le Git Tricoteuses
-            ["URL", article.META.META_COMMUN.URL],
+            ["Origine", metaCommun.ORIGINE],
+            ["Ancien identifiant", metaCommun.ANCIEN_ID],
           ]
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
@@ -254,7 +196,7 @@ async function generateArticlesGit(
           ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
         `
 
-        let referringArticlesLiensHtml: string | undefined
+        let referringArticlesLiensHtml: string | undefined = undefined
         const referringArticlesLiens =
           context.referringArticlesLiensById[articleId]
         if (referringArticlesLiens !== undefined) {
@@ -265,7 +207,7 @@ async function generateArticlesGit(
           `
         }
 
-        let referringTextsLiensHtml: string | undefined
+        let referringTextsLiensHtml: string | undefined = undefined
         const referringTextsLiens = context.referringTextsLiensById[articleId]
         if (referringTextsLiens !== undefined) {
           referringTextsLiensHtml = dedent`
@@ -275,7 +217,7 @@ async function generateArticlesGit(
           `
         }
 
-        let referredLiensHtml: string | undefined
+        let referredLiensHtml: string | undefined = undefined
         const referredLiens = (article as LegiArticle).LIENS?.LIEN
         if (referredLiens !== undefined) {
           referredLiensHtml = dedent`
@@ -648,7 +590,7 @@ export async function generateConsolidatedTextGit(
         timestamp: 0,
         timezoneOffset: -60,
       },
-      message: "Création du dépôt Git",
+      message: "Création du dépôt git",
       parent: [],
       tree: treeOid,
     },
@@ -854,8 +796,6 @@ export async function generateConsolidatedTextGit(
               "Ancien identifiant",
               jorfModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
             ],
-            // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-            ["URL", jorfModifyingTexteVersion.META.META_COMMUN.URL],
           ]
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
@@ -868,11 +808,11 @@ export async function generateConsolidatedTextGit(
           const legiModifyingTexteVersion =
             modifyingTexteVersion as LegiTexteVersion
           messageLines = [
+            ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
             [
               "État",
               legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT,
             ],
-            ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
             [
               "Date de début",
               legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
@@ -892,8 +832,6 @@ export async function generateConsolidatedTextGit(
               "Ancien identifiant",
               legiModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
             ],
-            // TODO: Mettre l'URL dans le Git Tricoteuses
-            ["URL", legiModifyingTexteVersion.META.META_COMMUN.URL],
           ]
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
@@ -1322,15 +1260,13 @@ async function generateTextGit(
     const readmeMarkdown = dedent`
       ---
       ${[
-        ["État", metaTexteVersion.ETAT],
         ["Nature", texteVersion.META.META_COMMUN.NATURE],
+        ["État", metaTexteVersion.ETAT],
         ["Date de début", metaTexteVersion.DATE_DEBUT],
         ["Date de fin", metaTexteVersion.DATE_FIN],
         ["Identifiant", textId],
         ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
         ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-        // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-        ["URL", texteVersion.META.META_COMMUN.URL],
       ]
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)
@@ -1425,7 +1361,7 @@ async function generateTextGit(
 async function htmlFromReferredLiens(
   context: Context,
   referredLiens: Array<
-    LegiArticleLien | LegiTexteVersionLien | JorfTexteVersionLien
+    JorfTexteVersionLien | LegiArticleLien | LegiTexteVersionLien
   >,
 ) {
   return dedent`
@@ -1436,7 +1372,7 @@ async function htmlFromReferredLiens(
             let referredA: string | undefined = undefined
             const referredId = referredLien["@id"] ?? referredLien["@cidtexte"]
             if (referredId !== undefined) {
-              if (/^(JORF|LEGI)ARTI\d{12}$/.test(referredId)) {
+              if (/^(CNIL|DOLE|JORF|KALI|LEGI)ARTI\d{12}$/.test(referredId)) {
                 const referredArticle = await getOrLoadArticle(
                   context,
                   referredId,
@@ -1479,7 +1415,7 @@ async function htmlFromReferredLiens(
                 }
               }
 
-              if (/^(JORF|LEGI)SCTA\d{12}$/.test(referredId)) {
+              if (/^(CNIL|DOLE|JORF|KALI|LEGI)SCTA\d{12}$/.test(referredId)) {
                 const referredSectionTa = await getOrLoadSectionTa(
                   context,
                   referredId,
@@ -1508,7 +1444,7 @@ async function htmlFromReferredLiens(
                 }
               }
 
-              if (/^(JORF|LEGI)TEXT\d{12}$/.test(referredId)) {
+              if (/^(CNIL|DOLE|JORF|KALI|LEGI)TEXT\d{12}$/.test(referredId)) {
                 const referredTexteVersion = await getOrLoadTexteVersion(
                   context,
                   referredId,

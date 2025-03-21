@@ -1,4 +1,4 @@
-import type { Sens } from "./shared"
+import type { ArticleType, Sens } from "./shared"
 
 export interface Jo {
   META: {
@@ -97,7 +97,7 @@ export interface JorfArticleMetaArticle {
   /// Mots-clés
   MCS_ART?: { MC: string[] }
   NUM?: string
-  TYPE?: JorfArticleType
+  TYPE?: ArticleType
 }
 
 export type JorfArticleNature = (typeof allJorfArticleNatures)[number]
@@ -117,7 +117,7 @@ export interface JorfArticleTm {
   TM?: JorfArticleTm
 }
 
-export type JorfArticleType = (typeof allJorfArticleTypes)[number]
+export type JorfCategorieTag = (typeof allJorfCategoriesTags)[number]
 
 export interface JorfMetaTexteChronicle {
   CID: string
@@ -170,7 +170,7 @@ export interface JorfSectionTa {
         "@fin": string
         "@id_txt": string
       }>
-      TM?: JorfSectionTaTm[]
+      TM?: JorfSectionTaTm
     }
   }
   TITRE_TA?: string
@@ -216,7 +216,7 @@ export interface JorfSectionTaStructure {
 export type JorfSectionTaTexteNature =
   (typeof allJorfSectionTaTexteNatures)[number]
 
-interface JorfSectionTaTm {
+export interface JorfSectionTaTm {
   TITRE_TM: {
     "#text"?: string
     "@debut": string
@@ -226,35 +226,23 @@ interface JorfSectionTaTm {
   TM?: JorfSectionTaTm
 }
 
+/**
+ * The merging of a JorfTextelr & a JorfTexteVersion
+ */
+export type JorfTexte = JorfTexteVersion & {
+  STRUCT?: JorfTextelrStructure
+  VERSIONS?: JorfTextelrVersions
+}
+
 export interface JorfTextelr {
   META: {
-    META_COMMUN: {
-      ANCIEN_ID?: string
-      ELI_ALIAS?: {
-        ID_ELI_ALIAS: string
-      }
-      ID: string
-      ID_ELI?: string
-      NATURE?: JorfTexteNature
-      ORIGINE: JorfTexteOrigine
-      URL: string
-    }
+    META_COMMUN: JorfTexteMetaCommun
     META_SPEC: {
       META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
     }
   }
   STRUCT?: JorfTextelrStructure
-  VERSIONS: {
-    VERSION: Array<{
-      "@etat"?: JorfTextelrEtat
-      LIEN_TXT: {
-        "@debut": string
-        "@fin": string
-        "@id": string
-        "@num"?: string
-      }
-    }>
-  }
+  VERSIONS: JorfTextelrVersions
 }
 
 export type JorfTextelrEtat = (typeof allJorfTextelrEtats)[number]
@@ -277,10 +265,6 @@ export type JorfTextelrLienArtNature =
 export type JorfTextelrLienArtOrigine =
   (typeof allJorfTextelrLienArtOrigines)[number]
 
-export type JorfTexteNature = (typeof allJorfTexteNatures)[number]
-
-export type JorfTexteOrigine = (typeof allJorfTexteOrigines)[number]
-
 export interface JorfTextelrLienSectionTa {
   "#text"?: string
   "@cid": string
@@ -298,6 +282,35 @@ export interface JorfTextelrStructure {
   LIEN_ART?: JorfTextelrLienArt[]
   LIEN_SECTION_TA?: JorfTextelrLienSectionTa[]
 }
+
+export interface JorfTextelrVersions {
+  VERSION: Array<{
+    "@etat"?: JorfTextelrEtat
+    LIEN_TXT: {
+      "@debut": string
+      "@fin": string
+      "@id": string
+      "@num"?: string
+    }
+  }>
+}
+
+export interface JorfTexteMetaCommun {
+  ANCIEN_ID?: string
+  ELI_ALIAS?: {
+    ID_ELI_ALIAS: string
+  }
+  ID: string
+  ID_ELI?: string
+  NATURE?: JorfTexteNature
+  ORIGINE: JorfTexteOrigine
+  URL: string
+}
+
+export type JorfTexteNature = (typeof allJorfTexteNatures)[number]
+
+export type JorfTexteOrigine = (typeof allJorfTexteOrigines)[number]
+
 export interface JorfTexteVersion {
   ABRO?: {
     CONTENU: string // HTML
@@ -312,17 +325,7 @@ export interface JorfTexteVersion {
     }
   }
   META: {
-    META_COMMUN: {
-      ANCIEN_ID?: string
-      ELI_ALIAS?: {
-        ID_ELI_ALIAS: string
-      }
-      ID: string
-      ID_ELI?: string
-      NATURE?: JorfTexteNature
-      ORIGINE: JorfTexteOrigine
-      URL: string
-    }
+    META_COMMUN: JorfTexteMetaCommun
     META_SPEC: {
       META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
       META_TEXTE_VERSION: JorfMetaTexteVersion
@@ -389,8 +392,8 @@ export const allJorfArticleEtats = [
   "MODIFIE",
   "PERIME",
   "TRANSFERE",
-  "VIGUEUR_DIFF",
   "VIGUEUR",
+  "VIGUEUR_DIFF",
 ] as const
 
 export const allJorfArticleLienArticleOrigines = ["JORF", "LEGI"] as const
@@ -473,10 +476,14 @@ export const allJorfArticleTexteNatures = [
   "VOCABULAIRE", // 170
 ] as const
 
-export const allJorfArticleTypes = [
-  "AUTONOME",
-  "ENTIEREMENT_MODIF",
-  "PARTIELLEMENT_MODIF",
+export const allJorfCategoriesTags = [
+  "ARTICLE",
+  "ID",
+  "JO",
+  "SECTION_TA",
+  "TEXTE_VERSION",
+  "TEXTELR",
+  "VERSIONS",
 ] as const
 
 export const allJorfSectionTaLienArtEtats = ["VIGUEUR"] as const
@@ -816,3 +823,12 @@ export const allJorfTexteVersionLienTypes = [
   "TXT_ASSOCIE", // 11821
   "TXT_SOURCE", // 81350
 ] as const
+
+export function* walkJoTm(tmArray: JoTm[]): Generator<JoTm, void> {
+  for (const tm of tmArray) {
+    yield tm
+    if (tm.TM !== undefined) {
+      yield* walkJoTm(tm.TM)
+    }
+  }
+}

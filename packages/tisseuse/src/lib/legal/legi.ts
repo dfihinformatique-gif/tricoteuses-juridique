@@ -1,4 +1,4 @@
-import type { Sens } from "./shared"
+import type { ArticleType, Sens } from "./shared"
 
 export interface LegiArticle {
   BLOC_TEXTUEL?: {
@@ -84,7 +84,7 @@ export interface LegiArticleMetaArticle {
   DATE_FIN: string
   ETAT?: LegiArticleEtat
   NUM?: string
-  TYPE?: LegiArticleType
+  TYPE?: ArticleType
 }
 
 export type LegiArticleNature = (typeof allLegiArticleNatures)[number]
@@ -104,7 +104,7 @@ export interface LegiArticleTm {
   TM?: LegiArticleTm
 }
 
-export type LegiArticleType = (typeof allLegiArticleTypes)[number]
+export type LegiCategorieTag = (typeof allLegiCategoriesTags)[number]
 
 export interface LegiMetaTexteChronicle {
   CID: string
@@ -161,7 +161,7 @@ export interface LegiSectionTa {
         "@fin": string
         "@id_txt": string
       }>
-      TM?: LegiSectionTaTm[]
+      TM?: LegiSectionTaTm
     }
   }
   ID: string
@@ -208,14 +208,22 @@ export interface LegiSectionTaStructure {
 export type LegiSectionTaTexteNature =
   (typeof allLegiSectionTaTexteNatures)[number]
 
-interface LegiSectionTaTm {
-  TITRE_TM: {
+export interface LegiSectionTaTm {
+  TITRE_TM: Array<{
     "#text"?: string
     "@debut": string
     "@fin": string
     "@id": string
-  }
+  }>
   TM?: LegiSectionTaTm
+}
+
+/**
+ * The merging of a LegiTextelr & a LegiTexteVersion
+ */
+export type LegiTexte = LegiTexteVersion & {
+  STRUCT?: LegiTextelrStructure
+  VERSIONS?: LegiTextelrVersions
 }
 
 export interface LegiTextelr {
@@ -232,17 +240,7 @@ export interface LegiTextelr {
     }
   }
   STRUCT?: LegiTextelrStructure
-  VERSIONS: {
-    VERSION: Array<{
-      "@etat"?: LegiTexteEtat
-      LIEN_TXT: {
-        "@debut": string
-        "@fin": string
-        "@id": string
-        "@num"?: string
-      }
-    }>
-  }
+  VERSIONS: LegiTextelrVersions
 }
 
 export type LegiTexteEtat = (typeof allLegiTexteEtats)[number]
@@ -285,6 +283,18 @@ export type LegiTexteOrigine = (typeof allLegiTexteOrigines)[number]
 export interface LegiTextelrStructure {
   LIEN_ART?: LegiTextelrLienArt[]
   LIEN_SECTION_TA?: LegiTextelrLienSectionTa[]
+}
+
+export interface LegiTextelrVersions {
+  VERSION: Array<{
+    "@etat"?: LegiTexteEtat
+    LIEN_TXT: {
+      "@debut": string
+      "@fin": string
+      "@id": string
+      "@num"?: string
+    }
+  }>
 }
 
 export interface LegiTexteVersion {
@@ -351,12 +361,12 @@ export const allLegiArticleEtats = [
   "ANNULE", // 1955
   "DEPLACE", // 1
   "DISJOINT", // 87
-  "MODIFIE_MORT_NE", // 6929
   "MODIFIE", // 429664
+  "MODIFIE_MORT_NE", // 6929
   "PERIME", // 19628
   "TRANSFERE", // 14757
-  "VIGUEUR_DIFF", // 14629
   "VIGUEUR", // 619477
+  "VIGUEUR_DIFF", // 14629
 ] as const
 
 export const allLegiArticleLienArticleOrigines = ["JORF", "LEGI"] as const
@@ -452,10 +462,13 @@ export const allLegiArticleTexteNatures = [
   "RAPPORT", // 22,
 ] as const
 
-export const allLegiArticleTypes = [
-  "AUTONOME",
-  "ENTIEREMENT_MODIF",
-  "PARTIELLEMENT_MODIF",
+export const allLegiCategoriesTags = [
+  "ARTICLE",
+  "ID",
+  "SECTION_TA",
+  "TEXTE_VERSION",
+  "TEXTELR",
+  "VERSIONS",
 ] as const
 
 export const allLegiSectionTaLienArtEtats = [

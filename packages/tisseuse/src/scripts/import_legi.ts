@@ -5,9 +5,7 @@ import {
   strictAudit,
 } from "@auditors/core"
 import assert from "assert"
-import { XMLParser } from "fast-xml-parser"
 import fs from "fs-extra"
-import he from "he"
 import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -28,54 +26,25 @@ import type {
   LegiSectionTa,
   LegiTextelr,
   LegiTexteVersion,
-  Versions,
   XmlHeader,
 } from "$lib/legal"
+import { allLegiCategoriesTags, type LegiCategorieTag } from "$lib/legal/legi"
+import { xmlParser } from "$lib/parsers/shared"
 import { db } from "$lib/server/databases"
 import { walkDir } from "$lib/server/file_systems"
-
-type CategoryTag = (typeof allCategoriesCode)[number]
-
-const allCategoriesCode = [
-  "ARTICLE",
-  "ID",
-  "SECTION_TA",
-  "TEXTE_VERSION",
-  "TEXTELR",
-  "VERSIONS",
-] as const
-
-const xmlParser = new XMLParser({
-  attributeNamePrefix: "@",
-  ignoreAttributes: false,
-  stopNodes: [
-    "ARTICLE.BLOC_TEXTUEL.CONTENU",
-    "ARTICLE.NOTA.CONTENU",
-    "ARTICLE.SM.CONTENU",
-    "TEXTE_VERSION.ABRO.CONTENU",
-    "TEXTE_VERSION.NOTA.CONTENU",
-    "TEXTE_VERSION.NOTICE.CONTENU",
-    "TEXTE_VERSION.RECT.CONTENU",
-    "TEXTE_VERSION.SIGNATAIRES.CONTENU",
-    "TEXTE_VERSION.SM.CONTENU",
-    "TEXTE_VERSION.TP.CONTENU",
-    "TEXTE_VERSION.VISAS.CONTENU",
-  ],
-  tagValueProcessor: (_tagName, tagValue) => he.decode(tagValue),
-})
 
 async function importLegi(
   dilaDir: string,
   { category, resume }: { category?: string; resume?: string } = {},
 ): Promise<void> {
-  const [categoryTag, categoryError] = auditOptions([
-    ...[...allCategoriesCode],
-  ])(strictAudit, category) as [CategoryTag | undefined, unknown]
+  const [categorieTag, categorieError] = auditOptions([
+    ...[...allLegiCategoriesTags],
+  ])(strictAudit, category) as [LegiCategorieTag | undefined, unknown]
   assert.strictEqual(
-    categoryError,
+    categorieError,
     null,
-    `Error for category ${JSON.stringify(categoryTag)}:\n${JSON.stringify(
-      categoryError,
+    `Error for category ${JSON.stringify(categorieTag)}:\n${JSON.stringify(
+      categorieError,
       null,
       2,
     )}`,
@@ -85,7 +54,7 @@ async function importLegi(
   const deleteRemainingIds = !skip
 
   const articleRemainingIds =
-    categoryTag === undefined || categoryTag === "ARTICLE"
+    categorieTag === undefined || categorieTag === "ARTICLE"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -97,7 +66,7 @@ async function importLegi(
         )
       : new Set<string>()
   const idRemainingElis =
-    categoryTag === undefined || categoryTag === "ID"
+    categorieTag === undefined || categorieTag === "ID"
       ? new Set(
           (
             await db<{ eli: string }[]>`
@@ -108,7 +77,7 @@ async function importLegi(
         )
       : new Set<string>()
   const sectionTaRemainingIds =
-    categoryTag === undefined || categoryTag === "SECTION_TA"
+    categorieTag === undefined || categorieTag === "SECTION_TA"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -120,7 +89,7 @@ async function importLegi(
         )
       : new Set<string>()
   const textelrRemainingIds =
-    categoryTag === undefined || categoryTag === "TEXTELR"
+    categorieTag === undefined || categorieTag === "TEXTELR"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -132,7 +101,7 @@ async function importLegi(
         )
       : new Set<string>()
   const texteVersionRemainingIds =
-    categoryTag === undefined || categoryTag === "TEXTE_VERSION"
+    categorieTag === undefined || categorieTag === "TEXTE_VERSION"
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -144,7 +113,7 @@ async function importLegi(
         )
       : new Set<string>()
   const versionsRemainingElis =
-    categoryTag === undefined || categoryTag === "VERSIONS"
+    categorieTag === undefined || categorieTag === "VERSIONS"
       ? new Set(
           (
             await db<{ eli: string }[]>`
@@ -187,15 +156,8 @@ async function importLegi(
       })
       const xmlData = xmlParser.parse(xmlString)
       for (const [tag, element] of Object.entries(xmlData) as [
-        CategoryTag | "?xml",
-        (
-          | LegiArticle
-          | LegiSectionTa
-          | LegiTextelr
-          | LegiTexteVersion
-          | Versions
-          | XmlHeader
-        ),
+        LegiCategorieTag | "?xml",
+        unknown,
       ][]) {
         switch (tag) {
           case "?xml": {
@@ -205,7 +167,7 @@ async function importLegi(
             break
           }
           case "ARTICLE":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [article, error] = auditChain(
                 auditLegiArticle,
                 auditRequire,
@@ -235,7 +197,7 @@ async function importLegi(
             }
             break
           case "ID":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               assert.strictEqual(relativeSplitPath[0], "global")
               assert.strictEqual(relativeSplitPath[1], "eli")
               const eli = relativeSplitPath.slice(2, -1).join("/")
@@ -268,7 +230,7 @@ async function importLegi(
             }
             break
           case "SECTION_TA":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [section, error] = auditChain(
                 auditLegiSectionTa,
                 auditRequire,
@@ -298,7 +260,7 @@ async function importLegi(
             }
             break
           case "TEXTE_VERSION":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [texteVersion, error] = auditChain(
                 auditLegiTexteVersion,
                 auditRequire,
@@ -342,7 +304,7 @@ async function importLegi(
             }
             break
           case "TEXTELR":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               const [textelr, error] = auditChain(
                 auditLegiTextelr,
                 auditRequire,
@@ -372,7 +334,7 @@ async function importLegi(
             }
             break
           case "VERSIONS":
-            if (categoryTag === undefined || categoryTag === tag) {
+            if (categorieTag === undefined || categorieTag === tag) {
               assert.strictEqual(relativeSplitPath[0], "global")
               assert.strictEqual(relativeSplitPath[1], "eli")
               const eli = relativeSplitPath.slice(2, -1).join("/")

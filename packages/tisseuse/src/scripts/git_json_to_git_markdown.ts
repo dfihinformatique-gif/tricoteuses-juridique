@@ -33,6 +33,7 @@ import type {
 } from "$lib/legal/jorf"
 import type {
   LegiArticle,
+  LegiArticleMetaArticle,
   LegiArticleTm,
   LegiMetaTexteVersion,
   LegiSectionTa,
@@ -230,17 +231,15 @@ async function convertArticleToMarkdown(
     dedent`
       ---
       ${[
-        // ["État", (article as LegiArticle).META.META_SPEC.META_ARTICLE.ETAT],
         ["Nature", metaCommun.NATURE],
-        ["Type", metaArticle.TYPE],
         ["Numéro", metaArticle.NUM],
+        ["Type", metaArticle.TYPE],
+        ["État", (metaArticle as LegiArticleMetaArticle).ETAT],
         ["Date de début", metaArticle.DATE_DEBUT],
         ["Date de fin", metaArticle.DATE_FIN],
         ["Identifiant", articleId],
-        ["Ancien identifiant", metaCommun.ANCIEN_ID],
         ["Origine", metaCommun.ORIGINE],
-        // TODO: Mettre l'URL dans le Git Tricoteuses
-        ["URL", metaCommun.URL],
+        ["Ancien identifiant", metaCommun.ANCIEN_ID],
       ]
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)
@@ -880,13 +879,11 @@ async function convertJoToMarkdown(
       ---
       ${[
         ["Nature", metaCommun.NATURE],
-        ["Date de publication", metaConteneur.DATE_PUBLI],
         ["Numéro", metaConteneur.NUM],
+        ["Date de publication", metaConteneur.DATE_PUBLI],
         ["Identifiant", joId],
-        ["ELI", metaCommun.ID_ELI],
         ["Origine", metaCommun.ORIGINE],
-        // TODO: Mettre l'URL dans le Git Tricoteuses
-        ["URL", jo.META.META_COMMUN.URL],
+        ["ELI", metaCommun.ID_ELI],
       ]
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)
@@ -1609,15 +1606,13 @@ async function convertTexteToMarkdown(
     dedent`
       ---
       ${[
-        ["État", (metaTexteVersion as LegiMetaTexteVersion)?.ETAT],
         ["Nature", metaCommun.NATURE],
+        ["État", (metaTexteVersion as LegiMetaTexteVersion)?.ETAT],
         ["Date de début", metaTexteVersion.DATE_DEBUT],
         ["Date de fin", metaTexteVersion.DATE_FIN],
         ["Identifiant", texteId],
         ["NOR", metaTexteChronicle.NOR],
         ["Ancien identifiant", metaCommun.ANCIEN_ID],
-        // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-        ["URL", metaCommun.URL],
       ]
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)

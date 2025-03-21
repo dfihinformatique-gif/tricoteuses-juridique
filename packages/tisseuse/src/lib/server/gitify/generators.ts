@@ -147,8 +147,10 @@ async function generateArticlesGit(
 
   if (articles !== undefined) {
     for (const article of articles) {
-      const articleId = article.META.META_COMMUN.ID
-      const articleNumber = article.META.META_SPEC.META_ARTICLE.NUM
+      const metaArticle = article.META.META_SPEC.META_ARTICLE
+      const metaCommun = article.META.META_COMMUN
+      const articleId = metaCommun.ID
+      const articleNumber = metaArticle.NUM
       const articleTitle = `Article ${articleNumber ?? articleId}`
       let articleSlug = slugify(articleTitle, "_")
       if (articleSlug.length > 252) {
@@ -174,14 +176,15 @@ async function generateArticlesGit(
         const articleMarkdown = dedent`
           ---
           ${[
-            ["État", (article as LegiArticle).META.META_SPEC.META_ARTICLE.ETAT],
-            ["Type", article.META.META_SPEC.META_ARTICLE.TYPE],
-            ["Date de début", article.META.META_SPEC.META_ARTICLE.DATE_DEBUT],
-            ["Date de fin", article.META.META_SPEC.META_ARTICLE.DATE_FIN],
+            ["Nature", metaCommun.NATURE],
+            ["Numéro", metaArticle.NUM],
+            ["Type", metaArticle.TYPE],
+            ["État", (metaArticle as LegiArticleMetaArticle).ETAT],
+            ["Date de début", metaArticle.DATE_DEBUT],
+            ["Date de fin", metaArticle.DATE_FIN],
             ["Identifiant", articleId],
-            ["Ancien identifiant", article.META.META_COMMUN.ANCIEN_ID],
-            // TODO: Mettre l'URL dans le Git Tricoteuses
-            ["URL", article.META.META_COMMUN.URL],
+            ["Origine", metaCommun.ORIGINE],
+            ["Ancien identifiant", metaCommun.ANCIEN_ID],
           ]
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
@@ -793,8 +796,6 @@ export async function generateConsolidatedTextGit(
               "Ancien identifiant",
               jorfModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
             ],
-            // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-            ["URL", jorfModifyingTexteVersion.META.META_COMMUN.URL],
           ]
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
@@ -807,11 +808,11 @@ export async function generateConsolidatedTextGit(
           const legiModifyingTexteVersion =
             modifyingTexteVersion as LegiTexteVersion
           messageLines = [
+            ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
             [
               "État",
               legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT,
             ],
-            ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
             [
               "Date de début",
               legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
@@ -831,8 +832,6 @@ export async function generateConsolidatedTextGit(
               "Ancien identifiant",
               legiModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
             ],
-            // TODO: Mettre l'URL dans le Git Tricoteuses
-            ["URL", legiModifyingTexteVersion.META.META_COMMUN.URL],
           ]
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
@@ -1261,15 +1260,13 @@ async function generateTextGit(
     const readmeMarkdown = dedent`
       ---
       ${[
-        ["État", metaTexteVersion.ETAT],
         ["Nature", texteVersion.META.META_COMMUN.NATURE],
+        ["État", metaTexteVersion.ETAT],
         ["Date de début", metaTexteVersion.DATE_DEBUT],
         ["Date de fin", metaTexteVersion.DATE_FIN],
         ["Identifiant", textId],
         ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
         ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-        // TODO: Mettre l'URL dans Légifrance et(?) le Git Tricoteuses
-        ["URL", texteVersion.META.META_COMMUN.URL],
       ]
         .filter(([, value]) => value !== undefined)
         .map(([key, value]) => `${key}: ${value}`)

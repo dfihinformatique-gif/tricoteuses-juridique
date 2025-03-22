@@ -44,6 +44,18 @@ import type {
   LegiTextelrLienArt,
 } from "$lib/legal/legi"
 import type { LegalObjectReferences } from "$lib/legal/references"
+import {
+  markdownVariantsBlockFromArticle,
+  markdownVariantsBlockFromJo,
+  markdownVariantsBlockFromSectionTa,
+  markdownVariantsBlockFromTexteVersion,
+} from "$lib/markdown/blocks"
+import {
+  escapeMarkdownLinkTitle,
+  escapeMarkdownLinkUrl,
+  escapeMarkdownText,
+  escapeMarkdownTitle,
+} from "$lib/markdown/escapes"
 import config from "$lib/server/config"
 import { licence } from "$lib/server/gitify/repositories"
 import {
@@ -61,13 +73,7 @@ import {
   writeOidBySplitPathTree,
   type OidBySplitPathTree,
 } from "$lib/server/nodegit/trees"
-import {
-  cleanHtmlFragment,
-  escapeMarkdownLinkTitle,
-  escapeMarkdownLinkUrl,
-  escapeMarkdownText,
-  escapeMarkdownTitle,
-} from "$lib/strings"
+import { cleanHtmlFragment } from "$lib/strings"
 
 type ReferenceMarkdown =
   | {
@@ -269,6 +275,7 @@ async function convertArticleToMarkdown(
         articleId,
       ),
     )),
+    markdownVariantsBlockFromArticle(article),
   ]
     .filter((block) => block !== undefined)
     .join("\n\n")
@@ -907,6 +914,7 @@ async function convertJoToMarkdown(
         joId,
       ),
     )),
+    markdownVariantsBlockFromJo(jo),
   ]
     .filter((block) => block !== undefined)
     .join("\n\n")
@@ -1428,6 +1436,7 @@ async function convertSectionTaToMarkdown(
         sectionTaId,
       ),
     )),
+    markdownVariantsBlockFromSectionTa(sectionTa),
   ]
     .filter((block) => block !== undefined)
     .join("\n\n")
@@ -1639,6 +1648,7 @@ async function convertTexteToMarkdown(
         texteId,
       ),
     )),
+    markdownVariantsBlockFromTexteVersion(texte),
   ]
     .filter((block) => block !== undefined)
     .join("\n\n")

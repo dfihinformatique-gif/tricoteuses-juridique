@@ -15,6 +15,12 @@ import sade from "sade"
 import { extractTypeFromId, gitPathFromId } from "$lib/legal/ids"
 import type { Jo, JorfTexte } from "$lib/legal/jorf"
 import type { LegiTexte } from "$lib/legal/legi"
+import {
+  escapeMarkdownLinkTitle,
+  escapeMarkdownLinkUrl,
+  escapeMarkdownText,
+  escapeMarkdownTitle,
+} from "$lib/markdown/escapes"
 import config from "$lib/server/config"
 import { licence } from "$lib/server/gitify/repositories"
 import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits"
@@ -23,14 +29,7 @@ import {
   walkPreviousAndCurrentOidByIdTrees,
   type OidBySplitPathTree,
 } from "$lib/server/nodegit/trees"
-import {
-  capitalizeFirstLetter,
-  escapeMarkdownLinkTitle,
-  escapeMarkdownLinkUrl,
-  escapeMarkdownText,
-  escapeMarkdownTitle,
-  slugify,
-} from "$lib/strings"
+import { capitalizeFirstLetter, slugify } from "$lib/strings"
 
 interface Description {
   date: string

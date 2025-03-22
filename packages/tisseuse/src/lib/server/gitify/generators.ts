@@ -35,6 +35,11 @@ import type {
   TexteVersionGitDb,
   TexteVersionLienDb,
 } from "$lib/legal/shared"
+import {
+  markdownVariantsBlockFromArticle,
+  markdownVariantsBlockFromSectionTa,
+  markdownVariantsBlockFromTexteVersion,
+} from "$lib/markdown/blocks"
 import config from "$lib/server/config"
 import { db } from "$lib/server/databases"
 import { cleanHtmlFragment, escapeHtml, slugify } from "$lib/strings"
@@ -248,7 +253,11 @@ async function generateArticlesGit(
         const treeEntry = await writeTextFileBlob(
           context.gitdir,
           articleFilename,
-          [articleMarkdown, detailsHtml]
+          [
+            articleMarkdown,
+            detailsHtml,
+            markdownVariantsBlockFromArticle(article),
+          ]
             .filter((block) => block !== undefined)
             .join("\n\n") + "\n",
         )
@@ -1147,7 +1156,11 @@ async function generateSectionTaGit(
     const treeEntry = await writeTextFileBlob(
       context.gitdir,
       readmeFilename,
-      [readmeMarkdown, detailsHtml]
+      [
+        readmeMarkdown,
+        detailsHtml,
+        markdownVariantsBlockFromSectionTa(sectionTa),
+      ]
         .filter((block) => block !== undefined)
         .join("\n\n") + "\n",
     )
@@ -1327,7 +1340,11 @@ async function generateTextGit(
     const treeEntry = await writeTextFileBlob(
       context.gitdir,
       readmeFilename,
-      [readmeMarkdown, detailsHtml]
+      [
+        readmeMarkdown,
+        detailsHtml,
+        markdownVariantsBlockFromTexteVersion(texteVersion),
+      ]
         .filter((block) => block !== undefined)
         .join("\n\n") + "\n",
     )

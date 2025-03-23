@@ -7,6 +7,7 @@ import path from "path"
 
 import { sortArticlesNumbers } from "$lib/articles"
 import { bestItemForDate } from "$lib/legal"
+import { gitPathFromId } from "$lib/legal/ids"
 import type {
   JorfArticle,
   JorfSectionTaLienArt,
@@ -776,6 +777,16 @@ export async function generateConsolidatedTextGit(
             modifyingTexteVersion as JorfTexteVersion
           messageLines = [
             [
+              "Lien",
+              new URL(
+                gitPathFromId(
+                  jorfModifyingTexteVersion.META.META_COMMUN.ID,
+                  ".md",
+                ),
+                "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+              ).toString(),
+            ],
+            [
               "Autorité",
               jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
                 .AUTORITE,
@@ -817,6 +828,16 @@ export async function generateConsolidatedTextGit(
           const legiModifyingTexteVersion =
             modifyingTexteVersion as LegiTexteVersion
           messageLines = [
+            [
+              "Lien",
+              new URL(
+                gitPathFromId(
+                  legiModifyingTexteVersion.META.META_COMMUN.ID,
+                  ".md",
+                ),
+                "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+              ).toString(),
+            ],
             ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
             [
               "État",

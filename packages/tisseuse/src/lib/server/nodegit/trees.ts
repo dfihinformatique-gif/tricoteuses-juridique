@@ -14,7 +14,7 @@ export function getOidFromIdTree(
 ): nodegit.Oid | undefined {
   const idMatch = id.match(idRegExp)
   assert.notStrictEqual(idMatch, null, `Unknown ID format: ${id}`)
-  return getOidFromSplitPathTree(oidByIdTree, idMatch!.slice(1))
+  return getOidFromSplitPathTree(oidByIdTree, [...idMatch!.slice(1, -1), id])
 }
 
 export function getOidFromSplitPathTree(
@@ -107,7 +107,7 @@ export function setOidInIdTree(
 ): boolean {
   const idMatch = id.match(idRegExp)
   assert.notStrictEqual(idMatch, null, `Unknown ID format: ${id}`)
-  return setOidInSplitPathTree(oidByIdTree, idMatch!.slice(1), oid)
+  return setOidInSplitPathTree(oidByIdTree, [...idMatch!.slice(1, -1), id], oid)
 }
 
 export function setOidInSplitPathTree(

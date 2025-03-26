@@ -10,20 +10,28 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
-import { auditId, auditVersions } from "$lib/auditors/legal"
+import { auditId, auditVersions } from "$lib/auditors/legal.js"
+import {
+  auditJorfArticle,
+  // jorfArticleStats,
+} from "$lib/auditors/jorf/articles.js"
 import {
   auditJo,
-  auditJorfArticle,
-  auditJorfSectionTa,
-  auditJorfTextelr,
-  auditJorfTexteVersion,
-  // jorfArticleStats,
-  // jorfSectionTaStats,
   // joStats,
-  // jorfTextelrStats,
+} from "$lib/auditors/jorf/jo.js"
+import {
+  auditJorfSectionTa,
+  // jorfSectionTaStats,
+} from "$lib/auditors/jorf/section_ta.js"
+import {
+  auditJorfTexteVersion,
   // jorfTexteVersionStats,
-} from "$lib/auditors/jorf"
-import type { XmlHeader } from "$lib/legal"
+} from "$lib/auditors/jorf/texte_version.js"
+import {
+  auditJorfTextelr,
+  // jorfTextelrStats,
+} from "$lib/auditors/jorf/textelr.js"
+import type { XmlHeader } from "$lib/legal/index.js"
 import {
   allJorfCategoriesTags,
   type Jo,
@@ -32,10 +40,10 @@ import {
   type JorfSectionTa,
   type JorfTextelr,
   type JorfTexteVersion,
-} from "$lib/legal/jorf"
-import { xmlParser } from "$lib/parsers/shared"
-import { db } from "$lib/server/databases"
-import { walkDir } from "$lib/server/file_systems"
+} from "$lib/legal/jorf.js"
+import { xmlParser } from "$lib/parsers/shared.js"
+import { db } from "$lib/server/databases/index.js"
+import { walkDir } from "$lib/server/file_systems.js"
 
 async function importJorf(
   dilaDir: string,

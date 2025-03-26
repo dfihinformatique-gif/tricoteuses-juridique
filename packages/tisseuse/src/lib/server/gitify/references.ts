@@ -4,16 +4,16 @@ import type {
   JorfTextelr,
   JorfSectionTa,
   JorfSectionTaLienSectionTa,
-} from "$lib/legal/jorf"
+} from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
   LegiSectionTa,
   LegiSectionTaLienSectionTa,
   LegiTextelr,
   LegiTexteVersion,
-} from "$lib/legal/legi"
-import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
-import { db } from "$lib/server/databases"
+} from "$lib/legal/legi.js"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
+import { db } from "$lib/server/databases/index.js"
 
 import {
   getOrLoadArticle,
@@ -21,7 +21,7 @@ import {
   getOrLoadTexteVersion,
   type Action,
   type Context,
-} from "./contexts"
+} from "./contexts.js"
 
 async function addModifyingArticleId(
   context: Context,

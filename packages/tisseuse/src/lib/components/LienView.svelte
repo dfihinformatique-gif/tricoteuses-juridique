@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Minus, Triangle } from "lucide-svelte"
 
-  import type { Aggregate } from "$lib/aggregates"
+  import type { Aggregate } from "$lib/aggregates.js"
   import ArticleView from "$lib/components/ArticleView.svelte"
   import SectionTaView from "$lib/components/SectionTaView.svelte"
   import TexteVersionView from "$lib/components/TexteVersionView.svelte"
@@ -11,7 +11,7 @@
     type Lien,
     pathnameFromLegalId,
     rootTypeFromLegalId,
-  } from "$lib/legal"
+  } from "$lib/legal/index.js"
 
   export let data: Aggregate
   export let level = 1

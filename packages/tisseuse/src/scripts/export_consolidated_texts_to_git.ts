@@ -5,14 +5,14 @@ import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
 
-import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi"
-import config from "$lib/server/config"
-import { db } from "$lib/server/databases"
-import { generateConsolidatedTextGit } from "$lib/server/gitify/generators"
+import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi.js"
+import config from "$lib/server/config.js"
+import { db } from "$lib/server/databases/index.js"
+import { generateConsolidatedTextGit } from "$lib/server/gitify/generators.js"
 import {
   organizationNameByTexteNature,
   repositoryNameFromTitle,
-} from "$lib/urls"
+} from "$lib/urls.js"
 
 const { forgejo } = config
 

@@ -1,7 +1,7 @@
 import assert from "assert"
 import postgres from "postgres"
 
-import config from "$lib/server/config"
+import config from "$lib/server/config.js"
 
 export interface Version {
   number: number

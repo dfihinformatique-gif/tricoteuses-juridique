@@ -14,13 +14,13 @@ import {
 } from "@auditors/core"
 
 import {
-  allArticleTypes,
   allJorfArticleEtats,
   allJorfArticleLienArticleOrigines,
   allJorfArticleNatures,
   allJorfArticleOrigines,
   allJorfArticleTexteNatures,
-} from "$lib/legal"
+} from "$lib/legal/jorf.js"
+import { allArticleTypes } from "$lib/legal/shared.js"
 
 export const jorfArticleStats: {
   // countByEtat: { [etat: string]: number }

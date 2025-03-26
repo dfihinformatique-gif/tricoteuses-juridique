@@ -1,5 +1,5 @@
-import type { LegiTexteNature } from "$lib/legal/legi"
-import { slugify } from "$lib/strings"
+import type { LegiTexteNature } from "$lib/legal/legi.js"
+import { slugify } from "$lib/strings.js"
 
 export const organizationNameByTexteNature: Partial<
   Record<LegiTexteNature, string>

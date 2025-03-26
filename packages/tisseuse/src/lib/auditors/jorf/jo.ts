@@ -15,7 +15,7 @@ import {
   type Audit,
 } from "@auditors/core"
 
-import { allJoNatures, allJoOrigines } from "$lib/legal"
+import { allJoNatures, allJoOrigines } from "$lib/legal/jorf.js"
 
 export const joStats: {
   countByNature: { [nature: string]: number }

@@ -17,7 +17,7 @@ import {
   type Auditor,
 } from "@auditors/core"
 
-import { allFollows } from "$lib/aggregates"
+import { allFollows } from "$lib/aggregates.js"
 
 export function auditFollowQuery(
   audit: Audit,

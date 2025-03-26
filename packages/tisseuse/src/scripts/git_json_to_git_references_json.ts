@@ -11,7 +11,7 @@ import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
 
-import { assertNever } from "$lib/asserts"
+import { assertNever } from "$lib/asserts.js"
 import type {
   Jo,
   JorfArticle,
@@ -20,27 +20,27 @@ import type {
   JorfSectionTaTm,
   JorfTexte,
   JoTm,
-} from "$lib/legal/jorf"
+} from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
   LegiArticleTm,
   LegiSectionTa,
   LegiSectionTaTm,
   LegiTexte,
-} from "$lib/legal/legi"
-import type { LegalObjectReferences } from "$lib/legal/references"
+} from "$lib/legal/legi.js"
+import type { LegalObjectReferences } from "$lib/legal/references.js"
 
-import config from "$lib/server/config"
-import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits"
+import config from "$lib/server/config.js"
+import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits.js"
 import {
   readOidBySplitPathTree,
   removeOidBySplitPathTreeEmptyNodes,
   setOidInIdTree,
   writeOidBySplitPathTree,
   type OidBySplitPathTree,
-} from "$lib/server/nodegit/trees"
-import { extractOrigineFromId } from "$lib/legal"
-import { extractTypeFromId } from "$lib/legal/ids"
+} from "$lib/server/nodegit/trees.js"
+import { extractOrigineFromId } from "$lib/legal/ids.js"
+import { extractTypeFromId } from "$lib/legal/ids.js"
 
 const { forgejo } = config
 

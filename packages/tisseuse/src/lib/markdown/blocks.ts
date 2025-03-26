@@ -1,24 +1,24 @@
 import dedent from "dedent-js"
 
-import { bestItemForDate, walkContexteTexteTm } from "$lib/legal"
-import { gitPathFromId } from "$lib/legal/ids"
+import { bestItemForDate, walkContexteTexteTm } from "$lib/legal/index.js"
+import { gitPathFromId } from "$lib/legal/ids.js"
 import type {
   Jo,
   JorfArticle,
   JorfSectionTa,
   JorfTexteVersion,
-} from "$lib/legal/jorf"
+} from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
   LegiSectionTa,
   LegiTexteNature,
   LegiTexteVersion,
-} from "$lib/legal/legi"
-import { slugify } from "$lib/strings"
+} from "$lib/legal/legi.js"
+import { slugify } from "$lib/strings.js"
 import {
   organizationNameByTexteNature,
   repositoryNameFromTitle,
-} from "$lib/urls"
+} from "$lib/urls.js"
 
 const today = new Date().toISOString().split("T")[0]
 

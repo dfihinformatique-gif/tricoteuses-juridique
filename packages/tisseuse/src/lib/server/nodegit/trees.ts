@@ -1,7 +1,7 @@
 import assert from "assert"
 import nodegit from "nodegit"
 
-import { idRegExp } from "$lib/legal/ids"
+import { idRegExp } from "$lib/legal/ids.js"
 
 export type OidBySplitPathTree = {
   childByKey?: Map<string, OidBySplitPathTree>

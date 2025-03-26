@@ -3,13 +3,13 @@
 
   import ArticleView from "$lib/components/ArticleView.svelte"
   import IdPagesSwitcher from "$lib/components/IdPagesSwitcher.svelte"
-  import type { Article } from "$lib/legal"
+  import type { Article } from "$lib/legal/index.js"
   import {
     summarizeAggregateProperties,
     summarizeLegalObject,
-  } from "$lib/summaries"
+  } from "$lib/summaries.js"
 
-  import type { PageData } from "./$types"
+  import type { PageData } from "./$types.js"
 
   export let data: PageData
 

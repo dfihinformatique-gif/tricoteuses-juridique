@@ -1,17 +1,16 @@
+import type { DossierLegislatif } from "$lib/legal/dole.js"
 import type {
   Article,
-  DossierLegislatif,
   Idcc,
-  Jo,
-  JorfArticle,
-  LegiArticle,
   SectionTa,
   Textekali,
   Textelr,
   TexteVersion,
   Versions,
-} from "$lib/legal"
-import type { ArticleLienDb, TexteVersionLienDb } from "./legal/shared"
+} from "$lib/legal/index.js"
+import type { Jo, JorfArticle } from "$lib/legal/jorf.js"
+import type { LegiArticle } from "$lib/legal/legi.js"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
 
 export interface Aggregate {
   article?: { [id: string]: Article | JorfArticle | LegiArticle }

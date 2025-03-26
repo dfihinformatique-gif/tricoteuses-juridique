@@ -2,10 +2,10 @@
   import { iterArrayOrSingleton } from "@tricoteuses/explorer-tools"
   import { SummaryView } from "augmented-data-viewer"
 
-  import type { Aggregate } from "$lib/aggregates"
+  import type { Aggregate } from "$lib/aggregates.js"
   import LienView from "$lib/components/LienView.svelte"
-  import type { Article } from "$lib/legal"
-  import { summarizeLegalObject } from "$lib/summaries"
+  import type { Article } from "$lib/legal/index.js"
+  import { summarizeLegalObject } from "$lib/summaries.js"
 
   export let article: Article
   export let data: Aggregate

@@ -1,4 +1,4 @@
-import type { ArticleType, Sens } from "./shared"
+import type { ArticleType, Sens } from "./shared.js"
 
 export interface LegiArticle {
   BLOC_TEXTUEL?: {

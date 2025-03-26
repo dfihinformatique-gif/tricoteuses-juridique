@@ -4,9 +4,9 @@
   import {
     summarizeDossierLegislatifProperties,
     summarizeLegalObject,
-  } from "$lib/summaries"
+  } from "$lib/summaries.js"
 
-  import type { PageData } from "./$types"
+  import type { PageData } from "./$types.js"
 
   export let data: PageData
 

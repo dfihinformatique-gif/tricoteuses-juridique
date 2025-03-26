@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { AuditSwitchError } from "@auditors/core"
 
-  import { realErrorFromError } from "./errors"
+  import { realErrorFromError } from "./errors.js"
 
   export let error: unknown
   export let frame = true

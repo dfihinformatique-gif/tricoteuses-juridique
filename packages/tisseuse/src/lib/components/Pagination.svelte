@@ -2,9 +2,9 @@
   import { cleanAudit } from "@auditors/core"
 
   import { page } from "$app/stores"
-  import { auditPaginationQuery } from "$lib/auditors/queries"
-  import type { PaginationQuery } from "$lib/queries"
-  import { urlFromUrlAndQuery } from "$lib/urls"
+  import { auditPaginationQuery } from "$lib/auditors/queries.js"
+  import type { PaginationQuery } from "$lib/queries.js"
+  import { urlFromUrlAndQuery } from "$lib/urls.js"
 
   export let count: number | undefined | null = undefined // Count is not always known.
   export let currentPageCount: number

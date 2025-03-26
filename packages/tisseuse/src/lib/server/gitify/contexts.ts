@@ -8,7 +8,7 @@ import type {
   JorfSectionTaStructure,
   JorfTextelr,
   JorfTexteVersion,
-} from "$lib/legal/jorf"
+} from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
   LegiSectionTa,
@@ -17,9 +17,9 @@ import type {
   LegiSectionTaStructure,
   LegiTextelr,
   LegiTexteVersion,
-} from "$lib/legal/legi"
-import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
-import { db } from "$lib/server/databases"
+} from "$lib/legal/legi.js"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
+import { db } from "$lib/server/databases/index.js"
 
 export type Action = (typeof actions)[number]
 

@@ -12,10 +12,10 @@ import type {
   Textelr,
   TexteVersion,
   XmlHeader,
-} from "$lib/legal"
-import { xmlParser } from "$lib/parsers/shared"
-import { db } from "$lib/server/databases"
-import { walkDir } from "$lib/server/file_systems"
+} from "$lib/legal/index.js"
+import { xmlParser } from "$lib/parsers/shared.js"
+import { db } from "$lib/server/databases/index.js"
+import { walkDir } from "$lib/server/file_systems.js"
 
 async function importKali(
   dilaDir: string,

@@ -5,9 +5,9 @@ import objectHash from "object-hash"
 import git, { type TreeEntry, type TreeObject } from "isomorphic-git"
 import path from "path"
 
-import { sortArticlesNumbers } from "$lib/articles"
-import { bestItemForDate } from "$lib/legal"
-import { gitPathFromId } from "$lib/legal/ids"
+import { sortArticlesNumbers } from "$lib/articles.js"
+import { bestItemForDate } from "$lib/legal/index.js"
+import { gitPathFromId } from "$lib/legal/ids.js"
 import type {
   JorfArticle,
   JorfSectionTaLienArt,
@@ -15,7 +15,7 @@ import type {
   JorfTextelr,
   JorfTexteVersion,
   JorfTexteVersionLien,
-} from "$lib/legal/jorf"
+} from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
   LegiArticleLien,
@@ -28,22 +28,22 @@ import type {
   LegiTextelrLienArt,
   LegiTexteVersion,
   LegiTexteVersionLien,
-} from "$lib/legal/legi"
+} from "$lib/legal/legi.js"
 import type {
   ArticleGitDb,
   ArticleLienDb,
   SectionTaGitDb,
   TexteVersionGitDb,
   TexteVersionLienDb,
-} from "$lib/legal/shared"
+} from "$lib/legal/shared.js"
 import {
   markdownVariantsBlockFromArticle,
   markdownVariantsBlockFromSectionTa,
   markdownVariantsBlockFromTexteVersion,
-} from "$lib/markdown/blocks"
-import config from "$lib/server/config"
-import { db } from "$lib/server/databases"
-import { cleanHtmlFragment, escapeHtml, slugify } from "$lib/strings"
+} from "$lib/markdown/blocks.js"
+import config from "$lib/server/config.js"
+import { db } from "$lib/server/databases/index.js"
+import { cleanHtmlFragment, escapeHtml, slugify } from "$lib/strings.js"
 
 import {
   actions,
@@ -56,18 +56,18 @@ import {
   type Action,
   type Context,
   type TexteManquant,
-} from "./contexts"
+} from "./contexts.js"
 import {
   registerLegiArticleModifiersAndReferences,
   registerLegiSectionTaModifiersAndReferences,
   registerLegiTextModifiersAndReferences,
-} from "./references"
-import { licence, writeTextFileBlob } from "./repositories"
+} from "./references.js"
+import { licence, writeTextFileBlob } from "./repositories.js"
 import {
   addArticleToTree,
   type SectionTaNode,
   type TextelrNode,
-} from "./texts_trees"
+} from "./texts_trees.js"
 
 const minDateObject = new Date("1971-01-01")
 const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)

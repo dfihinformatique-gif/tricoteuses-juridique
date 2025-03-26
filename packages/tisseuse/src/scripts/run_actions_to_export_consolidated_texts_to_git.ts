@@ -1,8 +1,8 @@
 import sade from "sade"
 
-import type { LegiTexteVersion } from "$lib/legal/legi"
-import config from "$lib/server/config"
-import { db } from "$lib/server/databases"
+import type { LegiTexteVersion } from "$lib/legal/legi.js"
+import config from "$lib/server/config.js"
+import { db } from "$lib/server/databases/index.js"
 
 const { forgejo } = config
 

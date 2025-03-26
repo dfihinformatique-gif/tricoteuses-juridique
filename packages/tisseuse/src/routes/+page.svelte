@@ -2,7 +2,7 @@
   import { Hero } from "@tricoteuses/explorer-tools"
 
   import { page } from "$app/stores"
-  import { appMenu } from "$lib/legal"
+  import { appMenu } from "$lib/legal/index.js"
 </script>
 
 <main>

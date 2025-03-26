@@ -22,9 +22,9 @@ import {
   allJorfTextelrLienArtOrigines,
   allJorfTexteNatures,
   allJorfTexteOrigines,
-} from "$lib/legal"
+} from "$lib/legal/jorf.js"
 
-import { auditMetaTexteChronicle } from "./texte"
+import { auditMetaTexteChronicle } from "./texte.js"
 
 export const jorfTextelrStats: {
   countByEtat: { [etat: string]: number }

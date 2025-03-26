@@ -12,15 +12,14 @@ import {
 } from "@auditors/core"
 
 import {
-  allArticleTypes,
   allLegiArticleEtats,
   allLegiArticleLienNatures,
   allLegiArticleLienTypes,
   allLegiArticleNatures,
   allLegiArticleOrigines,
   allLegiArticleTexteNatures,
-  allSens,
-} from "$lib/legal"
+} from "$lib/legal/legi.js"
+import { allArticleTypes, allSens } from "$lib/legal/shared.js"
 
 export const legiArticleStats: {
   countByEtat: { [etat: string]: number }

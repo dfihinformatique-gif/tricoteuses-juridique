@@ -1,10 +1,10 @@
 import { error } from "@sveltejs/kit"
 
-import type { Article } from "$lib/legal"
-import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
-import { db } from "$lib/server/databases"
+import type { Article } from "$lib/legal/index.js"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
+import { db } from "$lib/server/databases/index.js"
 
-import type { PageServerLoad } from "./$types"
+import type { PageServerLoad } from "./$types.js"
 
 export const load: PageServerLoad = async ({ params }) => {
   const article = (

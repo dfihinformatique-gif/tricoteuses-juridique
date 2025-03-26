@@ -3,9 +3,9 @@
 
   // import { page } from "$app/stores"
   import Pagination from "$lib/components/Pagination.svelte"
-  import { summarizeTextekaliProperties } from "$lib/summaries"
+  import { summarizeTextekaliProperties } from "$lib/summaries.js"
 
-  import type { PageData } from "./$types"
+  import type { PageData } from "./$types.js"
 
   export let data: PageData
 

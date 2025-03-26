@@ -1,8 +1,8 @@
 import { error } from "@sveltejs/kit"
 
-import type { GetRechercheResult } from "$lib/aggregates"
+import type { GetRechercheResult } from "$lib/aggregates.js"
 
-import type { PageLoad } from "./$types"
+import type { PageLoad } from "./$types.js"
 
 export const load: PageLoad = async ({ fetch, url }) => {
   const apiUrl = `/api${url.pathname}`

@@ -1,10 +1,10 @@
 import assert from "assert"
 import sade from "sade"
 
-import type { JorfArticle } from "$lib/legal/jorf"
-import type { LegiArticle, LegiArticleLienType } from "$lib/legal/legi"
-import type { ArticleType, Sens } from "$lib/legal/shared"
-import { db } from "$lib/server/databases"
+import type { JorfArticle } from "$lib/legal/jorf.js"
+import type { LegiArticle, LegiArticleLienType } from "$lib/legal/legi.js"
+import type { ArticleType, Sens } from "$lib/legal/shared.js"
+import { db } from "$lib/server/databases/index.js"
 
 const percentFormatter = new Intl.NumberFormat("fr-FR", {
   style: "percent",

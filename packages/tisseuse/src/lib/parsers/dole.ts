@@ -1,8 +1,9 @@
 import { auditChain, auditRequire, strictAudit } from "@auditors/core"
 
-import { auditDossierLegislatif } from "$lib/auditors/dole"
-import type { DossierLegislatif, XmlHeader } from "$lib/legal"
-import { xmlParser } from "$lib/parsers/shared"
+import { auditDossierLegislatif } from "$lib/auditors/dole.js"
+import type { DossierLegislatif } from "$lib/legal/dole.js"
+import type { XmlHeader } from "$lib/legal/index.js"
+import { xmlParser } from "$lib/parsers/shared.js"
 
 export function parseDossierLegislatif(
   filePath: string,

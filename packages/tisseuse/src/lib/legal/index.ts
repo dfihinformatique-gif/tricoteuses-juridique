@@ -1,8 +1,8 @@
 import type { MenuItem } from "@tricoteuses/explorer-tools"
 
-import type { DossierLegislatif } from "./dole"
-import { type Jo, type JorfArticleTm, type JorfSectionTaTm } from "./jorf"
-import type { LegiArticleTm, LegiSectionTaTm } from "./legi"
+import type { DossierLegislatif } from "./dole.js"
+import { type Jo, type JorfArticleTm, type JorfSectionTaTm } from "./jorf.js"
+import type { LegiArticleTm, LegiSectionTaTm } from "./legi.js"
 
 export interface Article {
   META: {

@@ -6,7 +6,7 @@ export {
   type GetRechercheResult,
   type GetTexteResult,
   type ListTextesResult,
-} from "./aggregates"
+} from "./aggregates.js"
 
 export {
   type Article,
@@ -37,7 +37,7 @@ export {
   type Tm,
   type TmLienTxt,
   type Versions,
-} from "./legal"
+} from "./legal/index.js"
 
 export {
   allDossierLegislatifTypes,
@@ -45,7 +45,7 @@ export {
   type DossierLegislatifType,
   type Echeancier,
   type EcheancierLigne,
-} from "./legal/dole"
+} from "./legal/dole.js"
 
 export {
   extractOrigineFromId,
@@ -56,7 +56,7 @@ export {
   idsTypes,
   type IdOrigine,
   type IdType,
-} from "./legal/ids"
+} from "./legal/ids.js"
 
 export {
   allJoNatures,
@@ -115,7 +115,7 @@ export {
   type JorfTexteVersionLien,
   type JorfTexteVersionLienNature,
   type JorfTexteVersionLienType,
-} from "./legal/jorf"
+} from "./legal/jorf.js"
 
 export {
   allLegiArticleEtats,
@@ -172,9 +172,9 @@ export {
   type LegiTexteVersionLien,
   type LegiTexteVersionLienNature,
   type LegiTexteVersionLienType,
-} from "./legal/legi"
+} from "./legal/legi.js"
 
-export type { LegalObjectReferences } from "./legal/references"
+export type { LegalObjectReferences } from "./legal/references.js"
 
 export {
   allArticleTypes,
@@ -186,6 +186,7 @@ export {
   type Sens,
   type TexteVersionGitDb,
   type TexteVersionLienDb,
-} from "./legal/shared"
+} from "./legal/shared.js"
 
-export { parseDossierLegislatif } from "./parsers"
+export { parseDossierLegislatif } from "./parsers/dole.js"
+export { xmlParser } from "./parsers/shared.js"

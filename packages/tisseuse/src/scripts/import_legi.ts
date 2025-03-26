@@ -10,28 +10,35 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
-import { auditId, auditVersions } from "$lib/auditors/legal"
+import { auditId, auditVersions } from "$lib/auditors/legal.js"
 import {
   auditLegiArticle,
-  auditLegiSectionTa,
-  auditLegiTextelr,
-  auditLegiTexteVersion,
   // legiArticleStats
+} from "$lib/auditors/legi/articles.js"
+import {
+  auditLegiSectionTa,
   // legiSectionTaStats,
-  // legiTextelrStats,
+} from "$lib/auditors/legi/section_ta.js"
+import {
+  auditLegiTexteVersion,
   // legiTexteVersionStats,
-} from "$lib/auditors/legi"
-import type {
-  LegiArticle,
-  LegiSectionTa,
-  LegiTextelr,
-  LegiTexteVersion,
-  XmlHeader,
-} from "$lib/legal"
-import { allLegiCategoriesTags, type LegiCategorieTag } from "$lib/legal/legi"
-import { xmlParser } from "$lib/parsers/shared"
-import { db } from "$lib/server/databases"
-import { walkDir } from "$lib/server/file_systems"
+} from "$lib/auditors/legi/texte_version.js"
+import {
+  auditLegiTextelr,
+  // legiTextelrStats,
+} from "$lib/auditors/legi/textelr.js"
+import type { XmlHeader } from "$lib/legal/index.js"
+import {
+  allLegiCategoriesTags,
+  type LegiArticle,
+  type LegiCategorieTag,
+  type LegiSectionTa,
+  type LegiTextelr,
+  type LegiTexteVersion,
+} from "$lib/legal/legi.js"
+import { xmlParser } from "$lib/parsers/shared.js"
+import { db } from "$lib/server/databases/index.js"
+import { walkDir } from "$lib/server/file_systems.js"
 
 async function importLegi(
   dilaDir: string,

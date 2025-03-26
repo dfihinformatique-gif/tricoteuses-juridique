@@ -5,7 +5,7 @@
   // import NavBar from "@tricoteuses/explorer-tools/components/NavBar.svelte"
 
   import { page } from "$app/stores"
-  import { appMenu } from "$lib/legal"
+  import { appMenu } from "$lib/legal/index.js"
 </script>
 
 <svelte:head>

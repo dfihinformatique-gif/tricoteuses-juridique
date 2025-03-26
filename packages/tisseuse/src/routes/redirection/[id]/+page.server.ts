@@ -7,18 +7,18 @@ import {
 } from "@auditors/core"
 import { error, redirect } from "@sveltejs/kit"
 
-import { assertNever } from "$lib/asserts"
-import { auditQueryOptionsArray } from "$lib/auditors/queries"
-import type { JorfTexteNature, JorfTexteVersion } from "$lib/legal/jorf"
+import { assertNever } from "$lib/asserts.js"
+import { auditQueryOptionsArray } from "$lib/auditors/queries.js"
+import type { JorfTexteNature, JorfTexteVersion } from "$lib/legal/jorf.js"
 import {
   organizationNameByTexteNature,
   repositoryNameFromTitle,
-} from "$lib/urls"
-import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi"
-import config from "$lib/server/config"
-import { db } from "$lib/server/databases"
+} from "$lib/urls.js"
+import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi.js"
+import config from "$lib/server/config.js"
+import { db } from "$lib/server/databases/index.js"
 
-import type { PageLoad } from "./$types"
+import type { PageLoad } from "./$types.js"
 
 type TargetType = (typeof targetsTypes)[number]
 

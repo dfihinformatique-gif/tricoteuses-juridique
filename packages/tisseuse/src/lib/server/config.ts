@@ -1,6 +1,6 @@
 import "dotenv/config"
 
-import { validateConfig } from "$lib/server/auditors/config"
+import { validateConfig } from "$lib/server/auditors/config.js"
 
 export interface Config {
   assembleeDb: {

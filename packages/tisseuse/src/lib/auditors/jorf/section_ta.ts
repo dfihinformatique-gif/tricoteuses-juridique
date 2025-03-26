@@ -18,7 +18,7 @@ import {
   allJorfSectionTaLienArtOrigines,
   // allJorfSectionTaLienSectionTaEtats,
   allJorfSectionTaTexteNatures,
-} from "$lib/legal"
+} from "$lib/legal/jorf.js"
 
 export const jorfSectionTaStats: {
   countByLienArtEtat: { [etat: string]: number }

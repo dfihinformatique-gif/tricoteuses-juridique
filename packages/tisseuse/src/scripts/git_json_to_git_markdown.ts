@@ -12,25 +12,26 @@ import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
 
-import { assertNever } from "$lib/asserts"
-import { bestItemForDate, walkContexteTexteTm, walkJoTm } from "$lib/legal"
+import { assertNever } from "$lib/asserts.js"
 import {
   extractOrigineFromId,
   extractTypeFromId,
   gitPathFromId,
   type IdType,
-} from "$lib/legal/ids"
-import type {
-  Jo,
-  JoLienTxt,
-  JorfArticle,
-  JorfArticleTm,
-  JorfSectionTa,
-  JorfSectionTaLienSectionTa,
-  JorfSectionTaTm,
-  JorfTexte,
-  JoTm,
-} from "$lib/legal/jorf"
+} from "$lib/legal/ids.js"
+import { bestItemForDate, walkContexteTexteTm } from "$lib/legal/index.js"
+import {
+  walkJoTm,
+  type Jo,
+  type JoLienTxt,
+  type JorfArticle,
+  type JorfArticleTm,
+  type JorfSectionTa,
+  type JorfSectionTaLienSectionTa,
+  type JorfSectionTaTm,
+  type JorfTexte,
+  type JoTm,
+} from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
   LegiArticleMetaArticle,
@@ -42,28 +43,28 @@ import type {
   LegiSectionTaTm,
   LegiTexte,
   LegiTextelrLienArt,
-} from "$lib/legal/legi"
-import type { LegalObjectReferences } from "$lib/legal/references"
+} from "$lib/legal/legi.js"
+import type { LegalObjectReferences } from "$lib/legal/references.js"
 import {
   markdownVariantsBlockFromArticle,
   markdownVariantsBlockFromJo,
   markdownVariantsBlockFromSectionTa,
   markdownVariantsBlockFromTexteVersion,
-} from "$lib/markdown/blocks"
+} from "$lib/markdown/blocks.js"
 import {
   escapeMarkdownLinkTitle,
   escapeMarkdownLinkUrl,
   escapeMarkdownText,
   escapeMarkdownTitle,
-} from "$lib/markdown/escapes"
-import config from "$lib/server/config"
-import { licence } from "$lib/server/gitify/repositories"
+} from "$lib/markdown/escapes.js"
+import config from "$lib/server/config.js"
+import { licence } from "$lib/server/gitify/repositories.js"
 import {
   dilaDateRegExp,
   iterCommitsOids,
   iterSourceCommitsWithSameDilaDate,
   type Origine,
-} from "$lib/server/nodegit/commits"
+} from "$lib/server/nodegit/commits.js"
 import {
   getOidFromIdTree,
   readOidBySplitPathTree,
@@ -72,8 +73,8 @@ import {
   walkPreviousAndCurrentOidByIdTrees,
   writeOidBySplitPathTree,
   type OidBySplitPathTree,
-} from "$lib/server/nodegit/trees"
-import { cleanHtmlFragment } from "$lib/strings"
+} from "$lib/server/nodegit/trees.js"
+import { cleanHtmlFragment } from "$lib/strings.js"
 
 type ReferenceMarkdown =
   | {

@@ -3,9 +3,9 @@
 
   // import { page } from "$app/stores"
   import Pagination from "$lib/components/Pagination.svelte"
-  import { summarizeSectionTaProperties } from "$lib/summaries"
+  import { summarizeSectionTaProperties } from "$lib/summaries.js"
 
-  import type { PageData } from "./$types"
+  import type { PageData } from "./$types.js"
 
   export let data: PageData
 

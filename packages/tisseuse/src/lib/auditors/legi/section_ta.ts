@@ -19,7 +19,7 @@ import {
   allLegiSectionTaLienArtOrigines,
   allLegiSectionTaLienSectionTaEtats,
   allLegiSectionTaTexteNatures,
-} from "$lib/legal"
+} from "$lib/legal/legi.js"
 
 export const legiSectionTaStats: {
   countByLienArtEtat: { [etat: string]: number }

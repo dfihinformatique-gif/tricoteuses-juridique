@@ -1,20 +1,20 @@
 import { iterArrayOrSingleton } from "@tricoteuses/explorer-tools"
 import objectHash from "object-hash"
 
-import type { Aggregate, Follow } from "$lib/aggregates"
+import type { Aggregate, Follow } from "$lib/aggregates.js"
+import type { JorfArticle } from "$lib/legal/jorf.js"
 import {
   rootTypeFromLegalId,
   type Article,
-  type JorfArticle,
   type LegalObjectType,
-  type LegiArticle,
   type SectionTa,
   type Textekali,
   type Textelr,
   type TexteVersion,
-} from "$lib/legal"
-import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
-import { db } from "$lib/server/databases"
+} from "$lib/legal/index.js"
+import type { LegiArticle } from "$lib/legal/legi.js"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
+import { db } from "$lib/server/databases/index.js"
 
 export class Aggregator {
   article: { [id: string]: Article | JorfArticle | LegiArticle } = {}

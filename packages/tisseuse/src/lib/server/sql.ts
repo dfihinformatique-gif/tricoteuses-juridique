@@ -1,6 +1,6 @@
 import type { PendingQuery, Row } from "postgres"
 
-import { db } from "$lib/server/databases"
+import { db } from "$lib/server/databases/index.js"
 
 export function joinSqlClauses(
   joiner: PendingQuery<Row[]>,

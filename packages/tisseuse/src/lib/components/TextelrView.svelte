@@ -1,10 +1,10 @@
 <script lang="ts">
   import { iterArrayOrSingleton } from "@tricoteuses/explorer-tools"
 
-  import type { Aggregate } from "$lib/aggregates"
+  import type { Aggregate } from "$lib/aggregates.js"
   import ArticleView from "$lib/components/ArticleView.svelte"
   import SectionTaView from "$lib/components/SectionTaView.svelte"
-  import { pathnameFromLegalId, type Textelr } from "$lib/legal"
+  import { pathnameFromLegalId, type Textelr } from "$lib/legal/index.js"
 
   export let data: Aggregate
   export let level = 1

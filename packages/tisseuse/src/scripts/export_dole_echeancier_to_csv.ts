@@ -2,8 +2,8 @@ import fs from "fs-extra"
 import Papa from "papaparse"
 import sade from "sade"
 
-import type { DossierLegislatif } from "$lib/legal"
-import { db } from "$lib/server/databases"
+import type { DossierLegislatif } from "$lib/legal/dole.js"
+import { db } from "$lib/server/databases/index.js"
 
 async function exportEcheanciers(csvFilePath: string): Promise<void> {
   const data: Array<{

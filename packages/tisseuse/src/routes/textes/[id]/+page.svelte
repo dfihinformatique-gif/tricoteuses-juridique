@@ -3,13 +3,13 @@
 
   import { goto } from "$app/navigation"
   import { page } from "$app/stores"
-  import type { Follow } from "$lib/aggregates"
+  import type { Follow } from "$lib/aggregates.js"
   import IdPagesSwitcher from "$lib/components/IdPagesSwitcher.svelte"
   import TexteVersionView from "$lib/components/TexteVersionView.svelte"
-  import type { TexteVersion } from "$lib/legal"
-  import { summarizeLegalObject } from "$lib/summaries"
+  import type { TexteVersion } from "$lib/legal/index.js"
+  import { summarizeLegalObject } from "$lib/summaries.js"
 
-  import type { PageData } from "./$types"
+  import type { PageData } from "./$types.js"
 
   export let data: PageData
 

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { CircleX } from "lucide-svelte"
 
-  import { realErrorFromError } from "./errors"
+  import { realErrorFromError } from "./errors.js"
   import ErrorValue from "./ErrorValue.svelte"
 
   export let error: unknown

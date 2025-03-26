@@ -1,8 +1,8 @@
-import type { JorfArticle, JorfArticleTm } from "$lib/legal/jorf"
-import type { LegiArticle, LegiArticleTm } from "$lib/legal/legi"
-import { slugify } from "$lib/strings"
+import type { JorfArticle, JorfArticleTm } from "$lib/legal/jorf.js"
+import type { LegiArticle, LegiArticleTm } from "$lib/legal/legi.js"
+import { slugify } from "$lib/strings.js"
 
-import type { Context } from "./contexts"
+import type { Context } from "./contexts.js"
 
 export interface NodeBase {
   articles?: Array<JorfArticle | LegiArticle>

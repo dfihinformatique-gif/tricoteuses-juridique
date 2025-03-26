@@ -8,19 +8,19 @@ import {
 import { error } from "@sveltejs/kit"
 import type { PendingQuery, Row } from "postgres"
 
-import type { Follow } from "$lib/aggregates"
+import type { Follow } from "$lib/aggregates.js"
 import {
   auditFollowQuery,
   auditLimitQueryParameter,
   auditOffsetQueryParameter,
   auditQQueryParameter,
-} from "$lib/auditors/queries"
-import type { TexteVersion } from "$lib/legal"
-import { Aggregator } from "$lib/server/aggregates"
-import { db } from "$lib/server/databases"
-import { joinSqlClauses } from "$lib/server/sql"
+} from "$lib/auditors/queries.js"
+import type { TexteVersion } from "$lib/legal/index.js"
+import { Aggregator } from "$lib/server/aggregates.js"
+import { db } from "$lib/server/databases/index.js"
+import { joinSqlClauses } from "$lib/server/sql.js"
 
-import type { RequestHandler } from "./$types"
+import type { RequestHandler } from "./$types.js"
 
 function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {

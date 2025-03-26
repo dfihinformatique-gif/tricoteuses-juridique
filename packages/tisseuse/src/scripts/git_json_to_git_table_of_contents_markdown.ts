@@ -12,24 +12,24 @@ import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
 
-import { extractTypeFromId, gitPathFromId } from "$lib/legal/ids"
-import type { Jo, JorfTexte } from "$lib/legal/jorf"
-import type { LegiTexte } from "$lib/legal/legi"
+import { extractTypeFromId, gitPathFromId } from "$lib/legal/ids.js"
+import type { Jo, JorfTexte } from "$lib/legal/jorf.js"
+import type { LegiTexte } from "$lib/legal/legi.js"
 import {
   escapeMarkdownLinkTitle,
   escapeMarkdownLinkUrl,
   escapeMarkdownText,
   escapeMarkdownTitle,
-} from "$lib/markdown/escapes"
-import config from "$lib/server/config"
-import { licence } from "$lib/server/gitify/repositories"
-import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits"
+} from "$lib/markdown/escapes.js"
+import config from "$lib/server/config.js"
+import { licence } from "$lib/server/gitify/repositories.js"
+import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits.js"
 import {
   readOidBySplitPathTree,
   walkPreviousAndCurrentOidByIdTrees,
   type OidBySplitPathTree,
-} from "$lib/server/nodegit/trees"
-import { capitalizeFirstLetter, slugify } from "$lib/strings"
+} from "$lib/server/nodegit/trees.js"
+import { capitalizeFirstLetter, slugify } from "$lib/strings.js"
 
 interface Description {
   date: string

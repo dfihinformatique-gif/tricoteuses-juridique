@@ -1,9 +1,9 @@
 import { error } from "@sveltejs/kit"
 
-import type { DossierLegislatif } from "$lib/legal"
-import { db } from "$lib/server/databases"
+import type { DossierLegislatif } from "$lib/legal/dole.js"
+import { db } from "$lib/server/databases/index.js"
 
-import type { PageServerLoad } from "./$types"
+import type { PageServerLoad } from "./$types.js"
 
 export const load: PageServerLoad = async ({ params }) => {
   const dossierLegislatif = (

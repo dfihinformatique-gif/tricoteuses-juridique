@@ -5,7 +5,7 @@ import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
 
-import { walkDir } from "$lib/server/file_systems"
+import { walkDir } from "$lib/server/file_systems.js"
 
 async function downloadDataset(
   datasetName: string,

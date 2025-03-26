@@ -8,13 +8,17 @@ import {
 } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
-import type { Follow } from "$lib/aggregates"
-import { auditFollowQuery, auditQQueryParameter } from "$lib/auditors/queries"
-import type { JorfArticle, LegiArticle } from "$lib/legal"
-import { Aggregator } from "$lib/server/aggregates"
-import { db } from "$lib/server/databases"
+import type { Follow } from "$lib/aggregates.js"
+import {
+  auditFollowQuery,
+  auditQQueryParameter,
+} from "$lib/auditors/queries.js"
+import type { JorfArticle } from "$lib/legal/jorf.js"
+import type { LegiArticle } from "$lib/legal/legi.js"
+import { Aggregator } from "$lib/server/aggregates.js"
+import { db } from "$lib/server/databases/index.js"
 
-import type { RequestHandler } from "./$types"
+import type { RequestHandler } from "./$types.js"
 
 function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {

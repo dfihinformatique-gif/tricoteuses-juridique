@@ -13,32 +13,36 @@ import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
 
-import { assertNever } from "$lib/asserts"
-import {
-  auditJo,
-  auditJorfArticle,
-  auditJorfSectionTa,
-  auditJorfTextelr,
-  auditJorfTexteVersion,
-} from "$lib/auditors/jorf"
-import {
-  auditLegiArticle,
-  auditLegiSectionTa,
-  auditLegiTextelr,
-  auditLegiTexteVersion,
-} from "$lib/auditors/legi"
-import { idRegExp } from "$lib/legal/ids"
-import type { JorfCategorieTag, JorfTexte, JorfTextelr } from "$lib/legal/jorf"
-import type { LegiCategorieTag, LegiTexte, LegiTextelr } from "$lib/legal/legi"
-import { xmlParser } from "$lib/parsers/shared"
-import config from "$lib/server/config"
+import { assertNever } from "$lib/asserts.js"
+import { auditJo } from "$lib/auditors/jorf/jo.js"
+import { auditJorfArticle } from "$lib/auditors/jorf/articles.js"
+import { auditJorfSectionTa } from "$lib/auditors/jorf/section_ta.js"
+import { auditJorfTexteVersion } from "$lib/auditors/jorf/texte_version.js"
+import { auditJorfTextelr } from "$lib/auditors/jorf/textelr.js"
+import { auditLegiArticle } from "$lib/auditors/legi/articles.js"
+import { auditLegiSectionTa } from "$lib/auditors/legi/section_ta.js"
+import { auditLegiTexteVersion } from "$lib/auditors/legi/texte_version.js"
+import { auditLegiTextelr } from "$lib/auditors/legi/textelr.js"
+import { idRegExp } from "$lib/legal/ids.js"
+import type {
+  JorfCategorieTag,
+  JorfTexte,
+  JorfTextelr,
+} from "$lib/legal/jorf.js"
+import type {
+  LegiCategorieTag,
+  LegiTexte,
+  LegiTextelr,
+} from "$lib/legal/legi.js"
+import { xmlParser } from "$lib/parsers/shared.js"
+import config from "$lib/server/config.js"
 import {
   dilaDateRegExp,
   iterCommitsOids,
   iterSourceCommitsWithSameDilaDate,
   origines,
   type Origine,
-} from "$lib/server/nodegit/commits"
+} from "$lib/server/nodegit/commits.js"
 import {
   getOidFromIdTree,
   readOidBySplitPathTree,
@@ -46,7 +50,7 @@ import {
   setOidInIdTree,
   writeOidBySplitPathTree,
   type OidBySplitPathTree,
-} from "$lib/server/nodegit/trees"
+} from "$lib/server/nodegit/trees.js"
 
 const { forgejo } = config
 
@@ -330,7 +334,7 @@ async function gitXmlToGitJson(
   const [dilaStartDate, dilaStartDateError] = auditChain(
     auditTest(
       (value: string) => dilaDateRegExp.test(value),
-      (value) => `Date not found in "${value}"`,
+      (value: string) => `Date not found in "${value}"`,
     ),
     auditFunction((value: string) => value.match(dilaDateRegExp)?.[0]),
     auditRequire,

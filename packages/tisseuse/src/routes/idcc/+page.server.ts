@@ -1,11 +1,11 @@
 import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
-import { auditSearchQueryContent } from "$lib/auditors/queries"
-import type { Idcc } from "$lib/legal"
-import { db } from "$lib/server/databases"
+import { auditSearchQueryContent } from "$lib/auditors/queries.js"
+import type { Idcc } from "$lib/legal/index.js"
+import { db } from "$lib/server/databases/index.js"
 
-import type { PageServerLoad } from "./$types"
+import type { PageServerLoad } from "./$types.js"
 
 function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {

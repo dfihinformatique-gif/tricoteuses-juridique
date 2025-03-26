@@ -1,6 +1,6 @@
-import { db } from "$lib/server/databases"
+import { db } from "$lib/server/databases/index.js"
 
-import type { RequestHandler } from "./$types"
+import type { RequestHandler } from "./$types.js"
 
 export const GET: RequestHandler = async () => {
   const natures = (

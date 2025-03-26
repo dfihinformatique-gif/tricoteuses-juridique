@@ -2,8 +2,8 @@ import { CodeActe, type DossierParlementaire } from "@tricoteuses/assemblee"
 import assert from "assert"
 import sade from "sade"
 
-import type { JorfTexteVersion } from "$lib/legal"
-import { assembleeDb, db } from "$lib/server/databases"
+import type { JorfTexteVersion } from "$lib/legal/jorf.js"
+import { assembleeDb, db } from "$lib/server/databases/index.js"
 
 async function associateJorfTextesWithDossiersLegislatifsAssemblee({
   verbose,

@@ -4,7 +4,7 @@ import Papa from "papaparse"
 import path from "path"
 import sade from "sade"
 
-import { assembleeDb, db } from "$lib/server/databases"
+import { assembleeDb, db } from "$lib/server/databases/index.js"
 
 async function associateJorfTextesWithAssembleeCommissions(
   dilaDir: string,

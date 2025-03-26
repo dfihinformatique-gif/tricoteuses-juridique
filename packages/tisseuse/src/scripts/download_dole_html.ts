@@ -5,8 +5,8 @@ import path from "path"
 import sade from "sade"
 import { $, cd } from "zx"
 
-import { parseDossierLegislatif } from "$lib/parsers"
-import { walkDir } from "$lib/server/file_systems"
+import { parseDossierLegislatif } from "$lib/parsers/dole.js"
+import { walkDir } from "$lib/server/file_systems.js"
 
 async function downloadDoleHtml(
   dilaDir: string,

@@ -1,11 +1,11 @@
 import { error } from "@sveltejs/kit"
 import { type Audit, auditSetNullish, cleanAudit } from "@auditors/core"
 
-import type { Follow, GetTexteResult } from "$lib/aggregates"
-import { auditFollowWithFalseQuery } from "$lib/auditors/queries"
-import { urlFromUrlAndQuery } from "$lib/urls"
+import type { Follow, GetTexteResult } from "$lib/aggregates.js"
+import { auditFollowWithFalseQuery } from "$lib/auditors/queries.js"
+import { urlFromUrlAndQuery } from "$lib/urls.js"
 
-import type { PageLoad } from "./$types"
+import type { PageLoad } from "./$types.js"
 
 function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {

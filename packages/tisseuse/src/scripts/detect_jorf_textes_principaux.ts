@@ -1,7 +1,7 @@
 import sade from "sade"
 
-import type { JorfTexteVersion } from "$lib/legal"
-import { db } from "$lib/server/databases"
+import type { JorfTexteVersion } from "$lib/legal/jorf.js"
+import { db } from "$lib/server/databases/index.js"
 
 async function detectJorfTextesPrincipaux(): Promise<void> {
   const texteVersionCursor = db<

@@ -1,8 +1,8 @@
 import metslesliens from "metslesliens"
 import sade from "sade"
 
-import type { JorfTexteVersion } from "$lib"
-import { db } from "$lib/server/databases"
+import type { JorfTexteVersion } from "$lib/legal/jorf.js"
+import { db } from "$lib/server/databases/index.js"
 
 async function associateDecretsToLois(): Promise<void> {
   for (const texteVersion of (

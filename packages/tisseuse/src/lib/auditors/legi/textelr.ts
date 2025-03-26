@@ -21,9 +21,9 @@ import {
   allLegiTextelrLienSectionTaEtats,
   allLegiTexteNatures,
   allLegiTexteOrigines,
-} from "$lib/legal"
+} from "$lib/legal/legi.js"
 
-import { auditMetaTexteChronicle } from "./texte"
+import { auditMetaTexteChronicle } from "./texte.js"
 
 export const legiTextelrStats: {
   countByEtat: { [etat: string]: number }

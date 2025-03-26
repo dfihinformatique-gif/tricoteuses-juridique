@@ -15,7 +15,7 @@ import {
   type Audit,
 } from "@auditors/core"
 
-import { allDossierLegislatifTypes } from "$lib/legal/dole"
+import { allDossierLegislatifTypes } from "$lib/legal/dole.js"
 
 function auditArborescence(
   audit: Audit,

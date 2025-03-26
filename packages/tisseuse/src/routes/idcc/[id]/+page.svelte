@@ -1,9 +1,12 @@
 <script lang="ts">
   import { TreeView, SummaryView } from "augmented-data-viewer"
 
-  import { summarizeIdccProperties, summarizeLegalObject } from "$lib/summaries"
+  import {
+    summarizeIdccProperties,
+    summarizeLegalObject,
+  } from "$lib/summaries.js"
 
-  import type { PageData } from "./$types"
+  import type { PageData } from "./$types.js"
 
   export let data: PageData
 

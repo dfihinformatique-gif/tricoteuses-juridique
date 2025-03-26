@@ -19,9 +19,9 @@ import {
   allLegiTexteVersionLienTypes,
   allLegiTexteNatures,
   allLegiTexteOrigines,
-  allSens,
-} from "$lib/legal"
-import { auditMetaTexteChronicle } from "./texte"
+} from "$lib/legal/legi.js"
+import { allSens } from "$lib/legal/shared.js"
+import { auditMetaTexteChronicle } from "./texte.js"
 
 export const legiTexteVersionStats: {
   countByEtat: { [etat: string]: number }

@@ -1,10 +1,10 @@
 <script lang="ts">
   import { SummaryView } from "augmented-data-viewer"
 
-  import type { Aggregate } from "$lib/aggregates"
+  import type { Aggregate } from "$lib/aggregates.js"
   import TextelrView from "$lib/components/TextelrView.svelte"
-  import type { TexteVersion } from "$lib/legal"
-  import { summarizeLegalObject } from "$lib/summaries"
+  import type { TexteVersion } from "$lib/legal/index.js"
+  import { summarizeLegalObject } from "$lib/summaries.js"
 
   export let data: Aggregate
   export let level = 1

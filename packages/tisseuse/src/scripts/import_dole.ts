@@ -4,10 +4,11 @@ import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
-import type { DossierLegislatif, JorfTextelr } from "$lib/legal"
-import { parseDossierLegislatif } from "$lib/parsers"
-import { db } from "$lib/server/databases"
-import { walkDir } from "$lib/server/file_systems"
+import type { DossierLegislatif } from "$lib/legal/dole.js"
+import type { JorfTextelr } from "$lib/legal/jorf.js"
+import { parseDossierLegislatif } from "$lib/parsers/dole.js"
+import { db } from "$lib/server/databases/index.js"
+import { walkDir } from "$lib/server/file_systems.js"
 
 async function importDole(
   dilaDir: string,

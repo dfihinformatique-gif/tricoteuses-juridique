@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores"
-  import * as Tabs from "$lib/components/ui/tabs"
-  import { menuItemsFromLegalId } from "$lib/legal"
+  import * as Tabs from "$lib/components/ui/tabs/index.js"
+  import { menuItemsFromLegalId } from "$lib/legal/index.js"
 
   export let id: string | undefined | null
 

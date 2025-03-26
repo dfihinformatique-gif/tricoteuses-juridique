@@ -8,15 +8,15 @@ import {
 } from "@auditors/core"
 import { error } from "@sveltejs/kit"
 
-import { auditFollowQuery } from "$lib/auditors/queries"
+import { auditFollowQuery } from "$lib/auditors/queries.js"
 
-import type { Follow } from "$lib/aggregates"
-import type { TexteVersion } from "$lib/legal"
-import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared"
-import { Aggregator } from "$lib/server/aggregates"
-import { db } from "$lib/server/databases"
+import type { Follow } from "$lib/aggregates.js"
+import type { TexteVersion } from "$lib/legal/index.js"
+import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
+import { Aggregator } from "$lib/server/aggregates.js"
+import { db } from "$lib/server/databases/index.js"
 
-import type { RequestHandler } from "./$types"
+import type { RequestHandler } from "./$types.js"
 
 function auditQuery(audit: Audit, query: URLSearchParams): [unknown, unknown] {
   if (query == null) {

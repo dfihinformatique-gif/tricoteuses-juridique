@@ -1,17 +1,17 @@
 import objectHash from "object-hash"
 import sade from "sade"
 
-import { db } from "$lib/server/databases"
+import { db } from "$lib/server/databases/index.js"
 import type {
   LegiArticleLien,
   LegiArticleLienType,
   LegiTexteVersionLien,
   LegiTexteVersionLienType,
-} from "$lib/legal/legi"
+} from "$lib/legal/legi.js"
 import type {
   JorfTexteVersionLien,
   JorfTexteVersionLienType,
-} from "$lib/legal/jorf"
+} from "$lib/legal/jorf.js"
 
 async function indexLiens(): Promise<void> {
   console.log("Indexing articles links…")

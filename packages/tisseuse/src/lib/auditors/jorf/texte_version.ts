@@ -18,10 +18,10 @@ import {
   allJorfTexteVersionLienTypes,
   allJorfTexteNatures,
   allJorfTexteOrigines,
-  allSens,
-} from "$lib/legal"
+} from "$lib/legal/jorf.js"
+import { allSens } from "$lib/legal/shared.js"
 
-import { auditMetaTexteChronicle } from "./texte"
+import { auditMetaTexteChronicle } from "./texte.js"
 
 export const jorfTexteVersionStats: {
   countByLienNature: { [nature: string]: number }

@@ -1,7 +1,7 @@
 import assert from "assert"
 
-import type { TexteVersion } from "$lib/legal"
-import { db, type Version, versionNumber } from "$lib/server/databases"
+import type { TexteVersion } from "$lib/legal/index.js"
+import { db, type Version, versionNumber } from "$lib/server/databases/index.js"
 
 export async function configureDatabase() {
   // Table: version

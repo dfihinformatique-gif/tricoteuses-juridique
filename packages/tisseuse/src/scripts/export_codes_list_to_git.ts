@@ -28,9 +28,9 @@ async function exportCodesListToGit(
   await fs.remove(repositoryDir)
   await fs.ensureDir(repositoryDir)
   cd(repositoryDir)
-  await $`git init`
+  await $`git init -b main`
 
-  await writeTextFileIfChanged(path.join(repositoryDir, "LICENCE.md"), licence)
+  await writeTextFileIfChanged("LICENCE.md", licence)
   await $`git add LICENCE.md`
 
   const codesLinks: Array<{
@@ -65,7 +65,7 @@ async function exportCodesListToGit(
   }
 
   await writeTextFileIfChanged(
-    path.join(repositoryDir, "README.md"),
+    "README.md",
     dedent`
       # Codes juridiques
 

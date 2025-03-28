@@ -1612,6 +1612,8 @@ async function convertTexteToMarkdown(
     ),
   )
 
+  const nota = await cleanHtmlFragment((texte as LegiTexte).NOTA?.CONTENU)
+  const sm = await cleanHtmlFragment((texte as JorfTexte).SM?.CONTENU)
   const texteMarkdown = [
     dedent`
       ---
@@ -1630,11 +1632,21 @@ async function convertTexteToMarkdown(
       ---
     `,
     titles.map((title) => `## ${escapeMarkdownTitle(title)}`).join("\n"),
-    // TODO: Ajouter ABRO, ENREPRISE, NOTA, RECT, SM & TP
+    // Note: ENTREPRISE seems to not be displayed on Légifrance.
+    // TODO: Should ENTREPRISE be added?
+    // Note: RECT seems to not be displayed on Légifrance.
+    // TODO: Should RECT be added?
+    // Note: ABRO seems to not be displayed on Légifrance
+    await cleanHtmlFragment((texte as JorfTexte).ABRO?.CONTENU),
     await cleanHtmlFragment((texte as JorfTexte).NOTICE?.CONTENU),
+    sm === undefined ? undefined : `### Résumé`,
+    sm,
     await cleanHtmlFragment(texte.VISAS?.CONTENU),
     structureMarkdown,
     await cleanHtmlFragment(texte.SIGNATAIRES?.CONTENU),
+    nota === undefined ? undefined : `### Nota`,
+    nota,
+    await cleanHtmlFragment((texte as LegiTexte).TP?.CONTENU),
     ...(await Array.fromAsync(
       markdownBlocksFromLegalObjectReferences(
         referrerById,

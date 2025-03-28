@@ -41,6 +41,7 @@ import {
   markdownVariantsBlockFromSectionTa,
   markdownVariantsBlockFromTexteVersion,
 } from "$lib/markdown/blocks.js"
+import { escapeMarkdownTitle } from "$lib/markdown/escapes.js"
 import config from "$lib/server/config.js"
 import { db } from "$lib/server/databases/index.js"
 import { cleanHtmlFragment, escapeHtml, slugify } from "$lib/strings.js"
@@ -197,7 +198,7 @@ async function generateArticlesGit(
             .join("\n")}
           ---
 
-          <h1>${escapeHtml(articleTitle)}</h1>
+          # ${escapeMarkdownTitle(articleTitle)}
 
           ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
         `
@@ -207,7 +208,7 @@ async function generateArticlesGit(
           context.referringArticlesLiensById[articleId]
         if (referringArticlesLiens !== undefined) {
           referringArticlesLiensHtml = dedent`
-            <h2>Articles faisant référence à l'article</h2>
+            ## Articles faisant référence à l'article
 
             ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
           `
@@ -217,7 +218,7 @@ async function generateArticlesGit(
         const referringTextsLiens = context.referringTextsLiensById[articleId]
         if (referringTextsLiens !== undefined) {
           referringTextsLiensHtml = dedent`
-            <h2>Textes faisant référence à l'article</h2>
+            ## Textes faisant référence à l'article
 
             ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
           `
@@ -227,7 +228,7 @@ async function generateArticlesGit(
         const referredLiens = (article as LegiArticle).LIENS?.LIEN
         if (referredLiens !== undefined) {
           referredLiensHtml = dedent`
-            <h2>Références faites par l'article</h2>
+            ## Références faites par l'article
 
             ${await htmlFromReferredLiens(context, referredLiens)}
           `
@@ -1133,7 +1134,7 @@ async function generateSectionTaGit(
         .join("\n")}
       ---
 
-      <h1>${escapeHtml(sectionTaNode.title)}</h1>
+      # ${escapeMarkdownTitle(sectionTaNode.title)}
 
       ${readmeLinksMarkdown}
     `
@@ -1143,7 +1144,7 @@ async function generateSectionTaGit(
       context.referringArticlesLiensById[sectionTaNode.id]
     if (referringArticlesLiens !== undefined) {
       referringArticlesLiensHtml = dedent`
-        <h2>Articles faisant référence à la section</h2>
+        ## Articles faisant référence à la section
 
         ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
       `
@@ -1154,7 +1155,7 @@ async function generateSectionTaGit(
       context.referringTextsLiensById[sectionTaNode.id]
     if (referringTextsLiens !== undefined) {
       referringTextsLiensHtml = dedent`
-        <h2>Textes faisant référence à la section</h2>
+        ## Textes faisant référence à la section
 
         ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
       `
@@ -1279,8 +1280,9 @@ async function generateTextGit(
     readmeCache.id !== textId ||
     readmeCache.custom !== readmeLinksMarkdown
   ) {
+    const nota = await cleanHtmlFragment(texteVersion.NOTA?.CONTENU)
     const readmeBlocks = [
-      `<h1>${escapeHtml(texteTitle)}</h1>`,
+      `# ${escapeMarkdownTitle(texteTitle)}`,
       dedent`
           > **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
           > de conversion à git des textes juridiques consolidés français.
@@ -1289,6 +1291,9 @@ async function generateTextGit(
       await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
       readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
       await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
+      nota === undefined ? undefined : `### Nota`,
+      nota,
+      await cleanHtmlFragment(texteVersion.TP?.CONTENU),
     ].filter((block) => block != null)
 
     const readmeMarkdown = dedent`
@@ -1314,7 +1319,7 @@ async function generateTextGit(
     const referringArticlesLiens = context.referringArticlesLiensById[textId]
     if (referringArticlesLiens !== undefined) {
       referringArticlesLiensHtml = dedent`
-        <h2>Articles faisant référence au texte</h2>
+        ## Articles faisant référence au texte
 
         ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
       `
@@ -1324,7 +1329,7 @@ async function generateTextGit(
     const referringTextsLiens = context.referringTextsLiensById[textId]
     if (referringTextsLiens !== undefined) {
       referringTextsLiensHtml = dedent`
-        <h2>Textes faisant référence au texte</h2>
+        ## Textes faisant référence au texte
 
         ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
       `
@@ -1334,7 +1339,7 @@ async function generateTextGit(
     const referredLiens = metaTexteVersion.LIENS?.LIEN
     if (referredLiens !== undefined) {
       referredLiensHtml = dedent`
-        <h2>Références faites par le texte</h2>
+        ## Références faites par le texte
 
         ${await htmlFromReferredLiens(context, referredLiens)}
       `

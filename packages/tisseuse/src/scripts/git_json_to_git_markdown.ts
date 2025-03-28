@@ -1630,7 +1630,8 @@ async function convertTexteToMarkdown(
       ---
     `,
     titles.map((title) => `## ${escapeMarkdownTitle(title)}`).join("\n"),
-    // TODO: Ajouter ABRO, ENREPRISE, NOTA, NOTICE, RECT, SM & TP
+    // TODO: Ajouter ABRO, ENREPRISE, NOTA, RECT, SM & TP
+    await cleanHtmlFragment((texte as JorfTexte).NOTICE?.CONTENU),
     await cleanHtmlFragment(texte.VISAS?.CONTENU),
     structureMarkdown,
     await cleanHtmlFragment(texte.SIGNATAIRES?.CONTENU),

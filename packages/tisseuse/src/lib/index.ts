@@ -26,6 +26,8 @@ export {
   pathnameFromLegalObject,
   pathnameFromLegalObjectTypeAndId,
   rootTypeFromLegalId,
+  walkStructureTree,
+  walkTextelrLiensArticles,
   type SectionTa,
   type Textekali,
   type Textelr,

@@ -2,19 +2,12 @@ import type { TreeEntry } from "isomorphic-git"
 
 import type {
   JorfArticle,
-  JorfSectionTa,
-  JorfSectionTaLienArt,
-  JorfSectionTaLienSectionTa,
-  JorfSectionTaStructure,
   JorfTextelr,
   JorfTexteVersion,
 } from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
   LegiSectionTa,
-  LegiSectionTaLienArt,
-  LegiSectionTaLienSectionTa,
-  LegiSectionTaStructure,
   LegiTextelr,
   LegiTexteVersion,
 } from "$lib/legal/legi.js"
@@ -175,91 +168,4 @@ export async function getOrLoadTexteVersion(
     context.texteVersionById[texteId] = texteVersion
   }
   return texteVersion
-}
-
-export async function* walkStructureTree(
-  context: Context,
-  structure: JorfSectionTaStructure | LegiSectionTaStructure,
-  parentsSectionTa: LegiSectionTa[] = [],
-): AsyncGenerator<
-  {
-    lienSectionTa: JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
-    liensSectionTa: Array<
-      JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
-    >
-    parentsSectionTa: Array<JorfSectionTa | LegiSectionTa>
-    sectionTa: JorfSectionTa | LegiSectionTa
-  },
-  void
-> {
-  const liensSectionTa = structure?.LIEN_SECTION_TA
-  if (liensSectionTa !== undefined) {
-    for (const lienSectionTa of liensSectionTa) {
-      const childSectionTa = await getOrLoadSectionTa(
-        context,
-        lienSectionTa["@id"],
-      )
-      if (childSectionTa !== null) {
-        yield {
-          lienSectionTa,
-          liensSectionTa,
-          parentsSectionTa,
-          sectionTa: childSectionTa,
-        }
-        const childStructure = childSectionTa.STRUCTURE_TA
-        if (childStructure !== undefined) {
-          yield* walkStructureTree(context, childStructure, [
-            ...parentsSectionTa,
-            childSectionTa,
-          ])
-        }
-      }
-    }
-  }
-}
-
-export async function* walkTextelrLiensArticles(
-  context: Context,
-  textelr: JorfTextelr | LegiTextelr,
-): AsyncGenerator<
-  {
-    lienArticle: JorfSectionTaLienArt | LegiSectionTaLienArt
-    lienSectionTa?: JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
-    liensSectionTa?: Array<
-      JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
-    >
-    parentsSectionTa?: Array<JorfSectionTa | LegiSectionTa>
-    sectionTa?: JorfSectionTa | LegiSectionTa
-  },
-  void
-> {
-  const structure = textelr.STRUCT
-  const liensArticles = structure?.LIEN_ART
-  if (liensArticles !== undefined) {
-    for (const lienArticle of liensArticles) {
-      yield { lienArticle }
-    }
-  }
-  for await (const {
-    lienSectionTa,
-    liensSectionTa,
-    parentsSectionTa,
-    sectionTa,
-  } of walkStructureTree(
-    context,
-    structure as JorfSectionTaStructure | LegiSectionTaStructure,
-  )) {
-    const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
-    if (liensArticles !== undefined) {
-      for (const lienArticle of liensArticles) {
-        yield {
-          lienArticle,
-          lienSectionTa,
-          liensSectionTa,
-          parentsSectionTa,
-          sectionTa,
-        }
-      }
-    }
-  }
 }

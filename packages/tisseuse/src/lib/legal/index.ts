@@ -1,8 +1,25 @@
 import type { MenuItem } from "@tricoteuses/explorer-tools"
 
 import type { DossierLegislatif } from "./dole.js"
-import { type Jo, type JorfArticleTm, type JorfSectionTaTm } from "./jorf.js"
-import type { LegiArticleTm, LegiSectionTaTm } from "./legi.js"
+import type {
+  Jo,
+  JorfArticleTm,
+  JorfSectionTa,
+  JorfSectionTaLienArt,
+  JorfSectionTaLienSectionTa,
+  JorfSectionTaStructure,
+  JorfSectionTaTm,
+  JorfTextelr,
+} from "./jorf.js"
+import type {
+  LegiArticleTm,
+  LegiSectionTa,
+  LegiSectionTaLienArt,
+  LegiSectionTaLienSectionTa,
+  LegiSectionTaStructure,
+  LegiSectionTaTm,
+  LegiTextelr,
+} from "./legi.js"
 
 export interface Article {
   META: {
@@ -659,5 +676,93 @@ export function* walkContexteTexteTm(
   yield tm
   if (tm.TM !== undefined) {
     yield* walkContexteTexteTm(tm.TM)
+  }
+}
+
+export async function* walkStructureTree(
+  getSectionTa: (
+    sectionTaId: string,
+  ) => Promise<JorfSectionTa | LegiSectionTa | null>,
+  structure: JorfSectionTaStructure | LegiSectionTaStructure,
+  parentsSectionTa: Array<JorfSectionTa | LegiSectionTa> = [],
+): AsyncGenerator<
+  {
+    lienSectionTa: JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
+    liensSectionTa: Array<
+      JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
+    >
+    parentsSectionTa: Array<JorfSectionTa | LegiSectionTa>
+    sectionTa: JorfSectionTa | LegiSectionTa
+  },
+  void
+> {
+  const liensSectionTa = structure?.LIEN_SECTION_TA
+  if (liensSectionTa !== undefined) {
+    for (const lienSectionTa of liensSectionTa) {
+      const childSectionTa = await getSectionTa(lienSectionTa["@id"])
+      if (childSectionTa != null) {
+        yield {
+          lienSectionTa,
+          liensSectionTa,
+          parentsSectionTa,
+          sectionTa: childSectionTa,
+        }
+        const childStructure = childSectionTa.STRUCTURE_TA
+        if (childStructure !== undefined) {
+          yield* walkStructureTree(getSectionTa, childStructure, [
+            ...parentsSectionTa,
+            childSectionTa,
+          ])
+        }
+      }
+    }
+  }
+}
+
+export async function* walkTextelrLiensArticles(
+  getSectionTa: (
+    sectionTaId: string,
+  ) => Promise<JorfSectionTa | LegiSectionTa | null>,
+  textelr: JorfTextelr | LegiTextelr,
+): AsyncGenerator<
+  {
+    lienArticle: JorfSectionTaLienArt | LegiSectionTaLienArt
+    lienSectionTa?: JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
+    liensSectionTa?: Array<
+      JorfSectionTaLienSectionTa | LegiSectionTaLienSectionTa
+    >
+    parentsSectionTa?: Array<JorfSectionTa | LegiSectionTa>
+    sectionTa?: JorfSectionTa | LegiSectionTa
+  },
+  void
+> {
+  const structure = textelr.STRUCT
+  const liensArticles = structure?.LIEN_ART
+  if (liensArticles !== undefined) {
+    for (const lienArticle of liensArticles) {
+      yield { lienArticle }
+    }
+  }
+  for await (const {
+    lienSectionTa,
+    liensSectionTa,
+    parentsSectionTa,
+    sectionTa,
+  } of walkStructureTree(
+    getSectionTa,
+    structure as JorfSectionTaStructure | LegiSectionTaStructure,
+  )) {
+    const liensArticles = sectionTa?.STRUCTURE_TA?.LIEN_ART
+    if (liensArticles !== undefined) {
+      for (const lienArticle of liensArticles) {
+        yield {
+          lienArticle,
+          lienSectionTa,
+          liensSectionTa,
+          parentsSectionTa,
+          sectionTa,
+        }
+      }
+    }
   }
 }

@@ -309,7 +309,7 @@ export async function generateConsolidatedTextGit(
     consolidatedIdsByActionByModifyingTextIdByDate: {},
     consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
     consolidatedTextInternalIds: new Set([consolidatedTextId]),
-    consolidatedTextModifyingTextsIdsByActionByPublicationDate: {},
+    consolidatedTextModifyingTextsIdsByActionByDate: {},
     currentInternalIds: new Set(),
     gitdir,
     hasModifyingTextIdByActionByConsolidatedArticleId: {},

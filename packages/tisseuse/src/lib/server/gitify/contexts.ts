@@ -31,7 +31,7 @@ export interface Context {
   >
   consolidatedTextCid: string
   consolidatedTextInternalIds: Set<string>
-  consolidatedTextModifyingTextsIdsByActionByPublicationDate: Record<
+  consolidatedTextModifyingTextsIdsByActionByDate: Record<
     string,
     Partial<Record<Action, Set<string>>>
   >

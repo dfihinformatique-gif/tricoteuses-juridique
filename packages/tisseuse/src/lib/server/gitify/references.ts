@@ -138,15 +138,19 @@ async function addModifyingTextId(
 
   if (modifiedId.startsWith("JORFTEXT") || modifiedId.startsWith("LEGITEXT")) {
     // A consolidated text doesn't change. Only its content changes.
-    const publicationDate =
-      modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
-    const consolidatedTextModifyingTextsIdsByAction =
-      (context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
-        publicationDate
-      ] ??= {})
-    const consolidatedTextModifyingTextsIds =
-      (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
-    consolidatedTextModifyingTextsIds.add(modifyingTextId)
+    const actionDate = action === "CREATE" ? modifiedDateDebut : modifiedDateFin
+    if (actionDate !== "2999-01-01") {
+      const consolidatedTextModifyingTextsIdsByAction =
+        // Remember that the the modifiying text had this action at this action date,
+        // In order to reuse this modifying text when a modifying article is without text
+        // at the same date.
+        (context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
+          actionDate
+        ] ??= {})
+      const consolidatedTextModifyingTextsIds =
+        (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
+      consolidatedTextModifyingTextsIds.add(modifyingTextId)
+    }
   } else {
     // Modified object is an article.
     if (action === "CREATE") {
@@ -678,7 +682,7 @@ export async function registerLegiArticleModifiersAndReferences(
         ] ??= {})
       if (!hasModifyingTextIdByAction.CREATE) {
         const consolidatedTextModifyingTextsIds =
-          context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
+          context.consolidatedTextModifyingTextsIdsByActionByDate[
             articleDateDebut
           ]?.CREATE
         if (consolidatedTextModifyingTextsIds !== undefined) {

@@ -144,9 +144,8 @@ async function addModifyingTextId(
         // Remember that the the modifiying text had this action at this action date,
         // In order to reuse this modifying text when a modifying article is without text
         // at the same date.
-        (context.consolidatedTextModifyingTextsIdsByActionByPublicationDate[
-          actionDate
-        ] ??= {})
+        (context.consolidatedTextModifyingTextsIdsByActionByDate[actionDate] ??=
+          {})
       const consolidatedTextModifyingTextsIds =
         (consolidatedTextModifyingTextsIdsByAction[action] ??= new Set())
       consolidatedTextModifyingTextsIds.add(modifyingTextId)

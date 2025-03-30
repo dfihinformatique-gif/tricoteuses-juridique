@@ -113,12 +113,27 @@ async function addModifyingTextId(
   if (modifyingTexteVersion === null) {
     return
   }
-  const modifyingTextPublicationDate =
-    modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI
-  if (modifyingTextPublicationDate === undefined) {
-    throw new Error(
-      `Modifying text ${modifyingTextId} of ${modifiedId} has no META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI`,
-    )
+  const modifyingTextelr = await getOrLoadTextelr(context, modifyingTextId)
+  if (action === "CREATE") {
+    if (modifiedDateDebut === "2999-01-01") {
+      // Since modifiedDateDebut is not known, assume that the date is the
+      // start date of modifying text (otherwise modifiedDateDebut should have
+      // been set to a valid date).
+      modifiedDateDebut =
+        modifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT ??
+        "2999-01-01"
+      if (modifiedDateDebut === "2999-01-01") {
+        if (modifyingTextelr !== null) {
+          modifiedDateDebut = modifyingTextelr.VERSIONS.VERSION.reduce(
+            (minDateDebut, version) =>
+              version.LIEN_TXT["@debut"] < minDateDebut
+                ? version.LIEN_TXT["@debut"]
+                : minDateDebut,
+            "2999-01-01",
+          )
+        }
+      }
+    }
   }
 
   if (modifiedId.startsWith("JORFTEXT") || modifiedId.startsWith("LEGITEXT")) {
@@ -134,15 +149,36 @@ async function addModifyingTextId(
     consolidatedTextModifyingTextsIds.add(modifyingTextId)
   } else {
     // Modified object is an article.
-    if (action === "CREATE" && modifiedDateDebut !== "2999-01-01") {
-      ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-        modifiedDateDebut
-      ] ??= {})[modifyingTextId] ??= {}).CREATE ??= new Set()).add(modifiedId)
-      ;(context.hasModifyingTextIdByActionByConsolidatedArticleId[
-        modifiedId
-      ] ??= {}).CREATE = true
-      ;(context.modifyingTextsIdsByArticleActionDate[modifiedDateDebut] ??=
-        new Set()).add(modifyingTextId)
+    if (action === "CREATE") {
+      if (modifiedDateDebut === "2999-01-01") {
+        // Since modifiedDateDebut is not known, assume that the date is the
+        // start date of modifying text (otherwise modifiedDateDebut should have
+        // been set to a valid date).
+        modifiedDateDebut =
+          modifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT ??
+          "2999-01-01"
+        if (modifiedDateDebut === "2999-01-01") {
+          if (modifyingTextelr !== null) {
+            modifiedDateDebut = modifyingTextelr.VERSIONS.VERSION.reduce(
+              (minDateDebut, version) =>
+                version.LIEN_TXT["@debut"] < minDateDebut
+                  ? version.LIEN_TXT["@debut"]
+                  : minDateDebut,
+              "2999-01-01",
+            )
+          }
+        }
+      }
+      if (modifiedDateDebut !== "2999-01-01") {
+        ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
+          modifiedDateDebut
+        ] ??= {})[modifyingTextId] ??= {}).CREATE ??= new Set()).add(modifiedId)
+        ;(context.hasModifyingTextIdByActionByConsolidatedArticleId[
+          modifiedId
+        ] ??= {}).CREATE = true
+        ;(context.modifyingTextsIdsByArticleActionDate[modifiedDateDebut] ??=
+          new Set()).add(modifyingTextId)
+      }
     } else if (action === "DELETE" && modifiedDateFin !== "2999-01-01") {
       ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
         modifiedDateFin

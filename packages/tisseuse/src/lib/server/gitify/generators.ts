@@ -312,9 +312,9 @@ export async function generateConsolidatedTextGit(
     consolidatedTextModifyingTextsIdsByActionByDate: {},
     currentInternalIds: new Set(),
     gitdir,
-    hasModifyingTextIdByActionByConsolidatedArticleId: {},
     jorfCreatorIdByConsolidatedId: {},
     logReferences,
+    modifierByActionByConsolidatedArticleId: {},
     modifyingArticleIdByActionByConsolidatedId: {},
     modifyingTextsIdsByArticleActionDate: {},
     referringArticlesLiensById: {},
@@ -496,12 +496,10 @@ export async function generateConsolidatedTextGit(
     consolidatedTextelr,
   )) {
     const consolidatedArticleId = lienArticle["@id"]
-    const hasModifyingTextIdByAction =
-      context.hasModifyingTextIdByActionByConsolidatedArticleId[
-        consolidatedArticleId
-      ]
+    const modifierByAction =
+      context.modifierByActionByConsolidatedArticleId[consolidatedArticleId]
     for (const action of actions) {
-      if (!hasModifyingTextIdByAction?.[action]) {
+      if (modifierByAction?.[action] === undefined) {
         const consolidatedArticle = await getOrLoadArticle(
           context,
           consolidatedArticleId,

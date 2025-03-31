@@ -27,6 +27,7 @@ async function addModifyingArticleId(
   context: Context,
   modifyingArticleId: string,
   action: Action,
+  priority: number,
   modifiedId: string,
   modifiedDateDebut: string,
   modifiedDateFin: string,
@@ -91,6 +92,7 @@ async function addModifyingArticleId(
       context,
       modifyingTextId,
       action,
+      priority,
       modifiedId,
       modifiedDateDebut,
       modifiedDateFin,
@@ -102,6 +104,7 @@ async function addModifyingTextId(
   context: Context,
   modifyingTextId: string,
   action: Action,
+  priority: number,
   modifiedId: string,
   modifiedDateDebut: string,
   modifiedDateFin: string,
@@ -152,45 +155,63 @@ async function addModifyingTextId(
     }
   } else {
     // Modified object is an article.
-    if (action === "CREATE") {
-      if (modifiedDateDebut === "2999-01-01") {
-        // Since modifiedDateDebut is not known, assume that the date is the
-        // start date of modifying text (otherwise modifiedDateDebut should have
-        // been set to a valid date).
-        modifiedDateDebut =
-          modifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT ??
-          "2999-01-01"
-        if (modifiedDateDebut === "2999-01-01") {
-          if (modifyingTextelr !== null) {
-            modifiedDateDebut = modifyingTextelr.VERSIONS.VERSION.reduce(
-              (minDateDebut, version) =>
-                version.LIEN_TXT["@debut"] < minDateDebut
-                  ? version.LIEN_TXT["@debut"]
-                  : minDateDebut,
-              "2999-01-01",
-            )
+    const actionDate = action === "CREATE" ? modifiedDateDebut : modifiedDateFin
+    if (actionDate !== "2999-01-01") {
+      const modifier =
+        context.modifierByActionByConsolidatedArticleId[modifiedId]?.[action]
+      if (priority > (modifier?.priority ?? -1)) {
+        if (modifier !== undefined) {
+          // Remove previous modifier of article because its priority is lower.
+
+          const consolidatedIdsByActionByModifyingTextId =
+            context.consolidatedIdsByActionByModifyingTextIdByDate[
+              modifier.date
+            ]
+          const consolidatedIdsByAction =
+            consolidatedIdsByActionByModifyingTextId[modifier.textId]
+          const consolidatedIds = consolidatedIdsByAction[action]
+          if (consolidatedIds !== undefined) {
+            consolidatedIds.delete(modifiedId)
+            if (consolidatedIds.size === 0) {
+              delete consolidatedIdsByAction[action]
+              if (Object.keys(consolidatedIdsByAction).length === 0) {
+                delete consolidatedIdsByActionByModifyingTextId[modifier.textId]
+                if (
+                  Object.keys(consolidatedIdsByActionByModifyingTextId)
+                    .length === 0
+                ) {
+                  delete context.consolidatedIdsByActionByModifyingTextIdByDate[
+                    modifier.date
+                  ]
+                }
+              }
+            }
+          }
+
+          const modifyingTextsIds =
+            context.modifyingTextsIdsByArticleActionDate[modifier.date]
+          modifyingTextsIds.delete(modifier.textId)
+          if (modifyingTextsIds.size === 0) {
+            delete context.modifyingTextsIdsByArticleActionDate[modifier.date]
           }
         }
-      }
-      if (modifiedDateDebut !== "2999-01-01") {
+
+        // Add article as a modifier.
         ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-          modifiedDateDebut
-        ] ??= {})[modifyingTextId] ??= {}).CREATE ??= new Set()).add(modifiedId)
-        ;(context.hasModifyingTextIdByActionByConsolidatedArticleId[
-          modifiedId
-        ] ??= {}).CREATE = true
-        ;(context.modifyingTextsIdsByArticleActionDate[modifiedDateDebut] ??=
+          actionDate
+        ] ??= {})[modifyingTextId] ??= {})[action] ??= new Set()).add(
+          modifiedId,
+        )
+        ;(context.modifierByActionByConsolidatedArticleId[modifiedId] ??= {})[
+          action
+        ] = {
+          date: actionDate,
+          priority,
+          textId: modifyingTextId,
+        }
+        ;(context.modifyingTextsIdsByArticleActionDate[actionDate] ??=
           new Set()).add(modifyingTextId)
       }
-    } else if (action === "DELETE" && modifiedDateFin !== "2999-01-01") {
-      ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-        modifiedDateFin
-      ] ??= {})[modifyingTextId] ??= {}).DELETE ??= new Set()).add(modifiedId)
-      ;(context.hasModifyingTextIdByActionByConsolidatedArticleId[
-        modifiedId
-      ] ??= {}).DELETE = true
-      ;(context.modifyingTextsIdsByArticleActionDate[modifiedDateFin] ??=
-        new Set()).add(modifyingTextId)
     }
   }
 }
@@ -220,6 +241,7 @@ export async function registerLegiArticleModifiersAndReferences(
   //     context,
   //     jorfCreatorId,
   //     "CREATE",
+  //     ???,
   //     articleId,
   //     articleDateDebut,
   //     articleDateFin,
@@ -234,6 +256,7 @@ export async function registerLegiArticleModifiersAndReferences(
   //         context,
   //         jorfCreatorId,
   //         "DELETE",
+  //         ???,
   //         articleVersion.LIEN_ART["@id"],
   //         articleVersion.LIEN_ART["@debut"],
   //         articleVersion.LIEN_ART["@fin"],
@@ -296,10 +319,12 @@ export async function registerLegiArticleModifiersAndReferences(
       (referringArticleLien.typelien === "TRANSFERE" &&
         !referringArticleLien.cible)
     ) {
+      // TODO: Decrease priority of some typelien?
       await addModifyingArticleId(
         context,
         referringArticleLien.article_id,
         "DELETE",
+        1,
         articleId,
         articleDateDebut,
         articleDateFin,
@@ -323,12 +348,6 @@ export async function registerLegiArticleModifiersAndReferences(
     ) {
       // Ignore link.
     } else if (
-      (referringArticleLien.typelien === "CODIFICATION" &&
-        referringArticleLien.cible) ||
-      (referringArticleLien.typelien === "CONCORDANCE" &&
-        referringArticleLien.cible) ||
-      (referringArticleLien.typelien === "CONCORDE" &&
-        !referringArticleLien.cible) ||
       (referringArticleLien.typelien === "CREATION" &&
         referringArticleLien.cible) ||
       (referringArticleLien.typelien === "CREE" &&
@@ -337,19 +356,16 @@ export async function registerLegiArticleModifiersAndReferences(
         !referringArticleLien.cible) ||
       (referringArticleLien.typelien === "DEPLACEMENT" &&
         referringArticleLien.cible) ||
-      (referringArticleLien.typelien === "DISJOINT" &&
-        referringArticleLien.cible) ||
       (referringArticleLien.typelien === "MODIFICATION" &&
         referringArticleLien.cible) ||
       (referringArticleLien.typelien === "MODIFIE" &&
-        !referringArticleLien.cible) ||
-      (referringArticleLien.typelien === "TRANSFERT" &&
-        referringArticleLien.cible)
+        !referringArticleLien.cible)
     ) {
       await addModifyingArticleId(
         context,
         referringArticleLien.article_id,
         "CREATE",
+        1,
         articleId,
         articleDateDebut,
         articleDateFin,
@@ -364,6 +380,46 @@ export async function registerLegiArticleModifiersAndReferences(
             context,
             referringArticleLien.article_id,
             "DELETE",
+            1,
+            articleVersion.LIEN_ART["@id"],
+            articleVersion.LIEN_ART["@debut"],
+            articleVersion.LIEN_ART["@fin"],
+          )
+        }
+      }
+    } else if (
+      (referringArticleLien.typelien === "CODIFICATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDANCE" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "DISJOINT" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "TRANSFERT" &&
+        referringArticleLien.cible)
+    ) {
+      // TOOD: Increase priority of "CONCORDANCE", "CONCORDE", "DISJOINT", "TRANSFERT"?
+      await addModifyingArticleId(
+        context,
+        referringArticleLien.article_id,
+        "CREATE",
+        0,
+        articleId,
+        articleDateDebut,
+        articleDateFin,
+      )
+      // Delete another version of the same article that existed before the newly created one.
+      for (const articleVersion of article.VERSIONS.VERSION) {
+        if (articleVersion.LIEN_ART["@id"] === articleId) {
+          continue
+        }
+        if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+          await addModifyingArticleId(
+            context,
+            referringArticleLien.article_id,
+            "DELETE",
+            0,
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -438,6 +494,7 @@ export async function registerLegiArticleModifiersAndReferences(
         context,
         referringTextLien.texte_version_id,
         "DELETE",
+        1,
         articleId,
         articleDateDebut,
         articleDateFin,
@@ -458,23 +515,16 @@ export async function registerLegiArticleModifiersAndReferences(
     ) {
       // Ignore link.
     } else if (
-      (referringTextLien.typelien === "CODIFICATION" &&
-        referringTextLien.cible) ||
-      (referringTextLien.typelien === "CONCORDANCE" &&
-        referringTextLien.cible) ||
-      (referringTextLien.typelien === "CONCORDE" && !referringTextLien.cible) ||
       (referringTextLien.typelien === "CREATION" && referringTextLien.cible) ||
-      // LEGIARTI000006527461 has an example of MODIFICATION with !cible
-      referringTextLien.typelien === "MODIFICATION" ||
-      (referringTextLien.typelien === "MODIFIE" && !referringTextLien.cible) ||
-      (referringTextLien.typelien === "RECTIFICATION" &&
+      (referringTextLien.typelien === "MODIFICATION" &&
         referringTextLien.cible) ||
-      (referringTextLien.typelien === "TRANSFERT" && referringTextLien.cible)
+      (referringTextLien.typelien === "MODIFIE" && !referringTextLien.cible)
     ) {
       await addModifyingTextId(
         context,
         referringTextLien.texte_version_id,
         "CREATE",
+        1,
         articleId,
         articleDateDebut,
         articleDateFin,
@@ -489,6 +539,7 @@ export async function registerLegiArticleModifiersAndReferences(
             context,
             referringTextLien.texte_version_id,
             "DELETE",
+            1,
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -496,8 +547,48 @@ export async function registerLegiArticleModifiersAndReferences(
         }
       }
     } else if (
-      referringTextLien.typelien === "CONCORDE" &&
-      referringTextLien.cible // LEGIARTI000018508754
+      (referringTextLien.typelien === "CODIFICATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "CONCORDANCE" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "CONCORDE" && !referringTextLien.cible) ||
+      (referringTextLien.typelien === "RECTIFICATION" &&
+        referringTextLien.cible) ||
+      (referringTextLien.typelien === "TRANSFERT" && referringTextLien.cible)
+    ) {
+      // TODO: Increase priority of "CONCORDANCE", "CONCORDE", "RECTIFICATION", "TRANSFERT"?
+      await addModifyingTextId(
+        context,
+        referringTextLien.texte_version_id,
+        "CREATE",
+        0,
+        articleId,
+        articleDateDebut,
+        articleDateFin,
+      )
+      // Delete another version of the same article that existed before the newly created one.
+      for (const articleVersion of article.VERSIONS.VERSION) {
+        if (articleVersion.LIEN_ART["@id"] === articleId) {
+          continue
+        }
+        if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+          await addModifyingTextId(
+            context,
+            referringTextLien.texte_version_id,
+            "DELETE",
+            0,
+            articleVersion.LIEN_ART["@id"],
+            articleVersion.LIEN_ART["@debut"],
+            articleVersion.LIEN_ART["@fin"],
+          )
+        }
+      }
+    } else if (
+      // LEGIARTI000018508754
+      (referringTextLien.typelien === "CONCORDE" && referringTextLien.cible) ||
+      // LEGIARTI000006527461 has an example of MODIFICATION with !cible
+      (referringTextLien.typelien === "MODIFICATION" &&
+        !referringTextLien.cible)
     ) {
       // It seems to be errors.
       // Ignore link.
@@ -549,10 +640,12 @@ export async function registerLegiArticleModifiersAndReferences(
         (articleReferredLien["@typelien"] === "TRANSFERE" &&
           articleReferredLien["@sens"] === "cible")
       ) {
+        // TODO: Decrease priority of some @typelien?
         await addModifyingTextId(
           context,
           articleReferredLien["@cidtexte"],
           "DELETE",
+          1,
           articleId,
           articleDateDebut,
           articleDateFin,
@@ -576,12 +669,6 @@ export async function registerLegiArticleModifiersAndReferences(
       ) {
         // Ignore link.
       } else if (
-        (articleReferredLien["@typelien"] === "CODIFICATION" &&
-          articleReferredLien["@sens"] === "source") ||
-        (articleReferredLien["@typelien"] === "CONCORDANCE" &&
-          articleReferredLien["@sens"] === "source") ||
-        (articleReferredLien["@typelien"] === "CONCORDE" &&
-          articleReferredLien["@sens"] === "cible") ||
         (articleReferredLien["@typelien"] === "CREATION" &&
           articleReferredLien["@sens"] === "source") ||
         (articleReferredLien["@typelien"] === "CREE" &&
@@ -590,24 +677,16 @@ export async function registerLegiArticleModifiersAndReferences(
           articleReferredLien["@sens"] === "cible") ||
         (articleReferredLien["@typelien"] === "DEPLACEMENT" &&
           articleReferredLien["@sens"] === "source") ||
-        (articleReferredLien["@typelien"] === "DISJOINT" &&
-          articleReferredLien["@sens"] === "source") ||
-        // Occurs for LEGIARTI000028043722
-        (articleReferredLien["@typelien"] === "MODIFICATION" &&
-          articleReferredLien["@sens"] === "cible") ||
         (articleReferredLien["@typelien"] === "MODIFICATION" &&
           articleReferredLien["@sens"] === "source") ||
         (articleReferredLien["@typelien"] === "MODIFIE" &&
-          articleReferredLien["@sens"] === "cible") ||
-        (articleReferredLien["@typelien"] === "RECTIFICATION" &&
-          articleReferredLien["@sens"] === "source") ||
-        (articleReferredLien["@typelien"] === "TRANSFERT" &&
-          articleReferredLien["@sens"] === "source")
+          articleReferredLien["@sens"] === "cible")
       ) {
         await addModifyingTextId(
           context,
           articleReferredLien["@cidtexte"],
           "CREATE",
+          1,
           articleId,
           articleDateDebut,
           articleDateFin,
@@ -622,6 +701,48 @@ export async function registerLegiArticleModifiersAndReferences(
               context,
               articleReferredLien["@cidtexte"],
               "DELETE",
+              1,
+              articleVersion.LIEN_ART["@id"],
+              articleVersion.LIEN_ART["@debut"],
+              articleVersion.LIEN_ART["@fin"],
+            )
+          }
+        }
+      } else if (
+        (articleReferredLien["@typelien"] === "CODIFICATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "CONCORDANCE" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "CONCORDE" &&
+          articleReferredLien["@sens"] === "cible") ||
+        (articleReferredLien["@typelien"] === "DISJOINT" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "RECTIFICATION" &&
+          articleReferredLien["@sens"] === "source") ||
+        (articleReferredLien["@typelien"] === "TRANSFERT" &&
+          articleReferredLien["@sens"] === "source")
+      ) {
+        // TODO: Increase priority of "CONCORDANCE", "CONCORDE", "DISJOINT", "RECTIFICATION", "TRANSFERT"?
+        await addModifyingTextId(
+          context,
+          articleReferredLien["@cidtexte"],
+          "CREATE",
+          0,
+          articleId,
+          articleDateDebut,
+          articleDateFin,
+        )
+        // Delete another version of the same article that existed before the newly created one.
+        for (const articleVersion of article.VERSIONS.VERSION) {
+          if (articleVersion.LIEN_ART["@id"] === articleId) {
+            continue
+          }
+          if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
+            await addModifyingTextId(
+              context,
+              articleReferredLien["@cidtexte"],
+              "DELETE",
+              0,
               articleVersion.LIEN_ART["@id"],
               articleVersion.LIEN_ART["@debut"],
               articleVersion.LIEN_ART["@fin"],
@@ -631,8 +752,12 @@ export async function registerLegiArticleModifiersAndReferences(
       } else if (
         (articleReferredLien["@typelien"] === "CREATION" &&
           articleReferredLien["@sens"] === "cible") ||
+        // Occurs for LEGIARTI000028043722
+        (articleReferredLien["@typelien"] === "MODIFICATION" &&
+          articleReferredLien["@sens"] === "cible") ||
+        // LEGIARTI000045468013
         (articleReferredLien["@typelien"] === "MODIFIE" &&
-          articleReferredLien["@sens"] === "source") // LEGIARTI000045468013
+          articleReferredLien["@sens"] === "source")
       ) {
         // It seems to be an error.
         // Ignore link.
@@ -651,6 +776,7 @@ export async function registerLegiArticleModifiersAndReferences(
         context,
         article.CONTEXTE.TEXTE["@cid"],
         "CREATE",
+        1,
         articleId,
         articleDateDebut,
         articleDateFin,
@@ -665,6 +791,7 @@ export async function registerLegiArticleModifiersAndReferences(
             context,
             article.CONTEXTE.TEXTE["@cid"],
             "DELETE",
+            1,
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -675,11 +802,9 @@ export async function registerLegiArticleModifiersAndReferences(
       // If article belongs directly to a text published in JORF but at a later date than the JORF text,
       // then if article has no creating text, consider that it has been created by a modifying text having the same start
       // date as the article when such a text exists.
-      const hasModifyingTextIdByAction =
-        (context.hasModifyingTextIdByActionByConsolidatedArticleId[
-          articleId
-        ] ??= {})
-      if (!hasModifyingTextIdByAction.CREATE) {
+      const modifierByAction =
+        context.modifierByActionByConsolidatedArticleId[articleId] ?? {}
+      if (modifierByAction.CREATE === undefined) {
         const consolidatedTextModifyingTextsIds =
           context.consolidatedTextModifyingTextsIdsByActionByDate[
             articleDateDebut
@@ -691,6 +816,7 @@ export async function registerLegiArticleModifiersAndReferences(
               context,
               modifyingTextId,
               "CREATE",
+              0,
               articleId,
               articleDateDebut,
               articleDateFin,
@@ -705,6 +831,7 @@ export async function registerLegiArticleModifiersAndReferences(
                   context,
                   modifyingTextId,
                   "DELETE",
+                  0,
                   articleVersion.LIEN_ART["@id"],
                   articleVersion.LIEN_ART["@debut"],
                   articleVersion.LIEN_ART["@fin"],
@@ -852,6 +979,7 @@ export async function registerLegiTextModifiersAndReferences(
         context,
         referringArticleLien.article_id,
         "DELETE",
+        1,
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
@@ -866,12 +994,6 @@ export async function registerLegiTextModifiersAndReferences(
     ) {
       // Ignore link.
     } else if (
-      (referringArticleLien.typelien === "CODIFICATION" &&
-        referringArticleLien.cible) ||
-      (referringArticleLien.typelien === "CONCORDANCE" &&
-        !referringArticleLien.cible) ||
-      (referringArticleLien.typelien === "CONCORDE" &&
-        !referringArticleLien.cible) ||
       (referringArticleLien.typelien === "CREE" &&
         !referringArticleLien.cible) ||
       (referringArticleLien.typelien === "MODIFICATION" &&
@@ -883,6 +1005,7 @@ export async function registerLegiTextModifiersAndReferences(
         context,
         referringArticleLien.article_id,
         "CREATE",
+        1,
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
@@ -897,6 +1020,42 @@ export async function registerLegiTextModifiersAndReferences(
             context,
             referringArticleLien.article_id,
             "DELETE",
+            1,
+            version.LIEN_TXT["@id"],
+            version.LIEN_TXT["@debut"],
+            version.LIEN_TXT["@fin"],
+          )
+        }
+      }
+    } else if (
+      (referringArticleLien.typelien === "CODIFICATION" &&
+        referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDANCE" &&
+        !referringArticleLien.cible) ||
+      (referringArticleLien.typelien === "CONCORDE" &&
+        !referringArticleLien.cible)
+    ) {
+      // TODO: Increase priority of "CONCORDANCE" & "CONCORDE"?
+      await addModifyingArticleId(
+        context,
+        referringArticleLien.article_id,
+        "CREATE",
+        0,
+        legiTextId,
+        texteVersionDateDebut ?? "2999-01-01",
+        texteVersionDateFin ?? "2999-01-01",
+      )
+      // Delete another version of the same text that existed before the newly created one.
+      for (const version of textelr.VERSIONS.VERSION) {
+        if (version.LIEN_TXT["@id"] === legiTextId) {
+          continue
+        }
+        if (version.LIEN_TXT["@fin"] === texteVersionDateDebut) {
+          await addModifyingArticleId(
+            context,
+            referringArticleLien.article_id,
+            "DELETE",
+            0,
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
             version.LIEN_TXT["@fin"],
@@ -955,6 +1114,7 @@ export async function registerLegiTextModifiersAndReferences(
         context,
         referringTextLien.texte_version_id,
         "DELETE",
+        1,
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
@@ -971,14 +1131,14 @@ export async function registerLegiTextModifiersAndReferences(
     ) {
       // Ignore link.
     } else if (
-      (referringTextLien.typelien === "CODIFICATION" &&
-        referringTextLien.cible) ||
-      (referringTextLien.typelien === "MODIFIE" && !referringTextLien.cible)
+      referringTextLien.typelien === "MODIFIE" &&
+      !referringTextLien.cible
     ) {
       await addModifyingTextId(
         context,
         referringTextLien.texte_version_id,
         "CREATE",
+        1,
         legiTextId,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
@@ -993,6 +1153,37 @@ export async function registerLegiTextModifiersAndReferences(
             context,
             referringTextLien.texte_version_id,
             "DELETE",
+            1,
+            version.LIEN_TXT["@id"],
+            version.LIEN_TXT["@debut"],
+            version.LIEN_TXT["@fin"],
+          )
+        }
+      }
+    } else if (
+      referringTextLien.typelien === "CODIFICATION" &&
+      referringTextLien.cible
+    ) {
+      await addModifyingTextId(
+        context,
+        referringTextLien.texte_version_id,
+        "CREATE",
+        0,
+        legiTextId,
+        texteVersionDateDebut ?? "2999-01-01",
+        texteVersionDateFin ?? "2999-01-01",
+      )
+      // Delete another version of the same text that existed before the newly created one.
+      for (const version of textelr.VERSIONS.VERSION) {
+        if (version.LIEN_TXT["@id"] === legiTextId) {
+          continue
+        }
+        if (version.LIEN_TXT["@fin"] === texteVersionDateDebut) {
+          await addModifyingTextId(
+            context,
+            referringTextLien.texte_version_id,
+            "DELETE",
+            0,
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
             version.LIEN_TXT["@fin"],
@@ -1031,6 +1222,7 @@ export async function registerLegiTextModifiersAndReferences(
         //     context,
         //     textReferredLien["@cidtexte"],
         //     "DELETE",
+        //     ???,
         //     legiTextId,
         //     texteVersionDateDebut ?? "2999-01-01",
         //     texteVersionDateFin ?? "2999-01-01",
@@ -1052,6 +1244,7 @@ export async function registerLegiTextModifiersAndReferences(
             context,
             textReferredLien["@cidtexte"],
             "CREATE",
+            1,
             legiTextId,
             texteVersionDateDebut ?? "2999-01-01",
             texteVersionDateFin ?? "2999-01-01",
@@ -1070,6 +1263,7 @@ export async function registerLegiTextModifiersAndReferences(
                 context,
                 textReferredLien["@cidtexte"],
                 "DELETE",
+                1,
                 version.LIEN_TXT["@id"],
                 version.LIEN_TXT["@debut"],
                 version.LIEN_TXT["@fin"],

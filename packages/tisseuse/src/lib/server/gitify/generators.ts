@@ -154,6 +154,11 @@ async function generateArticlesGit(
   tree: TreeObject
 }> {
   return await tracer.startActiveSpan(`generateArticlesGit:`, async (span) => {
+    span.setAttribute("date", date)
+    span.setAttribute(
+      "articles",
+      articles?.map((article) => article.META.META_COMMUN.ID) ?? [],
+    )
     try {
       const readmeLinks: Array<{ href: string; title: string }> = []
       const tree: TreeObject = []
@@ -315,6 +320,7 @@ export async function generateConsolidatedTextGit(
   return await tracer.startActiveSpan(
     `generateConsolidatedTextGit:`,
     async (span) => {
+      span.setAttribute("consolidated text", consolidatedTextId)
       try {
         const context: Context = {
           articleById: {},
@@ -1126,6 +1132,8 @@ async function generateSectionTaGit(
   return await tracer.startActiveSpan(
     `generateSectionTaGit:`,
     async (span): Promise<TreeEntry> => {
+      span.setAttribute("date", date)
+      span.setAttribute("sectionTa", sectionTa.ID)
       try {
         const sectionTaDirName = sectionTaNode.slug
         const repositoryRelativeDir = path.join(
@@ -1297,6 +1305,8 @@ async function generateTextGit(
   modifyingTextId: string,
 ): Promise<string> {
   return await tracer.startActiveSpan(`generateTextGit:`, async (span) => {
+    span.setAttribute("date", date)
+    span.setAttribute("texte", texteVersion.META.META_COMMUN.ID)
     try {
       const textId = texteVersion.META.META_COMMUN.ID
       const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION

@@ -3,6 +3,7 @@ import fs from "fs-extra"
 import git from "isomorphic-git"
 import path from "path"
 import sade from "sade"
+import opentelemetry from "@opentelemetry/api"
 import { $, cd } from "zx"
 
 import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi.js"
@@ -15,6 +16,7 @@ import {
 } from "$lib/urls.js"
 
 const { forgejo } = config
+const tracer = opentelemetry.trace.getTracer("export_consolidated_texts_to_git")
 
 async function exportConsolidatedTextsToGit(
   targetDir: string,
@@ -36,129 +38,145 @@ async function exportConsolidatedTextsToGit(
     silent?: boolean
   } = {},
 ): Promise<number> {
-  let exitCode = 0
-  if (only !== undefined && typeof only === "string") {
-    only = [only]
-  }
-  let skip = resume !== undefined
+  await new Promise((resolve) => setTimeout(resolve, 10000))
+  return await tracer.startActiveSpan(
+    `exportConsolidatedTextsToGit`,
+    async (span) => {
+      try {
+        let exitCode = 0
+        if (only !== undefined && typeof only === "string") {
+          only = [only]
+        }
+        let skip = resume !== undefined
 
-  const currentSourceCodeCommitOid = (
-    await git.log({
-      depth: 1,
-      dir: ".",
-      fs,
-    })
-  )[0]?.oid
+        const currentSourceCodeCommitOid = (
+          await git.log({
+            depth: 1,
+            dir: ".",
+            fs,
+          })
+        )[0]?.oid
 
-  for (const {
-    data: consolidatedTexteVersion,
-    id: consolidatedTextId,
-  } of await db<{ data: LegiTexteVersion; id: string }[]>`
-    SELECT data, id
-    FROM texte_version
-    WHERE
-      nature IN ('CODE', 'CONSTITUTION', 'DECLARATION')
-      and id LIKE 'LEGITEXT%'
-  `) {
-    if (skip) {
-      if (consolidatedTextId === resume) {
-        skip = false
-        if (!silent) {
-          console.log(
-            `Resuming at consolidated text ${consolidatedTextId} ${consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}...`,
+        for (const {
+          data: consolidatedTexteVersion,
+          id: consolidatedTextId,
+        } of await db<{ data: LegiTexteVersion; id: string }[]>`
+          SELECT data, id
+          FROM texte_version
+          WHERE
+            nature IN ('CODE', 'CONSTITUTION', 'DECLARATION')
+            and id LIKE 'LEGITEXT%'
+        `) {
+          if (skip) {
+            if (consolidatedTextId === resume) {
+              skip = false
+              if (!silent) {
+                console.log(
+                  `Resuming at consolidated text ${consolidatedTextId} ${consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}...`,
+                )
+              }
+            } else {
+              continue
+            }
+          }
+          if (only !== undefined && !only.includes(consolidatedTextId)) {
+            continue
+          }
+
+          const consolidatedTextOrganizationName =
+            organizationNameByTexteNature[
+              consolidatedTexteVersion.META.META_COMMUN
+                .NATURE as LegiTexteNature
+            ] as string
+          assert.notStrictEqual(consolidatedTextOrganizationName, undefined)
+          const consolidatedTextTitle =
+            consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+              .TITREFULL ??
+            consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+            consolidatedTextId
+          const consolidatedTextRepositoryName = repositoryNameFromTitle(
+            consolidatedTextTitle,
           )
-        }
-      } else {
-        continue
-      }
-    }
-    if (only !== undefined && !only.includes(consolidatedTextId)) {
-      continue
-    }
+          const consolidatedTextRepositoryDir = path.join(
+            targetDir,
+            consolidatedTextOrganizationName,
+            consolidatedTextRepositoryName,
+          )
 
-    const consolidatedTextOrganizationName = organizationNameByTexteNature[
-      consolidatedTexteVersion.META.META_COMMUN.NATURE as LegiTexteNature
-    ] as string
-    assert.notStrictEqual(consolidatedTextOrganizationName, undefined)
-    const consolidatedTextTitle =
-      consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
-      consolidatedTexteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE ??
-      consolidatedTextId
-    const consolidatedTextRepositoryName = repositoryNameFromTitle(
-      consolidatedTextTitle,
-    )
-    const consolidatedTextRepositoryDir = path.join(
-      targetDir,
-      consolidatedTextOrganizationName,
-      consolidatedTextRepositoryName,
-    )
-
-    const result = await generateConsolidatedTextGit(
-      consolidatedTextId,
-      consolidatedTextRepositoryDir + ".git",
-      {
-        currentSourceCodeCommitOid,
-        force,
-        "log-commits": logCommits,
-        "log-references": logReferences,
-      },
-    )
-    if (result !== 0) {
-      // Note: When result === 10, the git repository has not been generated.
-      if (result !== 10 && exitCode === 0) {
-        exitCode = result
-      }
-      continue
-    }
-    if (push && forgejo !== undefined) {
-      const response = await fetch(
-        new URL(
-          `/api/v1/repos/${consolidatedTextOrganizationName}/${consolidatedTextRepositoryName}`,
-          forgejo.url,
-        ),
-        { headers: { Accept: "application/json" } },
-      )
-      if (response.status === 404) {
-        // Create repository.
-        const url = new URL(
-          `/api/v1/orgs/${consolidatedTextOrganizationName}/repos`,
-          forgejo.url,
-        ).toString()
-        const response = await fetch(url, {
-          body: JSON.stringify(
+          const result = await generateConsolidatedTextGit(
+            consolidatedTextId,
+            consolidatedTextRepositoryDir + ".git",
             {
-              default_branch: "main",
-              description: consolidatedTextTitle,
-              name: consolidatedTextRepositoryName,
+              currentSourceCodeCommitOid,
+              force,
+              "log-commits": logCommits,
+              "log-references": logReferences,
             },
-            null,
-            2,
-          ),
-          headers: {
-            Accept: "application/json",
-            Authorization: `token ${forgejo.token}`,
-            "Content-Type": "application/json",
-          },
-          method: "POST",
-        })
-        if (!response.ok) {
-          console.error(`Error while creating remote repository at ${url}:`)
-          console.error(`${response.status} ${response.statusText}`)
-          console.error(await response.text())
-          throw new Error("Error while creating remote repository")
+          )
+          if (result !== 0) {
+            // Note: When result === 10, the git repository has not been generated.
+            if (result !== 10 && exitCode === 0) {
+              exitCode = result
+            }
+            continue
+          }
+          if (push && forgejo !== undefined) {
+            const response = await fetch(
+              new URL(
+                `/api/v1/repos/${consolidatedTextOrganizationName}/${consolidatedTextRepositoryName}`,
+                forgejo.url,
+              ),
+              { headers: { Accept: "application/json" } },
+            )
+            if (response.status === 404) {
+              // Create repository.
+              const url = new URL(
+                `/api/v1/orgs/${consolidatedTextOrganizationName}/repos`,
+                forgejo.url,
+              ).toString()
+              const response = await fetch(url, {
+                body: JSON.stringify(
+                  {
+                    default_branch: "main",
+                    description: consolidatedTextTitle,
+                    name: consolidatedTextRepositoryName,
+                  },
+                  null,
+                  2,
+                ),
+                headers: {
+                  Accept: "application/json",
+                  Authorization: `token ${forgejo.token}`,
+                  "Content-Type": "application/json",
+                },
+                method: "POST",
+              })
+              if (!response.ok) {
+                console.error(
+                  `Error while creating remote repository at ${url}:`,
+                )
+                console.error(`${response.status} ${response.statusText}`)
+                console.error(await response.text())
+                throw new Error("Error while creating remote repository")
+              }
+            } else {
+              assert(response.ok)
+            }
+            cd(consolidatedTextRepositoryDir + ".git")
+            const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:${consolidatedTextOrganizationName}/${consolidatedTextRepositoryName}.git`
+            await $`git remote add origin ${origin}`
+            await $`git push --all --force --set-upstream origin`
+            // Remove remote tags that are not present locally.
+            await $`git ls-remote --tags origin | awk '{print $2}' | sed 's|refs/tags/||' | sort | comm -23 - <(git tag | sort) | xargs -I {} git push --delete origin {}`
+            await $`git push --force --quiet --tags`
+          }
         }
-      } else {
-        assert(response.ok)
+        return exitCode
+      } finally {
+        span.end()
       }
-      cd(consolidatedTextRepositoryDir + ".git")
-      const origin = `[${forgejo.sshAccount}:${forgejo.sshPort}]:${consolidatedTextOrganizationName}/${consolidatedTextRepositoryName}.git`
-      await $`git remote add origin ${origin}`
-      await $`git push --all --force --set-upstream origin`
-      await $`git push --force --quiet --tags`
-    }
-  }
-
-  return exitCode
+    },
+  )
 }
 
 sade("export_consolidated_texts_to_git <targetDir>", true)

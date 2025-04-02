@@ -3,6 +3,7 @@ import dedent from "dedent-js"
 import fs from "fs-extra"
 import objectHash from "object-hash"
 import git, { type TreeEntry, type TreeObject } from "isomorphic-git"
+import opentelemetry from "@opentelemetry/api"
 import path from "path"
 
 import { sortArticlesNumbers } from "$lib/articles.js"
@@ -77,6 +78,7 @@ const minDateTimestamp = Math.floor(minDateObject.getTime() / 1000)
 const oneDay = 24 * 60 * 60 // hours * minutes * seconds
 const todayObject = new Date(new Date().toISOString().slice(0, 10))
 const today = todayObject.toISOString().slice(0, 10)
+const tracer = opentelemetry.trace.getTracer("generators")
 
 async function addLienArticleToCurrentArticles(
   context: Context,
@@ -151,86 +153,1270 @@ async function generateArticlesGit(
   readmeLinks: Array<{ href: string; title: string }>
   tree: TreeObject
 }> {
-  const readmeLinks: Array<{ href: string; title: string }> = []
-  const tree: TreeObject = []
+  return await tracer.startActiveSpan(`generateArticlesGit:`, async (span) => {
+    try {
+      const readmeLinks: Array<{ href: string; title: string }> = []
+      const tree: TreeObject = []
 
-  if (articles !== undefined) {
-    for (const article of articles) {
-      const metaArticle = article.META.META_SPEC.META_ARTICLE
-      const metaCommun = article.META.META_COMMUN
-      const articleId = metaCommun.ID
-      const articleNumber = metaArticle.NUM
-      const articleTitle = `Article ${articleNumber ?? articleId}`
-      let articleSlug = slugify(articleTitle, "_")
-      if (articleSlug.length > 252) {
-        articleSlug = articleSlug.slice(0, 251)
-        if (articleSlug.at(-1) !== "_") {
-          articleSlug += "_"
+      if (articles !== undefined) {
+        for (const article of articles) {
+          const metaArticle = article.META.META_SPEC.META_ARTICLE
+          const metaCommun = article.META.META_COMMUN
+          const articleId = metaCommun.ID
+          const articleNumber = metaArticle.NUM
+          const articleTitle = `Article ${articleNumber ?? articleId}`
+          let articleSlug = slugify(articleTitle, "_")
+          if (articleSlug.length > 252) {
+            articleSlug = articleSlug.slice(0, 251)
+            if (articleSlug.at(-1) !== "_") {
+              articleSlug += "_"
+            }
+          }
+          const articleFilename = `${articleSlug}.md`
+          const articleRepositoryRelativeFilePath = path.join(
+            repositoryRelativeDir,
+            articleFilename,
+          )
+          const articleCache =
+            context.textFileCacheByRepositoryRelativeFilePath[
+              articleRepositoryRelativeFilePath
+            ]
+          if (
+            articleCache === undefined ||
+            articleId !== articleCache.id ||
+            articleCache.custom !== undefined
+          ) {
+            const articleMarkdown = dedent`
+            ---
+            ${[
+              ["Nature", metaCommun.NATURE],
+              ["Numéro", metaArticle.NUM],
+              ["Type", metaArticle.TYPE],
+              ["État", (metaArticle as LegiArticleMetaArticle).ETAT],
+              ["Date de début", metaArticle.DATE_DEBUT],
+              ["Date de fin", metaArticle.DATE_FIN],
+              ["Identifiant", articleId],
+              ["Origine", metaCommun.ORIGINE],
+              ["Ancien identifiant", metaCommun.ANCIEN_ID],
+            ]
+              .filter(([, value]) => value !== undefined)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join("\n")}
+            ---
+
+            # ${escapeMarkdownTitle(articleTitle)}
+
+            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
+          `
+
+            let referringArticlesLiensHtml: string | undefined = undefined
+            const referringArticlesLiens =
+              context.referringArticlesLiensById[articleId]
+            if (referringArticlesLiens !== undefined) {
+              referringArticlesLiensHtml = dedent`
+              ## Articles faisant référence à l'article
+
+              ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+            `
+            }
+
+            let referringTextsLiensHtml: string | undefined = undefined
+            const referringTextsLiens =
+              context.referringTextsLiensById[articleId]
+            if (referringTextsLiens !== undefined) {
+              referringTextsLiensHtml = dedent`
+              ## Textes faisant référence à l'article
+
+              ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+            `
+            }
+
+            let referredLiensHtml: string | undefined = undefined
+            const referredLiens = (article as LegiArticle).LIENS?.LIEN
+            if (referredLiens !== undefined) {
+              referredLiensHtml = dedent`
+              ## Références faites par l'article
+
+              ${await htmlFromReferredLiens(context, referredLiens)}
+            `
+            }
+
+            const referencesHtml = [
+              referringArticlesLiensHtml,
+              referringTextsLiensHtml,
+              referredLiensHtml,
+            ]
+              .filter((block) => block !== undefined)
+              .join("\n\n")
+            const detailsHtml =
+              referencesHtml === ""
+                ? undefined
+                : dedent`
+                  <details>
+                    <summary><em>Références</em></summary>
+
+                    ${referencesHtml.replaceAll("\n", "\n  ")}
+                  </details>
+                `
+
+            const treeEntry = await writeTextFileBlob(
+              context.gitdir,
+              articleFilename,
+              [
+                articleMarkdown,
+                detailsHtml,
+                markdownVariantsBlockFromArticle(article),
+              ]
+                .filter((block) => block !== undefined)
+                .join("\n\n") + "\n",
+            )
+            tree.push(treeEntry)
+            context.articleGitById[articleId] ??= {
+              date,
+              path: articleRepositoryRelativeFilePath,
+            }
+            context.textFileCacheByRepositoryRelativeFilePath[
+              articleRepositoryRelativeFilePath
+            ] = {
+              id: articleId,
+              treeEntry,
+            }
+          } else {
+            tree.push(articleCache.treeEntry)
+          }
+          readmeLinks.push({ href: articleFilename, title: articleTitle })
         }
       }
-      const articleFilename = `${articleSlug}.md`
-      const articleRepositoryRelativeFilePath = path.join(
-        repositoryRelativeDir,
-        articleFilename,
-      )
-      const articleCache =
+      return {
+        readmeLinks,
+        tree,
+      }
+    } finally {
+      span.end()
+    }
+  })
+}
+
+export async function generateConsolidatedTextGit(
+  consolidatedTextId: string,
+  gitdir: string,
+  {
+    currentSourceCodeCommitOid,
+    force,
+    "log-commits": logCommits,
+    "log-references": logReferences,
+  }: {
+    currentSourceCodeCommitOid?: string
+    force?: boolean
+    "log-commits"?: boolean
+    "log-references"?: boolean
+  },
+): Promise<number> {
+  return await tracer.startActiveSpan(
+    `generateConsolidatedTextGit:`,
+    async (span) => {
+      try {
+        const context: Context = {
+          articleById: {},
+          articleGitById: {},
+          consolidatedIdsByActionByModifyingTextIdByDate: {},
+          consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
+          consolidatedTextInternalIds: new Set([consolidatedTextId]),
+          consolidatedTextModifyingTextsIdsByActionByDate: {},
+          currentInternalIds: new Set(),
+          gitdir,
+          jorfCreatorIdByConsolidatedId: {},
+          logReferences,
+          modifierByActionByConsolidatedArticleId: {},
+          modifyingArticleIdByActionByConsolidatedId: {},
+          modifyingTextsIdsByArticleActionDate: {},
+          referringArticlesLiensById: {},
+          referringTextsLiensById: {},
+          sectionTaById: {},
+          sectionTaGitById: {},
+          textelrById: {},
+          texteManquantById: {},
+          texteVersionById: {},
+          texteVersionGitById: {},
+          textFileCacheByRepositoryRelativeFilePath: {},
+        }
+        const consolidatedTextelr = (await getOrLoadTextelr(
+          context,
+          consolidatedTextId,
+        )) as LegiTextelr
+        assert.notStrictEqual(consolidatedTextelr, null)
+        const consolidatedTexteVersion = (await getOrLoadTexteVersion(
+          context,
+          consolidatedTextId,
+        )) as LegiTexteVersion
+        assert.notStrictEqual(consolidatedTexteVersion, null)
+        const meta = consolidatedTexteVersion.META
+        const metaTexteChronicle = meta.META_SPEC.META_TEXTE_CHRONICLE
+        context.consolidatedTextCid = metaTexteChronicle.CID
+        // It seems that the CID of a LEGI text is the ID of the original JORF text
+        // that created the first version of the law.
+        // Most texts of LOI nature (except 191 / 3533) have a JORFTEXT CID.
+        // Most texts of DECRET nature (except 409 / 53952) have a JORFTEXT CID.
+        // Most texts of ARRETE nature (except 2832 / 80224) have a JORFTEXT CID.
+        // Idem for the CONSTITUTION.
+        // All texts of CODE nature have their CID === ID. But this is normal because a CODE
+        // is not created from a single JORF law.
+        const jorfCreatorArticleIdByNum: Record<string, string> = {}
+        if (context.consolidatedTextCid.startsWith("JORFTEXT")) {
+          context.jorfCreatorIdByConsolidatedId[consolidatedTextId] =
+            context.consolidatedTextCid
+
+          // Map JORF articles by their number, to be able to associate them with the LEGI article that they
+          // create.
+          const jorfCreatorTextelr = (await getOrLoadTextelr(
+            context,
+            context.consolidatedTextCid,
+          )) as JorfTextelr
+          // Note we currently ignore JORF SectionTAs and reference only their articles.
+          for await (const {
+            lienArticle: jorfCreatorLienArticle,
+          } of walkTextelrLiensArticles(
+            async (sectionTaId: string) =>
+              await getOrLoadSectionTa(context, sectionTaId),
+            jorfCreatorTextelr,
+          )) {
+            // Note: In JORF text of 1958 Constitution (JORFTEXT000000571356), for example,
+            // `num` of articles are only present in LienArticle, not in (incomplete) articles
+            // themselves.
+            const articleNumber = jorfCreatorLienArticle["@num"]
+            if (articleNumber !== undefined) {
+              jorfCreatorArticleIdByNum[articleNumber] =
+                jorfCreatorLienArticle["@id"]
+            }
+          }
+        }
+
+        const metaTexteVersion = meta.META_SPEC.META_TEXTE_VERSION
+        console.log(
+          `${meta.META_COMMUN.ID} ${(metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE ?? meta.META_COMMUN.ID).replace(/\s+/g, " ").trim()} (${metaTexteVersion.DATE_DEBUT ?? ""} — ${metaTexteVersion.DATE_FIN === "2999-01-01" ? "…" : (metaTexteVersion.DATE_FIN ?? "")}, ${metaTexteVersion.ETAT})`,
+        )
+
+        // First Pass: Register IDs of internal objects and associate them with
+        // their JORF counterparts (when JORF articles exist they should have the
+        // same content as their LEGI counterparts).
+
+        for await (const { lienSectionTa } of walkStructureTree(
+          async (sectionTaId: string) =>
+            await getOrLoadSectionTa(context, sectionTaId),
+          consolidatedTextelr.STRUCT as
+            | JorfSectionTaStructure
+            | LegiSectionTaStructure,
+        )) {
+          context.consolidatedTextInternalIds.add(lienSectionTa["@id"])
+        }
+        for await (const { lienArticle } of walkTextelrLiensArticles(
+          async (sectionTaId: string) =>
+            await getOrLoadSectionTa(context, sectionTaId),
+          consolidatedTextelr,
+        )) {
+          const articleId = lienArticle["@id"]
+          context.consolidatedTextInternalIds.add(articleId)
+          if (
+            lienArticle["@debut"] === metaTexteChronicle.DATE_PUBLI &&
+            lienArticle["@num"] !== undefined
+          ) {
+            const jorfCreatorArticleId =
+              jorfCreatorArticleIdByNum[lienArticle["@num"]]
+            if (jorfCreatorArticleId !== undefined) {
+              context.jorfCreatorIdByConsolidatedId[articleId] =
+                jorfCreatorArticleId
+            }
+          }
+        }
+
+        // Second Pass : Register texts & articles that modify parts (aka SectionTA & Article) of the consolidated text.
+
+        await registerLegiTextModifiersAndReferences(
+          context,
+          0,
+          consolidatedTextelr,
+          consolidatedTexteVersion,
+        )
+
+        for await (const {
+          lienSectionTa,
+          parentsSectionTa,
+          sectionTa,
+        } of walkStructureTree(
+          async (sectionTaId: string) =>
+            await getOrLoadSectionTa(context, sectionTaId),
+          consolidatedTextelr.STRUCT as
+            | JorfSectionTaStructure
+            | LegiSectionTaStructure,
+        )) {
+          await registerLegiSectionTaModifiersAndReferences(
+            context,
+            parentsSectionTa === undefined ? 0 : parentsSectionTa.length,
+            lienSectionTa,
+            sectionTa,
+          )
+        }
+
+        for await (const {
+          lienArticle,
+          parentsSectionTa,
+        } of walkTextelrLiensArticles(
+          async (sectionTaId: string) =>
+            await getOrLoadSectionTa(context, sectionTaId),
+          consolidatedTextelr,
+        )) {
+          const article = (await getOrLoadArticle(
+            context,
+            lienArticle["@id"],
+          )) as LegiArticle
+          if (article !== null) {
+            await registerLegiArticleModifiersAndReferences(
+              context,
+              parentsSectionTa === undefined ? 0 : 1 + parentsSectionTa.length,
+              article,
+            )
+          }
+        }
+
+        // If code & data have not changed and no force option, don't generate git repository.
+        const dataHash = objectHash({
+          articleById: context.articleById,
+          sectionTaById: context.sectionTaById,
+          textelrById: context.textelrById,
+          texteVersionById: context.texteVersionById,
+        })
+        if (!force) {
+          const consolidatedTextGitHashes = (
+            await db<{ data_hash: string; source_code_commit_oid: string }[]>`
+            SELECT * FROM consolidated_texts_git_hashes
+            WHERE id = ${consolidatedTextId}
+          `
+          )[0]
+          if (consolidatedTextGitHashes !== undefined) {
+            // if (
+            //   currentSourceCodeCommitOid ===
+            //   consolidatedTextGitHashes.source_code_commit_oid
+            // ) {
+            if (dataHash === consolidatedTextGitHashes.data_hash) {
+              return 10
+            }
+            // }
+          }
+        }
+
+        // Associate modified articles without modifying text with a modifying text that modified other articles at the same date.
+        for await (const { lienArticle } of walkTextelrLiensArticles(
+          async (sectionTaId: string) =>
+            await getOrLoadSectionTa(context, sectionTaId),
+          consolidatedTextelr,
+        )) {
+          const consolidatedArticleId = lienArticle["@id"]
+          const modifierByAction =
+            context.modifierByActionByConsolidatedArticleId[
+              consolidatedArticleId
+            ]
+          for (const action of actions) {
+            if (modifierByAction?.[action] === undefined) {
+              const consolidatedArticle = await getOrLoadArticle(
+                context,
+                consolidatedArticleId,
+              )
+              if (consolidatedArticle === null) {
+                continue
+              }
+              const consolidatedArticleActionDate =
+                action === "CREATE"
+                  ? consolidatedArticle.META.META_SPEC.META_ARTICLE.DATE_DEBUT
+                  : consolidatedArticle.META.META_SPEC.META_ARTICLE.DATE_FIN
+              if (consolidatedArticleActionDate !== "2999-01-01") {
+                const modifyingTextsIds =
+                  (context.modifyingTextsIdsByArticleActionDate[
+                    consolidatedArticleActionDate
+                  ] ??= new Set())
+                if (modifyingTextsIds.size === 0) {
+                  // No modifying text can be associated with the modification of consolidated article
+                  // => Create a fake one.
+                  const texteManquantId = "ZZZZ TEXTE MANQUANT"
+                  if (
+                    context.consolidatedIdsByActionByModifyingTextIdByDate[
+                      consolidatedArticleActionDate
+                    ]?.[texteManquantId] === undefined
+                  ) {
+                    context.texteManquantById[texteManquantId] ??= {
+                      publicationDate: consolidatedArticleActionDate,
+                    }
+                  }
+                  modifyingTextsIds.add(texteManquantId)
+                  ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
+                    consolidatedArticleActionDate
+                  ] ??= {})[texteManquantId] ??= {})[action] ??= new Set()).add(
+                    consolidatedArticleId,
+                  )
+                } else if (modifyingTextsIds.size === 1) {
+                  // There is only one modifying text for this date => use it.
+                  const modifyingTextId = modifyingTextsIds.values().next()
+                    .value as string
+                  ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
+                    consolidatedArticleActionDate
+                  ] ??= {})[modifyingTextId] ??= {})[action] ??= new Set()).add(
+                    consolidatedArticleId,
+                  )
+                } else {
+                  // Several text modify different consolidated articles at this date.
+                  // Try to find the best one.
+                  // This could be:
+                  // - one of the texts whose publication date is the nearest before this date
+                  // - the text that modifies the most articles at this date
+                  // …
+                  // TODO: Improve heuristic.
+                  const modifyingTextId = modifyingTextsIds.values().next()
+                    .value as string
+                  ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
+                    consolidatedArticleActionDate
+                  ] ??= {})[modifyingTextId] ??= {})[action] ??= new Set()).add(
+                    consolidatedArticleId,
+                  )
+                }
+              }
+            }
+          }
+        }
+
+        // Generation of Git repository
+
+        await fs.remove(gitdir)
+        await fs.mkdir(gitdir, { recursive: true })
+        await git.init({
+          bare: true,
+          defaultBranch: "main",
+          gitdir,
+          fs,
+        })
+
+        const tree: TreeObject = []
+
+        // Generate LICENCE.md file.
+        const licenseFilename = "LICENCE.md"
+        const licenseRepositoryRelativeFilePath = licenseFilename
+        const treeEntry = await writeTextFileBlob(
+          context.gitdir,
+          licenseFilename,
+          licence,
+        )
+        tree.push(treeEntry)
         context.textFileCacheByRepositoryRelativeFilePath[
-          articleRepositoryRelativeFilePath
-        ]
-      if (
-        articleCache === undefined ||
-        articleId !== articleCache.id ||
-        articleCache.custom !== undefined
-      ) {
-        const articleMarkdown = dedent`
+          licenseRepositoryRelativeFilePath
+        ] = {
+          id: licenseRepositoryRelativeFilePath,
+          treeEntry,
+        }
+
+        const treeOid = await git.writeTree({
+          fs,
+          gitdir,
+          tree,
+        })
+        let commitOid = await git.writeCommit({
+          commit: {
+            author: {
+              email: "tricoteuses@tricoteuses.fr",
+              name: "Tricoteuses",
+              timestamp: 0,
+              timezoneOffset: -60,
+            },
+            committer: {
+              email: "republique@tricoteuses.fr",
+              name: "République française",
+              timestamp: 0,
+              timezoneOffset: -60,
+            },
+            message: "Création du dépôt git",
+            parent: [],
+            tree: treeOid,
+          },
+          fs,
+          gitdir,
+        })
+        await git.writeRef({
+          force: true,
+          fs,
+          gitdir,
+          ref: "refs/heads/main",
+          value: commitOid,
+        })
+
+        let future = false
+        let latestTreeOid: string | undefined = undefined
+        for (const [
+          date,
+          consolidatedIdsByActionByModifyingTextId,
+        ] of Object.entries(
+          context.consolidatedIdsByActionByModifyingTextIdByDate,
+        ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
+          if (logCommits) {
+            console.log(date)
+          }
+          const dateObject = new Date(date)
+          const timezoneOffset = dateObject.getTimezoneOffset() // in minutes
+          let timestamp = Math.floor(dateObject.getTime() / 1000)
+          if (timestamp < minDateTimestamp) {
+            const diffDays = Math.round((minDateTimestamp - timestamp) / oneDay)
+            timestamp = minDateTimestamp - diffDays
+          }
+          timestamp += timezoneOffset * 60
+
+          // Sort modifying texts at current date.
+          const modifyingTexteVersionArray: Array<
+            JorfTexteVersion | LegiTexteVersion | TexteManquant
+          > = []
+          for (const modifyingTextId of Object.keys(
+            consolidatedIdsByActionByModifyingTextId,
+          )) {
+            let modifyingTexteVersion:
+              | JorfTexteVersion
+              | LegiTexteVersion
+              | TexteManquant = context.texteManquantById[
+              modifyingTextId
+            ] as TexteManquant
+            if (modifyingTexteVersion === undefined) {
+              modifyingTexteVersion = (await getOrLoadTexteVersion(
+                context,
+                modifyingTextId,
+              )) as JorfTexteVersion | LegiTexteVersion
+              assert.notStrictEqual(modifyingTexteVersion, null)
+            }
+            modifyingTexteVersionArray.push(modifyingTexteVersion)
+          }
+          modifyingTexteVersionArray.sort(
+            (modifyingTexteVersion1, modifyingTexteVersion2) => {
+              if (
+                (modifyingTexteVersion1 as TexteManquant).publicationDate !==
+                undefined
+              ) {
+                return 1
+              }
+              if (
+                (modifyingTexteVersion2 as TexteManquant).publicationDate !==
+                undefined
+              ) {
+                return -1
+              }
+              const metaTexteChronicle1 = (
+                modifyingTexteVersion1 as JorfTexteVersion | LegiTexteVersion
+              ).META.META_SPEC.META_TEXTE_CHRONICLE
+              const publicationDate1 = metaTexteChronicle1.DATE_PUBLI
+              const metaTexteChronicle2 = (
+                modifyingTexteVersion2 as JorfTexteVersion | LegiTexteVersion
+              ).META.META_SPEC.META_TEXTE_CHRONICLE
+              const publicationDate2 = metaTexteChronicle2.DATE_PUBLI
+              if (publicationDate1 !== publicationDate2) {
+                return publicationDate1.localeCompare(publicationDate2)
+              }
+              const number1 = metaTexteChronicle1.NUM
+              if (number1 === undefined) {
+                return 1
+              }
+              const number2 = metaTexteChronicle2.NUM
+              if (number2 === undefined) {
+                return -1
+              }
+              return number1.localeCompare(number2)
+            },
+          )
+
+          for (const [
+            modifyingTextIndex,
+            modifyingTexteVersion,
+          ] of modifyingTexteVersionArray.entries()) {
+            const t0 = performance.now()
+            let modifyingTextId: string
+            let modifyingTextTitle: string
+            if (
+              (modifyingTexteVersion as TexteManquant).publicationDate ===
+              undefined
+            ) {
+              modifyingTextId = (
+                modifyingTexteVersion as JorfTexteVersion | LegiTexteVersion
+              ).META.META_COMMUN.ID
+              modifyingTextTitle = (
+                (modifyingTexteVersion as JorfTexteVersion | LegiTexteVersion)
+                  .META.META_SPEC.META_TEXTE_VERSION.TITREFULL ??
+                (modifyingTexteVersion as JorfTexteVersion | LegiTexteVersion)
+                  .META.META_SPEC.META_TEXTE_VERSION.TITRE ??
+                modifyingTextId
+              )
+                .replace(/\s+/g, " ")
+                .trim()
+                .replace(/\s+\(\d+\)$/, "")
+            } else {
+              modifyingTextId = "ZZZZ TEXTE MANQUANT"
+              modifyingTextTitle = `!!! Texte non trouvé ${date} !!!`
+            }
+            if (logCommits) {
+              console.log(`  ${modifyingTextId} ${modifyingTextTitle}`)
+            }
+            const consolidatedIdsByAction =
+              consolidatedIdsByActionByModifyingTextId[modifyingTextId]
+            if (consolidatedIdsByAction.DELETE !== undefined && logCommits) {
+              console.log(
+                `    DELETE: ${[...consolidatedIdsByAction.DELETE].toSorted().join(", ")}`,
+              )
+            }
+            if (consolidatedIdsByAction.CREATE !== undefined && logCommits) {
+              console.log(
+                `    CREATE: ${[...consolidatedIdsByAction.CREATE].toSorted().join(", ")}`,
+              )
+            }
+
+            const t1 = performance.now()
+            const currentArticleByNumber: Record<
+              string,
+              JorfArticle | LegiArticle
+            > = {}
+            for (const action of ["DELETE", "CREATE"] as Action[]) {
+              for await (const { lienArticle } of walkTextelrLiensArticles(
+                async (sectionTaId: string) =>
+                  await getOrLoadSectionTa(context, sectionTaId),
+                consolidatedTextelr,
+              )) {
+                await addLienArticleToCurrentArticles(
+                  context,
+                  consolidatedIdsByAction,
+                  currentArticleByNumber,
+                  action,
+                  lienArticle,
+                )
+              }
+            }
+            const tree: TextelrNode = {}
+            for (const [, article] of Object.entries(
+              currentArticleByNumber,
+            ).toSorted(([number1], [number2]) =>
+              sortArticlesNumbers(number1, number2),
+            )) {
+              await addArticleToTree(context, tree, date, article)
+            }
+
+            const t2 = performance.now()
+            const treeOid = await generateTextGit(
+              context,
+              1,
+              tree,
+              consolidatedTexteVersion as LegiTexteVersion,
+              date,
+              modifyingTextId,
+            )
+
+            const t3 = performance.now()
+            if (treeOid !== latestTreeOid) {
+              let messageLines: string | undefined = undefined
+              let summary: string | undefined = undefined
+              if (modifyingTextId.startsWith("JORFTEXT")) {
+                const jorfModifyingTexteVersion =
+                  modifyingTexteVersion as JorfTexteVersion
+                messageLines = [
+                  [
+                    "Lien",
+                    new URL(
+                      gitPathFromId(
+                        jorfModifyingTexteVersion.META.META_COMMUN.ID,
+                        ".md",
+                      ),
+                      "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+                    ).toString(),
+                  ],
+                  [
+                    "Autorité",
+                    jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                      .AUTORITE,
+                  ],
+                  [
+                    "Ministère",
+                    jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                      .MINISTERE,
+                  ],
+                  ["Nature", jorfModifyingTexteVersion.META.META_COMMUN.NATURE],
+                  [
+                    "Date de début",
+                    jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                      .DATE_DEBUT,
+                  ],
+                  [
+                    "Date de fin",
+                    jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                      .DATE_FIN,
+                  ],
+                  [
+                    "Identifiant",
+                    jorfModifyingTexteVersion.META.META_COMMUN.ID,
+                  ],
+                  [
+                    "NOR",
+                    jorfModifyingTexteVersion.META.META_SPEC
+                      .META_TEXTE_CHRONICLE.NOR,
+                  ],
+                  [
+                    "Ancien identifiant",
+                    jorfModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
+                  ],
+                ]
+                  .filter(([, value]) => value !== undefined)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join("\n")
+                summary = jorfModifyingTexteVersion.SM?.CONTENU?.replace(
+                  /<br\s*\/>/gi,
+                  "\n",
+                )
+              } else if (modifyingTextId.startsWith("LEGITEXT")) {
+                const legiModifyingTexteVersion =
+                  modifyingTexteVersion as LegiTexteVersion
+                messageLines = [
+                  [
+                    "Lien",
+                    new URL(
+                      gitPathFromId(
+                        legiModifyingTexteVersion.META.META_COMMUN.ID,
+                        ".md",
+                      ),
+                      "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+                    ).toString(),
+                  ],
+                  ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
+                  [
+                    "État",
+                    legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                      .ETAT,
+                  ],
+                  [
+                    "Date de début",
+                    legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                      .DATE_DEBUT,
+                  ],
+                  [
+                    "Date de fin",
+                    legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
+                      .DATE_FIN,
+                  ],
+                  [
+                    "Identifiant",
+                    legiModifyingTexteVersion.META.META_COMMUN.ID,
+                  ],
+                  [
+                    "NOR",
+                    legiModifyingTexteVersion.META.META_SPEC
+                      .META_TEXTE_CHRONICLE.NOR,
+                  ],
+                  [
+                    "Ancien identifiant",
+                    legiModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
+                  ],
+                ]
+                  .filter(([, value]) => value !== undefined)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join("\n")
+              }
+              if (date > today && !future) {
+                await git.branch({
+                  checkout: true,
+                  gitdir,
+                  fs,
+                  ref: "futur",
+                })
+                future = true
+              }
+              commitOid = await git.writeCommit({
+                commit: {
+                  author: {
+                    email: "republique@tricoteuses.fr",
+                    name: "République française",
+                    timestamp,
+                    timezoneOffset,
+                  },
+                  committer: {
+                    email: "republique@tricoteuses.fr",
+                    name: "République française",
+                    timestamp,
+                    timezoneOffset,
+                  },
+                  message: [modifyingTextTitle, summary, messageLines]
+                    .filter((block) => block !== undefined)
+                    .join("\n\n"),
+                  parent: [commitOid],
+                  tree: treeOid,
+                },
+                fs,
+                gitdir,
+              })
+              await git.writeRef({
+                force: true,
+                fs,
+                gitdir,
+                ref: `refs/heads/${future ? "futur" : "main"}`,
+                value: commitOid,
+              })
+              latestTreeOid = treeOid
+            }
+            if (modifyingTextIndex === modifyingTexteVersionArray.length - 1) {
+              await git.writeRef({
+                fs,
+                gitdir,
+                ref: `refs/tags/${
+                  date === "2222-02-22"
+                    ? "différé" // mise en vigueur différée à une date non précisée
+                    : date
+                }`,
+                value: commitOid,
+              })
+            }
+
+            const t4 = performance.now()
+            if (logCommits) {
+              console.log(
+                `Durations: ${t1 - t0} ${t2 - t1} ${t3 - t2} ${t4 - t3}`,
+              )
+            }
+          }
+        }
+
+        if (future) {
+          // Return to main branch.
+          await git.writeRef({
+            fs,
+            force: true,
+            gitdir,
+            ref: "HEAD",
+            symbolic: true,
+            value: "refs/heads/main",
+          })
+        }
+
+        for await (const articleGitRows of db<ArticleGitDb[]>`
+          SELECT * FROM article_git
+          WHERE id in (
+            SELECT id
+            FROM article
+            WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${consolidatedTextId}
+          )
+        `.cursor(100)) {
+          for (const { id, date, path } of articleGitRows) {
+            const articleGit = context.articleGitById[id]
+            if (articleGit === undefined) {
+              await db`
+                DELETE FROM article_git
+                WHERE id = ${id}
+              `
+            } else if (date === articleGit.date && path === articleGit.path) {
+              delete context.articleGitById[id]
+            }
+          }
+        }
+        const articleGitArray = Object.entries(context.articleGitById).map(
+          ([id, { date, path }]) => ({ id, date, path }),
+        )
+        if (articleGitArray.length !== 0) {
+          // Split articleGitArray to avoid error:
+          // MAX_PARAMETERS_EXCEEDED: Max number of parameters (65534) exceeded
+          for (let i = 0; i < articleGitArray.length; i += 10_000) {
+            await db`
+              INSERT INTO article_git
+              ${db(articleGitArray.slice(i, i + 10_000))}
+              ON CONFLICT (id)
+              DO UPDATE SET
+                date = excluded.date,
+                path = excluded.path
+            `
+          }
+        }
+
+        for await (const sectionTaGitRows of db<SectionTaGitDb[]>`
+          SELECT * FROM section_ta_git
+          WHERE id in (
+            SELECT id
+            FROM section_ta
+            WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${consolidatedTextId}
+          )
+        `.cursor(100)) {
+          for (const { id, date, path } of sectionTaGitRows) {
+            const sectionTaGit = context.sectionTaGitById[id]
+            if (sectionTaGit === undefined) {
+              await db`
+                DELETE FROM section_ta_git
+                WHERE id = ${id}
+              `
+            } else if (
+              date === sectionTaGit.date &&
+              path === sectionTaGit.path
+            ) {
+              delete context.sectionTaGitById[id]
+            }
+          }
+        }
+        if (Object.keys(context.sectionTaGitById).length !== 0) {
+          await db`
+            INSERT INTO section_ta_git
+            ${db(Object.entries(context.sectionTaGitById).map(([id, { date, path }]) => ({ id, date, path })))}
+            ON CONFLICT (id)
+            DO UPDATE SET
+              date = excluded.date,
+              path = excluded.path
+          `
+        }
+
+        for (const { id, date, path } of await db<TexteVersionGitDb[]>`
+          SELECT * FROM texte_version_git
+          WHERE id = ${consolidatedTextId}
+        `) {
+          const texteVersionGit = context.texteVersionGitById[id]
+          if (texteVersionGit === undefined) {
+            await db`
+              DELETE FROM texte_version_git
+              WHERE id = ${id}
+            `
+          } else if (
+            date === texteVersionGit.date &&
+            path === texteVersionGit.path
+          ) {
+            delete context.texteVersionGitById[id]
+          }
+        }
+        if (Object.keys(context.texteVersionGitById).length !== 0) {
+          await db`
+            INSERT INTO texte_version_git
+            ${db(Object.entries(context.texteVersionGitById).map(([id, { date, path }]) => ({ id, date, path })))}
+            ON CONFLICT (id)
+            DO UPDATE SET
+              date = excluded.date,
+              path = excluded.path
+          `
+        }
+
+        await db`
+          INSERT INTO consolidated_texts_git_hashes (
+            id,
+            data_hash,
+            source_code_commit_oid
+          ) VALUES (
+            ${consolidatedTextId},
+            ${dataHash},
+            ${currentSourceCodeCommitOid ?? ""}
+          )
+          ON CONFLICT (id)
+          DO UPDATE SET
+            data_hash = ${dataHash},
+            source_code_commit_oid = ${currentSourceCodeCommitOid ?? ""}
+        `
+
+        return 0
+      } finally {
+        span.end()
+      }
+    },
+  )
+}
+
+async function generateSectionTaGit(
+  context: Context,
+  depth: number,
+  sectionTaNode: SectionTaNode,
+  sectionTa: LegiSectionTa,
+  date: string,
+  parentRepositoryRelativeDir: string,
+  modifyingTextId: string,
+): Promise<TreeEntry> {
+  return await tracer.startActiveSpan(
+    `generateSectionTaGit:`,
+    async (span): Promise<TreeEntry> => {
+      try {
+        const sectionTaDirName = sectionTaNode.slug
+        const repositoryRelativeDir = path.join(
+          parentRepositoryRelativeDir,
+          sectionTaDirName,
+        )
+
+        const { readmeLinks, tree } = await generateArticlesGit(
+          context,
+          sectionTaNode.articles,
+          date,
+          repositoryRelativeDir,
+        )
+
+        const readmeFilename = "README.md"
+        if (sectionTaNode.children !== undefined) {
+          for (const child of sectionTaNode.children) {
+            const sectionTa = await getOrLoadSectionTa(context, child.id)
+            if (sectionTa !== null) {
+              const sectionTaDirName = child.slug
+              readmeLinks.push({
+                href: path.join(sectionTaDirName, readmeFilename),
+                title: child.title,
+              })
+
+              tree.push(
+                await generateSectionTaGit(
+                  context,
+                  depth + 1,
+                  child,
+                  sectionTa,
+                  date,
+                  repositoryRelativeDir,
+                  modifyingTextId,
+                ),
+              )
+            }
+          }
+        }
+
+        const readmeLinksMarkdown = readmeLinks
+          .map(({ href, title }) => `- [${title}](${href})`)
+          .join("\n")
+        const readmeRepositoryRelativeFilePath = path.join(
+          repositoryRelativeDir,
+          readmeFilename,
+        )
+        const readmeCache =
+          context.textFileCacheByRepositoryRelativeFilePath[
+            readmeRepositoryRelativeFilePath
+          ]
+        if (
+          readmeCache === undefined ||
+          readmeCache.id !== sectionTaNode.id ||
+          readmeCache.custom !== readmeLinksMarkdown
+        ) {
+          const readmeMarkdown = dedent`
           ---
           ${[
-            ["Nature", metaCommun.NATURE],
-            ["Numéro", metaArticle.NUM],
-            ["Type", metaArticle.TYPE],
-            ["État", (metaArticle as LegiArticleMetaArticle).ETAT],
-            ["Date de début", metaArticle.DATE_DEBUT],
-            ["Date de fin", metaArticle.DATE_FIN],
-            ["Identifiant", articleId],
-            ["Origine", metaCommun.ORIGINE],
-            ["Ancien identifiant", metaCommun.ANCIEN_ID],
+            ["Commentaire", sectionTa.COMMENTAIRE],
+            // ["État", lienSectionTa["@etat"]],
+            ["Date de début", sectionTaNode.startDate],
+            ["Date de fin", sectionTaNode.endDate],
+            ["Identifiant", sectionTaNode.id],
+            // TODO: Mettre l'URL dans le Git Tricoteuses
+            // ["URL", lienSectionTa["@url"]],
           ]
             .filter(([, value]) => value !== undefined)
             .map(([key, value]) => `${key}: ${value}`)
             .join("\n")}
           ---
 
-          # ${escapeMarkdownTitle(articleTitle)}
+          # ${escapeMarkdownTitle(sectionTaNode.title)}
 
-          ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
+          ${readmeLinksMarkdown}
         `
 
-        let referringArticlesLiensHtml: string | undefined = undefined
+          let referringArticlesLiensHtml: string | undefined
+          const referringArticlesLiens =
+            context.referringArticlesLiensById[sectionTaNode.id]
+          if (referringArticlesLiens !== undefined) {
+            referringArticlesLiensHtml = dedent`
+            ## Articles faisant référence à la section
+
+            ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+          `
+          }
+
+          let referringTextsLiensHtml: string | undefined
+          const referringTextsLiens =
+            context.referringTextsLiensById[sectionTaNode.id]
+          if (referringTextsLiens !== undefined) {
+            referringTextsLiensHtml = dedent`
+            ## Textes faisant référence à la section
+
+            ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+          `
+          }
+
+          const referencesHtml = [
+            referringArticlesLiensHtml,
+            referringTextsLiensHtml,
+          ]
+            .filter((block) => block !== undefined)
+            .join("\n\n")
+          const detailsHtml =
+            referencesHtml === ""
+              ? undefined
+              : dedent`
+                <details>
+                  <summary><em>Références</em></summary>
+
+                  ${referencesHtml.replaceAll("\n", "\n  ")}
+                </details>
+              `
+
+          const treeEntry = await writeTextFileBlob(
+            context.gitdir,
+            readmeFilename,
+            [
+              readmeMarkdown,
+              detailsHtml,
+              markdownVariantsBlockFromSectionTa(sectionTa),
+            ]
+              .filter((block) => block !== undefined)
+              .join("\n\n") + "\n",
+          )
+          tree.push(treeEntry)
+          context.sectionTaGitById[sectionTaNode.id] ??= {
+            date,
+            path: readmeRepositoryRelativeFilePath,
+          }
+          context.textFileCacheByRepositoryRelativeFilePath[
+            readmeRepositoryRelativeFilePath
+          ] = {
+            custom: readmeLinksMarkdown,
+            id: sectionTaNode.id,
+            treeEntry,
+          }
+        } else {
+          tree.push(readmeCache.treeEntry)
+        }
+
+        const treeOid = await git.writeTree({
+          fs,
+          gitdir: context.gitdir,
+          tree,
+        })
+
+        return {
+          mode: "040000",
+          path: sectionTaDirName,
+          oid: treeOid,
+          type: "tree",
+        }
+      } finally {
+        span.end()
+      }
+    },
+  )
+}
+
+async function generateTextGit(
+  context: Context,
+  depth: number,
+  textelrNode: TextelrNode,
+  texteVersion: LegiTexteVersion,
+  date: string,
+  modifyingTextId: string,
+): Promise<string> {
+  return await tracer.startActiveSpan(`generateTextGit:`, async (span) => {
+    try {
+      const textId = texteVersion.META.META_COMMUN.ID
+      const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
+      const texteTitle = (
+        metaTexteVersion.TITREFULL ??
+        metaTexteVersion.TITRE ??
+        textId
+      )
+        .replace(/\s+/g, " ")
+        .trim()
+
+      const { readmeLinks, tree } = await generateArticlesGit(
+        context,
+        textelrNode.articles,
+        date,
+        "",
+      )
+
+      const readmeFilename = "README.md"
+      if (textelrNode.children !== undefined) {
+        for (const child of textelrNode.children) {
+          const sectionTa = await getOrLoadSectionTa(context, child.id)
+          if (sectionTa !== null) {
+            const sectionTaDirName = child.slug
+            readmeLinks.push({
+              href: path.join(sectionTaDirName, readmeFilename),
+              title: child.title,
+            })
+
+            tree.push(
+              await generateSectionTaGit(
+                context,
+                depth + 1,
+                child,
+                sectionTa,
+                date,
+                "",
+                modifyingTextId,
+              ),
+            )
+          }
+        }
+      }
+
+      const readmeLinksMarkdown = readmeLinks
+        .map(({ href, title }) => `- [${title}](${href})`)
+        .join("\n")
+      const readmeRepositoryRelativeFilePath = readmeFilename
+      const readmeCache =
+        context.textFileCacheByRepositoryRelativeFilePath[
+          readmeRepositoryRelativeFilePath
+        ]
+      if (
+        readmeCache === undefined ||
+        readmeCache.id !== textId ||
+        readmeCache.custom !== readmeLinksMarkdown
+      ) {
+        const nota = await cleanHtmlFragment(texteVersion.NOTA?.CONTENU)
+        const readmeBlocks = [
+          `# ${escapeMarkdownTitle(texteTitle)}`,
+          dedent`
+              > **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
+              > de conversion à git des textes juridiques consolidés français.
+              > **Il peut contenir des erreurs !**
+            `,
+          await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
+          readmeLinks
+            .map(({ href, title }) => `- [${title}](${href})`)
+            .join("\n"),
+          await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
+          nota === undefined ? undefined : `### Nota`,
+          nota,
+          await cleanHtmlFragment(texteVersion.TP?.CONTENU),
+        ].filter((block) => block != null)
+
+        const readmeMarkdown = dedent`
+          ---
+          ${[
+            ["Nature", texteVersion.META.META_COMMUN.NATURE],
+            ["État", metaTexteVersion.ETAT],
+            ["Date de début", metaTexteVersion.DATE_DEBUT],
+            ["Date de fin", metaTexteVersion.DATE_FIN],
+            ["Identifiant", textId],
+            ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
+            ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
+          ]
+            .filter(([, value]) => value !== undefined)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n")}
+          ---
+
+          ${readmeBlocks.join("\n\n")}
+        `
+
+        let referringArticlesLiensHtml: string | undefined
         const referringArticlesLiens =
-          context.referringArticlesLiensById[articleId]
+          context.referringArticlesLiensById[textId]
         if (referringArticlesLiens !== undefined) {
           referringArticlesLiensHtml = dedent`
-            ## Articles faisant référence à l'article
+            ## Articles faisant référence au texte
 
             ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
           `
         }
 
-        let referringTextsLiensHtml: string | undefined = undefined
-        const referringTextsLiens = context.referringTextsLiensById[articleId]
+        let referringTextsLiensHtml: string | undefined
+        const referringTextsLiens = context.referringTextsLiensById[textId]
         if (referringTextsLiens !== undefined) {
           referringTextsLiensHtml = dedent`
-            ## Textes faisant référence à l'article
+            ## Textes faisant référence au texte
 
             ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
           `
         }
 
-        let referredLiensHtml: string | undefined = undefined
-        const referredLiens = (article as LegiArticle).LIENS?.LIEN
+        let referredLiensHtml: string | undefined
+        const referredLiens = metaTexteVersion.LIENS?.LIEN
         if (referredLiens !== undefined) {
           referredLiensHtml = dedent`
-            ## Références faites par l'article
+            ## Références faites par le texte
 
             ${await htmlFromReferredLiens(context, referredLiens)}
           `
@@ -256,1161 +1442,44 @@ async function generateArticlesGit(
 
         const treeEntry = await writeTextFileBlob(
           context.gitdir,
-          articleFilename,
+          readmeFilename,
           [
-            articleMarkdown,
+            readmeMarkdown,
             detailsHtml,
-            markdownVariantsBlockFromArticle(article),
+            markdownVariantsBlockFromTexteVersion(texteVersion),
           ]
             .filter((block) => block !== undefined)
             .join("\n\n") + "\n",
         )
         tree.push(treeEntry)
-        context.articleGitById[articleId] ??= {
+        context.texteVersionGitById[textId] ??= {
           date,
-          path: articleRepositoryRelativeFilePath,
+          path: readmeRepositoryRelativeFilePath,
         }
         context.textFileCacheByRepositoryRelativeFilePath[
-          articleRepositoryRelativeFilePath
+          readmeRepositoryRelativeFilePath
         ] = {
-          id: articleId,
+          custom: readmeLinksMarkdown,
+          id: texteVersion.META.META_COMMUN.ID,
           treeEntry,
         }
       } else {
-        tree.push(articleCache.treeEntry)
+        tree.push(readmeCache.treeEntry)
       }
-      readmeLinks.push({ href: articleFilename, title: articleTitle })
-    }
-  }
-  return {
-    readmeLinks,
-    tree,
-  }
-}
 
-export async function generateConsolidatedTextGit(
-  consolidatedTextId: string,
-  gitdir: string,
-  {
-    currentSourceCodeCommitOid,
-    force,
-    "log-commits": logCommits,
-    "log-references": logReferences,
-  }: {
-    currentSourceCodeCommitOid?: string
-    force?: boolean
-    "log-commits"?: boolean
-    "log-references"?: boolean
-  },
-): Promise<number> {
-  const context: Context = {
-    articleById: {},
-    articleGitById: {},
-    consolidatedIdsByActionByModifyingTextIdByDate: {},
-    consolidatedTextCid: consolidatedTextId, // Temporary value, overrided below
-    consolidatedTextInternalIds: new Set([consolidatedTextId]),
-    consolidatedTextModifyingTextsIdsByActionByDate: {},
-    currentInternalIds: new Set(),
-    gitdir,
-    jorfCreatorIdByConsolidatedId: {},
-    logReferences,
-    modifierByActionByConsolidatedArticleId: {},
-    modifyingArticleIdByActionByConsolidatedId: {},
-    modifyingTextsIdsByArticleActionDate: {},
-    referringArticlesLiensById: {},
-    referringTextsLiensById: {},
-    sectionTaById: {},
-    sectionTaGitById: {},
-    textelrById: {},
-    texteManquantById: {},
-    texteVersionById: {},
-    texteVersionGitById: {},
-    textFileCacheByRepositoryRelativeFilePath: {},
-  }
-  const consolidatedTextelr = (await getOrLoadTextelr(
-    context,
-    consolidatedTextId,
-  )) as LegiTextelr
-  assert.notStrictEqual(consolidatedTextelr, null)
-  const consolidatedTexteVersion = (await getOrLoadTexteVersion(
-    context,
-    consolidatedTextId,
-  )) as LegiTexteVersion
-  assert.notStrictEqual(consolidatedTexteVersion, null)
-  const meta = consolidatedTexteVersion.META
-  const metaTexteChronicle = meta.META_SPEC.META_TEXTE_CHRONICLE
-  context.consolidatedTextCid = metaTexteChronicle.CID
-  // It seems that the CID of a LEGI text is the ID of the original JORF text
-  // that created the first version of the law.
-  // Most texts of LOI nature (except 191 / 3533) have a JORFTEXT CID.
-  // Most texts of DECRET nature (except 409 / 53952) have a JORFTEXT CID.
-  // Most texts of ARRETE nature (except 2832 / 80224) have a JORFTEXT CID.
-  // Idem for the CONSTITUTION.
-  // All texts of CODE nature have their CID === ID. But this is normal because a CODE
-  // is not created from a single JORF law.
-  const jorfCreatorArticleIdByNum: Record<string, string> = {}
-  if (context.consolidatedTextCid.startsWith("JORFTEXT")) {
-    context.jorfCreatorIdByConsolidatedId[consolidatedTextId] =
-      context.consolidatedTextCid
-
-    // Map JORF articles by their number, to be able to associate them with the LEGI article that they
-    // create.
-    const jorfCreatorTextelr = (await getOrLoadTextelr(
-      context,
-      context.consolidatedTextCid,
-    )) as JorfTextelr
-    // Note we currently ignore JORF SectionTAs and reference only their articles.
-    for await (const {
-      lienArticle: jorfCreatorLienArticle,
-    } of walkTextelrLiensArticles(
-      async (sectionTaId: string) =>
-        await getOrLoadSectionTa(context, sectionTaId),
-      jorfCreatorTextelr,
-    )) {
-      // Note: In JORF text of 1958 Constitution (JORFTEXT000000571356), for example,
-      // `num` of articles are only present in LienArticle, not in (incomplete) articles
-      // themselves.
-      const articleNumber = jorfCreatorLienArticle["@num"]
-      if (articleNumber !== undefined) {
-        jorfCreatorArticleIdByNum[articleNumber] = jorfCreatorLienArticle["@id"]
-      }
-    }
-  }
-
-  const metaTexteVersion = meta.META_SPEC.META_TEXTE_VERSION
-  console.log(
-    `${meta.META_COMMUN.ID} ${(metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE ?? meta.META_COMMUN.ID).replace(/\s+/g, " ").trim()} (${metaTexteVersion.DATE_DEBUT ?? ""} — ${metaTexteVersion.DATE_FIN === "2999-01-01" ? "…" : (metaTexteVersion.DATE_FIN ?? "")}, ${metaTexteVersion.ETAT})`,
-  )
-
-  // First Pass: Register IDs of internal objects and associate them with
-  // their JORF counterparts (when JORF articles exist they should have the
-  // same content as their LEGI counterparts).
-
-  for await (const { lienSectionTa } of walkStructureTree(
-    async (sectionTaId: string) =>
-      await getOrLoadSectionTa(context, sectionTaId),
-    consolidatedTextelr.STRUCT as
-      | JorfSectionTaStructure
-      | LegiSectionTaStructure,
-  )) {
-    context.consolidatedTextInternalIds.add(lienSectionTa["@id"])
-  }
-  for await (const { lienArticle } of walkTextelrLiensArticles(
-    async (sectionTaId: string) =>
-      await getOrLoadSectionTa(context, sectionTaId),
-    consolidatedTextelr,
-  )) {
-    const articleId = lienArticle["@id"]
-    context.consolidatedTextInternalIds.add(articleId)
-    if (
-      lienArticle["@debut"] === metaTexteChronicle.DATE_PUBLI &&
-      lienArticle["@num"] !== undefined
-    ) {
-      const jorfCreatorArticleId =
-        jorfCreatorArticleIdByNum[lienArticle["@num"]]
-      if (jorfCreatorArticleId !== undefined) {
-        context.jorfCreatorIdByConsolidatedId[articleId] = jorfCreatorArticleId
-      }
-    }
-  }
-
-  // Second Pass : Register texts & articles that modify parts (aka SectionTA & Article) of the consolidated text.
-
-  await registerLegiTextModifiersAndReferences(
-    context,
-    0,
-    consolidatedTextelr,
-    consolidatedTexteVersion,
-  )
-
-  for await (const {
-    lienSectionTa,
-    parentsSectionTa,
-    sectionTa,
-  } of walkStructureTree(
-    async (sectionTaId: string) =>
-      await getOrLoadSectionTa(context, sectionTaId),
-    consolidatedTextelr.STRUCT as
-      | JorfSectionTaStructure
-      | LegiSectionTaStructure,
-  )) {
-    await registerLegiSectionTaModifiersAndReferences(
-      context,
-      parentsSectionTa === undefined ? 0 : parentsSectionTa.length,
-      lienSectionTa,
-      sectionTa,
-    )
-  }
-
-  for await (const {
-    lienArticle,
-    parentsSectionTa,
-  } of walkTextelrLiensArticles(
-    async (sectionTaId: string) =>
-      await getOrLoadSectionTa(context, sectionTaId),
-    consolidatedTextelr,
-  )) {
-    const article = (await getOrLoadArticle(
-      context,
-      lienArticle["@id"],
-    )) as LegiArticle
-    if (article !== null) {
-      await registerLegiArticleModifiersAndReferences(
-        context,
-        parentsSectionTa === undefined ? 0 : 1 + parentsSectionTa.length,
-        article,
+      tree.push(
+        context.textFileCacheByRepositoryRelativeFilePath["LICENCE.md"]
+          .treeEntry,
       )
-    }
-  }
 
-  // If code & data have not changed and no force option, don't generate git repository.
-  const dataHash = objectHash({
-    articleById: context.articleById,
-    sectionTaById: context.sectionTaById,
-    textelrById: context.textelrById,
-    texteVersionById: context.texteVersionById,
-  })
-  if (!force) {
-    const consolidatedTextGitHashes = (
-      await db<{ data_hash: string; source_code_commit_oid: string }[]>`
-      SELECT * FROM consolidated_texts_git_hashes
-      WHERE id = ${consolidatedTextId}
-    `
-    )[0]
-    if (consolidatedTextGitHashes !== undefined) {
-      // if (
-      //   currentSourceCodeCommitOid ===
-      //   consolidatedTextGitHashes.source_code_commit_oid
-      // ) {
-      if (dataHash === consolidatedTextGitHashes.data_hash) {
-        return 10
-      }
-      // }
-    }
-  }
-
-  // Associate modified articles without modifying text with a modifying text that modified other articles at the same date.
-  for await (const { lienArticle } of walkTextelrLiensArticles(
-    async (sectionTaId: string) =>
-      await getOrLoadSectionTa(context, sectionTaId),
-    consolidatedTextelr,
-  )) {
-    const consolidatedArticleId = lienArticle["@id"]
-    const modifierByAction =
-      context.modifierByActionByConsolidatedArticleId[consolidatedArticleId]
-    for (const action of actions) {
-      if (modifierByAction?.[action] === undefined) {
-        const consolidatedArticle = await getOrLoadArticle(
-          context,
-          consolidatedArticleId,
-        )
-        if (consolidatedArticle === null) {
-          continue
-        }
-        const consolidatedArticleActionDate =
-          action === "CREATE"
-            ? consolidatedArticle.META.META_SPEC.META_ARTICLE.DATE_DEBUT
-            : consolidatedArticle.META.META_SPEC.META_ARTICLE.DATE_FIN
-        if (consolidatedArticleActionDate !== "2999-01-01") {
-          const modifyingTextsIds =
-            (context.modifyingTextsIdsByArticleActionDate[
-              consolidatedArticleActionDate
-            ] ??= new Set())
-          if (modifyingTextsIds.size === 0) {
-            // No modifying text can be associated with the modification of consolidated article
-            // => Create a fake one.
-            const texteManquantId = "ZZZZ TEXTE MANQUANT"
-            if (
-              context.consolidatedIdsByActionByModifyingTextIdByDate[
-                consolidatedArticleActionDate
-              ]?.[texteManquantId] === undefined
-            ) {
-              context.texteManquantById[texteManquantId] ??= {
-                publicationDate: consolidatedArticleActionDate,
-              }
-            }
-            modifyingTextsIds.add(texteManquantId)
-            ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-              consolidatedArticleActionDate
-            ] ??= {})[texteManquantId] ??= {})[action] ??= new Set()).add(
-              consolidatedArticleId,
-            )
-          } else if (modifyingTextsIds.size === 1) {
-            // There is only one modifying text for this date => use it.
-            const modifyingTextId = modifyingTextsIds.values().next()
-              .value as string
-            ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-              consolidatedArticleActionDate
-            ] ??= {})[modifyingTextId] ??= {})[action] ??= new Set()).add(
-              consolidatedArticleId,
-            )
-          } else {
-            // Several text modify different consolidated articles at this date.
-            // Try to find the best one.
-            // This could be:
-            // - one of the texts whose publication date is the nearest before this date
-            // - the text that modifies the most articles at this date
-            // …
-            // TODO: Improve heuristic.
-            const modifyingTextId = modifyingTextsIds.values().next()
-              .value as string
-            ;(((context.consolidatedIdsByActionByModifyingTextIdByDate[
-              consolidatedArticleActionDate
-            ] ??= {})[modifyingTextId] ??= {})[action] ??= new Set()).add(
-              consolidatedArticleId,
-            )
-          }
-        }
-      }
-    }
-  }
-
-  // Generation of Git repository
-
-  await fs.remove(gitdir)
-  await fs.mkdir(gitdir, { recursive: true })
-  await git.init({
-    bare: true,
-    defaultBranch: "main",
-    gitdir,
-    fs,
-  })
-
-  const tree: TreeObject = []
-
-  // Generate LICENCE.md file.
-  const licenseFilename = "LICENCE.md"
-  const licenseRepositoryRelativeFilePath = licenseFilename
-  const treeEntry = await writeTextFileBlob(
-    context.gitdir,
-    licenseFilename,
-    licence,
-  )
-  tree.push(treeEntry)
-  context.textFileCacheByRepositoryRelativeFilePath[
-    licenseRepositoryRelativeFilePath
-  ] = {
-    id: licenseRepositoryRelativeFilePath,
-    treeEntry,
-  }
-
-  const treeOid = await git.writeTree({
-    fs,
-    gitdir,
-    tree,
-  })
-  let commitOid = await git.writeCommit({
-    commit: {
-      author: {
-        email: "tricoteuses@tricoteuses.fr",
-        name: "Tricoteuses",
-        timestamp: 0,
-        timezoneOffset: -60,
-      },
-      committer: {
-        email: "republique@tricoteuses.fr",
-        name: "République française",
-        timestamp: 0,
-        timezoneOffset: -60,
-      },
-      message: "Création du dépôt git",
-      parent: [],
-      tree: treeOid,
-    },
-    fs,
-    gitdir,
-  })
-  await git.writeRef({
-    force: true,
-    fs,
-    gitdir,
-    ref: "refs/heads/main",
-    value: commitOid,
-  })
-
-  let future = false
-  let latestTreeOid: string | undefined = undefined
-  for (const [date, consolidatedIdsByActionByModifyingTextId] of Object.entries(
-    context.consolidatedIdsByActionByModifyingTextIdByDate,
-  ).toSorted(([date1], [date2]) => date1.localeCompare(date2))) {
-    if (logCommits) {
-      console.log(date)
-    }
-    const dateObject = new Date(date)
-    const timezoneOffset = dateObject.getTimezoneOffset() // in minutes
-    let timestamp = Math.floor(dateObject.getTime() / 1000)
-    if (timestamp < minDateTimestamp) {
-      const diffDays = Math.round((minDateTimestamp - timestamp) / oneDay)
-      timestamp = minDateTimestamp - diffDays
-    }
-    timestamp += timezoneOffset * 60
-
-    // Sort modifying texts at current date.
-    const modifyingTexteVersionArray: Array<
-      JorfTexteVersion | LegiTexteVersion | TexteManquant
-    > = []
-    for (const modifyingTextId of Object.keys(
-      consolidatedIdsByActionByModifyingTextId,
-    )) {
-      let modifyingTexteVersion:
-        | JorfTexteVersion
-        | LegiTexteVersion
-        | TexteManquant = context.texteManquantById[
-        modifyingTextId
-      ] as TexteManquant
-      if (modifyingTexteVersion === undefined) {
-        modifyingTexteVersion = (await getOrLoadTexteVersion(
-          context,
-          modifyingTextId,
-        )) as JorfTexteVersion | LegiTexteVersion
-        assert.notStrictEqual(modifyingTexteVersion, null)
-      }
-      modifyingTexteVersionArray.push(modifyingTexteVersion)
-    }
-    modifyingTexteVersionArray.sort(
-      (modifyingTexteVersion1, modifyingTexteVersion2) => {
-        if (
-          (modifyingTexteVersion1 as TexteManquant).publicationDate !==
-          undefined
-        ) {
-          return 1
-        }
-        if (
-          (modifyingTexteVersion2 as TexteManquant).publicationDate !==
-          undefined
-        ) {
-          return -1
-        }
-        const metaTexteChronicle1 = (
-          modifyingTexteVersion1 as JorfTexteVersion | LegiTexteVersion
-        ).META.META_SPEC.META_TEXTE_CHRONICLE
-        const publicationDate1 = metaTexteChronicle1.DATE_PUBLI
-        const metaTexteChronicle2 = (
-          modifyingTexteVersion2 as JorfTexteVersion | LegiTexteVersion
-        ).META.META_SPEC.META_TEXTE_CHRONICLE
-        const publicationDate2 = metaTexteChronicle2.DATE_PUBLI
-        if (publicationDate1 !== publicationDate2) {
-          return publicationDate1.localeCompare(publicationDate2)
-        }
-        const number1 = metaTexteChronicle1.NUM
-        if (number1 === undefined) {
-          return 1
-        }
-        const number2 = metaTexteChronicle2.NUM
-        if (number2 === undefined) {
-          return -1
-        }
-        return number1.localeCompare(number2)
-      },
-    )
-
-    for (const [
-      modifyingTextIndex,
-      modifyingTexteVersion,
-    ] of modifyingTexteVersionArray.entries()) {
-      const t0 = performance.now()
-      let modifyingTextId: string
-      let modifyingTextTitle: string
-      if (
-        (modifyingTexteVersion as TexteManquant).publicationDate === undefined
-      ) {
-        modifyingTextId = (
-          modifyingTexteVersion as JorfTexteVersion | LegiTexteVersion
-        ).META.META_COMMUN.ID
-        modifyingTextTitle = (
-          (modifyingTexteVersion as JorfTexteVersion | LegiTexteVersion).META
-            .META_SPEC.META_TEXTE_VERSION.TITREFULL ??
-          (modifyingTexteVersion as JorfTexteVersion | LegiTexteVersion).META
-            .META_SPEC.META_TEXTE_VERSION.TITRE ??
-          modifyingTextId
-        )
-          .replace(/\s+/g, " ")
-          .trim()
-          .replace(/\s+\(\d+\)$/, "")
-      } else {
-        modifyingTextId = "ZZZZ TEXTE MANQUANT"
-        modifyingTextTitle = `!!! Texte non trouvé ${date} !!!`
-      }
-      if (logCommits) {
-        console.log(`  ${modifyingTextId} ${modifyingTextTitle}`)
-      }
-      const consolidatedIdsByAction =
-        consolidatedIdsByActionByModifyingTextId[modifyingTextId]
-      if (consolidatedIdsByAction.DELETE !== undefined && logCommits) {
-        console.log(
-          `    DELETE: ${[...consolidatedIdsByAction.DELETE].toSorted().join(", ")}`,
-        )
-      }
-      if (consolidatedIdsByAction.CREATE !== undefined && logCommits) {
-        console.log(
-          `    CREATE: ${[...consolidatedIdsByAction.CREATE].toSorted().join(", ")}`,
-        )
-      }
-
-      const t1 = performance.now()
-      const currentArticleByNumber: Record<string, JorfArticle | LegiArticle> =
-        {}
-      for (const action of ["DELETE", "CREATE"] as Action[]) {
-        for await (const { lienArticle } of walkTextelrLiensArticles(
-          async (sectionTaId: string) =>
-            await getOrLoadSectionTa(context, sectionTaId),
-          consolidatedTextelr,
-        )) {
-          await addLienArticleToCurrentArticles(
-            context,
-            consolidatedIdsByAction,
-            currentArticleByNumber,
-            action,
-            lienArticle,
-          )
-        }
-      }
-      const tree: TextelrNode = {}
-      for (const [, article] of Object.entries(currentArticleByNumber).toSorted(
-        ([number1], [number2]) => sortArticlesNumbers(number1, number2),
-      )) {
-        await addArticleToTree(context, tree, date, article)
-      }
-
-      const t2 = performance.now()
-      const treeOid = await generateTextGit(
-        context,
-        1,
+      return await git.writeTree({
+        fs,
+        gitdir: context.gitdir,
         tree,
-        consolidatedTexteVersion as LegiTexteVersion,
-        date,
-        modifyingTextId,
-      )
-
-      const t3 = performance.now()
-      if (treeOid !== latestTreeOid) {
-        let messageLines: string | undefined = undefined
-        let summary: string | undefined = undefined
-        if (modifyingTextId.startsWith("JORFTEXT")) {
-          const jorfModifyingTexteVersion =
-            modifyingTexteVersion as JorfTexteVersion
-          messageLines = [
-            [
-              "Lien",
-              new URL(
-                gitPathFromId(
-                  jorfModifyingTexteVersion.META.META_COMMUN.ID,
-                  ".md",
-                ),
-                "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-              ).toString(),
-            ],
-            [
-              "Autorité",
-              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-                .AUTORITE,
-            ],
-            [
-              "Ministère",
-              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-                .MINISTERE,
-            ],
-            ["Nature", jorfModifyingTexteVersion.META.META_COMMUN.NATURE],
-            [
-              "Date de début",
-              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-                .DATE_DEBUT,
-            ],
-            [
-              "Date de fin",
-              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-                .DATE_FIN,
-            ],
-            ["Identifiant", jorfModifyingTexteVersion.META.META_COMMUN.ID],
-            [
-              "NOR",
-              jorfModifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR,
-            ],
-            [
-              "Ancien identifiant",
-              jorfModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
-            ],
-          ]
-            .filter(([, value]) => value !== undefined)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n")
-          summary = jorfModifyingTexteVersion.SM?.CONTENU?.replace(
-            /<br\s*\/>/gi,
-            "\n",
-          )
-        } else if (modifyingTextId.startsWith("LEGITEXT")) {
-          const legiModifyingTexteVersion =
-            modifyingTexteVersion as LegiTexteVersion
-          messageLines = [
-            [
-              "Lien",
-              new URL(
-                gitPathFromId(
-                  legiModifyingTexteVersion.META.META_COMMUN.ID,
-                  ".md",
-                ),
-                "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-              ).toString(),
-            ],
-            ["Nature", legiModifyingTexteVersion.META.META_COMMUN.NATURE],
-            [
-              "État",
-              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.ETAT,
-            ],
-            [
-              "Date de début",
-              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-                .DATE_DEBUT,
-            ],
-            [
-              "Date de fin",
-              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION
-                .DATE_FIN,
-            ],
-            ["Identifiant", legiModifyingTexteVersion.META.META_COMMUN.ID],
-            [
-              "NOR",
-              legiModifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR,
-            ],
-            [
-              "Ancien identifiant",
-              legiModifyingTexteVersion.META.META_COMMUN.ANCIEN_ID,
-            ],
-          ]
-            .filter(([, value]) => value !== undefined)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n")
-        }
-        if (date > today && !future) {
-          await git.branch({
-            checkout: true,
-            gitdir,
-            fs,
-            ref: "futur",
-          })
-          future = true
-        }
-        commitOid = await git.writeCommit({
-          commit: {
-            author: {
-              email: "republique@tricoteuses.fr",
-              name: "République française",
-              timestamp,
-              timezoneOffset,
-            },
-            committer: {
-              email: "republique@tricoteuses.fr",
-              name: "République française",
-              timestamp,
-              timezoneOffset,
-            },
-            message: [modifyingTextTitle, summary, messageLines]
-              .filter((block) => block !== undefined)
-              .join("\n\n"),
-            parent: [commitOid],
-            tree: treeOid,
-          },
-          fs,
-          gitdir,
-        })
-        await git.writeRef({
-          force: true,
-          fs,
-          gitdir,
-          ref: `refs/heads/${future ? "futur" : "main"}`,
-          value: commitOid,
-        })
-        latestTreeOid = treeOid
-      }
-      if (modifyingTextIndex === modifyingTexteVersionArray.length - 1) {
-        await git.writeRef({
-          fs,
-          gitdir,
-          ref: `refs/tags/${
-            date === "2222-02-22"
-              ? "différé" // mise en vigueur différée à une date non précisée
-              : date
-          }`,
-          value: commitOid,
-        })
-      }
-
-      const t4 = performance.now()
-      if (logCommits) {
-        console.log(`Durations: ${t1 - t0} ${t2 - t1} ${t3 - t2} ${t4 - t3}`)
-      }
+      })
+    } finally {
+      span.end()
     }
-  }
-
-  if (future) {
-    // Return to main branch.
-    await git.writeRef({
-      fs,
-      force: true,
-      gitdir,
-      ref: "HEAD",
-      symbolic: true,
-      value: "refs/heads/main",
-    })
-  }
-
-  for await (const articleGitRows of db<ArticleGitDb[]>`
-    SELECT * FROM article_git
-    WHERE id in (
-      SELECT id
-      FROM article
-      WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${consolidatedTextId}
-    )
-  `.cursor(100)) {
-    for (const { id, date, path } of articleGitRows) {
-      const articleGit = context.articleGitById[id]
-      if (articleGit === undefined) {
-        await db`
-          DELETE FROM article_git
-          WHERE id = ${id}
-        `
-      } else if (date === articleGit.date && path === articleGit.path) {
-        delete context.articleGitById[id]
-      }
-    }
-  }
-  const articleGitArray = Object.entries(context.articleGitById).map(
-    ([id, { date, path }]) => ({ id, date, path }),
-  )
-  if (articleGitArray.length !== 0) {
-    // Split articleGitArray to avoid error:
-    // MAX_PARAMETERS_EXCEEDED: Max number of parameters (65534) exceeded
-    for (let i = 0; i < articleGitArray.length; i += 10_000) {
-      await db`
-        INSERT INTO article_git
-        ${db(articleGitArray.slice(i, i + 10_000))}
-        ON CONFLICT (id)
-        DO UPDATE SET
-          date = excluded.date,
-          path = excluded.path
-      `
-    }
-  }
-
-  for await (const sectionTaGitRows of db<SectionTaGitDb[]>`
-    SELECT * FROM section_ta_git
-    WHERE id in (
-      SELECT id
-      FROM section_ta
-      WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${consolidatedTextId}
-    )
-  `.cursor(100)) {
-    for (const { id, date, path } of sectionTaGitRows) {
-      const sectionTaGit = context.sectionTaGitById[id]
-      if (sectionTaGit === undefined) {
-        await db`
-          DELETE FROM section_ta_git
-          WHERE id = ${id}
-        `
-      } else if (date === sectionTaGit.date && path === sectionTaGit.path) {
-        delete context.sectionTaGitById[id]
-      }
-    }
-  }
-  if (Object.keys(context.sectionTaGitById).length !== 0) {
-    await db`
-      INSERT INTO section_ta_git
-      ${db(Object.entries(context.sectionTaGitById).map(([id, { date, path }]) => ({ id, date, path })))}
-      ON CONFLICT (id)
-      DO UPDATE SET
-        date = excluded.date,
-        path = excluded.path
-    `
-  }
-
-  for (const { id, date, path } of await db<TexteVersionGitDb[]>`
-    SELECT * FROM texte_version_git
-    WHERE id = ${consolidatedTextId}
-  `) {
-    const texteVersionGit = context.texteVersionGitById[id]
-    if (texteVersionGit === undefined) {
-      await db`
-        DELETE FROM texte_version_git
-        WHERE id = ${id}
-      `
-    } else if (date === texteVersionGit.date && path === texteVersionGit.path) {
-      delete context.texteVersionGitById[id]
-    }
-  }
-  if (Object.keys(context.texteVersionGitById).length !== 0) {
-    await db`
-      INSERT INTO texte_version_git
-      ${db(Object.entries(context.texteVersionGitById).map(([id, { date, path }]) => ({ id, date, path })))}
-      ON CONFLICT (id)
-      DO UPDATE SET
-        date = excluded.date,
-        path = excluded.path
-    `
-  }
-
-  await db`
-    INSERT INTO consolidated_texts_git_hashes (
-      id,
-      data_hash,
-      source_code_commit_oid
-    ) VALUES (
-      ${consolidatedTextId},
-      ${dataHash},
-      ${currentSourceCodeCommitOid ?? ""}
-    )
-    ON CONFLICT (id)
-    DO UPDATE SET
-      data_hash = ${dataHash},
-      source_code_commit_oid = ${currentSourceCodeCommitOid ?? ""}
-  `
-
-  return 0
-}
-
-async function generateSectionTaGit(
-  context: Context,
-  depth: number,
-  sectionTaNode: SectionTaNode,
-  sectionTa: LegiSectionTa,
-  date: string,
-  parentRepositoryRelativeDir: string,
-  modifyingTextId: string,
-): Promise<TreeEntry> {
-  const sectionTaDirName = sectionTaNode.slug
-  const repositoryRelativeDir = path.join(
-    parentRepositoryRelativeDir,
-    sectionTaDirName,
-  )
-
-  const { readmeLinks, tree } = await generateArticlesGit(
-    context,
-    sectionTaNode.articles,
-    date,
-    repositoryRelativeDir,
-  )
-
-  const readmeFilename = "README.md"
-  if (sectionTaNode.children !== undefined) {
-    for (const child of sectionTaNode.children) {
-      const sectionTa = await getOrLoadSectionTa(context, child.id)
-      if (sectionTa !== null) {
-        const sectionTaDirName = child.slug
-        readmeLinks.push({
-          href: path.join(sectionTaDirName, readmeFilename),
-          title: child.title,
-        })
-
-        tree.push(
-          await generateSectionTaGit(
-            context,
-            depth + 1,
-            child,
-            sectionTa,
-            date,
-            repositoryRelativeDir,
-            modifyingTextId,
-          ),
-        )
-      }
-    }
-  }
-
-  const readmeLinksMarkdown = readmeLinks
-    .map(({ href, title }) => `- [${title}](${href})`)
-    .join("\n")
-  const readmeRepositoryRelativeFilePath = path.join(
-    repositoryRelativeDir,
-    readmeFilename,
-  )
-  const readmeCache =
-    context.textFileCacheByRepositoryRelativeFilePath[
-      readmeRepositoryRelativeFilePath
-    ]
-  if (
-    readmeCache === undefined ||
-    readmeCache.id !== sectionTaNode.id ||
-    readmeCache.custom !== readmeLinksMarkdown
-  ) {
-    const readmeMarkdown = dedent`
-      ---
-      ${[
-        ["Commentaire", sectionTa.COMMENTAIRE],
-        // ["État", lienSectionTa["@etat"]],
-        ["Date de début", sectionTaNode.startDate],
-        ["Date de fin", sectionTaNode.endDate],
-        ["Identifiant", sectionTaNode.id],
-        // TODO: Mettre l'URL dans le Git Tricoteuses
-        // ["URL", lienSectionTa["@url"]],
-      ]
-        .filter(([, value]) => value !== undefined)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join("\n")}
-      ---
-
-      # ${escapeMarkdownTitle(sectionTaNode.title)}
-
-      ${readmeLinksMarkdown}
-    `
-
-    let referringArticlesLiensHtml: string | undefined
-    const referringArticlesLiens =
-      context.referringArticlesLiensById[sectionTaNode.id]
-    if (referringArticlesLiens !== undefined) {
-      referringArticlesLiensHtml = dedent`
-        ## Articles faisant référence à la section
-
-        ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
-      `
-    }
-
-    let referringTextsLiensHtml: string | undefined
-    const referringTextsLiens =
-      context.referringTextsLiensById[sectionTaNode.id]
-    if (referringTextsLiens !== undefined) {
-      referringTextsLiensHtml = dedent`
-        ## Textes faisant référence à la section
-
-        ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
-      `
-    }
-
-    const referencesHtml = [referringArticlesLiensHtml, referringTextsLiensHtml]
-      .filter((block) => block !== undefined)
-      .join("\n\n")
-    const detailsHtml =
-      referencesHtml === ""
-        ? undefined
-        : dedent`
-            <details>
-              <summary><em>Références</em></summary>
-
-              ${referencesHtml.replaceAll("\n", "\n  ")}
-            </details>
-          `
-
-    const treeEntry = await writeTextFileBlob(
-      context.gitdir,
-      readmeFilename,
-      [
-        readmeMarkdown,
-        detailsHtml,
-        markdownVariantsBlockFromSectionTa(sectionTa),
-      ]
-        .filter((block) => block !== undefined)
-        .join("\n\n") + "\n",
-    )
-    tree.push(treeEntry)
-    context.sectionTaGitById[sectionTaNode.id] ??= {
-      date,
-      path: readmeRepositoryRelativeFilePath,
-    }
-    context.textFileCacheByRepositoryRelativeFilePath[
-      readmeRepositoryRelativeFilePath
-    ] = {
-      custom: readmeLinksMarkdown,
-      id: sectionTaNode.id,
-      treeEntry,
-    }
-  } else {
-    tree.push(readmeCache.treeEntry)
-  }
-
-  const treeOid = await git.writeTree({
-    fs,
-    gitdir: context.gitdir,
-    tree,
-  })
-
-  return {
-    mode: "040000",
-    path: sectionTaDirName,
-    oid: treeOid,
-    type: "tree",
-  }
-}
-
-async function generateTextGit(
-  context: Context,
-  depth: number,
-  textelrNode: TextelrNode,
-  texteVersion: LegiTexteVersion,
-  date: string,
-  modifyingTextId: string,
-): Promise<string> {
-  const textId = texteVersion.META.META_COMMUN.ID
-  const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
-  const texteTitle = (
-    metaTexteVersion.TITREFULL ??
-    metaTexteVersion.TITRE ??
-    textId
-  )
-    .replace(/\s+/g, " ")
-    .trim()
-
-  const { readmeLinks, tree } = await generateArticlesGit(
-    context,
-    textelrNode.articles,
-    date,
-    "",
-  )
-
-  const readmeFilename = "README.md"
-  if (textelrNode.children !== undefined) {
-    for (const child of textelrNode.children) {
-      const sectionTa = await getOrLoadSectionTa(context, child.id)
-      if (sectionTa !== null) {
-        const sectionTaDirName = child.slug
-        readmeLinks.push({
-          href: path.join(sectionTaDirName, readmeFilename),
-          title: child.title,
-        })
-
-        tree.push(
-          await generateSectionTaGit(
-            context,
-            depth + 1,
-            child,
-            sectionTa,
-            date,
-            "",
-            modifyingTextId,
-          ),
-        )
-      }
-    }
-  }
-
-  const readmeLinksMarkdown = readmeLinks
-    .map(({ href, title }) => `- [${title}](${href})`)
-    .join("\n")
-  const readmeRepositoryRelativeFilePath = readmeFilename
-  const readmeCache =
-    context.textFileCacheByRepositoryRelativeFilePath[
-      readmeRepositoryRelativeFilePath
-    ]
-  if (
-    readmeCache === undefined ||
-    readmeCache.id !== textId ||
-    readmeCache.custom !== readmeLinksMarkdown
-  ) {
-    const nota = await cleanHtmlFragment(texteVersion.NOTA?.CONTENU)
-    const readmeBlocks = [
-      `# ${escapeMarkdownTitle(texteTitle)}`,
-      dedent`
-          > **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
-          > de conversion à git des textes juridiques consolidés français.
-          > **Il peut contenir des erreurs !**
-        `,
-      await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
-      readmeLinks.map(({ href, title }) => `- [${title}](${href})`).join("\n"),
-      await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
-      nota === undefined ? undefined : `### Nota`,
-      nota,
-      await cleanHtmlFragment(texteVersion.TP?.CONTENU),
-    ].filter((block) => block != null)
-
-    const readmeMarkdown = dedent`
-      ---
-      ${[
-        ["Nature", texteVersion.META.META_COMMUN.NATURE],
-        ["État", metaTexteVersion.ETAT],
-        ["Date de début", metaTexteVersion.DATE_DEBUT],
-        ["Date de fin", metaTexteVersion.DATE_FIN],
-        ["Identifiant", textId],
-        ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
-        ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-      ]
-        .filter(([, value]) => value !== undefined)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join("\n")}
-      ---
-
-      ${readmeBlocks.join("\n\n")}
-    `
-
-    let referringArticlesLiensHtml: string | undefined
-    const referringArticlesLiens = context.referringArticlesLiensById[textId]
-    if (referringArticlesLiens !== undefined) {
-      referringArticlesLiensHtml = dedent`
-        ## Articles faisant référence au texte
-
-        ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
-      `
-    }
-
-    let referringTextsLiensHtml: string | undefined
-    const referringTextsLiens = context.referringTextsLiensById[textId]
-    if (referringTextsLiens !== undefined) {
-      referringTextsLiensHtml = dedent`
-        ## Textes faisant référence au texte
-
-        ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
-      `
-    }
-
-    let referredLiensHtml: string | undefined
-    const referredLiens = metaTexteVersion.LIENS?.LIEN
-    if (referredLiens !== undefined) {
-      referredLiensHtml = dedent`
-        ## Références faites par le texte
-
-        ${await htmlFromReferredLiens(context, referredLiens)}
-      `
-    }
-
-    const referencesHtml = [
-      referringArticlesLiensHtml,
-      referringTextsLiensHtml,
-      referredLiensHtml,
-    ]
-      .filter((block) => block !== undefined)
-      .join("\n\n")
-    const detailsHtml =
-      referencesHtml === ""
-        ? undefined
-        : dedent`
-            <details>
-              <summary><em>Références</em></summary>
-
-              ${referencesHtml.replaceAll("\n", "\n  ")}
-            </details>
-          `
-
-    const treeEntry = await writeTextFileBlob(
-      context.gitdir,
-      readmeFilename,
-      [
-        readmeMarkdown,
-        detailsHtml,
-        markdownVariantsBlockFromTexteVersion(texteVersion),
-      ]
-        .filter((block) => block !== undefined)
-        .join("\n\n") + "\n",
-    )
-    tree.push(treeEntry)
-    context.texteVersionGitById[textId] ??= {
-      date,
-      path: readmeRepositoryRelativeFilePath,
-    }
-    context.textFileCacheByRepositoryRelativeFilePath[
-      readmeRepositoryRelativeFilePath
-    ] = {
-      custom: readmeLinksMarkdown,
-      id: texteVersion.META.META_COMMUN.ID,
-      treeEntry,
-    }
-  } else {
-    tree.push(readmeCache.treeEntry)
-  }
-
-  tree.push(
-    context.textFileCacheByRepositoryRelativeFilePath["LICENCE.md"].treeEntry,
-  )
-
-  return await git.writeTree({
-    fs,
-    gitdir: context.gitdir,
-    tree,
   })
 }
 

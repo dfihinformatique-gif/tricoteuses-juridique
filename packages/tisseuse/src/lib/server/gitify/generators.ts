@@ -153,7 +153,7 @@ async function generateArticlesGit(
   readmeLinks: Array<{ href: string; title: string }>
   tree: TreeObject
 }> {
-  return await tracer.startActiveSpan(`generateArticlesGit:`, async (span) => {
+  return await tracer.startActiveSpan(`generateArticlesGit`, async (span) => {
     span.setAttribute("date", date)
     span.setAttribute(
       "articles",
@@ -318,7 +318,7 @@ export async function generateConsolidatedTextGit(
   },
 ): Promise<number> {
   return await tracer.startActiveSpan(
-    `generateConsolidatedTextGit:`,
+    `generateConsolidatedTextGit ${consolidatedTextId}`,
     async (span) => {
       span.setAttribute("consolidated text", consolidatedTextId)
       try {
@@ -1130,7 +1130,7 @@ async function generateSectionTaGit(
   modifyingTextId: string,
 ): Promise<TreeEntry> {
   return await tracer.startActiveSpan(
-    `generateSectionTaGit:`,
+    `generateSectionTaGit ${sectionTa.ID}`,
     async (span): Promise<TreeEntry> => {
       span.setAttribute("date", date)
       span.setAttribute("sectionTa", sectionTa.ID)
@@ -1304,85 +1304,87 @@ async function generateTextGit(
   date: string,
   modifyingTextId: string,
 ): Promise<string> {
-  return await tracer.startActiveSpan(`generateTextGit:`, async (span) => {
-    span.setAttribute("date", date)
-    span.setAttribute("texte", texteVersion.META.META_COMMUN.ID)
-    try {
-      const textId = texteVersion.META.META_COMMUN.ID
-      const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
-      const texteTitle = (
-        metaTexteVersion.TITREFULL ??
-        metaTexteVersion.TITRE ??
-        textId
-      )
-        .replace(/\s+/g, " ")
-        .trim()
+  return await tracer.startActiveSpan(
+    `generateTextGit ${texteVersion.META.META_COMMUN.ID}`,
+    async (span) => {
+      span.setAttribute("date", date)
+      span.setAttribute("texte", texteVersion.META.META_COMMUN.ID)
+      try {
+        const textId = texteVersion.META.META_COMMUN.ID
+        const metaTexteVersion = texteVersion.META.META_SPEC.META_TEXTE_VERSION
+        const texteTitle = (
+          metaTexteVersion.TITREFULL ??
+          metaTexteVersion.TITRE ??
+          textId
+        )
+          .replace(/\s+/g, " ")
+          .trim()
 
-      const { readmeLinks, tree } = await generateArticlesGit(
-        context,
-        textelrNode.articles,
-        date,
-        "",
-      )
+        const { readmeLinks, tree } = await generateArticlesGit(
+          context,
+          textelrNode.articles,
+          date,
+          "",
+        )
 
-      const readmeFilename = "README.md"
-      if (textelrNode.children !== undefined) {
-        for (const child of textelrNode.children) {
-          const sectionTa = await getOrLoadSectionTa(context, child.id)
-          if (sectionTa !== null) {
-            const sectionTaDirName = child.slug
-            readmeLinks.push({
-              href: path.join(sectionTaDirName, readmeFilename),
-              title: child.title,
-            })
+        const readmeFilename = "README.md"
+        if (textelrNode.children !== undefined) {
+          for (const child of textelrNode.children) {
+            const sectionTa = await getOrLoadSectionTa(context, child.id)
+            if (sectionTa !== null) {
+              const sectionTaDirName = child.slug
+              readmeLinks.push({
+                href: path.join(sectionTaDirName, readmeFilename),
+                title: child.title,
+              })
 
-            tree.push(
-              await generateSectionTaGit(
-                context,
-                depth + 1,
-                child,
-                sectionTa,
-                date,
-                "",
-                modifyingTextId,
-              ),
-            )
+              tree.push(
+                await generateSectionTaGit(
+                  context,
+                  depth + 1,
+                  child,
+                  sectionTa,
+                  date,
+                  "",
+                  modifyingTextId,
+                ),
+              )
+            }
           }
         }
-      }
 
-      const readmeLinksMarkdown = readmeLinks
-        .map(({ href, title }) => `- [${title}](${href})`)
-        .join("\n")
-      const readmeRepositoryRelativeFilePath = readmeFilename
-      const readmeCache =
-        context.textFileCacheByRepositoryRelativeFilePath[
-          readmeRepositoryRelativeFilePath
-        ]
-      if (
-        readmeCache === undefined ||
-        readmeCache.id !== textId ||
-        readmeCache.custom !== readmeLinksMarkdown
-      ) {
-        const nota = await cleanHtmlFragment(texteVersion.NOTA?.CONTENU)
-        const readmeBlocks = [
-          `# ${escapeMarkdownTitle(texteTitle)}`,
-          dedent`
+        const readmeLinksMarkdown = readmeLinks
+          .map(({ href, title }) => `- [${title}](${href})`)
+          .join("\n")
+        const readmeRepositoryRelativeFilePath = readmeFilename
+        const readmeCache =
+          context.textFileCacheByRepositoryRelativeFilePath[
+            readmeRepositoryRelativeFilePath
+          ]
+        if (
+          readmeCache === undefined ||
+          readmeCache.id !== textId ||
+          readmeCache.custom !== readmeLinksMarkdown
+        ) {
+          const nota = await cleanHtmlFragment(texteVersion.NOTA?.CONTENU)
+          const readmeBlocks = [
+            `# ${escapeMarkdownTitle(texteTitle)}`,
+            dedent`
               > **Avertissement** : Ce document fait partie du projet [Tricoteuses](https://tricoteuses.fr/)
               > de conversion à git des textes juridiques consolidés français.
               > **Il peut contenir des erreurs !**
             `,
-          await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
-          readmeLinks
-            .map(({ href, title }) => `- [${title}](${href})`)
-            .join("\n"),
-          await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
-          nota === undefined ? undefined : `### Nota`,
-          nota,
-          await cleanHtmlFragment(texteVersion.TP?.CONTENU),
-        ].filter((block) => block != null)
+            await cleanHtmlFragment(texteVersion.VISAS?.CONTENU),
+            readmeLinks
+              .map(({ href, title }) => `- [${title}](${href})`)
+              .join("\n"),
+            await cleanHtmlFragment(texteVersion.SIGNATAIRES?.CONTENU),
+            nota === undefined ? undefined : `### Nota`,
+            nota,
+            await cleanHtmlFragment(texteVersion.TP?.CONTENU),
+          ].filter((block) => block != null)
 
-        const readmeMarkdown = dedent`
+          const readmeMarkdown = dedent`
           ---
           ${[
             ["Nature", texteVersion.META.META_COMMUN.NATURE],
@@ -1401,48 +1403,48 @@ async function generateTextGit(
           ${readmeBlocks.join("\n\n")}
         `
 
-        let referringArticlesLiensHtml: string | undefined
-        const referringArticlesLiens =
-          context.referringArticlesLiensById[textId]
-        if (referringArticlesLiens !== undefined) {
-          referringArticlesLiensHtml = dedent`
+          let referringArticlesLiensHtml: string | undefined
+          const referringArticlesLiens =
+            context.referringArticlesLiensById[textId]
+          if (referringArticlesLiens !== undefined) {
+            referringArticlesLiensHtml = dedent`
             ## Articles faisant référence au texte
 
             ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
           `
-        }
+          }
 
-        let referringTextsLiensHtml: string | undefined
-        const referringTextsLiens = context.referringTextsLiensById[textId]
-        if (referringTextsLiens !== undefined) {
-          referringTextsLiensHtml = dedent`
+          let referringTextsLiensHtml: string | undefined
+          const referringTextsLiens = context.referringTextsLiensById[textId]
+          if (referringTextsLiens !== undefined) {
+            referringTextsLiensHtml = dedent`
             ## Textes faisant référence au texte
 
             ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
           `
-        }
+          }
 
-        let referredLiensHtml: string | undefined
-        const referredLiens = metaTexteVersion.LIENS?.LIEN
-        if (referredLiens !== undefined) {
-          referredLiensHtml = dedent`
+          let referredLiensHtml: string | undefined
+          const referredLiens = metaTexteVersion.LIENS?.LIEN
+          if (referredLiens !== undefined) {
+            referredLiensHtml = dedent`
             ## Références faites par le texte
 
             ${await htmlFromReferredLiens(context, referredLiens)}
           `
-        }
+          }
 
-        const referencesHtml = [
-          referringArticlesLiensHtml,
-          referringTextsLiensHtml,
-          referredLiensHtml,
-        ]
-          .filter((block) => block !== undefined)
-          .join("\n\n")
-        const detailsHtml =
-          referencesHtml === ""
-            ? undefined
-            : dedent`
+          const referencesHtml = [
+            referringArticlesLiensHtml,
+            referringTextsLiensHtml,
+            referredLiensHtml,
+          ]
+            .filter((block) => block !== undefined)
+            .join("\n\n")
+          const detailsHtml =
+            referencesHtml === ""
+              ? undefined
+              : dedent`
                 <details>
                   <summary><em>Références</em></summary>
 
@@ -1450,47 +1452,48 @@ async function generateTextGit(
                 </details>
               `
 
-        const treeEntry = await writeTextFileBlob(
-          context.gitdir,
-          readmeFilename,
-          [
-            readmeMarkdown,
-            detailsHtml,
-            markdownVariantsBlockFromTexteVersion(texteVersion),
-          ]
-            .filter((block) => block !== undefined)
-            .join("\n\n") + "\n",
+          const treeEntry = await writeTextFileBlob(
+            context.gitdir,
+            readmeFilename,
+            [
+              readmeMarkdown,
+              detailsHtml,
+              markdownVariantsBlockFromTexteVersion(texteVersion),
+            ]
+              .filter((block) => block !== undefined)
+              .join("\n\n") + "\n",
+          )
+          tree.push(treeEntry)
+          context.texteVersionGitById[textId] ??= {
+            date,
+            path: readmeRepositoryRelativeFilePath,
+          }
+          context.textFileCacheByRepositoryRelativeFilePath[
+            readmeRepositoryRelativeFilePath
+          ] = {
+            custom: readmeLinksMarkdown,
+            id: texteVersion.META.META_COMMUN.ID,
+            treeEntry,
+          }
+        } else {
+          tree.push(readmeCache.treeEntry)
+        }
+
+        tree.push(
+          context.textFileCacheByRepositoryRelativeFilePath["LICENCE.md"]
+            .treeEntry,
         )
-        tree.push(treeEntry)
-        context.texteVersionGitById[textId] ??= {
-          date,
-          path: readmeRepositoryRelativeFilePath,
-        }
-        context.textFileCacheByRepositoryRelativeFilePath[
-          readmeRepositoryRelativeFilePath
-        ] = {
-          custom: readmeLinksMarkdown,
-          id: texteVersion.META.META_COMMUN.ID,
-          treeEntry,
-        }
-      } else {
-        tree.push(readmeCache.treeEntry)
+
+        return await git.writeTree({
+          fs,
+          gitdir: context.gitdir,
+          tree,
+        })
+      } finally {
+        span.end()
       }
-
-      tree.push(
-        context.textFileCacheByRepositoryRelativeFilePath["LICENCE.md"]
-          .treeEntry,
-      )
-
-      return await git.writeTree({
-        fs,
-        gitdir: context.gitdir,
-        tree,
-      })
-    } finally {
-      span.end()
-    }
-  })
+    },
+  )
 }
 
 async function htmlFromReferredLiens(

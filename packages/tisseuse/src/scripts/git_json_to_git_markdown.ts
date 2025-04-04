@@ -636,6 +636,23 @@ async function convertIncomingTexteReferencesToMarkdown(
       }
     }
   }
+  const liens = texte.META.META_SPEC.META_TEXTE_VERSION.LIENS
+  if (liens !== undefined) {
+    for (const lien of liens.LIEN) {
+      if (lien["@id"] === referrentId) {
+        children.push({
+          markdown: ["Lien", lien["@typelien"], lien["@sens"]]
+            .filter((item) => item !== undefined)
+            .join(" "),
+        })
+      }
+      if (lien["@cidtexte"] === referrentId) {
+        children.push({
+          markdown: "Lien texte",
+        })
+      }
+    }
+  }
   const versions = texte.VERSIONS?.VERSION
   if (versions !== undefined) {
     for (const version of versions) {
@@ -1490,6 +1507,31 @@ async function* convertTexteOutgoingReferencesToMarkdown(
     yield {
       children,
       markdown: "Table des matières",
+    }
+  }
+  const liens = texte.META.META_SPEC.META_TEXTE_VERSION.LIENS
+  if (liens !== undefined) {
+    for (const lien of liens.LIEN) {
+      yield* convertOutgoingReferenceToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        texteDir,
+        lien["@id"],
+        {
+          label: ["Lien", lien["@typelien"], lien["@sens"]]
+            .filter((item) => item !== undefined)
+            .join(" "),
+        },
+      )
+      yield* convertOutgoingReferenceToMarkdown(
+        referenceById,
+        jsonOidByIdTree,
+        jsonRepository,
+        texteDir,
+        lien["@cidtexte"],
+        { label: "Lien texte" },
+      )
     }
   }
   const versions = texte.VERSIONS?.VERSION

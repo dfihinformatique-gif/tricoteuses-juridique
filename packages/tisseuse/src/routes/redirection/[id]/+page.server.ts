@@ -9,21 +9,28 @@ import { error, redirect } from "@sveltejs/kit"
 
 import { assertNever } from "$lib/asserts.js"
 import { auditQueryOptionsArray } from "$lib/auditors/queries.js"
+import { gitPathFromId } from "$lib/legal/ids.js"
 import type { JorfTexteNature, JorfTexteVersion } from "$lib/legal/jorf.js"
+import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi.js"
+import config from "$lib/server/config.js"
+import { db } from "$lib/server/databases/index.js"
 import {
   organizationNameByTexteNature,
   repositoryNameFromTitle,
 } from "$lib/urls.js"
-import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi.js"
-import config from "$lib/server/config.js"
-import { db } from "$lib/server/databases/index.js"
 
 import type { PageLoad } from "./$types.js"
 
 type TargetType = (typeof targetsTypes)[number]
 
 const { forgejo } = config
-const targetsTypes = ["git", "legifrance", "tricoteuses"] as const
+const targetsTypes = [
+  "git", // TODO: Rename to something like "consolidation"
+  "json",
+  "legifrance",
+  "markdown",
+  "tricoteuses",
+] as const
 
 const auditRedirectionQuery = (
   audit: Audit,
@@ -55,7 +62,7 @@ const auditRedirectionQuery = (
     remainingKeys,
     auditQueryOptionsArray(targetsTypes),
     auditEmptyToNull,
-    auditRequire,
+    auditSetNullish(["markdown"]),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys, auditSetNullish({}))
@@ -206,6 +213,20 @@ export const load: PageLoad = async ({ params, url }) => {
         continue
       }
 
+      case "json": {
+        if (forgejo !== undefined) {
+          redirect(
+            303,
+            new URL(
+              `dila/textes_juridiques/src/branch/main/${gitPathFromId(params.id, ".json")}`,
+              forgejo.url,
+            ),
+          )
+        }
+
+        continue
+      }
+
       case "legifrance": {
         if (/^(JORF|LEGI)ARTI\d{12}$/.test(params.id)) {
           const entry = (
@@ -287,6 +308,20 @@ export const load: PageLoad = async ({ params, url }) => {
             }
           }
           redirect(303, `https://www.legifrance.gouv.fr/loda/id/${params.id}/`)
+        }
+
+        continue
+      }
+
+      case "markdown": {
+        if (forgejo !== undefined) {
+          redirect(
+            303,
+            new URL(
+              `dila/textes_juridiques/src/branch/main/${gitPathFromId(params.id, ".md")}`,
+              forgejo.url,
+            ),
+          )
         }
 
         continue

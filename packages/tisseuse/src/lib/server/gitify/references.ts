@@ -274,6 +274,10 @@ export async function registerLegiArticleModifiersAndReferences(
     )
   }
 
+  if (metaArticle.ETAT === "MODIFIE_MORT_NE") {
+    return
+  }
+
   for (const referringArticleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id IN ${db(articleIds)}
   `) {

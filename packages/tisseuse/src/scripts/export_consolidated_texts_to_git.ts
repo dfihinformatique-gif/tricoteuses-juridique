@@ -38,7 +38,6 @@ async function exportConsolidatedTextsToGit(
     silent?: boolean
   } = {},
 ): Promise<number> {
-  await new Promise((resolve) => setTimeout(resolve, 10000))
   return await tracer.startActiveSpan(
     `exportConsolidatedTextsToGit`,
     async (span) => {

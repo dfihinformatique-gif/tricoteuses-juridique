@@ -44,17 +44,7 @@ export interface LegiArticle {
     CONTENU: string // HTML
   }
   VERSIONS: {
-    VERSION: Array<{
-      "@etat"?: LegiArticleEtat
-      LIEN_ART: {
-        "@debut": string
-        "@etat"?: LegiArticleEtat
-        "@fin": string
-        "@id": string
-        "@num"?: string
-        "@origine": LegiArticleOrigine
-      }
-    }>
+    VERSION: LegiArticleVersion[]
   }
 }
 
@@ -102,6 +92,18 @@ export interface LegiArticleTm {
     "@id": string
   }>
   TM?: LegiArticleTm
+}
+
+export interface LegiArticleVersion {
+  "@etat"?: LegiArticleEtat
+  LIEN_ART: {
+    "@debut": string
+    "@etat"?: LegiArticleEtat
+    "@fin": string
+    "@id": string
+    "@num"?: string
+    "@origine": LegiArticleOrigine
+  }
 }
 
 export type LegiCategorieTag = (typeof allLegiCategoriesTags)[number]
@@ -285,16 +287,18 @@ export interface LegiTextelrStructure {
   LIEN_SECTION_TA?: LegiTextelrLienSectionTa[]
 }
 
+export interface LegiTextelrVersion {
+  "@etat"?: LegiTexteEtat
+  LIEN_TXT: {
+    "@debut": string
+    "@fin": string
+    "@id": string
+    "@num"?: string
+  }
+}
+
 export interface LegiTextelrVersions {
-  VERSION: Array<{
-    "@etat"?: LegiTexteEtat
-    LIEN_TXT: {
-      "@debut": string
-      "@fin": string
-      "@id": string
-      "@num"?: string
-    }
-  }>
+  VERSION: LegiTextelrVersion[]
 }
 
 export interface LegiTexteVersion {

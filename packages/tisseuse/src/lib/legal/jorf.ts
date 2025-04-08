@@ -72,17 +72,7 @@ export interface JorfArticle {
     }
   }
   VERSIONS: {
-    VERSION: Array<{
-      "@etat"?: JorfArticleEtat
-      LIEN_ART: {
-        "@debut": string
-        "@etat"?: JorfArticleEtat
-        "@fin": string
-        "@id": string
-        "@num"?: string
-        "@origine": JorfArticleLienArticleOrigine
-      }
-    }>
+    VERSION: JorfArticleVersion[]
   }
 }
 
@@ -115,6 +105,18 @@ export interface JorfArticleTm {
     "@id": string
   }
   TM?: JorfArticleTm
+}
+
+export interface JorfArticleVersion {
+  "@etat"?: JorfArticleEtat
+  LIEN_ART: {
+    "@debut": string
+    "@etat"?: JorfArticleEtat
+    "@fin": string
+    "@id": string
+    "@num"?: string
+    "@origine": JorfArticleLienArticleOrigine
+  }
 }
 
 export type JorfCategorieTag = (typeof allJorfCategoriesTags)[number]
@@ -283,16 +285,18 @@ export interface JorfTextelrStructure {
   LIEN_SECTION_TA?: JorfTextelrLienSectionTa[]
 }
 
+export interface JorfTextelrVersion {
+  "@etat"?: JorfTextelrEtat
+  LIEN_TXT: {
+    "@debut": string
+    "@fin": string
+    "@id": string
+    "@num"?: string
+  }
+}
+
 export interface JorfTextelrVersions {
-  VERSION: Array<{
-    "@etat"?: JorfTextelrEtat
-    LIEN_TXT: {
-      "@debut": string
-      "@fin": string
-      "@id": string
-      "@num"?: string
-    }
-  }>
+  VERSION: JorfTextelrVersion[]
 }
 
 export interface JorfTexteMetaCommun {

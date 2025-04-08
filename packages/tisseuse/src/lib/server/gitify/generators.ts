@@ -736,6 +736,7 @@ export async function generateConsolidatedTextGit(
             },
           )
 
+          let hasCommitsForDate = false
           for (const [
             modifyingTextIndex,
             modifyingTexteVersion,
@@ -821,6 +822,7 @@ export async function generateConsolidatedTextGit(
 
             const t3 = performance.now()
             if (treeOid !== latestTreeOid) {
+              hasCommitsForDate = true
               let messageLines: string | undefined = undefined
               let summary: string | undefined = undefined
               if (modifyingTextId.startsWith("JORFTEXT")) {
@@ -968,8 +970,12 @@ export async function generateConsolidatedTextGit(
               })
               latestTreeOid = treeOid
             }
-            if (modifyingTextIndex === modifyingTexteVersionArray.length - 1) {
+            if (
+              modifyingTextIndex === modifyingTexteVersionArray.length - 1 &&
+              hasCommitsForDate
+            ) {
               await git.writeRef({
+                force: true,
                 fs,
                 gitdir,
                 ref: `refs/tags/${

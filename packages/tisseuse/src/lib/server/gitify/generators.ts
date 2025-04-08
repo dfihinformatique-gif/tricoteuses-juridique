@@ -330,11 +330,11 @@ export async function generateConsolidatedTextGit(
           consolidatedTextInternalIds: new Set([consolidatedTextId]),
           consolidatedTextModifyingTextsIdsByActionByDate: {},
           currentInternalIds: new Set(),
+          firstConsolidatedIdByJorfCreatorId: {},
           gitdir,
           jorfCreatorIdByConsolidatedId: {},
           logReferences,
           modifierByActionByConsolidatedArticleId: {},
-          modifyingArticleIdByActionByConsolidatedId: {},
           modifyingTextsIdsByArticleActionDate: {},
           referringArticlesLiensById: {},
           referringTextsLiensById: {},
@@ -371,6 +371,9 @@ export async function generateConsolidatedTextGit(
         if (context.consolidatedTextCid.startsWith("JORFTEXT")) {
           context.jorfCreatorIdByConsolidatedId[consolidatedTextId] =
             context.consolidatedTextCid
+          context.firstConsolidatedIdByJorfCreatorId[
+            context.consolidatedTextCid
+          ] = consolidatedTextId
 
           // Map JORF articles by their number, to be able to associate them with the LEGI article that they
           // create.
@@ -431,6 +434,9 @@ export async function generateConsolidatedTextGit(
             if (jorfCreatorArticleId !== undefined) {
               context.jorfCreatorIdByConsolidatedId[articleId] =
                 jorfCreatorArticleId
+              context.firstConsolidatedIdByJorfCreatorId[
+                jorfCreatorArticleId
+              ] ??= articleId
             }
           }
         }

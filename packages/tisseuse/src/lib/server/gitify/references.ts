@@ -4,12 +4,16 @@ import type {
   JorfTextelr,
   JorfSectionTa,
   JorfSectionTaLienSectionTa,
+  JorfTextelrVersion,
+  JorfArticleVersion,
 } from "$lib/legal/jorf.js"
 import type {
   LegiArticle,
+  LegiArticleVersion,
   LegiSectionTa,
   LegiSectionTaLienSectionTa,
   LegiTextelr,
+  LegiTextelrVersion,
   LegiTexteVersion,
 } from "$lib/legal/legi.js"
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
@@ -29,61 +33,13 @@ async function addModifyingArticleId(
   action: Action,
   priority: number,
   modifiedId: string,
+  modifiedRealId: string,
   modifiedDateDebut: string,
   modifiedDateFin: string,
 ): Promise<void> {
   const modifyingArticle = await getOrLoadArticle(context, modifyingArticleId)
   if (modifyingArticle === null) {
     return
-  }
-  const modifyingArticlePublicationDate =
-    modifyingArticle.CONTEXTE.TEXTE["@date_publi"]
-  if (modifyingArticlePublicationDate === undefined) {
-    throw new Error(
-      `Modifying article ${modifyingArticleId} of ${modifiedId} has no CONTEXTE.TEXTE["@date_publi"]`,
-    )
-  }
-  // if (
-  //   action === "CREATE" &&
-  //   modifyingArticlePublicationDate !== "2999-01-01" &&
-  //   modifyingArticlePublicationDate > modifiedDateDebut
-  // ) {
-  //   console.warn(
-  //     `Ignoring creating article ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match start date ${modifiedDateDebut} of ${modifiedId}`,
-  //   )
-  //   return
-  // }
-  // if (
-  //   action === "DELETE" &&
-  //   modifyingArticlePublicationDate !== "2999-01-01" &&
-  //   modifyingArticlePublicationDate > modifiedDateFin
-  // ) {
-  //   console.warn(
-  //     `Ignoring deleting article ${modifyingArticleId} because its publication date ${modifyingArticlePublicationDate} doesn't match end date ${modifiedDateFin} of ${modifiedId}`,
-  //   )
-  //   return
-  // }
-
-  if (modifiedId.startsWith("LEGITEXT")) {
-    // A consolidated text doesn't change. Only its content changes.
-  } else {
-    const modifyingArticleIdByAction =
-      (context.modifyingArticleIdByActionByConsolidatedId[modifiedId] ??= {})
-    const existingModifyingArticleId = modifyingArticleIdByAction[action]
-    if (existingModifyingArticleId === undefined) {
-      modifyingArticleIdByAction[action] = modifyingArticleId
-    } else if (existingModifyingArticleId !== modifyingArticleId) {
-      const existingModifyingArticle = (await getOrLoadArticle(
-        context,
-        existingModifyingArticleId,
-      ))!
-      if (
-        existingModifyingArticle.CONTEXTE.TEXTE["@date_publi"]! <
-        modifyingArticlePublicationDate
-      ) {
-        modifyingArticleIdByAction[action] = modifyingArticleId
-      }
-    }
   }
 
   const modifyingTextId = modifyingArticle.CONTEXTE.TEXTE["@cid"]
@@ -94,6 +50,7 @@ async function addModifyingArticleId(
       action,
       priority,
       modifiedId,
+      modifiedRealId,
       modifiedDateDebut,
       modifiedDateFin,
     )
@@ -106,6 +63,7 @@ async function addModifyingTextId(
   action: Action,
   priority: number,
   modifiedId: string,
+  modifiedRealId: string,
   modifiedDateDebut: string,
   modifiedDateFin: string,
 ): Promise<void> {
@@ -118,12 +76,92 @@ async function addModifyingTextId(
   }
   const modifyingTextelr = await getOrLoadTextelr(context, modifyingTextId)
   if (action === "CREATE") {
-    if (modifiedDateDebut === "2999-01-01") {
-      // Since modifiedDateDebut is not known, assume that the date is the
-      // start date of modifying text (otherwise modifiedDateDebut should have
-      // been set to a valid date).
+    if (modifiedRealId.startsWith("JORF")) {
+      // When the realModifiedId is a JORF id, then consider that it is a referencing
+      // error, because a JORF can't be created by others. A LEGI id should have been
+      // used, so find the LEGI version of that JORF object whose start date is equal
+      // to or just after start date of modifying text.
       modifiedDateDebut =
         modifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT ??
+        modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI ??
+        "2999-01-01"
+      if (modifiedDateDebut !== "2999-01-01") {
+        if (
+          modifiedId.startsWith("JORF") &&
+          context.firstConsolidatedIdByJorfCreatorId[modifiedId] !== undefined
+        ) {
+          // Some JORF objects, for examples, the articles  of the Constitution have no
+          // version other than themselves in VERSIONS.VERSION (but the other LEGI versions
+          // are linked together in VERSIONS.VERSION), so don't use JORF version to retrieve
+          // the othere versions.
+          modifiedId = context.firstConsolidatedIdByJorfCreatorId[modifiedId]
+        }
+        if (
+          modifiedId.startsWith("JORFTEXT") ||
+          modifiedId.startsWith("LEGITEXT")
+        ) {
+          const modifiedTextelr = await getOrLoadTextelr(context, modifiedId)
+          if (modifiedTextelr !== null) {
+            const bestModifiedVersion = modifiedTextelr.VERSIONS.VERSION.reduce(
+              (
+                bestModifiedVersion:
+                  | JorfTextelrVersion
+                  | LegiTextelrVersion
+                  | undefined,
+                version,
+              ) => {
+                const versionDebut = version.LIEN_TXT["@debut"]
+                return versionDebut >= modifiedDateDebut &&
+                  (bestModifiedVersion === undefined ||
+                    versionDebut < bestModifiedVersion.LIEN_TXT["@debut"])
+                  ? version
+                  : bestModifiedVersion
+              },
+              undefined,
+            )
+            if (bestModifiedVersion !== undefined) {
+              modifiedId = bestModifiedVersion.LIEN_TXT["@id"]
+              modifiedDateDebut = bestModifiedVersion.LIEN_TXT["@debut"]
+              modifiedDateFin = bestModifiedVersion.LIEN_TXT["@fin"]
+            }
+          }
+        } else {
+          // Modified object is an article.
+          const modifiedArticle = await getOrLoadArticle(context, modifiedId)
+          if (modifiedArticle !== null) {
+            const bestModifiedVersion = modifiedArticle.VERSIONS.VERSION.reduce(
+              (
+                bestModifiedVersion:
+                  | JorfArticleVersion
+                  | LegiArticleVersion
+                  | undefined,
+                version,
+              ) => {
+                const versionDebut = version.LIEN_ART["@debut"]
+                return versionDebut >= modifiedDateDebut &&
+                  (bestModifiedVersion === undefined ||
+                    versionDebut < bestModifiedVersion.LIEN_ART["@debut"])
+                  ? version
+                  : bestModifiedVersion
+              },
+              undefined,
+            )
+            if (bestModifiedVersion !== undefined) {
+              modifiedId = bestModifiedVersion.LIEN_ART["@id"]
+              modifiedDateDebut = bestModifiedVersion.LIEN_ART["@debut"]
+              modifiedDateFin = bestModifiedVersion.LIEN_ART["@fin"]
+            }
+          }
+        }
+      }
+    }
+    if (modifiedDateDebut === "2999-01-01") {
+      // When modifiedDateDebut is not known (ie = 2999-01-01), assume that the
+      // date is the start date of modifying text (otherwise modifiedDateDebut
+      // should have been set to a valid date).
+      modifiedDateDebut =
+        modifyingTexteVersion.META.META_SPEC.META_TEXTE_VERSION.DATE_DEBUT ??
+        modifyingTexteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_PUBLI ??
         "2999-01-01"
       if (modifiedDateDebut === "2999-01-01") {
         if (modifyingTextelr !== null) {
@@ -236,35 +274,6 @@ export async function registerLegiArticleModifiersAndReferences(
     )
   }
 
-  // if (jorfCreatorId !== undefined) {
-  //   await addModifyingArticleId(
-  //     context,
-  //     jorfCreatorId,
-  //     "CREATE",
-  //     ???,
-  //     articleId,
-  //     articleDateDebut,
-  //     articleDateFin,
-  //   )
-  //   // Delete another version of the same article that existed before the newly created one.
-  //   for (const articleVersion of article.VERSIONS.VERSION) {
-  //     if (articleVersion.LIEN_ART["@id"] === articleId) {
-  //       continue
-  //     }
-  //     if (articleVersion.LIEN_ART["@fin"] === articleDateDebut) {
-  //       await addModifyingArticleId(
-  //         context,
-  //         jorfCreatorId,
-  //         "DELETE",
-  //         ???,
-  //         articleVersion.LIEN_ART["@id"],
-  //         articleVersion.LIEN_ART["@debut"],
-  //         articleVersion.LIEN_ART["@fin"],
-  //       )
-  //     }
-  //   }
-  // }
-
   for (const referringArticleLien of await db<ArticleLienDb[]>`
     SELECT * FROM article_lien WHERE id IN ${db(articleIds)}
   `) {
@@ -326,6 +335,7 @@ export async function registerLegiArticleModifiersAndReferences(
         "DELETE",
         1,
         articleId,
+        referringArticleLien.id,
         articleDateDebut,
         articleDateFin,
       )
@@ -367,6 +377,7 @@ export async function registerLegiArticleModifiersAndReferences(
         "CREATE",
         1,
         articleId,
+        referringArticleLien.id,
         articleDateDebut,
         articleDateFin,
       )
@@ -381,6 +392,7 @@ export async function registerLegiArticleModifiersAndReferences(
             referringArticleLien.article_id,
             "DELETE",
             1,
+            articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -406,6 +418,7 @@ export async function registerLegiArticleModifiersAndReferences(
         "CREATE",
         0,
         articleId,
+        referringArticleLien.id,
         articleDateDebut,
         articleDateFin,
       )
@@ -420,6 +433,7 @@ export async function registerLegiArticleModifiersAndReferences(
             referringArticleLien.article_id,
             "DELETE",
             0,
+            articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -496,6 +510,7 @@ export async function registerLegiArticleModifiersAndReferences(
         "DELETE",
         1,
         articleId,
+        referringTextLien.id,
         articleDateDebut,
         articleDateFin,
       )
@@ -526,6 +541,7 @@ export async function registerLegiArticleModifiersAndReferences(
         "CREATE",
         1,
         articleId,
+        referringTextLien.id,
         articleDateDebut,
         articleDateFin,
       )
@@ -540,6 +556,7 @@ export async function registerLegiArticleModifiersAndReferences(
             referringTextLien.texte_version_id,
             "DELETE",
             1,
+            articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -563,6 +580,7 @@ export async function registerLegiArticleModifiersAndReferences(
         "CREATE",
         0,
         articleId,
+        referringTextLien.id,
         articleDateDebut,
         articleDateFin,
       )
@@ -577,6 +595,7 @@ export async function registerLegiArticleModifiersAndReferences(
             referringTextLien.texte_version_id,
             "DELETE",
             0,
+            articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -647,6 +666,7 @@ export async function registerLegiArticleModifiersAndReferences(
           "DELETE",
           1,
           articleId,
+          articleId,
           articleDateDebut,
           articleDateFin,
         )
@@ -688,6 +708,7 @@ export async function registerLegiArticleModifiersAndReferences(
           "CREATE",
           1,
           articleId,
+          articleId,
           articleDateDebut,
           articleDateFin,
         )
@@ -702,6 +723,7 @@ export async function registerLegiArticleModifiersAndReferences(
               articleReferredLien["@cidtexte"],
               "DELETE",
               1,
+              articleVersion.LIEN_ART["@id"],
               articleVersion.LIEN_ART["@id"],
               articleVersion.LIEN_ART["@debut"],
               articleVersion.LIEN_ART["@fin"],
@@ -729,6 +751,7 @@ export async function registerLegiArticleModifiersAndReferences(
           "CREATE",
           0,
           articleId,
+          articleId,
           articleDateDebut,
           articleDateFin,
         )
@@ -743,6 +766,7 @@ export async function registerLegiArticleModifiersAndReferences(
               articleReferredLien["@cidtexte"],
               "DELETE",
               0,
+              articleVersion.LIEN_ART["@id"],
               articleVersion.LIEN_ART["@id"],
               articleVersion.LIEN_ART["@debut"],
               articleVersion.LIEN_ART["@fin"],
@@ -778,6 +802,7 @@ export async function registerLegiArticleModifiersAndReferences(
         "CREATE",
         1,
         articleId,
+        articleId,
         articleDateDebut,
         articleDateFin,
       )
@@ -792,6 +817,7 @@ export async function registerLegiArticleModifiersAndReferences(
             article.CONTEXTE.TEXTE["@cid"],
             "DELETE",
             1,
+            articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@id"],
             articleVersion.LIEN_ART["@debut"],
             articleVersion.LIEN_ART["@fin"],
@@ -818,6 +844,7 @@ export async function registerLegiArticleModifiersAndReferences(
               "CREATE",
               0,
               articleId,
+              articleId,
               articleDateDebut,
               articleDateFin,
             )
@@ -832,6 +859,7 @@ export async function registerLegiArticleModifiersAndReferences(
                   modifyingTextId,
                   "DELETE",
                   0,
+                  articleVersion.LIEN_ART["@id"],
                   articleVersion.LIEN_ART["@id"],
                   articleVersion.LIEN_ART["@debut"],
                   articleVersion.LIEN_ART["@fin"],
@@ -981,6 +1009,7 @@ export async function registerLegiTextModifiersAndReferences(
         "DELETE",
         1,
         legiTextId,
+        referringArticleLien.id,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
@@ -1007,6 +1036,7 @@ export async function registerLegiTextModifiersAndReferences(
         "CREATE",
         1,
         legiTextId,
+        referringArticleLien.id,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
@@ -1021,6 +1051,7 @@ export async function registerLegiTextModifiersAndReferences(
             referringArticleLien.article_id,
             "DELETE",
             1,
+            version.LIEN_TXT["@id"],
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
             version.LIEN_TXT["@fin"],
@@ -1042,6 +1073,7 @@ export async function registerLegiTextModifiersAndReferences(
         "CREATE",
         0,
         legiTextId,
+        referringArticleLien.id,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
@@ -1056,6 +1088,7 @@ export async function registerLegiTextModifiersAndReferences(
             referringArticleLien.article_id,
             "DELETE",
             0,
+            version.LIEN_TXT["@id"],
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
             version.LIEN_TXT["@fin"],
@@ -1116,6 +1149,7 @@ export async function registerLegiTextModifiersAndReferences(
         "DELETE",
         1,
         legiTextId,
+        referringTextLien.id,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
@@ -1140,6 +1174,7 @@ export async function registerLegiTextModifiersAndReferences(
         "CREATE",
         1,
         legiTextId,
+        referringTextLien.id,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
@@ -1154,6 +1189,7 @@ export async function registerLegiTextModifiersAndReferences(
             referringTextLien.texte_version_id,
             "DELETE",
             1,
+            version.LIEN_TXT["@id"],
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
             version.LIEN_TXT["@fin"],
@@ -1170,6 +1206,7 @@ export async function registerLegiTextModifiersAndReferences(
         "CREATE",
         0,
         legiTextId,
+        referringTextLien.id,
         texteVersionDateDebut ?? "2999-01-01",
         texteVersionDateFin ?? "2999-01-01",
       )
@@ -1184,6 +1221,7 @@ export async function registerLegiTextModifiersAndReferences(
             referringTextLien.texte_version_id,
             "DELETE",
             0,
+            version.LIEN_TXT["@id"],
             version.LIEN_TXT["@id"],
             version.LIEN_TXT["@debut"],
             version.LIEN_TXT["@fin"],
@@ -1217,17 +1255,6 @@ export async function registerLegiTextModifiersAndReferences(
             `${" ".repeat(20)} ${"  ".repeat(depth + 1)}sens: ${textReferredLien["@sens"]} typelien: ${textReferredLien["@typelien"]} ${textReferredLien["@cidtexte"]} ${textReferredLien["@id"]}${textReferredLien["@nortexte"] === undefined ? "" : ` ${textReferredLien["@nortexte"]}`}${textReferredLien["@num"] === undefined ? "" : ` ${textReferredLien["@num"]}`} ${textReferredLien["@naturetexte"]} du ${textReferredLien["@datesignatexte"]} : ${textReferredLien["#text"]}`,
           )
         }
-        // if () {
-        //   await addModifyingTextId(
-        //     context,
-        //     textReferredLien["@cidtexte"],
-        //     "DELETE",
-        //     ???,
-        //     legiTextId,
-        //     texteVersionDateDebut ?? "2999-01-01",
-        //     texteVersionDateFin ?? "2999-01-01",
-        //   )
-        // } else
         if (
           (textReferredLien["@typelien"] === "APPLICATION" &&
             textReferredLien["@sens"] === "cible") ||
@@ -1245,6 +1272,7 @@ export async function registerLegiTextModifiersAndReferences(
             textReferredLien["@cidtexte"],
             "CREATE",
             1,
+            legiTextId,
             legiTextId,
             texteVersionDateDebut ?? "2999-01-01",
             texteVersionDateFin ?? "2999-01-01",
@@ -1264,6 +1292,7 @@ export async function registerLegiTextModifiersAndReferences(
                 textReferredLien["@cidtexte"],
                 "DELETE",
                 1,
+                version.LIEN_TXT["@id"],
                 version.LIEN_TXT["@id"],
                 version.LIEN_TXT["@debut"],
                 version.LIEN_TXT["@fin"],

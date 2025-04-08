@@ -37,6 +37,12 @@ export interface Context {
   >
   // Current content of a text at a given date
   currentInternalIds: Set<string>
+  // Allows to retrieve one of the integration/consolidation version of a
+  // JORF object.
+  // Needed, because for example, JORF articles of the Constitution have no
+  // version other than themselves in VERSIONS.VERSION (but the other LEGI versions
+  // are linked together in VERSIONS.VERSION).
+  firstConsolidatedIdByJorfCreatorId: Record<string, string>
   gitdir: string
   // When a LEGI article, sectionTa or text has been created by the same JORF
   // article, sectionIa or text, ID of this JORF object
@@ -45,10 +51,6 @@ export interface Context {
   modifierByActionByConsolidatedArticleId: Record<
     string,
     Partial<Record<Action, { date: string; priority: number; textId: string }>>
-  >
-  modifyingArticleIdByActionByConsolidatedId: Record<
-    string,
-    Partial<Record<Action, string>>
   >
   modifyingTextsIdsByArticleActionDate: Record<string, Set<string>>
   referringTextsLiensById: Record<string, TexteVersionLienDb[]>

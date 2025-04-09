@@ -83,6 +83,7 @@ export function markdownVariantsBlockFromArticle(
                       sectionTaSlug += "_"
                     }
                   }
+                  return sectionTaSlug
                 }),
                 (() => {
                   const articleTitle = `Article ${articleNumber ?? articleId}`

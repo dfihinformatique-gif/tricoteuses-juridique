@@ -2174,12 +2174,17 @@ async function* markdownBlocksFromLegalObjectReferences(
   referrentDir: string,
   referrentId: string,
 ): AsyncGenerator<string, void> {
+  yield dedent`
+    <details>
+      <summary><h2>Références</h2></summary>
+
+  `
   if (outgoingReferenceMarkdownArray.length !== 0) {
     yield dedent`
-        ## ${escapeMarkdownTitle(outgoingDesignation)}
+      ### ${escapeMarkdownTitle(outgoingDesignation)}
 
-        ${markdownTreeFromReferenceMarkdownArray(outgoingReferenceMarkdownArray)}
-      `
+      ${markdownTreeFromReferenceMarkdownArray(outgoingReferenceMarkdownArray)}
+    `
   }
 
   const incomingReferenceMarkdownArrayByIdType: Partial<
@@ -2197,32 +2202,35 @@ async function* markdownBlocksFromLegalObjectReferences(
 
   if (incomingReferenceMarkdownArrayByIdType.CONT !== undefined) {
     yield dedent`
-      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.CONT)}
+      ### ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.CONT)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.CONT)}
     `
   }
   if (incomingReferenceMarkdownArrayByIdType.TEXT !== undefined) {
     yield dedent`
-      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.TEXT)}
+      ### ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.TEXT)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.TEXT)}
     `
   }
   if (incomingReferenceMarkdownArrayByIdType.SCTA !== undefined) {
     yield dedent`
-      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.SCTA)}
+      ### ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.SCTA)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.SCTA)}
     `
   }
   if (incomingReferenceMarkdownArrayByIdType.ARTI !== undefined) {
     yield dedent`
-      ## ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.ARTI)}
+      ### ${escapeMarkdownTitle(incomingReferencesDesignationByIdType.ARTI)}
 
       ${markdownTreeFromReferenceMarkdownArray(incomingReferenceMarkdownArrayByIdType.ARTI)}
     `
   }
+  yield dedent`
+    </details>
+  `
 }
 
 async function markdownLinkFromOutgoingReference(

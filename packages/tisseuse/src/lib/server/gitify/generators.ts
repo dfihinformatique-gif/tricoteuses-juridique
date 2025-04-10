@@ -219,7 +219,7 @@ async function generateArticlesGit(
               context.referringArticlesLiensById[articleId]
             if (referringArticlesLiens !== undefined) {
               referringArticlesLiensHtml = dedent`
-              ## Articles faisant référence à l'article
+              ### Articles faisant référence à l'article
 
               ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
             `
@@ -230,7 +230,7 @@ async function generateArticlesGit(
               context.referringTextsLiensById[articleId]
             if (referringTextsLiens !== undefined) {
               referringTextsLiensHtml = dedent`
-              ## Textes faisant référence à l'article
+              ### Textes faisant référence à l'article
 
               ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
             `
@@ -240,7 +240,7 @@ async function generateArticlesGit(
             const referredLiens = (article as LegiArticle).LIENS?.LIEN
             if (referredLiens !== undefined) {
               referredLiensHtml = dedent`
-              ## Références faites par l'article
+              ### Références faites par l'article
 
               ${await htmlFromReferredLiens(context, referredLiens)}
             `
@@ -258,7 +258,7 @@ async function generateArticlesGit(
                 ? undefined
                 : dedent`
                   <details>
-                    <summary><em>Références</em></summary>
+                    <summary><h2>Références</h2></summary>
 
                     ${referencesHtml.replaceAll("\n", "\n  ")}
                   </details>
@@ -1228,7 +1228,7 @@ async function generateSectionTaGit(
             context.referringArticlesLiensById[sectionTaNode.id]
           if (referringArticlesLiens !== undefined) {
             referringArticlesLiensHtml = dedent`
-            ## Articles faisant référence à la section
+            ### Articles faisant référence à la section
 
             ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
           `
@@ -1239,7 +1239,7 @@ async function generateSectionTaGit(
             context.referringTextsLiensById[sectionTaNode.id]
           if (referringTextsLiens !== undefined) {
             referringTextsLiensHtml = dedent`
-            ## Textes faisant référence à la section
+            ### Textes faisant référence à la section
 
             ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
           `
@@ -1256,7 +1256,7 @@ async function generateSectionTaGit(
               ? undefined
               : dedent`
                 <details>
-                  <summary><em>Références</em></summary>
+                  <summary><h2>Références</h2></summary>
 
                   ${referencesHtml.replaceAll("\n", "\n  ")}
                 </details>
@@ -1420,7 +1420,7 @@ async function generateTextGit(
             context.referringArticlesLiensById[textId]
           if (referringArticlesLiens !== undefined) {
             referringArticlesLiensHtml = dedent`
-            ## Articles faisant référence au texte
+            ### Articles faisant référence au texte
 
             ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
           `
@@ -1430,7 +1430,7 @@ async function generateTextGit(
           const referringTextsLiens = context.referringTextsLiensById[textId]
           if (referringTextsLiens !== undefined) {
             referringTextsLiensHtml = dedent`
-            ## Textes faisant référence au texte
+            ### Textes faisant référence au texte
 
             ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
           `
@@ -1440,7 +1440,7 @@ async function generateTextGit(
           const referredLiens = metaTexteVersion.LIENS?.LIEN
           if (referredLiens !== undefined) {
             referredLiensHtml = dedent`
-            ## Références faites par le texte
+            ### Références faites par le texte
 
             ${await htmlFromReferredLiens(context, referredLiens)}
           `
@@ -1458,7 +1458,7 @@ async function generateTextGit(
               ? undefined
               : dedent`
                 <details>
-                  <summary><em>Références</em></summary>
+                  <summary><h2>Références</h2></summary>
 
                   ${referencesHtml.replaceAll("\n", "\n  ")}
                 </details>

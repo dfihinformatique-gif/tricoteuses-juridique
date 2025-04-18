@@ -33,7 +33,7 @@ export function markdownVariantsBlockFromArticle(
   const foundTitreTxt = bestItemForDate(texte.TITRE_TXT, today)
   return dedent`
     <details>
-      <summary><h2>Variantes</h2></summary>
+      <summary><h2>Autres formats</h2></summary>
 
     ${[
       [
@@ -124,7 +124,7 @@ export function markdownVariantsBlockFromJo(jo: Jo): string {
   const joId = metaCommun.ID
   return dedent`
     <details>
-      <summary><h2>Variantes</h2></summary>
+      <summary><h2>Autres formats</h2></summary>
 
     ${[
       [
@@ -170,7 +170,7 @@ export function markdownVariantsBlockFromSectionTa(
   const foundTitreTxt = bestItemForDate(texte.TITRE_TXT, today)
   return dedent`
     <details>
-      <summary><h2>Variantes</h2></summary>
+      <summary><h2>Autres formats</h2></summary>
 
     ${[
       [
@@ -265,7 +265,7 @@ export function markdownVariantsBlockFromTexteVersion(
   const texteId = metaCommun.ID
   return dedent`
     <details>
-      <summary><h2>Variantes</h2></summary>
+      <summary><h2>Autres formats</h2></summary>
 
     ${[
       [

@@ -765,6 +765,7 @@ export const allJorfTexteVersionLienNatures = [
   "ORDONNANCE", // 35340
   "Procès-verbal de désaccord", // 4
   "PROJET", // 93
+  "PROJET D'AVENANT",
   "PROTOCOLE D'ACCORD COLLECTIF", // 7
   "Protocole d'accord de méthode", // 1
   "PROTOCOLE D'ACCORD INTERBRANCHE", // 3

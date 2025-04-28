@@ -19,6 +19,7 @@ export const diacritiquesMinuscule: { [letter: string]: string } = {
 const slugifyCharmap = {
   ...originalSlugify.defaults.charmap,
   "'": " ",
+  "’": " ",
   "@": " ",
   ".": " ",
 }

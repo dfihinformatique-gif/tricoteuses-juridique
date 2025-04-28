@@ -1374,7 +1374,13 @@ async function convertSectionTaToMarkdown(
             jsonRepository,
             sectionTaDir,
             lienArt["@id"],
-            { inParent: true },
+            {
+              inParent: true,
+              linkTitle:
+                lienArt["@num"] === undefined
+                  ? undefined
+                  : `article ${lienArt["@num"]}`,
+            },
           ),
         }),
       )),
@@ -1607,7 +1613,13 @@ async function convertTexteToMarkdown(
             jsonRepository,
             texteDir,
             lienArt["@id"],
-            { inParent: true },
+            {
+              inParent: true,
+              linkTitle:
+                lienArt["@num"] === undefined
+                  ? undefined
+                  : `article ${lienArt["@num"]}`,
+            },
           ),
         }),
       )),
@@ -2233,6 +2245,14 @@ async function* markdownBlocksFromLegalObjectReferences(
   `
 }
 
+function markdownLinkFromIdAndTitle(
+  referrerDir: string,
+  id: string,
+  title: string,
+): string {
+  return `[${escapeMarkdownLinkTitle(title)}](${escapeMarkdownLinkUrl(path.relative(referrerDir, gitPathFromId(id, ".md")))})`
+}
+
 async function markdownLinkFromOutgoingReference(
   referenceById: Record<string, unknown>,
   jsonOidByIdTree: OidBySplitPathTree,
@@ -2241,10 +2261,12 @@ async function markdownLinkFromOutgoingReference(
   referrentId: string,
   {
     inParent,
+    linkTitle,
     prefix,
     suffix,
   }: {
     inParent?: boolean
+    linkTitle?: string
     prefix?: string
     suffix?: string
   } = {},
@@ -2258,22 +2280,14 @@ async function markdownLinkFromOutgoingReference(
   return markdownLinkFromIdAndTitle(
     referrerDir,
     referrentId,
-    `${prefix === undefined ? "" : `${escapeMarkdownText(prefix)} `}${referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent, { inParent })}${suffix === undefined ? "" : ` ${escapeMarkdownText(suffix)}`}`,
+    `${prefix === undefined ? "" : `${escapeMarkdownText(prefix)} `}${referrent === undefined ? `Objet ${referrentId} manquant` : markdownLinkTitleFromIdAndLegalObject(referrentId, referrent, { inParent, linkTitle })}${suffix === undefined ? "" : ` ${escapeMarkdownText(suffix)}`}`,
   )
-}
-
-function markdownLinkFromIdAndTitle(
-  referrerDir: string,
-  id: string,
-  title: string,
-): string {
-  return `[${escapeMarkdownLinkTitle(title)}](${escapeMarkdownLinkUrl(path.relative(referrerDir, gitPathFromId(id, ".md")))})`
 }
 
 function markdownLinkTitleFromIdAndLegalObject(
   id: string,
   legalObject: unknown,
-  { inParent }: { inParent?: boolean } = {},
+  { inParent, linkTitle }: { inParent?: boolean; linkTitle?: string } = {},
 ): string {
   const idType = extractTypeFromId(id)
   switch (idType) {
@@ -2313,12 +2327,19 @@ function markdownLinkTitleFromIdAndLegalObject(
                     }`,
                 )
                 .join(", ")
+      // Note some articles don't have a article.META.META_SPEC.META_ARTICLE.NUM, but their number
+      // is in the first line of BLOC_TEXTUEL.
+      // In this case the number may be found in link to article (and should be given in linkTitle).
+      // For example, every articles of "LOI organique n° 2001-692 du 1er août 2001 relative aux
+      // lois de finances" (JORFTEXT000000394028)
       return [
         texteTitle,
         articleNumber === undefined
-          ? article.BLOC_TEXTUEL === undefined
-            ? "_article vide_"
-            : "_article sans numéro_"
+          ? linkTitle === undefined
+            ? article.BLOC_TEXTUEL === undefined
+              ? "_article vide_"
+              : "_article sans numéro_"
+            : linkTitle
           : `article ${articleNumber}`,
       ]
         .filter((fragment) => fragment !== undefined)

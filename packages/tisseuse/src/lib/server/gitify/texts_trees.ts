@@ -43,7 +43,6 @@ async function addArticleToTreeNode(
 ): Promise<void> {
   const metaArticle = article.META.META_SPEC.META_ARTICLE
   if (tm === undefined) {
-    // Article is directly in textelr.
     const articles = (node.articles ??= [])
     articles.push(article)
   } else {

@@ -364,6 +364,11 @@ export async function configureDatabase() {
   `
 
   await db`
+    CREATE INDEX IF NOT EXISTS article_num_key
+    ON article ((data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM'))
+  `
+
+  await db`
     CREATE INDEX IF NOT EXISTS dossier_legislatif_jorf_texte_principal_id_key
     ON dossier_legislatif (jorf_texte_principal_id)
   `

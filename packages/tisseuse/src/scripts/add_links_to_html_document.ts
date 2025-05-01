@@ -206,8 +206,19 @@ async function addLinksToHtmlDocument(
       link.tree,
     )) {
       switch (atomicReference.type) {
+        case "alinea-reference":
+        case "portion-reference": {
+          // Ignore sub-article refereneces.
+          break
+        }
+
         case "article-reference": {
           await addLinkToArticleReference(atomicReference)
+          break
+        }
+
+        case "book-reference": {
+          // TODO supra-article references
           break
         }
 
@@ -394,6 +405,12 @@ async function addLinksToHtmlDocument(
           let addedLinksCount = 0
           for (const atomicReferenceInLaw of atomicReferencesInLaw) {
             switch (atomicReferenceInLaw.type) {
+              case "alinea-reference":
+              case "portion-reference": {
+                // Ignore sub-article refereneces.
+                break
+              }
+
               case "article-reference": {
                 await addLinkToArticleReference(
                   atomicReferenceInLaw,
@@ -401,6 +418,11 @@ async function addLinksToHtmlDocument(
                   atomicReferencesInLaw.length === 1,
                 )
                 addedLinksCount++
+                break
+              }
+
+              case "book-reference": {
+                // TODO supra-article references
                 break
               }
 

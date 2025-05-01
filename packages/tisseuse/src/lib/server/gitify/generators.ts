@@ -219,10 +219,10 @@ async function generateArticlesGit(
               context.referringArticlesLiensById[articleId]
             if (referringArticlesLiens !== undefined) {
               referringArticlesLiensHtml = dedent`
-              ### Articles faisant référence à l'article
+                ### Articles faisant référence à l'article
 
-              ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
-            `
+                ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+              `
             }
 
             let referringTextsLiensHtml: string | undefined = undefined
@@ -230,20 +230,20 @@ async function generateArticlesGit(
               context.referringTextsLiensById[articleId]
             if (referringTextsLiens !== undefined) {
               referringTextsLiensHtml = dedent`
-              ### Textes faisant référence à l'article
+                ### Textes faisant référence à l'article
 
-              ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
-            `
+                ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+              `
             }
 
             let referredLiensHtml: string | undefined = undefined
             const referredLiens = (article as LegiArticle).LIENS?.LIEN
             if (referredLiens !== undefined) {
               referredLiensHtml = dedent`
-              ### Références faites par l'article
+                ### Références faites par l'article
 
-              ${await htmlFromReferredLiens(context, referredLiens)}
-            `
+                ${await htmlFromReferredLiens(context, referredLiens)}
+              `
             }
 
             const referencesHtml = [
@@ -257,12 +257,12 @@ async function generateArticlesGit(
               referencesHtml === ""
                 ? undefined
                 : dedent`
-                  <details>
-                    <summary><h2>Références</h2></summary>
+                    <details>
+                      <summary><h2>Références</h2></summary>
 
-                    ${referencesHtml.replaceAll("\n", "\n  ")}
-                  </details>
-                `
+                      ${referencesHtml.replaceAll("\n", "\n  ")}
+                    </details>
+                  `
 
             const treeEntry = await writeTextFileBlob(
               context.gitdir,
@@ -1203,35 +1203,35 @@ async function generateSectionTaGit(
           readmeCache.custom !== readmeLinksMarkdown
         ) {
           const readmeMarkdown = dedent`
-          ---
-          ${[
-            ["Commentaire", sectionTa.COMMENTAIRE],
-            // ["État", lienSectionTa["@etat"]],
-            ["Date de début", sectionTaNode.startDate],
-            ["Date de fin", sectionTaNode.endDate],
-            ["Identifiant", sectionTaNode.id],
-            // TODO: Mettre l'URL dans le Git Tricoteuses
-            // ["URL", lienSectionTa["@url"]],
-          ]
-            .filter(([, value]) => value !== undefined)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n")}
-          ---
+            ---
+            ${[
+              ["Commentaire", sectionTa.COMMENTAIRE],
+              // ["État", lienSectionTa["@etat"]],
+              ["Date de début", sectionTaNode.startDate],
+              ["Date de fin", sectionTaNode.endDate],
+              ["Identifiant", sectionTaNode.id],
+              // TODO: Mettre l'URL dans le Git Tricoteuses
+              // ["URL", lienSectionTa["@url"]],
+            ]
+              .filter(([, value]) => value !== undefined)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join("\n")}
+            ---
 
-          # ${escapeMarkdownTitle(sectionTaNode.title)}
+            # ${escapeMarkdownTitle(sectionTaNode.title)}
 
-          ${readmeLinksMarkdown}
-        `
+            ${readmeLinksMarkdown}
+          `
 
           let referringArticlesLiensHtml: string | undefined
           const referringArticlesLiens =
             context.referringArticlesLiensById[sectionTaNode.id]
           if (referringArticlesLiens !== undefined) {
             referringArticlesLiensHtml = dedent`
-            ### Articles faisant référence à la section
+              ### Articles faisant référence à la section
 
-            ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
-          `
+              ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+            `
           }
 
           let referringTextsLiensHtml: string | undefined
@@ -1239,10 +1239,10 @@ async function generateSectionTaGit(
             context.referringTextsLiensById[sectionTaNode.id]
           if (referringTextsLiens !== undefined) {
             referringTextsLiensHtml = dedent`
-            ### Textes faisant référence à la section
+              ### Textes faisant référence à la section
 
-            ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
-          `
+              ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+            `
           }
 
           const referencesHtml = [
@@ -1255,12 +1255,12 @@ async function generateSectionTaGit(
             referencesHtml === ""
               ? undefined
               : dedent`
-                <details>
-                  <summary><h2>Références</h2></summary>
+                  <details>
+                    <summary><h2>Références</h2></summary>
 
-                  ${referencesHtml.replaceAll("\n", "\n  ")}
-                </details>
-              `
+                    ${referencesHtml.replaceAll("\n", "\n  ")}
+                  </details>
+                `
 
           const treeEntry = await writeTextFileBlob(
             context.gitdir,
@@ -1397,53 +1397,53 @@ async function generateTextGit(
           ].filter((block) => block != null)
 
           const readmeMarkdown = dedent`
-          ---
-          ${[
-            ["Nature", texteVersion.META.META_COMMUN.NATURE],
-            ["État", metaTexteVersion.ETAT],
-            ["Date de début", metaTexteVersion.DATE_DEBUT],
-            ["Date de fin", metaTexteVersion.DATE_FIN],
-            ["Identifiant", textId],
-            ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
-            ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
-          ]
-            .filter(([, value]) => value !== undefined)
-            .map(([key, value]) => `${key}: ${value}`)
-            .join("\n")}
-          ---
+            ---
+            ${[
+              ["Nature", texteVersion.META.META_COMMUN.NATURE],
+              ["État", metaTexteVersion.ETAT],
+              ["Date de début", metaTexteVersion.DATE_DEBUT],
+              ["Date de fin", metaTexteVersion.DATE_FIN],
+              ["Identifiant", textId],
+              ["NOR", texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NOR],
+              ["Ancien identifiant", texteVersion.META.META_COMMUN.ANCIEN_ID],
+            ]
+              .filter(([, value]) => value !== undefined)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join("\n")}
+            ---
 
-          ${readmeBlocks.join("\n\n")}
-        `
+            ${readmeBlocks.join("\n\n")}
+          `
 
           let referringArticlesLiensHtml: string | undefined
           const referringArticlesLiens =
             context.referringArticlesLiensById[textId]
           if (referringArticlesLiens !== undefined) {
             referringArticlesLiensHtml = dedent`
-            ### Articles faisant référence au texte
+              ### Articles faisant référence au texte
 
-            ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
-          `
+              ${await htmlFromReferringArticlesLiens(context, referringArticlesLiens)}
+            `
           }
 
           let referringTextsLiensHtml: string | undefined
           const referringTextsLiens = context.referringTextsLiensById[textId]
           if (referringTextsLiens !== undefined) {
             referringTextsLiensHtml = dedent`
-            ### Textes faisant référence au texte
+              ### Textes faisant référence au texte
 
-            ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
-          `
+              ${await htmlFromReferringTextsLiens(context, referringTextsLiens)}
+            `
           }
 
           let referredLiensHtml: string | undefined
           const referredLiens = metaTexteVersion.LIENS?.LIEN
           if (referredLiens !== undefined) {
             referredLiensHtml = dedent`
-            ### Références faites par le texte
+              ### Références faites par le texte
 
-            ${await htmlFromReferredLiens(context, referredLiens)}
-          `
+              ${await htmlFromReferredLiens(context, referredLiens)}
+            `
           }
 
           const referencesHtml = [
@@ -1457,12 +1457,12 @@ async function generateTextGit(
             referencesHtml === ""
               ? undefined
               : dedent`
-                <details>
-                  <summary><h2>Références</h2></summary>
+                  <details>
+                    <summary><h2>Références</h2></summary>
 
-                  ${referencesHtml.replaceAll("\n", "\n  ")}
-                </details>
-              `
+                    ${referencesHtml.replaceAll("\n", "\n  ")}
+                  </details>
+                `
 
           const treeEntry = await writeTextFileBlob(
             context.gitdir,
@@ -1561,7 +1561,7 @@ async function htmlFromReferredLiens(
                           .replace(/\s+\(\d+\)$/, "") ??
                         referredTextTitreTxt["@c_titre_court"] ??
                         `${referredArticleTexte["@nature"] ?? "Texte"} ${referredArticleTexte["@cid"]} sans titre`)
-                  referredA = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredArticleTitleFragment)}</a>`
+                  referredA = `<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredArticleTitleFragment)}</a>`
                 }
               }
 
@@ -1590,7 +1590,7 @@ async function htmlFromReferredLiens(
                           .replace(/\s+\(\d+\)$/, "") ??
                         referredTextTitreTxt["@c_titre_court"] ??
                         `${referredSectionTaTexte["@nature"] ?? "Texte"} ${referredSectionTaTexte["@cid"]} sans titre`)
-                  referredA = dedent`<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredSectionTaTitleFragment)}</a>`
+                  referredA = `<a href="${new URL(`redirection/${referredId}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referredTextTitleFragment)} - ${escapeHtml(referredSectionTaTitleFragment)}</a>`
                 }
               }
 
@@ -1690,7 +1690,7 @@ async function htmlFromReferringArticlesLiens(
                       .replace(/\s+\(\d+\)$/, "") ??
                     referringTextTitreTxt["@c_titre_court"] ??
                     `${referringArticleTexte["@nature"] ?? "Texte"} ${referringArticleTexte["@cid"]} sans titre`)
-              referringArticleA = dedent`<a href="${new URL(`redirection/${referringArticleLien.article_id}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referringTextTitleFragment)} - ${escapeHtml(referringArticleTitleFragment)}</a>`
+              referringArticleA = `<a href="${new URL(`redirection/${referringArticleLien.article_id}?vers=git&vers=legifrance`, config.url).toString()}">${escapeHtml(referringTextTitleFragment)} - ${escapeHtml(referringArticleTitleFragment)}</a>`
             }
             return dedent`
               <li>

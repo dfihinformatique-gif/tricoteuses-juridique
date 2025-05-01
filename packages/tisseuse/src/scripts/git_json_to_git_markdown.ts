@@ -234,6 +234,7 @@ async function convertArticleToMarkdown(
     ),
   )
 
+  const nota = await cleanHtmlFragment((article as LegiArticle).NOTA?.CONTENU)
   const articleMarkdown = [
     dedent`
       ---
@@ -261,6 +262,8 @@ async function convertArticleToMarkdown(
       ? undefined
       : `# ${escapeMarkdownTitle(`Article ${articleNumber}`)}`,
     await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU),
+    nota === undefined ? undefined : `### Nota`,
+    nota,
     ...(await Array.fromAsync(
       markdownBlocksFromLegalObjectReferences(
         referrerById,

@@ -191,28 +191,36 @@ async function generateArticlesGit(
             articleId !== articleCache.id ||
             articleCache.custom !== undefined
           ) {
+            const nota = await cleanHtmlFragment(
+              (article as LegiArticle).NOTA?.CONTENU,
+            )
+            const articleBlocks = [
+              `# ${escapeMarkdownTitle(articleTitle)}`,
+              await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU),
+              nota === undefined ? undefined : `### Nota`,
+              nota,
+            ].filter((block) => block != null)
+
             const articleMarkdown = dedent`
-            ---
-            ${[
-              ["Nature", metaCommun.NATURE],
-              ["Numéro", metaArticle.NUM],
-              ["Type", metaArticle.TYPE],
-              ["État", (metaArticle as LegiArticleMetaArticle).ETAT],
-              ["Date de début", metaArticle.DATE_DEBUT],
-              ["Date de fin", metaArticle.DATE_FIN],
-              ["Identifiant", articleId],
-              ["Origine", metaCommun.ORIGINE],
-              ["Ancien identifiant", metaCommun.ANCIEN_ID],
-            ]
-              .filter(([, value]) => value !== undefined)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join("\n")}
-            ---
+              ---
+              ${[
+                ["Nature", metaCommun.NATURE],
+                ["Numéro", metaArticle.NUM],
+                ["Type", metaArticle.TYPE],
+                ["État", (metaArticle as LegiArticleMetaArticle).ETAT],
+                ["Date de début", metaArticle.DATE_DEBUT],
+                ["Date de fin", metaArticle.DATE_FIN],
+                ["Identifiant", articleId],
+                ["Origine", metaCommun.ORIGINE],
+                ["Ancien identifiant", metaCommun.ANCIEN_ID],
+              ]
+                .filter(([, value]) => value !== undefined)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join("\n")}
+              ---
 
-            # ${escapeMarkdownTitle(articleTitle)}
-
-            ${await cleanHtmlFragment(article.BLOC_TEXTUEL?.CONTENU)}
-          `
+              ${articleBlocks.join("\n\n")}
+            `
 
             let referringArticlesLiensHtml: string | undefined = undefined
             const referringArticlesLiens =

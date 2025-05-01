@@ -225,6 +225,7 @@ async function addLinksToHtmlDocument(
         case "law-reference": {
           switch (atomicReference.lawType) {
             case "arrêté":
+            case "convention":
             case "directive":
             case "règlement":
             case "ordonnance": {

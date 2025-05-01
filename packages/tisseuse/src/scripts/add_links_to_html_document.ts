@@ -432,6 +432,7 @@ async function addLinksToHtmlDocument(
                   console.log(
                     `Reference of type ${atomicReferenceInLaw.type} ignored in law-reference`,
                   )
+                  console.log(JSON.stringify(link, null, 2))
                 }
             }
           }
@@ -455,6 +456,7 @@ async function addLinksToHtmlDocument(
         default:
           if (logIgnoredReferencesTypes) {
             console.log(`Reference of type ${atomicReference.type} ignored`)
+            console.log(JSON.stringify(link, null, 2))
           }
       }
     }

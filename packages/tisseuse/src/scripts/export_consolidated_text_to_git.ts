@@ -1,5 +1,5 @@
 import fs from "fs-extra"
-import git from "isomorphic-git"
+import nodegit from "nodegit"
 import sade from "sade"
 
 import { generateConsolidatedTextGit } from "$lib/server/gitify/generators.js"
@@ -18,13 +18,9 @@ sade("export_consolidated_text_to_git <consolidatedTextId> <targetDir>", true)
     "Log references of consolidated text and its articles",
   )
   .action(async (consolidatedTextId, targetDir, options) => {
-    const currentSourceCodeCommitOid = (
-      await git.log({
-        depth: 1,
-        dir: ".",
-        fs,
-      })
-    )[0]?.oid
+    const repo = await nodegit.Repository.open(".")
+    const headCommit = await repo.getHeadCommit()
+    const currentSourceCodeCommitOid = headCommit?.id().tostrS()
 
     process.exit(
       await generateConsolidatedTextGit(consolidatedTextId, targetDir, {

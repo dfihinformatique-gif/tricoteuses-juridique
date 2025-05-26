@@ -1,8 +1,6 @@
 import dedent from "dedent-js"
 import fs from "fs-extra"
-import git from "isomorphic-git"
-
-import type { TreeEntry } from "isomorphic-git"
+import * as nodegit from "nodegit"
 
 export const licence =
   dedent`
@@ -74,19 +72,15 @@ export const licence =
 const textEncoder = new TextEncoder()
 
 export async function writeTextFileBlob(
-  gitdir: string,
+  repo: nodegit.Repository,
   filename: string,
   text: string,
-): Promise<TreeEntry> {
-  const oid = await git.writeBlob({
-    fs,
-    gitdir,
-    blob: textEncoder.encode(text),
-  })
+): Promise<{ mode: string; path: string; oid: string; type: "blob" }> {
+  const blobOid = await repo.createBlobFromBuffer(Buffer.from(text))
   return {
     mode: "100644",
     path: filename,
-    oid,
+    oid: blobOid.tostrS(),
     type: "blob",
   }
 }

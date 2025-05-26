@@ -1,6 +1,6 @@
 import assert from "assert"
 import fs from "fs-extra"
-import git from "isomorphic-git"
+import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
 import opentelemetry from "@opentelemetry/api"
@@ -48,13 +48,9 @@ async function exportConsolidatedTextsToGit(
         }
         let skip = resume !== undefined
 
-        const currentSourceCodeCommitOid = (
-          await git.log({
-            depth: 1,
-            dir: ".",
-            fs,
-          })
-        )[0]?.oid
+        const repo = await nodegit.Repository.open(".")
+        const headCommit = await repo.getHeadCommit()
+        const currentSourceCodeCommitOid = headCommit?.id().tostrS()
 
         for (const {
           data: consolidatedTexteVersion,

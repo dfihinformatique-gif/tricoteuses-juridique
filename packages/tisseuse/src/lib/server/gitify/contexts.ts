@@ -1,5 +1,3 @@
-import type { TreeEntry } from "isomorphic-git"
-
 import type {
   JorfArticle,
   JorfTextelr,
@@ -82,7 +80,7 @@ interface TextFileCache {
    */
   custom?: string
   id: string
-  treeEntry: TreeEntry
+  treeEntry: { mode: string; path: string; oid: string; type: "blob" }
 }
 
 export interface TexteManquant {

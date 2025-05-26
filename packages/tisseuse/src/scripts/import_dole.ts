@@ -111,9 +111,13 @@ async function importDole(
         )
         ON CONFLICT (id)
         DO UPDATE SET
-          data = ${db.json(dossierLegislatif as unknown as JSONValue)},
-          jorf_texte_principal_id = ${jorfTextePrincipalId ?? null},
-          jorf_textes_id = ${jorfTextesId.size === 0 ? null : [...jorfTextesId]}
+          data = EXCLUDED.data,
+          jorf_texte_principal_id = EXCLUDED.jorf_texte_principal_id,
+          jorf_textes_id = EXCLUDED.jorf_textes_id
+        WHERE
+          dossier_legislatif.data IS DISTINCT FROM EXCLUDED.data OR
+          dossier_legislatif.jorf_texte_principal_id IS DISTINCT FROM EXCLUDED.jorf_texte_principal_id OR
+          dossier_legislatif.jorf_textes_id IS DISTINCT FROM EXCLUDED.jorf_textes_id
       `
       dossierLegislatifRemainingIds.delete(
         dossierLegislatif.META.META_COMMUN.ID,

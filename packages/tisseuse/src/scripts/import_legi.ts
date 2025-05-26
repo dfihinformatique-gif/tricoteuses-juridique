@@ -198,7 +198,8 @@ async function importLegi(
                 )
                 ON CONFLICT (id)
                 DO UPDATE SET
-                  data = ${db.json(article as unknown as JSONValue)}
+                  data = EXCLUDED.data
+                WHERE article.data IS DISTINCT FROM EXCLUDED.data
               `
               articleRemainingIds.delete(article.META.META_COMMUN.ID)
             }
@@ -231,7 +232,8 @@ async function importLegi(
                 )
                 ON CONFLICT (eli)
                 DO UPDATE SET
-                  id = ${id}
+                  id = EXCLUDED.id
+                WHERE id.id IS DISTINCT FROM EXCLUDED.id
               `
               idRemainingElis.delete(eli)
             }
@@ -261,7 +263,8 @@ async function importLegi(
                 )
                 ON CONFLICT (id)
                 DO UPDATE SET
-                  data = ${db.json(section as unknown as JSONValue)}
+                  data = EXCLUDED.data
+                WHERE section_ta.data IS DISTINCT FROM EXCLUDED.data
               `
               sectionTaRemainingIds.delete(section.ID)
             }
@@ -301,11 +304,13 @@ async function importLegi(
                 )
                 ON CONFLICT (id)
                 DO UPDATE SET
-                  data = ${db.json(texteVersion as unknown as JSONValue)},
-                  nature = ${texteVersion.META.META_COMMUN.NATURE ?? ""},
-                  text_search = setweight(to_tsvector('french', ${textAFragments.join(
-                    " ",
-                  )}), 'A')
+                  data = EXCLUDED.data,
+                  nature = EXCLUDED.nature,
+                  text_search = EXCLUDED.text_search
+                WHERE
+                  texte_version.data IS DISTINCT FROM EXCLUDED.data OR
+                  texte_version.nature IS DISTINCT FROM EXCLUDED.nature OR
+                  texte_version.text_search IS DISTINCT FROM EXCLUDED.text_search
               `
               texteVersionRemainingIds.delete(texteVersion.META.META_COMMUN.ID)
             }
@@ -335,7 +340,8 @@ async function importLegi(
                 )
                 ON CONFLICT (id)
                 DO UPDATE SET
-                  data = ${db.json(textelr as unknown as JSONValue)}
+                  data = EXCLUDED.data
+                WHERE textelr.data IS DISTINCT FROM EXCLUDED.data
               `
               textelrRemainingIds.delete(textelr.META.META_COMMUN.ID)
             }
@@ -371,10 +377,13 @@ async function importLegi(
                 )
                 ON CONFLICT (eli)
                 DO UPDATE SET
-                  id = ${id},
-                  data = ${db.json(versions as unknown as JSONValue)}
+                  id = EXCLUDED.id,
+                  data = EXCLUDED.data
+                WHERE
+                  versions.id IS DISTINCT FROM EXCLUDED.id OR
+                  versions.data IS DISTINCT FROM EXCLUDED.data
               `
-              versionsRemainingElis.delete(id)
+              versionsRemainingElis.delete(eli) // Corrected to use eli
             }
             break
           default: {

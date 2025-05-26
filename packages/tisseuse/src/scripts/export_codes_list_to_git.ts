@@ -8,7 +8,7 @@ import { $, cd } from "zx"
 import type { LegiTexteEtat, LegiTexteVersion } from "$lib/legal/legi.js"
 import config from "$lib/server/config.js"
 import { db } from "$lib/server/databases/index.js"
-import { licence } from "$lib/server/gitify/repositories.js"
+import { licence } from "$lib/server/nodegit/repositories.js"
 import { writeTextFileIfChanged } from "$lib/server/files.js"
 import { repositoryNameFromTitle } from "$lib/urls.js"
 

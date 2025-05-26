@@ -9,7 +9,7 @@ import { $, cd } from "zx"
 import type { LegiTexteNature, LegiTexteVersion } from "$lib/legal/legi.js"
 import config from "$lib/server/config.js"
 import { db } from "$lib/server/databases/index.js"
-import { generateConsolidatedTextGit } from "$lib/server/gitify/generators.js"
+import { generateConsolidatedTextGit } from "$lib/server/nodegit/generators.js"
 import {
   organizationNameByTexteNature,
   repositoryNameFromTitle,

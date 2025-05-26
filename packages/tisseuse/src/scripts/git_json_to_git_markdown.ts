@@ -58,7 +58,7 @@ import {
   escapeMarkdownTitle,
 } from "$lib/markdown/escapes.js"
 import config from "$lib/server/config.js"
-import { licence } from "$lib/server/gitify/repositories.js"
+import { licence } from "$lib/server/nodegit/repositories.js"
 import {
   dilaDateRegExp,
   iterCommitsOids,

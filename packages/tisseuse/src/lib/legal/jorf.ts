@@ -1,364 +1,376 @@
 import type { ArticleType, Sens } from "./shared.js"
 
 /**
- * Represents a Journal Officiel (JO) publication.
- * Corresponds to the `JO` root element in `jorf_conteneur.dtd`.
- * DTD comment: "Décrit la structure d'un document de type conteneur JORF".
+ * Représente une publication au Journal Officiel (JO).
+ * Correspond à l'élément racine `JO` dans `jorf_conteneur.dtd`.
+ * Commentaire DTD : "Décrit la structure d'un document de type conteneur JORF".
  */
 export interface Jo {
   /**
-   * Metadata for the JO publication.
-   * Corresponds to `META` in `jorf_conteneur.dtd`.
+   * Métadonnées de la publication JO.
+   * Correspond à `META` dans `jorf_conteneur.dtd`.
    */
   META: {
     /**
-     * Common metadata elements.
-     * Corresponds to `META_COMMUN` (defined in `meta_commun.dtd`).
+     * Éléments de métadonnées communs.
+     * Correspond à `META_COMMUN` (défini dans `meta_commun.dtd`).
      */
     META_COMMUN: {
-      /** Unique identifier of the JO publication. From `ID` in `meta_commun.dtd`. */
+      /** Identifiant unique de la publication JO. Provient de `ID` dans `meta_commun.dtd`. */
       ID: string
-      /** European Legislation Identifier for the JO. From `ID_ELI` in `meta_commun.dtd`. */
+      /** Identifiant Européen de la Législation (ELI) pour le JO. Provient de `ID_ELI` dans `meta_commun.dtd`. */
       ID_ELI?: string
-      /** Nature of the document, typically "JO". From `NATURE` in `meta_commun.dtd`. */
+      /** Nature du document, typiquement "JO". Provient de `NATURE` dans `meta_commun.dtd`. */
       NATURE: JoNature
-      /** Origin of the document, typically "JORF". From `ORIGINE` in `meta_commun.dtd`. */
+      /** Origine du document, typiquement "JORF". Provient de `ORIGINE` dans `meta_commun.dtd`. */
       ORIGINE: JoOrigine
-      /** Relative URL of the JO publication. From `URL` in `meta_commun.dtd`. */
+      /** URL relative de la publication JO. Provient de `URL` dans `meta_commun.dtd`. */
       URL: string
     }
     /**
-     * Specific metadata for the JO container.
-     * Corresponds to `META_SPEC` in `jorf_conteneur.dtd`.
+     * Métadonnées spécifiques au conteneur JO.
+     * Correspond à `META_SPEC` dans `jorf_conteneur.dtd`.
      */
     META_SPEC: {
       /**
-       * Container-specific metadata.
-       * Corresponds to `META_CONTENEUR` in `jorf_conteneur.dtd`.
+       * Métadonnées spécifiques au conteneur.
+       * Correspond à `META_CONTENEUR` dans `jorf_conteneur.dtd`.
+       * Commentaire DTD : "Métadonnées du conteneur JORF".
        */
       META_CONTENEUR: {
-        /** Publication date of the JO. From `DATE_PUBLI` in `jorf_conteneur.dtd`. */
+        /** Date de publication du JO. Provient de `DATE_PUBLI` dans `jorf_conteneur.dtd`. */
         DATE_PUBLI: string
-        /** Number of the JO. From `NUM` in `jorf_conteneur.dtd`. */
+        /** Numéro du JO. Provient de `NUM` dans `jorf_conteneur.dtd`. */
         NUM?: string
-        /** Title of the JO. From `TITRE` in `jorf_conteneur.dtd`. */
+        /** Titre du JO. Provient de `TITRE` dans `jorf_conteneur.dtd`. */
         TITRE: string
       }
     }
   }
   /**
-   * Structure of the texts within the JO (table of contents).
-   * Corresponds to `STRUCTURE_TXT` in `jorf_conteneur.dtd`.
-   * DTD comment: "Sommaire du JO. Definit la liste ordonnée des têtiers et des textes composants le JO."
+   * Structure des textes au sein du JO (table des matières).
+   * Correspond à `STRUCTURE_TXT` dans `jorf_conteneur.dtd`.
+   * Commentaire DTD : "Sommaire du JO. Definit la liste ordonnée des têtiers et des textes composants le JO."
    */
   STRUCTURE_TXT?: {
-    /** Array of links to texts published in this JO. */
+    /** Tableau de liens vers les textes publiés dans ce JO. */
     LIEN_TXT?: JoLienTxt[]
-    /** Array of table of contents levels (têtiers). */
+    /** Tableau des niveaux de la table des matières (têtiers). */
     TM?: JoTm[]
   }
 }
 
 /**
- * Represents a link to a text within a Journal Officiel.
- * Corresponds to `LIEN_TXT` element in `jorf_conteneur.dtd`.
+ * Représente un lien vers un texte au sein d'un Journal Officiel.
+ * Correspond à l'élément `LIEN_TXT` dans `jorf_conteneur.dtd`.
+ * Commentaire DTD : "Lien vers le texte du JO".
  */
 export interface JoLienTxt {
-  /** Identifier of the linked text. From `idtxt` attribute. */
+  /** Identifiant du texte lié. Provient de l'attribut `idtxt`. */
   "@idtxt": string
-  /** Title of the linked text. From `titretxt` attribute. */
+  /** Titre du texte lié. Provient de l'attribut `titretxt`. */
   "@titretxt"?: string
 }
 
-/** Nature of a `Jo` document, typically "JO". */
+/** Nature d'un document `Jo`, typiquement "JO". */
 export type JoNature = (typeof allJoNatures)[number]
 
-/** Origin of a `Jo` document, typically "JORF". */
+/** Origine d'un document `Jo`, typiquement "JORF". */
 export type JoOrigine = (typeof allJoOrigines)[number]
 
 /**
- * Represents an article published in the Journal Officiel (JORF).
- * Corresponds to the `ARTICLE` root element in `jorf_article.dtd`.
- * DTD comment: "Décrit toutes les informations relatives à un article JORF".
+ * Représente un article publié au Journal Officiel (JORF).
+ * Correspond à l'élément racine `ARTICLE` dans `jorf_article.dtd`.
+ * Commentaire DTD : "Décrit toutes les informations relatives à un article JORF".
  */
 export interface JorfArticle {
   /**
-   * Main textual content of the article.
-   * Corresponds to `BLOC_TEXTUEL` in `jorf_article.dtd`, containing HTML `CONTENU`.
+   * Contenu textuel principal de l'article.
+   * Correspond à `BLOC_TEXTUEL` dans `jorf_article.dtd`, contenant un `CONTENU` HTML.
+   * Commentaire DTD : "Contenu textuel".
    */
   BLOC_TEXTUEL?: {
-    /** HTML content of the article. */
+    /** Contenu HTML de l'article. */
     CONTENU: string // HTML
   }
   /**
-   * Context of the article, referencing its parent legislative text.
-   * Corresponds to `CONTEXTE` in `jorf_article.dtd`.
+   * Contexte de l'article, référençant son texte parent.
+   * Correspond à `CONTEXTE` dans `jorf_article.dtd`.
+   * Commentaire DTD : "Rappel du contexte de l'article courant. Cite le texte parent et ses différentes versions."
    */
   CONTEXTE: {
     /**
-     * Information about the parent legislative text.
-     * Corresponds to `TEXTE` element in `jorf_article.dtd`.
+     * Informations sur le texte parent.
+     * Correspond à l'élément `TEXTE` dans `jorf_article.dtd`.
+     * Commentaire DTD : "Rappel du texte parent et de ses différentes versions".
      */
     TEXTE: {
-      /** Common identifier for all versions of the parent text. From `cid` attribute. */
+      /** Identifiant commun à toutes les versions du texte parent. Provient de l'attribut `cid`. */
       "@cid": string
-      /** Publication date of the parent text. From `date_publi` attribute. */
+      /** Date de publication du texte parent. Provient de l'attribut `date_publi`. */
       "@date_publi": string
-      /** Signature date of the parent text. From `date_signature` attribute. */
+      /** Date de signature du texte parent. Provient de l'attribut `date_signature`. */
       "@date_signature": string
-      /** Nature of the parent text. From `nature` attribute. */
+      /** Nature du texte parent. Provient de l'attribut `nature`. */
       "@nature"?: JorfArticleTexteNature
-      /** NOR identifier of the parent text. From `nor` attribute. */
+      /** Identifiant NOR du texte parent. Provient de l'attribut `nor`. */
       "@nor"?: string
-      /** Number of the parent text. From `num` attribute. */
+      /** Numéro du texte parent. Provient de l'attribut `num`. */
       "@num"?: string
-      /** Publication number in JO for the parent text. From `num_parution_jo` attribute. */
+      /** Numéro de parution au JO pour le texte parent. Provient de l'attribut `num_parution_jo`. */
       "@num_parution_jo"?: string
       /**
-       * Titles of the parent text versions.
-       * Corresponds to `TITRE_TXT` elements in `jorf_article.dtd`.
+       * Titres des versions du texte parent.
+       * Correspond aux éléments `TITRE_TXT` dans `jorf_article.dtd`.
+       * Commentaire DTD : "Titre long du texte parent".
        */
       TITRE_TXT?: Array<{
-        /** Text content of the title. */
+        /** Contenu textuel du titre. */
         "#text"?: string
-        /** Short title of the text version. From `c_titre_court` attribute. */
+        /** Titre court de la version du texte. Provient de l'attribut `c_titre_court`. */
         "@c_titre_court"?: string
-        /** Start date of validity for this text version title. From `debut` attribute. */
+        /** Date de début de validité pour ce titre. Provient de l'attribut `debut`. */
         "@debut": string
-        /** End date of validity for this text version title. From `fin` attribute. */
+        /** Date de fin de validité pour ce titre. Provient de l'attribut `fin`. */
         "@fin": string
-        /** Internal identifier of the text version. From `id_txt` attribute. */
+        /** Identifiant interne de la version du texte. Provient de l'attribut `id_txt`. */
         "@id_txt": string
       }>
       /**
-       * Table of contents hierarchy for the parent text.
-       * Corresponds to nested `TM` elements in `jorf_article.dtd`.
+       * Hiérarchie de la table des matières pour le texte parent.
+       * Correspond aux éléments `TM` imbriqués dans `jorf_article.dtd`.
+       * Commentaire DTD : "Têtier parent".
        */
       TM?: JorfArticleTm
     }
   }
   /**
-   * Metadata for the article.
-   * Corresponds to `META` in `jorf_article.dtd`.
+   * Métadonnées de l'article.
+   * Correspond à `META` dans `jorf_article.dtd`.
    */
   META: {
     /**
-     * Common metadata elements.
-     * Corresponds to `META_COMMUN` (defined in `meta_commun.dtd`).
+     * Éléments de métadonnées communs.
+     * Correspond à `META_COMMUN` (défini dans `meta_commun.dtd`).
      */
     META_COMMUN: {
-      /** Old identifier. From `ANCIEN_ID`. */
+      /** Ancien identifiant. Provient de `ANCIEN_ID`. */
       ANCIEN_ID?: string
-      /** European Legislation Identifier alias. From `ELI_ALIAS/ID_ELI_ALIAS`. */
+      /** Alias de l'Identifiant Européen de la Législation (ELI). Provient de `ELI_ALIAS/ID_ELI_ALIAS`. */
       ELI_ALIAS?: {
         ID_ELI_ALIAS: string
       }
-      /** Unique identifier of the article. From `ID`. */
+      /** Identifiant unique de l'article. Provient de `ID`. */
       ID: string
-      /** European Legislation Identifier. From `ID_ELI`. */
+      /** Identifiant Européen de la Législation (ELI). Provient de `ID_ELI`. */
       ID_ELI?: string
-      /** Nature of the document (e.g., "Article"). From `NATURE`. */
+      /** Nature du document (ex: "Article"). Provient de `NATURE`. */
       NATURE?: JorfArticleNature
-      /** Origin of the document (e.g., "JORF"). From `ORIGINE`. */
+      /** Origine du document (ex: "JORF"). Provient de `ORIGINE`. */
       ORIGINE: JorfArticleOrigine
-      /** Relative URL of the document. From `URL`. */
+      /** URL relative du document. Provient de `URL`. */
       URL: string
     }
     /**
-     * Specific metadata for the article.
-     * Corresponds to `META_SPEC` in `jorf_article.dtd`.
+     * Métadonnées spécifiques à l'article.
+     * Correspond à `META_SPEC` dans `jorf_article.dtd`.
      */
     META_SPEC: {
       /**
-       * Article-specific metadata.
-       * Corresponds to `META_ARTICLE` in `jorf_article.dtd`.
+       * Métadonnées spécifiques à l'article.
+       * Correspond à `META_ARTICLE` dans `jorf_article.dtd`.
+       * Commentaire DTD : "Metadonnees specifiques aux articles".
        */
       META_ARTICLE: JorfArticleMetaArticle
     }
   }
   /**
-   * Versions of the article. JORF articles are typically versioned if modified by subsequent LEGI texts.
-   * Corresponds to `VERSIONS` in `jorf_article.dtd`.
-   * DTD comment: "Liste des versions de cet article. Les autres versions d'un texte JORF sont issu du fond LEGI".
+   * Versions de l'article. Les articles JORF sont typiquement versionnés s'ils sont modifiés par des textes LEGI ultérieurs.
+   * Correspond à `VERSIONS` dans `jorf_article.dtd`.
+   * Commentaire DTD : "Liste des versions de cet article. Les autres versions d'un texte JORF sont issu du fond LEGI".
    */
   VERSIONS: {
-    /** Array of article version elements. */
+    /** Tableau d'éléments de version d'article. */
     VERSION: JorfArticleVersion[]
   }
-  // SM (Résumé LEX) is in jorf_article.dtd but not in this TS interface.
+  // L'élément SM (Résumé LEX) est présent dans jorf_article.dtd mais pas dans cette interface TS.
 }
 
 /**
- * Legal status of a JORF article version.
- * Values based on `ETAT` attribute of `VERSION` element in `jorf_article.dtd`.
- * DTD comment example: "@example ABROGE".
+ * Statut juridique d'une version d'article JORF.
+ * Valeurs basées sur l'attribut `etat` de l'élément `VERSION` dans `jorf_article.dtd`.
+ * Exemple de commentaire DTD : "@example ABROGE".
  */
 export type JorfArticleEtat = (typeof allJorfArticleEtats)[number]
 
-/** Origin of the article linked to by `JorfArticleVersion/LIEN_ART`. */
+/** Origine de l'article lié par `JorfArticleVersion/LIEN_ART`. */
 export type JorfArticleLienArticleOrigine =
   (typeof allJorfArticleLienArticleOrigines)[number]
 
 /**
- * Represents article-specific metadata for a JORF article.
- * Corresponds to `META_ARTICLE` in `jorf_article.dtd`.
+ * Représente les métadonnées spécifiques à un article JORF.
+ * Correspond à `META_ARTICLE` dans `jorf_article.dtd`.
  */
 export interface JorfArticleMetaArticle {
-  /** Start date of validity for the article. From `DATE_DEBUT`. */
+  /** Date d'entrée en vigueur de l'article. Provient de `DATE_DEBUT`. */
   DATE_DEBUT: string
-  /** End date of validity for the article. From `DATE_FIN`. */
+  /** Date de fin de vigueur de l'article. Provient de `DATE_FIN`. */
   DATE_FIN: string
   /**
-   * Keywords for the article.
-   * Corresponds to `MCS_ART` in `jorf_article.dtd`.
+   * Mots-clés de l'article.
+   * Correspond à `MCS_ART` et ses éléments `MC` ("Libellé du mot clé") dans `jorf_article.dtd`.
    */
   MCS_ART?: { MC: string[] }
-  /** Number of the article (e.g., "2-4"). From `NUM`. */
+  /** Numéro de l'article (ex: "2-4"). Provient de `NUM`. */
   NUM?: string
-  /** Type of the article. From `TYPE`. DTD comment: "@hidden liste de valeurs à préciser". */
+  /** Type de l'article. Provient de `TYPE`. Commentaire DTD : "@hidden liste de valeurs à préciser". */
   TYPE?: ArticleType
 }
 
-/** Nature of a `JorfArticle` document, typically "Article". */
+/** Nature d'un document `JorfArticle`, typiquement "Article". */
 export type JorfArticleNature = (typeof allJorfArticleNatures)[number]
 
-/** Origin of a `JorfArticle` document, typically "JORF". */
+/** Origine d'un document `JorfArticle`, typiquement "JORF". */
 export type JorfArticleOrigine = (typeof allJorfArticleOrigines)[number]
 
-/** Nature of the parent text referenced in `JorfArticle/CONTEXTE/TEXTE`. */
+/** Nature du texte parent référencé dans `JorfArticle/CONTEXTE/TEXTE`. */
 export type JorfArticleTexteNature = (typeof allJorfArticleTexteNatures)[number]
 
 /**
- * Represents a level in the table of contents (Table des Matières - TM) within a JORF article's context.
- * Corresponds to the recursive `TM` element structure in `jorf_article.dtd`.
+ * Représente un niveau dans la table des matières (TM) contextuelle d'un article JORF.
+ * Correspond à la structure récursive de l'élément `TM` dans `jorf_article.dtd`.
  */
 export interface JorfArticleTm {
   /**
-   * Title of this table of contents level.
-   * Corresponds to `TITRE_TM` element.
+   * Titre de ce niveau de table des matières.
+   * Correspond à l'élément `TITRE_TM`.
+   * Commentaire DTD : "Libellé du têtier."
    */
   TITRE_TM: {
-    /** Text content of the TM title. */
+    /** Contenu textuel du titre de la TM. */
     "#text"?: string
-    /** Start date of validity for this TM level. From `debut` attribute. */
+    /** Date de début de validité pour ce niveau de TM. Provient de l'attribut `debut`. */
     "@debut": string
-    /** End date of validity for this TM level. From `fin` attribute. */
+    /** Date de fin de validité pour ce niveau de TM. Provient de l'attribut `fin`. */
     "@fin": string
-    /** Internal identifier of this TM level. From `id` attribute. */
+    /** Identifiant interne de ce niveau de TM. Provient de l'attribut `id`. */
     "@id": string
   }
-  /** Nested table of contents level. */
+  /** Niveau de table des matières imbriqué. */
   TM?: JorfArticleTm
 }
 
 /**
- * Represents a specific version of a JORF article.
- * Corresponds to `VERSION` element within `ARTICLE/VERSIONS` in `jorf_article.dtd`.
+ * Représente une version spécifique d'un article JORF.
+ * Correspond à l'élément `VERSION` au sein de `ARTICLE/VERSIONS` dans `jorf_article.dtd`.
+ * Commentaire DTD : "Version de l'article."
  */
 export interface JorfArticleVersion {
-  /** Legal status of the article in this version. From `etat` attribute. */
+  /** Statut juridique de l'article dans cette version. Provient de l'attribut `etat`. */
   "@etat"?: JorfArticleEtat
   /**
-   * Link to the article content for this version.
-   * Corresponds to `LIEN_ART` element (defined in `lien_art.dtd`).
+   * Lien vers le contenu de l'article pour cette version.
+   * Correspond à l'élément `LIEN_ART` (défini dans `lien_art.dtd`).
    */
   LIEN_ART: {
-    /** Start date of validity. From `debut` attribute. */
+    /** Date de début de validité. Provient de l'attribut `debut`. */
     "@debut": string
-    /** Legal status of the linked article version. From `etat` attribute. */
+    /** Statut juridique de la version d'article liée. Provient de l'attribut `etat`. */
     "@etat"?: JorfArticleEtat
-    /** End date of validity. From `fin` attribute. */
+    /** Date de fin de validité. Provient de l'attribut `fin`. */
     "@fin": string
-    /** Identifier of the linked article content. From `id` attribute. */
+    /** Identifiant du contenu de l'article lié. Provient de l'attribut `id`. */
     "@id": string
-    /** Number of the linked article. From `num` attribute. */
+    /** Numéro de l'article lié. Provient de l'attribut `num`. */
     "@num"?: string
-    /** Origin of the linked article. From `origine` attribute. */
+    /** Origine de l'article lié. Provient de l'attribut `origine`. */
     "@origine": JorfArticleLienArticleOrigine
   }
 }
 
-/** Tags representing different categories or types of JORF documents/structures. */
+/** Balises représentant différentes catégories ou types de documents/structures JORF. */
 export type JorfCategorieTag = (typeof allJorfCategoriesTags)[number]
 
 /**
- * Represents metadata specific to chronological aspects of a JORF text.
- * Corresponds to `META_TEXTE_CHRONICLE` root element in `meta_texte_chronicle.dtd`.
- * Note: `DERNIERE_MODIFICATION` and `VERSIONS_A_VENIR` from the generic DTD are not typically used for JORF texts.
+ * Représente les métadonnées spécifiques aux aspects chronologiques d'un texte JORF.
+ * Correspond à l'élément racine `META_TEXTE_CHRONICLE` dans `meta_texte_chronicle.dtd`.
+ * Note : `DERNIERE_MODIFICATION` et `VERSIONS_A_VENIR` du DTD générique ne sont typiquement pas utilisés pour les textes JORF.
  */
 export interface JorfMetaTexteChronicle {
-  /** Common identifier for all versions of the text. From `CID`. */
+  /** Identifiant commun à toutes les versions du texte. Provient de `CID`. */
   CID: string
-  /** Publication date of the text. From `DATE_PUBLI`. */
+  /** Date de publication du texte. Provient de `DATE_PUBLI`. */
   DATE_PUBLI: string
-  /** Signature date of the text. From `DATE_TEXTE`. */
+  /** Date de signature du texte. Provient de `DATE_TEXTE`. */
   DATE_TEXTE: string
-  /** NOR identifier of the text. From `NOR`. */
+  /** Identifiant NOR du texte. Provient de `NOR`. */
   NOR?: string
-  /** Number of the text. From `NUM`. */
+  /** Numéro du texte. Provient de `NUM`. */
   NUM?: string
-  /** Publication number in JO. From `NUM_PARUTION`. */
+  /** Numéro de parution au JO. Provient de `NUM_PARUTION`. */
   NUM_PARUTION?: number
-  /** Sequence number in JO. From `NUM_SEQUENCE`. */
+  /** Numéro de séquence dans le JO. Provient de `NUM_SEQUENCE`. */
   NUM_SEQUENCE?: number
-  /** Origin of publication (e.g., title of JO). From `ORIGINE_PUBLI`. */
+  /** Origine de la publication (ex: titre du JO). Provient de `ORIGINE_PUBLI`. */
   ORIGINE_PUBLI?: string
-  /** Start page of publication in JO. From `PAGE_DEB_PUBLI`. */
+  /** Page de début de la publication dans le JO. Provient de `PAGE_DEB_PUBLI`. */
   PAGE_DEB_PUBLI?: number
-  /** End page of publication in JO. From `PAGE_FIN_PUBLI`. */
+  /** Page de fin de la publication dans le JO. Provient de `PAGE_FIN_PUBLI`. */
   PAGE_FIN_PUBLI?: number
 }
 
 /**
- * Represents metadata specific to a version of a JORF text.
- * Corresponds to `META_TEXTE_VERSION` element in `jorf_texte_version.dtd`.
+ * Représente les métadonnées spécifiques à une version d'un texte JORF.
+ * Correspond à l'élément `META_TEXTE_VERSION` dans `jorf_texte_version.dtd`.
  */
 export interface JorfMetaTexteVersion {
-  /** Issuing authority. From `AUTORITE`. */
+  /** Autorité émettrice. Provient de `AUTORITE`. */
   AUTORITE?: string
-  /** Start date of validity (not typically used for JORF). From `DATE_DEBUT`. */
+  /** Date d'entrée en vigueur (non typiquement utilisé pour JORF). Provient de `DATE_DEBUT`. */
   DATE_DEBUT?: string
-  /** End date of validity (not typically used for JORF). From `DATE_FIN`. */
+  /** Date de fin de vigueur (non typiquement utilisé pour JORF). Provient de `DATE_FIN`. */
   DATE_FIN?: string
   /**
-   * Links associated with this text version.
-   * Corresponds to `LIENS` in `jorf_texte_version.dtd`.
+   * Liens associés à cette version du texte.
+   * Correspond à `LIENS` dans `jorf_texte_version.dtd`.
    */
   LIENS?: {
-    /** Array of link elements. */
+    /** Tableau d'éléments de lien. */
     LIEN: Array<JorfTexteVersionLien>
   }
   /**
-   * Keywords for the text.
-   * Corresponds to `MCS_TXT` in `jorf_texte_version.dtd`.
+   * Mots-clés du texte.
+   * Correspond à `MCS_TXT` et ses éléments `MC` ("Mot clé du texte") dans `jorf_texte_version.dtd`.
    */
   MCS_TXT?: {
-    /** Array of keywords (MC = Mot Clé). */
+    /** Tableau de mots-clés (MC = Mot Clé). */
     MC: string[]
   }
-  /** Issuing ministry. From `MINISTERE`. */
+  /** Ministère émetteur. Provient de `MINISTERE`. */
   MINISTERE?: string
-  /** Short title of the text version. From `TITRE`. */
+  /** Titre court de la version du texte. Provient de `TITRE`. */
   TITRE?: string
-  /** Full title of the text version. From `TITREFULL`. */
+  /** Titre complet de la version du texte. Provient de `TITREFULL`. */
   TITREFULL?: string
 }
 
 /**
- * Represents a "Section TA" (Titre/Article) in a JORF text, a level in its table of contents.
- * Corresponds to the `SECTION_TA` root element in `jorf_section_ta.dtd`.
+ * Représente une "Section TA" (Titre/Article) dans un texte JORF, un niveau de sa table des matières.
+ * Correspond à l'élément racine `SECTION_TA` dans `jorf_section_ta.dtd`.
+ * Commentaire DTD : "Decrit le sommaire d'un texte en terme de têtier et d'article".
  */
 export interface JorfSectionTa {
-  /** Identifier of the section. From `ID`. */
+  /** Identifiant de la section. Provient de `ID`. */
   ID: string
-  /** Commentary associated with the section. From `COMMENTAIRE`. */
+  /** Commentaire associé à la section. Provient de `COMMENTAIRE`. */
   COMMENTAIRE?: string
   /**
-   * Context of the section, referencing its parent JORF text.
-   * Corresponds to `CONTEXTE` in `jorf_section_ta.dtd`.
+   * Contexte de la section, référençant son texte JORF parent.
+   * Correspond à `CONTEXTE` dans `jorf_section_ta.dtd`.
+   * Commentaire DTD : "Contexte de la section. Rappelle la succession des sections parentes pour arriver à l'élément courant".
    */
   CONTEXTE: {
-    /** Information about the parent JORF text. */
+    /** Informations sur le texte JORF parent. */
     TEXTE: {
       "@autorite"?: string
       "@cid": string
@@ -369,7 +381,7 @@ export interface JorfSectionTa {
       "@nor"?: string
       "@num"?: string
       "@num_parution_jo"?: string
-      /** Titles of the parent text versions. */
+      /** Titres des versions du texte parent. */
       TITRE_TXT: Array<{
         "#text": string
         "@c_titre_court"?: string
@@ -377,370 +389,375 @@ export interface JorfSectionTa {
         "@fin": string
         "@id_txt": string
       }>
-      /** Table of contents hierarchy for the parent text. */
+      /** Hiérarchie de la table des matières pour le texte parent. */
       TM?: JorfSectionTaTm
     }
   }
-  /** Title of the section. From `TITRE_TA`. */
+  /** Titre de la section. Provient de `TITRE_TA`. */
   TITRE_TA?: string
   /**
-   * Structure of this section, linking to subsections or articles.
-   * Corresponds to `STRUCTURE_TA` in `jorf_section_ta.dtd`.
+   * Structure de cette section, liant vers des sous-sections ou des articles.
+   * Correspond à `STRUCTURE_TA` dans `jorf_section_ta.dtd`.
+   * Commentaire DTD : "Structure de la section. Présente la succession des sections filles et des articles de la section courante".
    */
   STRUCTURE_TA?: JorfSectionTaStructure
 }
 
 /**
- * Represents a link from a `JorfSectionTa` to an article.
- * Attributes based on `lien_art.dtd` usage within `SECTION_TA/STRUCTURE_TA`.
+ * Représente un lien d'une `JorfSectionTa` vers un article.
+ * Les attributs sont basés sur `lien_art.dtd` utilisés dans `SECTION_TA/STRUCTURE_TA`.
  */
 export interface JorfSectionTaLienArt {
-  /** Start date of validity. From `debut` attribute. */
+  /** Date de début de validité. Provient de l'attribut `debut`. */
   "@debut": string
-  /** Legal status. From `etat` attribute. */
+  /** Statut juridique. Provient de l'attribut `etat`. */
   "@etat"?: JorfSectionTaLienArtEtat
-  /** End date of validity. From `fin` attribute. */
+  /** Date de fin de validité. Provient de l'attribut `fin`. */
   "@fin": string
-  /** Identifier of the linked article. From `id` attribute. */
+  /** Identifiant de l'article lié. Provient de l'attribut `id`. */
   "@id": string
-  /** Number of the linked article. From `num` attribute. */
+  /** Numéro de l'article lié. Provient de l'attribut `num`. */
   "@num"?: string
-  /** Origin of the linked article. From `origine` attribute. */
+  /** Origine de l'article lié. Provient de l'attribut `origine`. */
   "@origine"?: JorfSectionTaLienArtOrigine
 }
 
-/** Legal status for a `JorfSectionTaLienArt`. */
+/** Statut juridique pour un `JorfSectionTaLienArt`. */
 export type JorfSectionTaLienArtEtat =
   (typeof allJorfSectionTaLienArtEtats)[number]
 
-/** Origin for a `JorfSectionTaLienArt`. */
+/** Origine pour un `JorfSectionTaLienArt`. */
 export type JorfSectionTaLienArtOrigine =
   (typeof allJorfSectionTaLienArtOrigines)[number]
 
 /**
- * Represents a link from a `JorfSectionTa` to another `JorfSectionTa` (subsection).
- * Attributes based on `lien_section_ta.dtd` usage within `SECTION_TA/STRUCTURE_TA`.
+ * Représente un lien d'une `JorfSectionTa` vers une autre `JorfSectionTa` (sous-section).
+ * Les attributs sont basés sur `lien_section_ta.dtd` utilisés dans `SECTION_TA/STRUCTURE_TA`.
  */
 export interface JorfSectionTaLienSectionTa {
-  /** Text content/title of the linked section. */
+  /** Contenu textuel/titre de la section liée. */
   "#text"?: string
-  /** CID of the linked section. From `cid` attribute. */
+  /** CID de la section liée. Provient de l'attribut `cid`. */
   "@cid": string
-  /** Start date of validity. From `debut` attribute. */
+  /** Date de début de validité. Provient de l'attribut `debut`. */
   "@debut": string
-  // "@etat"?: JorfSectionTaLienSectionTaEtat // Etat attribute is not usually present on LIEN_SECTION_TA in JORF DTDs for sections.
-  /** End date of validity. From `fin` attribute. */
+  // "@etat"?: JorfSectionTaLienSectionTaEtat // L'attribut Etat n'est généralement pas présent sur les LIEN_SECTION_TA dans les DTD JORF pour les sections.
+  /** Date de fin de validité. Provient de l'attribut `fin`. */
   "@fin": string
-  /** Identifier of the linked section. From `id` attribute. */
+  /** Identifiant de la section liée. Provient de l'attribut `id`. */
   "@id": string
-  /** Nesting level. From `niv` attribute. */
+  /** Niveau d'imbrication. Provient de l'attribut `niv`. */
   "@niv": number
-  /** URL/path to the XML file of the linked section. From `url` attribute. */
+  /** URL/chemin vers le fichier XML de la section liée. Provient de l'attribut `url`. */
   "@url": string
 }
 
-/** Legal status for a `JorfSectionTaLienSectionTa`. (Usually not applicable for JORF sections). */
+/** Statut juridique pour un `JorfSectionTaLienSectionTa`. (Généralement non applicable pour les sections JORF). */
 export type JorfSectionTaLienSectionTaEtat =
   (typeof allJorfSectionTaLienSectionTaEtats)[number]
 
 /**
- * Structure of a `JorfSectionTa`, containing links to articles or subsections.
- * Corresponds to `STRUCTURE_TA` in `jorf_section_ta.dtd`.
+ * Structure d'une `JorfSectionTa`, contenant des liens vers des articles ou des sous-sections.
+ * Correspond à `STRUCTURE_TA` dans `jorf_section_ta.dtd`.
  */
 export interface JorfSectionTaStructure {
-  /** Array of links to articles within this section. */
+  /** Tableau de liens vers des articles au sein de cette section. */
   LIEN_ART?: JorfSectionTaLienArt[]
-  /** Array of links to subsections (other JorfSectionTa) within this section. */
+  /** Tableau de liens vers des sous-sections (autres JorfSectionTa) au sein de cette section. */
   LIEN_SECTION_TA?: JorfSectionTaLienSectionTa[]
 }
 
-/** Nature of the parent text for a `JorfSectionTa`. */
+/** Nature du texte parent pour une `JorfSectionTa`. */
 export type JorfSectionTaTexteNature =
   (typeof allJorfSectionTaTexteNatures)[number]
 
 /**
- * Represents a table of contents (TM) structure within a `JorfSectionTa`.
- * Similar to `JorfArticleTm`.
+ * Représente une structure de table des matières (TM) au sein d'une `JorfSectionTa`.
+ * Similaire à `JorfArticleTm`.
  */
 export interface JorfSectionTaTm {
-  /** Title of this table of contents level. */
+  /** Titre de ce niveau de table des matières. */
   TITRE_TM: {
-    /** Text content of the TM title. */
+    /** Contenu textuel du titre de la TM. */
     "#text"?: string
-    /** Start date of validity. */
+    /** Date de début de validité. */
     "@debut": string
-    /** End date of validity. */
+    /** Date de fin de validité. */
     "@fin": string
-    /** Identifier of the TM level. */
+    /** Identifiant du niveau de TM. */
     "@id": string
   }
-  /** Nested table of contents level. */
+  /** Niveau de table des matières imbriqué. */
   TM?: JorfSectionTaTm
 }
 
 /**
- * Represents a complete JORF text, combining its structural overview (`JorfTextelr`)
- * and the content of a specific version (`JorfTexteVersion`).
- * This is a conceptual merge, not a direct DTD root element.
+ * Représente un texte JORF complet, combinant son aperçu structurel (`JorfTextelr`)
+ * et le contenu d'une version spécifique (`JorfTexteVersion`).
+ * Ceci est une fusion conceptuelle, pas un élément racine DTD direct.
  */
 export type JorfTexte = JorfTexteVersion & {
   /**
-   * Structural hierarchy of the text (table of contents).
-   * From `STRUCT` element in `jorf_texte_struct.dtd`.
+   * Hiérarchie structurelle du texte (table des matières).
+   * Provient de l'élément `STRUCT` dans `jorf_texte_struct.dtd`.
    */
   STRUCT?: JorfTextelrStructure
   /**
-   * List of available versions of the text.
-   * From `VERSIONS` element in `jorf_texte_struct.dtd`.
+   * Liste des versions disponibles du texte.
+   * Provient de l'élément `VERSIONS` dans `jorf_texte_struct.dtd`.
    */
   VERSIONS?: JorfTextelrVersions
 }
 
 /**
- * Represents the structural overview of a JORF text and its versions.
- * Corresponds to the `TEXTELR` root element in `jorf_texte_struct.dtd`.
- * DTD comment: "Décrit la structure d'un texte JORF et la liste des différentes versions de ce texte."
+ * Représente l'aperçu structurel d'un texte JORF et de ses versions.
+ * Correspond à l'élément racine `TEXTELR` dans `jorf_texte_struct.dtd`.
+ * Commentaire DTD : "Décrit la structure d'un texte JORF et la liste des différentes versions de ce texte."
  */
 export interface JorfTextelr {
-  /** Metadata for the text structure. */
+  /** Métadonnées pour la structure du texte. */
   META: {
-    /** Common metadata, adapted for JORF texts. */
+    /** Métadonnées communes, adaptées pour les textes JORF. */
     META_COMMUN: JorfTexteMetaCommun
-    /** Specific metadata for the text structure. */
+    /** Métadonnées spécifiques pour la structure du texte. */
     META_SPEC: {
-      /** Chronological metadata for the text. */
+      /** Métadonnées chronologiques pour le texte. */
       META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
     }
   }
   /**
-   * The structural hierarchy (table of contents) of the JORF text.
-   * Corresponds to `STRUCT` in `jorf_texte_struct.dtd`.
+   * La hiérarchie structurelle (table des matières) du texte JORF.
+   * Correspond à `STRUCT` dans `jorf_texte_struct.dtd`.
+   * Commentaire DTD pour `STRUCT` dans `TEXTELR` : "Historique de la structure".
    */
   STRUCT?: JorfTextelrStructure
   /**
-   * List of available versions of this JORF text.
-   * Corresponds to `VERSIONS` in `jorf_texte_struct.dtd`.
+   * Liste des versions disponibles de ce texte JORF.
+   * Correspond à `VERSIONS` dans `jorf_texte_struct.dtd`.
+   * Commentaire DTD pour `VERSIONS` dans `TEXTELR` : "Liste des versions du texte".
    */
   VERSIONS: JorfTextelrVersions
 }
 
 /**
- * Legal status of a JORF text version, as listed in `JorfTextelrVersions`.
- * From `etat` attribute of `VERSION` element in `jorf_texte_struct.dtd`.
- * DTD comment: "Etat juridique de la version. Ce champ n'est pas renseigné pour JORF dont les textes sont toujours en version INITIALE".
- * Typically "INITIALE" or similar for JORF if not modified by LEGI.
+ * Statut juridique d'une version de texte JORF, telle que listée dans `JorfTextelrVersions`.
+ * Provient de l'attribut `etat` de l'élément `VERSION` dans `jorf_texte_struct.dtd`.
+ * Commentaire DTD : "Etat juridique de la version. Ce champ n'est pas renseigné pour JORF dont les textes sont toujours en version INITIALE".
+ * Typiquement "INITIALE" ou similaire pour JORF si non modifié par LEGI.
  */
 export type JorfTextelrEtat = (typeof allJorfTextelrEtats)[number]
 
 /**
- * Represents a link from a `JorfTextelrStructure` to an article.
- * Attributes based on `lien_art.dtd` usage within `TEXTELR/STRUCT`.
+ * Représente un lien d'une `JorfTextelrStructure` vers un article.
+ * Les attributs sont basés sur `lien_art.dtd` utilisés dans `TEXTELR/STRUCT`.
  */
 export interface JorfTextelrLienArt {
-  /** Start date of validity. */
+  /** Date de début de validité. */
   "@debut": string
-  /** Legal status. */
+  /** Statut juridique. */
   "@etat"?: JorfTextelrLienArtEtat
-  /** End date of validity. */
+  /** Date de fin de validité. */
   "@fin": string
-  /** Identifier of the linked article. */
+  /** Identifiant de l'article lié. */
   "@id": string
-  // "@nature"?: undefined // Nature is implicitly Article here.
-  /** Number of the linked article. */
+  // "@nature"?: undefined // La nature est implicitement Article ici.
+  /** Numéro de l'article lié. */
   "@num"?: string
-  /** Origin of the linked article. */
+  /** Origine de l'article lié. */
   "@origine"?: JorfTextelrLienArtOrigine
 }
 
-/** Legal status for a `JorfTextelrLienArt`. */
+/** Statut juridique pour un `JorfTextelrLienArt`. */
 export type JorfTextelrLienArtEtat = (typeof allJorfTextelrLienArtEtats)[number]
 
-/** Nature for a `JorfTextelrLienArt` (usually not specified, implicitly Article). */
+/** Nature pour un `JorfTextelrLienArt` (généralement non spécifiée, implicitement Article). */
 export type JorfTextelrLienArtNature =
   (typeof allJorfTextelrLienArtNatures)[number]
 
-/** Origin for a `JorfTextelrLienArt`. */
+/** Origine pour un `JorfTextelrLienArt`. */
 export type JorfTextelrLienArtOrigine =
   (typeof allJorfTextelrLienArtOrigines)[number]
 
 /**
- * Represents a link from a `JorfTextelrStructure` to a `JorfSectionTa` (section).
- * Attributes based on `lien_section_ta.dtd` usage within `TEXTELR/STRUCT`.
+ * Représente un lien d'une `JorfTextelrStructure` vers une `JorfSectionTa` (section).
+ * Les attributs sont basés sur `lien_section_ta.dtd` utilisés dans `TEXTELR/STRUCT`.
  */
 export interface JorfTextelrLienSectionTa {
-  /** Title of the linked section. */
+  /** Titre de la section liée. */
   "#text"?: string
-  /** CID of the linked section. */
+  /** CID de la section liée. */
   "@cid": string
-  /** Start date of validity. */
+  /** Date de début de validité. */
   "@debut": string
-  // "@etat"?: undefined // Etat not typically on JORF section links.
-  /** End date of validity. */
+  // "@etat"?: undefined // L'état n'est typiquement pas présent sur les liens de section JORF.
+  /** Date de fin de validité. */
   "@fin": string
-  /** Identifier of the linked section. */
+  /** Identifiant de la section liée. */
   "@id": string
-  /** Nesting level of the section. */
+  /** Niveau d'imbrication de la section. */
   "@niv": number
-  /** URL/path to the XML file of the linked section. */
+  /** URL/chemin vers le fichier XML de la section liée. */
   "@url": string
 }
 
 /**
- * Represents the top-level structure (table of contents) of a `JorfTextelr` document.
- * Corresponds to the `STRUCT` element in `jorf_texte_struct.dtd`.
+ * Représente la structure de premier niveau (table des matières) d'un document `JorfTextelr`.
+ * Correspond à l'élément `STRUCT` dans `jorf_texte_struct.dtd`.
  */
 export interface JorfTextelrStructure {
-  /** Array of links to articles at this level. */
+  /** Tableau de liens vers des articles à ce niveau. */
   LIEN_ART?: JorfTextelrLienArt[]
-  /** Array of links to sections (JorfSectionTa) at this level. */
+  /** Tableau de liens vers des sections (JorfSectionTa) à ce niveau. */
   LIEN_SECTION_TA?: JorfTextelrLienSectionTa[]
 }
 
 /**
- * Represents a specific version of a JORF text, as listed in `JorfTextelrVersions`.
- * Corresponds to `VERSION` element within `TEXTELR/VERSIONS` in `jorf_texte_struct.dtd`.
+ * Représente une version spécifique d'un texte JORF, telle que listée dans `JorfTextelrVersions`.
+ * Correspond à l'élément `VERSION` au sein de `TEXTELR/VERSIONS` dans `jorf_texte_struct.dtd`.
  */
 export interface JorfTextelrVersion {
-  /** Legal status of this text version. From `etat` attribute. */
+  /** Statut juridique de cette version de texte. Provient de l'attribut `etat`. */
   "@etat"?: JorfTextelrEtat
   /**
-   * Link to the actual text content of this version.
-   * Corresponds to `LIEN_TXT` element (defined in `lien_txt.dtd`).
+   * Lien vers le contenu textuel réel de cette version.
+   * Correspond à l'élément `LIEN_TXT` (défini dans `lien_txt.dtd`).
    */
   LIEN_TXT: {
-    /** Start date of validity. */
+    /** Date de début de validité. */
     "@debut": string
-    /** End date of validity. */
+    /** Date de fin de validité. */
     "@fin": string
-    /** Identifier of the linked text version document (e.g., a `JorfTexteVersion` ID). */
+    /** Identifiant du document de version de texte lié (ex: un ID `JorfTexteVersion`). */
     "@id": string
-    /** Number of the text version. */
+    /** Numéro de la version du texte. */
     "@num"?: string
   }
 }
 
 /**
- * Container for the list of versions of a JORF text in a `JorfTextelr` document.
- * Corresponds to `VERSIONS` element in `jorf_texte_struct.dtd`.
+ * Conteneur pour la liste des versions d'un texte JORF dans un document `JorfTextelr`.
+ * Correspond à l'élément `VERSIONS` dans `jorf_texte_struct.dtd`.
  */
 export interface JorfTextelrVersions {
-  /** Array of text version elements. */
+  /** Tableau d'éléments de version de texte. */
   VERSION: JorfTextelrVersion[]
 }
 
 /**
- * Represents common metadata for JORF texts, a specific profile of `meta_commun.dtd`.
+ * Représente les métadonnées communes pour les textes JORF, un profil spécifique de `meta_commun.dtd`.
  */
 export interface JorfTexteMetaCommun {
-  /** Old identifier. From `ANCIEN_ID`. */
+  /** Ancien identifiant. Provient de `ANCIEN_ID`. */
   ANCIEN_ID?: string
-  /** European Legislation Identifier alias. From `ELI_ALIAS/ID_ELI_ALIAS`. */
+  /** Alias de l'Identifiant Européen de la Législation (ELI). Provient de `ELI_ALIAS/ID_ELI_ALIAS`. */
   ELI_ALIAS?: {
     ID_ELI_ALIAS: string
   }
-  /** Unique identifier of the JORF text document. From `ID`. */
+  /** Identifiant unique du document texte JORF. Provient de `ID`. */
   ID: string
-  /** European Legislation Identifier. From `ID_ELI`. */
+  /** Identifiant Européen de la Législation (ELI). Provient de `ID_ELI`. */
   ID_ELI?: string
-  /** Nature of the JORF text document. From `NATURE`. */
+  /** Nature du document texte JORF. Provient de `NATURE`. */
   NATURE?: JorfTexteNature
-  /** Origin of the document (typically "JORF"). From `ORIGINE`. */
+  /** Origine du document (typiquement "JORF"). Provient de `ORIGINE`. */
   ORIGINE: JorfTexteOrigine
-  /** Relative URL of the JORF text document. From `URL`. */
+  /** URL relative du document texte JORF. Provient de `URL`. */
   URL: string
 }
 
-/** Nature of a `JorfTexteVersion` or `JorfTextelr` document. */
+/** Nature d'un document `JorfTexteVersion` ou `JorfTextelr`. */
 export type JorfTexteNature = (typeof allJorfTexteNatures)[number]
 
-/** Origin of a `JorfTexteVersion` or `JorfTextelr` document, typically "JORF". */
+/** Origine d'un document `JorfTexteVersion` ou `JorfTextelr`, typiquement "JORF". */
 export type JorfTexteOrigine = (typeof allJorfTexteOrigines)[number]
 
 /**
- * Represents a specific version of a JORF text with its full content.
- * Corresponds to the `TEXTE_VERSION` root element in `jorf_texte_version.dtd`.
- * DTD comment: "Décrit les informations spécifiques à une version de texte JORF".
+ * Représente une version spécifique d'un texte JORF avec son contenu complet.
+ * Correspond à l'élément racine `TEXTE_VERSION` dans `jorf_texte_version.dtd`.
+ * Commentaire DTD : "Décrit les informations spécifiques à une version de texte JORF".
  */
 export interface JorfTexteVersion {
   /**
-   * Abrogations affecting this text version (HTML content).
-   * Corresponds to `ABRO/CONTENU` in `jorf_texte_version.dtd`.
+   * Abrogations affectant cette version du texte (contenu HTML).
+   * Correspond à `ABRO/CONTENU` dans `jorf_texte_version.dtd`.
    */
   ABRO?: {
     CONTENU: string // HTML
   }
   /**
-   * Information related to enterprises, if applicable.
-   * Corresponds to `ENTREPRISE` element in `jorf_texte_version.dtd`.
+   * Informations relatives aux entreprises, le cas échéant.
+   * Correspond à l'élément `ENTREPRISE` dans `jorf_texte_version.dtd`.
+   * Commentaire DTD : "Rubrique entreprise".
    */
   ENTREPRISE?: {
-    /** Indicates if the text is related to "entreprise". From `texte_entreprise` attribute. */
+    /** Indique si le texte est relatif à une "entreprise". Provient de l'attribut `texte_entreprise`. */
     "@texte_entreprise": "non" | "oui"
     /**
-     * Effective dates for enterprise-related aspects.
-     * Corresponds to `DATES_EFFET/DATE_EFFET` in `jorf_texte_version.dtd`.
+     * Dates d'effet pour les aspects relatifs aux entreprises.
+     * Correspond à `DATES_EFFET/DATE_EFFET` dans `jorf_texte_version.dtd`.
      */
     DATES_EFFET?: {
       DATE_EFFET: string[]
     }
     /**
-     * Relevant domains for enterprise-related aspects.
-     * Corresponds to `DOMAINES/DOMAINE` in `jorf_texte_version.dtd`.
+     * Domaines pertinents pour les aspects relatifs aux entreprises.
+     * Correspond à `DOMAINES/DOMAINE` dans `jorf_texte_version.dtd`.
      */
     DOMAINES?: {
       DOMAINE: string[]
     }
   }
-  /** Metadata for this JORF text version. */
+  /** Métadonnées pour cette version de texte JORF. */
   META: {
-    /** Common metadata. */
+    /** Métadonnées communes. */
     META_COMMUN: JorfTexteMetaCommun
-    /** Specific metadata. */
+    /** Métadonnées spécifiques. */
     META_SPEC: {
-      /** Chronological metadata. */
+      /** Métadonnées chronologiques. */
       META_TEXTE_CHRONICLE: JorfMetaTexteChronicle
-      /** Version-specific metadata. */
+      /** Métadonnées spécifiques à la version. */
       META_TEXTE_VERSION: JorfMetaTexteVersion
     }
   }
   /**
-   * Notice associated with this text version (HTML content).
-   * Corresponds to `NOTICE/CONTENU` in `jorf_texte_version.dtd`.
+   * Notice associée à cette version du texte (contenu HTML).
+   * Correspond à `NOTICE/CONTENU` dans `jorf_texte_version.dtd`.
    */
   NOTICE?: {
     CONTENU: string // HTML
   }
   /**
-   * Rectifications to this text version (HTML content).
-   * Corresponds to `RECT/CONTENU` in `jorf_texte_version.dtd`.
+   * Rectifications à cette version du texte (contenu HTML).
+   * Correspond à `RECT/CONTENU` dans `jorf_texte_version.dtd`.
    */
   RECT?: {
     CONTENU: string // HTML
   }
   /**
-   * Signatories of this text version (HTML content).
-   * Corresponds to `SIGNATAIRES/CONTENU` in `jorf_texte_version.dtd`.
+   * Signataires de cette version du texte (contenu HTML).
+   * Correspond à `SIGNATAIRES/CONTENU` dans `jorf_texte_version.dtd`.
    */
   SIGNATAIRES?: {
     CONTENU: string // HTML
   }
   /**
-   * Summary (Résumé LEX) of the text (HTML content).
-   * Corresponds to `SM/CONTENU` in `jorf_texte_version.dtd`.
+   * Résumé (Résumé LEX) du texte (contenu HTML).
+   * Correspond à `SM/CONTENU` dans `jorf_texte_version.dtd`.
+   * Commentaire DTD : "Résumé LEX".
    */
   SM?: {
     CONTENU: string // HTML
   }
   /**
-   * Preparatory works (Travaux Préparatoires) for this text version (HTML content).
-   * Corresponds to `TP/CONTENU` in `jorf_texte_version.dtd`.
+   * Travaux préparatoires pour cette version du texte (contenu HTML).
+   * Correspond à `TP/CONTENU` dans `jorf_texte_version.dtd`.
    */
   TP?: {
     CONTENU: string // HTML
   }
   /**
-   * Visas (preamble references) for this text version (HTML content).
-   * Corresponds to `VISAS/CONTENU` in `jorf_texte_version.dtd`.
+   * Visas (références au préambule) pour cette version du texte (contenu HTML).
+   * Correspond à `VISAS/CONTENU` dans `jorf_texte_version.dtd`.
    */
   VISAS?: {
     CONTENU: string // HTML
@@ -748,56 +765,57 @@ export interface JorfTexteVersion {
 }
 
 /**
- * Represents a link from a `JorfTexteVersion` (via `JorfMetaTexteVersion/LIENS`) to another document.
- * Attributes are based on `lien.dtd` usage within `TEXTE_VERSION`.
+ * Représente un lien d'une `JorfTexteVersion` (via `JorfMetaTexteVersion/LIENS`) vers un autre document.
+ * Les attributs sont basés sur `lien.dtd` utilisés dans `TEXTE_VERSION`.
  */
 export interface JorfTexteVersionLien {
-  /** Text content of the link, if any. */
+  /** Contenu textuel du lien, s'il existe. */
   "#text"?: string
-  /** Identifier of the target text if internal. From `cidtexte` attribute. */
+  /** Identifiant interne du texte cible si interne. Provient de l'attribut `cidtexte`. */
   "@cidtexte"?: string // Present if and only if @id is present
-  /** Signature date of the target text. From `datesignatexte` attribute. */
+  /** Date de signature du texte cible. Provient de l'attribut `datesignatexte`. */
   "@datesignatexte"?: string
-  /** Identifier of the target element. From `id` attribute. */
+  /** Identifiant de l'élément cible. Provient de l'attribut `id`. */
   "@id"?: string
-  /** Nature of the target text. From `naturetexte` attribute. */
+  /** Nature du texte cible. Provient de l'attribut `naturetexte`. */
   "@naturetexte"?: JorfTexteVersionLienNature
-  /** NOR identifier of the target text. From `nortexte` attribute. */
+  /** Identifiant NOR du texte cible. Provient de l'attribut `nortexte`. */
   "@nortexte"?: string
-  /** Number of the target text or element. From `num` attribute. */
+  /** Numéro du texte ou de l'élément cible. Provient de l'attribut `num`. */
   "@num"?: string
-  /** (Deprecated?) Number of the target text. From `numtexte` attribute. */
+  /** (Obsolète?) Numéro du texte cible. Provient de l'attribut `numtexte`. */
   "@numtexte"?: string
-  /** Direction of the link. From `sens` attribute. */
+  /** Sens du lien. Provient de l'attribut `sens`. */
   "@sens": Sens
-  /** Type of the link. From `typelien` attribute. */
+  /** Type du lien. Provient de l'attribut `typelien`. */
   "@typelien": JorfTexteVersionLienType
 }
 
-/** Nature of the text linked to by a `JorfTexteVersionLien`. */
+/** Nature du texte lié par un `JorfTexteVersionLien`. */
 export type JorfTexteVersionLienNature =
   (typeof allJorfTexteVersionLienNatures)[number]
 
-/** Type of link in `JorfTexteVersionLien`. */
+/** Type de lien dans `JorfTexteVersionLien`. */
 export type JorfTexteVersionLienType =
   (typeof allJorfTexteVersionLienTypes)[number]
 
 /**
- * Represents a table of contents (TM - Têtier) level within a Journal Officiel (`Jo` document).
- * Corresponds to `TM` element in `jorf_conteneur.dtd`.
+ * Représente un niveau de table des matières (TM - Têtier) au sein d'un Journal Officiel (`Jo` document).
+ * Correspond à l'élément `TM` dans `jorf_conteneur.dtd`.
+ * Commentaire DTD : "Têtier du sommaire. Peut contenir une liste de textes et d'autres têtiers".
  */
 export interface JoTm {
-  /** Nesting level of this TM item. From `niv` attribute. */
+  /** Niveau d'imbrication de cet élément TM. Provient de l'attribut `niv`. */
   "@niv": number
-  /** Links to texts at this TM level. */
+  /** Liens vers des textes à ce niveau de TM. */
   LIEN_TXT?: JoLienTxt[]
-  /** Title of this TM level. From `TITRE_TM` element. */
+  /** Titre de ce niveau de TM. Provient de l'élément `TITRE_TM`. */
   TITRE_TM: string
-  /** Nested TM levels. */
+  /** Niveaux de TM imbriqués. */
   TM?: JoTm[]
 }
 
-/** Possible nature values for a `Jo` document. */
+/** Valeurs possibles pour la nature d'un document `Jo`. */
 export const allJoNatures = ["JO"] as const
 
 export const allJoOrigines = ["JORF"] as const

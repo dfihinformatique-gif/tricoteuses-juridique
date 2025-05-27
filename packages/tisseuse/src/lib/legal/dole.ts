@@ -1,205 +1,205 @@
 /**
- * Represents a link within the legislative dossier's hierarchical structure (arborescence).
- * Corresponds to the `LIEN` element in `dole_dossier.xsd`.
+ * Représente un lien au sein de la structure hiérarchique (arborescence) d'un dossier législatif.
+ * Correspond à l'élément `LIEN` dans `dole_dossier.xsd`.
  */
 export interface ArborescenceLien {
-  /** Text content of the link. */
+  /** Contenu textuel du lien. */
   "#text"?: string
-  /** Identifier for the link. From `@id` attribute in XSD. */
+  /** Identifiant du lien. Provient de l'attribut `@id` dans le XSD. */
   "@id": string
-  /** Label for the link. From `@libelle` attribute in XSD. */
+  /** Libellé du lien. Provient de l'attribut `@libelle` dans le XSD. */
   "@libelle"?: string
-  /** URL of the link. From `@lien` attribute in XSD. */
+  /** URL du lien. Provient de l'attribut `@lien` dans le XSD. */
   "@lien"?: string
 }
 
 /**
- * Represents a level (node) in the legislative dossier's hierarchical structure (arborescence).
- * Corresponds to the `NIVEAU` element in `dole_dossier.xsd`.
+ * Représente un niveau (nœud) dans la structure hiérarchique (arborescence) d'un dossier législatif.
+ * Correspond à l'élément `NIVEAU` dans `dole_dossier.xsd`.
  */
 export interface ArborescenceNiveau {
-  /** Identifier for the level. From `@id` attribute in XSD. */
+  /** Identifiant du niveau. Provient de l'attribut `@id` dans le XSD. */
   "@id": string
-  /** Label for the level. From `@libelle` attribute in XSD. */
+  /** Libellé du niveau. Provient de l'attribut `@libelle` dans le XSD. */
   "@libelle": string
-  /** Array of links within this level. */
+  /** Tableau de liens (`ArborescenceLien`) présents dans ce niveau. */
   LIEN?: ArborescenceLien[]
-  /** Nested level. Note: XSD allows multiple nested NIVEAU, TS interface currently models one. */
+  /** Niveau imbriqué. Note : Le XSD autorise plusieurs `NIVEAU` imbriqués, l'interface TS n'en modélise actuellement qu'un. */
   NIVEAU?: ArborescenceNiveau
 }
 
 /**
- * Represents a legislative dossier (Dossier Législatif).
- * This is the root structure, corresponding to the `DOSSIER_LEGISLATIF` element in `dole_dossier.xsd`.
- * The XSD describes it as: "Décrit un dossier legislatif".
+ * Représente un dossier législatif.
+ * Ceci est la structure racine, correspondant à l'élément `DOSSIER_LEGISLATIF` dans `dole_dossier.xsd`.
+ * Le XSD le décrit comme : "Décrit un dossier legislatif".
  */
 export interface DossierLegislatif {
   /**
-   * Main content of the legislative dossier.
-   * Corresponds to the `CONTENU` element in `dole_dossier.xsd`.
+   * Contenu principal du dossier législatif.
+   * Correspond à l'élément `CONTENU` dans `dole_dossier.xsd`.
    */
   CONTENU: {
     /**
-     * Hierarchical structure (tree) of the dossier, often for navigation.
-     * Corresponds to the `ARBORESCENCE` element in `dole_dossier.xsd`.
+     * Structure hiérarchique (arborescence) du dossier, souvent utilisée pour la navigation.
+     * Correspond à l'élément `ARBORESCENCE` dans `dole_dossier.xsd`.
      */
     ARBORESCENCE: {
-      /** Links at the root of the arborescence. */
+      /** Liens (`ArborescenceLien`) à la racine de l'arborescence. */
       LIEN?: ArborescenceLien[]
-      /** Levels at the root of the arborescence. */
+      /** Niveaux (`ArborescenceNiveau`) à la racine de l'arborescence. */
       NIVEAU?: ArborescenceNiveau
     }
-    /** Content related to the dossier (field 1). Corresponds to `CONTENU_DOSSIER_1` (xs:anyType) in XSD. */
+    /** Contenu relatif au dossier (champ 1). Correspond à `CONTENU_DOSSIER_1` (xs:anyType) dans le XSD. */
     CONTENU_DOSSIER_1?: string
-    /** Content related to the dossier (field 2). Corresponds to `CONTENU_DOSSIER_2` (xs:anyType) in XSD. */
+    /** Contenu relatif au dossier (champ 2). Correspond à `CONTENU_DOSSIER_2` (xs:anyType) dans le XSD. */
     CONTENU_DOSSIER_2?: string
-    /** Content related to the dossier (field 3). Corresponds to `CONTENU_DOSSIER_3` (xs:anyType) in XSD. */
+    /** Contenu relatif au dossier (champ 3). Correspond à `CONTENU_DOSSIER_3` (xs:anyType) dans le XSD. */
     CONTENU_DOSSIER_3?: string
-    /** Content related to the dossier (field 4). Corresponds to `CONTENU_DOSSIER_4` (xs:anyType) in XSD. */
+    /** Contenu relatif au dossier (champ 4). Correspond à `CONTENU_DOSSIER_4` (xs:anyType) dans le XSD. */
     CONTENU_DOSSIER_4?: string
-    /** Content related to the dossier (field 5). Corresponds to `CONTENU_DOSSIER_5` (xs:anyType) in XSD. */
+    /** Contenu relatif au dossier (champ 5). Correspond à `CONTENU_DOSSIER_5` (xs:anyType) dans le XSD. */
     CONTENU_DOSSIER_5?: string
     /**
-     * Schedule or timeline associated with the legislative dossier.
-     * Corresponds to the `ECHEANCIER` element in `dole_dossier.xsd`.
+     * Échéancier associé au dossier législatif.
+     * Correspond à l'élément `ECHEANCIER` dans `dole_dossier.xsd`.
      */
     ECHEANCIER?: Echeancier
-    /** Explanatory statement or summary. Corresponds to `EXPOSE_MOTIF` (xs:anyType) in XSD. */
+    /** Exposé des motifs ou résumé. Correspond à `EXPOSE_MOTIF` (xs:anyType) dans le XSD. */
     EXPOSE_MOTIF?: string
-    /** Label for related text 1. Corresponds to `LIBELLE_TEXTE_1` in XSD. */
+    /** Libellé du texte lié 1. Correspond à `LIBELLE_TEXTE_1` dans le XSD. */
     LIBELLE_TEXTE_1?: string
-    /** Label for related text 2. Corresponds to `LIBELLE_TEXTE_2` in XSD. */
+    /** Libellé du texte lié 2. Correspond à `LIBELLE_TEXTE_2` dans le XSD. */
     LIBELLE_TEXTE_2?: string
-    /** Label for related text 3. Corresponds to `LIBELLE_TEXTE_3` in XSD. */
+    /** Libellé du texte lié 3. Correspond à `LIBELLE_TEXTE_3` dans le XSD. */
     LIBELLE_TEXTE_3?: string
-    /** Label for related text 4. Corresponds to `LIBELLE_TEXTE_4` in XSD. */
+    /** Libellé du texte lié 4. Correspond à `LIBELLE_TEXTE_4` dans le XSD. */
     LIBELLE_TEXTE_4?: string
-    /** Label for related text 5. Corresponds to `LIBELLE_TEXTE_5` in XSD. */
+    /** Libellé du texte lié 5. Correspond à `LIBELLE_TEXTE_5` dans le XSD. */
     LIBELLE_TEXTE_5?: string
   }
   /**
-   * Metadata associated with the legislative dossier.
-   * Corresponds to the `META` element in `dole_dossier.xsd`.
+   * Métadonnées associées au dossier législatif.
+   * Correspond à l'élément `META` dans `dole_dossier.xsd`.
    */
   META: {
     /**
-     * Common metadata elements.
-     * Corresponds to the `META_COMMUN` element in `dole_d dossier.xsd`.
+     * Éléments de métadonnées communs.
+     * Correspond à l'élément `META_COMMUN` dans `dole_dossier.xsd`.
      */
     META_COMMUN: {
       // MetaCommun
-      /** Old identifier, if any. Corresponds to `ANCIEN_ID` in XSD. */
+      /** Ancien identifiant, s'il existe. Correspond à `ANCIEN_ID` dans le XSD. */
       ANCIEN_ID?: string
-      /** Unique identifier for the dossier. Corresponds to `ID` in XSD. */
+      /** Identifiant unique du dossier. Correspond à `ID` dans le XSD. */
       ID: string
-      /** URL of the legislative dossier. Corresponds to `URL` in XSD. */
+      /** URL du dossier législatif. Correspond à `URL` dans le XSD. */
       URL: string
-      // NATURE?: Nature // Never used. XSD defines `NATURE` as nature of the document.
+      // NATURE?: Nature // Jamais utilisé. Le XSD définit `NATURE` comme la nature du document.
       /**
-       * Origin of the data (e.g., "JORF" for Journal Officiel).
-       * Corresponds to `ORIGINE` in XSD.
+       * Origine des données (ex: "JORF" pour Journal Officiel).
+       * Correspond à `ORIGINE` dans le XSD.
        */
       ORIGINE: "JORF" // Origine
     }
     /**
-     * Specific metadata for the legislative dossier.
-     * Corresponds to the `META_DOSSIER_LEGISLATIF` element in `dole_dossier.xsd`.
+     * Métadonnées spécifiques au dossier législatif.
+     * Correspond à l'élément `META_DOSSIER_LEGISLATIF` dans `dole_dossier.xsd`.
      */
     META_DOSSIER_LEGISLATIF: {
-      /** Creation date of the dossier (YYYY-MM-DD). Corresponds to `DATE_CREATION` in XSD. */
+      /** Date de création du dossier (YYYY-MM-DD). Correspond à `DATE_CREATION` dans le XSD. */
       DATE_CREATION: string
-      /** Last modification date of the dossier (YYYY-MM-DD). Corresponds to `DATE_DERNIERE_MODIFICATION` in XSD. */
+      /** Date de dernière modification du dossier (YYYY-MM-DD). Correspond à `DATE_DERNIERE_MODIFICATION` dans le XSD. */
       DATE_DERNIERE_MODIFICATION: string
-      /** Identifier for related text 1. Corresponds to `ID_TEXTE_1` in XSD. Always starts with JORFTEXT when present. */
+      /** Identifiant du texte lié 1. Correspond à `ID_TEXTE_1` dans le XSD. Commence toujours par JORFTEXT si présent. */
       ID_TEXTE_1?: string // Always starts with JORFTEXT when present
-      /** Identifier for related text 2. Corresponds to `ID_TEXTE_2` in XSD. Always starts with JORFTEXT when present. */
+      /** Identifiant du texte lié 2. Correspond à `ID_TEXTE_2` dans le XSD. Commence toujours par JORFTEXT si présent. */
       ID_TEXTE_2?: string // Always starts with JORFTEXT when present
-      /** Identifier for related text 3. Corresponds to `ID_TEXTE_3` in XSD. Always starts with JORFTEXT when present. */
+      /** Identifiant du texte lié 3. Correspond à `ID_TEXTE_3` dans le XSD. Commence toujours par JORFTEXT si présent. */
       ID_TEXTE_3?: string // Always starts with JORFTEXT when present
-      /** Identifier for related text 4. Corresponds to `ID_TEXTE_4` in XSD. Always starts with JORFTEXT when present. */
+      /** Identifiant du texte lié 4. Correspond à `ID_TEXTE_4` dans le XSD. Commence toujours par JORFTEXT si présent. */
       ID_TEXTE_4?: string // Always starts with JORFTEXT when present
-      /** Identifier for related text 5. Corresponds to `ID_TEXTE_5` in XSD. Always starts with JORFTEXT when present. */
+      /** Identifiant du texte lié 5. Correspond à `ID_TEXTE_5` dans le XSD. Commence toujours par JORFTEXT si présent. */
       ID_TEXTE_5?: string // Always starts with JORFTEXT when present
       /**
-       * Information about the legislature.
-       * Corresponds to the `LEGISLATURE` element in `dole_dossier.xsd`.
+       * Informations sur la législature.
+       * Correspond à l'élément `LEGISLATURE` dans `dole_dossier.xsd`.
        */
       LEGISLATURE?: {
-        /** Start date of the legislature (YYYY-MM-DD). Corresponds to `DATE_DEBUT` in XSD. */
+        /** Date de début de la législature (YYYY-MM-DD). Correspond à `DATE_DEBUT` dans le XSD. */
         DATE_DEBUT: string
-        /** End date of the legislature (YYYY-MM-DD). Corresponds to `DATE_FIN` in XSD. */
+        /** Date de fin de la législature (YYYY-MM-DD). Correspond à `DATE_FIN` dans le XSD. */
         DATE_FIN: string
-        /** Label or name of the legislature. Corresponds to `LIBELLE` in XSD. */
+        /** Libellé ou nom de la législature. Correspond à `LIBELLE` dans le XSD. */
         LIBELLE: string
-        /** Number of the legislature. Corresponds to `NUMERO` (xs:string) in XSD. */
+        /** Numéro de la législature. Correspond à `NUMERO` (xs:string) dans le XSD. */
         NUMERO: number
       }
-      /** Title of the legislative dossier. Corresponds to `TITRE` in XSD. */
+      /** Titre du dossier législatif. Correspond à `TITRE` dans le XSD. */
       TITRE: string
-      /** Type of the legislative dossier. Corresponds to `TYPE` (xs:string) in XSD. */
+      /** Type du dossier législatif. Correspond à `TYPE` (xs:string) dans le XSD. */
       TYPE?: DossierLegislatifType
     }
   }
 }
 
 /**
- * Defines the possible types for a legislative dossier.
- * These values are based on observed data and provide type safety.
- * The XSD defines the `TYPE` field in `META_DOSSIER_LEGISLATIF` as `xs:string`.
+ * Définit les types possibles pour un dossier législatif.
+ * Ces valeurs sont basées sur les données observées et assurent la sécurité des types.
+ * Le XSD définit le champ `TYPE` dans `META_DOSSIER_LEGISLATIF` comme `xs:string`.
  */
 export type DossierLegislatifType = (typeof allDossierLegislatifTypes)[number]
 
 /**
- * Represents a schedule or timeline (échéancier) within a legislative dossier.
- * Corresponds to the `ECHEANCIER` element in `dole_dossier.xsd`.
+ * Représente un échéancier au sein d'un dossier législatif.
+ * Correspond à l'élément `ECHEANCIER` dans `dole_dossier.xsd`.
  */
 export interface Echeancier {
   /**
-   * Last update date of the schedule (YYYY-MM-DD).
-   * From `@derniere_maj` attribute in XSD.
+   * Date de dernière mise à jour de l'échéancier (YYYY-MM-DD).
+   * Provient de l'attribut `@derniere_maj` dans le XSD.
    */
   "@derniere_maj"?: string
   /**
-   * Array of lines or items in the schedule.
-   * Corresponds to one or more `LIGNE` elements in XSD.
+   * Tableau de lignes ou d'éléments de l'échéancier.
+   * Correspond à un ou plusieurs éléments `LIGNE` dans le XSD.
    */
   LIGNE: EcheancierLigne[]
 }
 
 /**
- * Represents a single line or item within the schedule (échéancier).
- * Corresponds to the `LIGNE` element in `dole_dossier.xsd`.
+ * Représente une seule ligne ou un élément au sein de l'échéancier.
+ * Correspond à l'élément `LIGNE` dans `dole_dossier.xsd`.
  */
 export interface EcheancierLigne {
-  /** Article reference. Corresponds to `ARTICLE` in XSD. */
+  /** Référence de l'article. Correspond à `ARTICLE` dans le XSD. */
   ARTICLE?: string
-  /** Legal basis. Corresponds to `BASE_LEGALE` in XSD. */
+  /** Base légale. Correspond à `BASE_LEGALE` dans le XSD. */
   BASE_LEGALE?: string
-  /** Identifier of the target law. Corresponds to `CID_LOI_CIBLE` in XSD. Always a JORFTEXT ID. */
+  /** Identifiant de la loi cible. Correspond à `CID_LOI_CIBLE` dans le XSD. Toujours un ID JORFTEXT. */
   CID_LOI_CIBLE?: string // Always a JORFTEXT ID
-  /** Planned date (YYYY-MM-DD). Corresponds to `DATE_PREVUE` in XSD. */
+  /** Date prévue (YYYY-MM-DD). Correspond à `DATE_PREVUE` dans le XSD. */
   DATE_PREVUE?: string
-  /** Decree reference. Corresponds to `DECRET` in XSD. */
+  /** Référence au décret. Correspond à `DECRET` dans le XSD. */
   DECRET?: string
   /**
-   * Link(s) to the article.
-   * Corresponds to `LIEN_ARTICLE` element in XSD.
+   * Lien(s) vers l'article.
+   * Correspond à l'élément `LIEN_ARTICLE` dans le XSD.
    */
   LIEN_ARTICLE?: Array<{
-    /** Identifier of the linked article. From `@id` attribute in XSD. Always a JORFARTI ID. */
+    /** Identifiant de l'article lié. Provient de l'attribut `@id` dans le XSD. Toujours un ID JORFARTI. */
     "@id": string // Always a JORFARTI ID
-    /** Text content of the link. */
+    /** Contenu textuel du lien. */
     "#text": string
   }>
-  /** Order number of the schedule item. Corresponds to `NUMERO_ORDRE` in XSD. */
+  /** Numéro d'ordre de l'élément de l'échéancier. Correspond à `NUMERO_ORDRE` dans le XSD. */
   NUMERO_ORDRE?: string
-  /** Object or subject of the schedule item. Corresponds to `OBJET` in XSD. */
+  /** Objet ou sujet de l'élément de l'échéancier. Correspond à `OBJET` dans le XSD. */
   OBJET?: string
 }
 
 /**
- * Defines the known types of legislative dossiers.
- * This list is used to create the `DossierLegislatifType`.
+ * Définit les types connus de dossiers législatifs.
+ * Cette liste est utilisée pour créer le type `DossierLegislatifType`.
  */
 export const allDossierLegislatifTypes = [
   "LOI_PUBLIEE",

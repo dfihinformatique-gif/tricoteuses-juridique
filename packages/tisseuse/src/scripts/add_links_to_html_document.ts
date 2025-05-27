@@ -94,6 +94,7 @@ async function addLinksToHtmlDocument(
       (articleReference.indirect as metslesliens.Indirect)?.relative === 0 &&
       currentArticleId !== undefined
     ) {
+      // "le même article", "le présent article", etc
       // Do nothing.
       return
     }
@@ -137,6 +138,40 @@ async function addLinksToHtmlDocument(
         `),
       ]
     }
+    if (
+      articlesInfos.length === 0 &&
+      typeof articleReference.id === "string" &&
+      /^L\d+-\d+$/.test(articleReference.id)
+    ) {
+      // Look whether there exists only one text with this article number.
+      articlesInfos = [
+        ...(await db<
+          {
+            data: JorfArticle | LegiArticle
+            id: string
+          }[]
+        >`
+          SELECT data, id
+          FROM article
+          WHERE
+            data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM' = ${articleReference.id}
+        `),
+      ]
+      if (articlesInfos.length !== 0) {
+        const textsIds = articlesInfos.reduce((textsIds, { data }) => {
+          const textId = data.CONTEXTE.TEXTE["@cid"]
+          if (textId !== undefined) {
+            textsIds.add(textId)
+          }
+          return textsIds
+        }, new Set<string>())
+        if (textsIds.size > 1) {
+          // Different texts have an article with the same number.
+          // So try another method.
+          articlesInfos = []
+        }
+      }
+    }
     if (articlesInfos.length === 0) {
       console.warn(
         `Unknown article ${articleReference.id ?? null} of law ${currentTextId} for reference ${JSON.stringify(articleReference, null, 2)}`,
@@ -157,7 +192,7 @@ async function addLinksToHtmlDocument(
         }
         filteredArticlesInfos = articlesInfos.filter(
           ({ id }) =>
-            !currentTextId!.startsWith("JORF") || id.startsWith("JORF"),
+            !currentTextId?.startsWith("JORF") || id.startsWith("JORF"),
         )
         if (filteredArticlesInfos.length === 1) {
           currentArticleId = filteredArticlesInfos[0].id
@@ -217,7 +252,12 @@ async function addLinksToHtmlDocument(
           break
         }
 
-        case "book-reference": {
+        case "book-reference":
+        case "chapter-reference":
+        case "code-part-reference":
+        case "paragraph-reference":
+        case "section-reference":
+        case "title-reference": {
           // TODO supra-article references
           break
         }
@@ -226,6 +266,7 @@ async function addLinksToHtmlDocument(
           switch (atomicReference.lawType) {
             case "arrêté":
             case "convention":
+            case "décret":
             case "directive":
             case "règlement":
             case "ordonnance": {
@@ -422,7 +463,12 @@ async function addLinksToHtmlDocument(
                 break
               }
 
-              case "book-reference": {
+              case "book-reference":
+              case "chapter-reference":
+              case "code-part-reference":
+              case "paragraph-reference":
+              case "section-reference":
+              case "title-reference": {
                 // TODO supra-article references
                 break
               }
@@ -465,6 +511,7 @@ async function addLinksToHtmlDocument(
   await fs.writeFile(outputDocumentPath, outputHtml, { encoding: "utf-8" })
   return 0
 }
+
 /**
  * Replaces numeric HTML character references (decimal and hexadecimal)
  * in a string with their corresponding UTF-8 characters.

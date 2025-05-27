@@ -207,14 +207,22 @@ export async function writeOidBySplitPathTree(
           // Child is a blob and key is an ID.
           assert.notStrictEqual(child.oid, undefined)
           const filename = key + extension
-          builder.insert(filename, child.oid!, nodegit.TreeEntry.FILEMODE.BLOB) // 0o040000
+          builder.insert(
+            filename,
+            child.oid!,
+            nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+          )
         } else {
           const childOid = await writeOidBySplitPathTree(
             repository,
             child,
             extension,
           )
-          builder.insert(key, childOid, nodegit.TreeEntry.FILEMODE.TREE) // 0o100644
+          builder.insert(
+            key,
+            childOid,
+            nodegit.TreeEntry.FILEMODE.TREE, // 0o100644
+          )
         }
       }
     }

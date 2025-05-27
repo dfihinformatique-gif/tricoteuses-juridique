@@ -1,6 +1,15 @@
 import dedent from "dedent-js"
-import fs from "fs-extra"
-import * as nodegit from "nodegit"
+import nodegit from "nodegit"
+
+export type SimpleTreeEntry = {
+  mode: number
+  /*
+   * File or directory name
+   */
+  name: string
+  oid: string
+  type: "blob" | "tree"
+}
 
 export const licence =
   dedent`
@@ -69,17 +78,38 @@ export const licence =
     libertés (CNIL), la réutilisation ne peut avoir pour objet ou pour effet de
     réidentifier les personnes concernées.
   ` + "\n"
-const textEncoder = new TextEncoder()
+
+export async function writeSimpleTree(
+  repository: nodegit.Repository,
+  dirName: string,
+  tree: SimpleTreeEntry[],
+): Promise<SimpleTreeEntry> {
+  const treeBuilder = await nodegit.Treebuilder.create(repository, undefined)
+  for (const treeEntry of tree) {
+    await treeBuilder.insert(
+      treeEntry.name,
+      nodegit.Oid.fromString(treeEntry.oid),
+      treeEntry.mode,
+    )
+  }
+  const treeOid = await treeBuilder.write()
+  return {
+    mode: nodegit.TreeEntry.FILEMODE.TREE,
+    name: dirName,
+    oid: treeOid.tostrS(),
+    type: "tree",
+  }
+}
 
 export async function writeTextFileBlob(
-  repo: nodegit.Repository,
+  repository: nodegit.Repository,
   filename: string,
   text: string,
-): Promise<{ mode: string; path: string; oid: string; type: "blob" }> {
-  const blobOid = await repo.createBlobFromBuffer(Buffer.from(text))
+): Promise<SimpleTreeEntry> {
+  const blobOid = await repository.createBlobFromBuffer(Buffer.from(text))
   return {
-    mode: "100644",
-    path: filename,
+    mode: nodegit.TreeEntry.FILEMODE.BLOB,
+    name: filename,
     oid: blobOid.tostrS(),
     type: "blob",
   }

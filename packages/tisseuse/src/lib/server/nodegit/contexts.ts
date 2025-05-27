@@ -1,3 +1,5 @@
+import nodegit from "nodegit"
+
 import type {
   JorfArticle,
   JorfTextelr,
@@ -11,6 +13,8 @@ import type {
 } from "$lib/legal/legi.js"
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
 import { db } from "$lib/server/databases/index.js"
+
+import type { SimpleTreeEntry } from "./repositories.js"
 
 export type Action = (typeof actions)[number]
 
@@ -41,7 +45,6 @@ export interface Context {
   // version other than themselves in VERSIONS.VERSION (but the other LEGI versions
   // are linked together in VERSIONS.VERSION).
   firstConsolidatedIdByJorfCreatorId: Record<string, string>
-  gitdir: string
   // When a LEGI article, sectionTa or text has been created by the same JORF
   // article, sectionIa or text, ID of this JORF object
   jorfCreatorIdByConsolidatedId: Record<string, string>
@@ -53,6 +56,7 @@ export interface Context {
   modifyingTextsIdsByArticleActionDate: Record<string, Set<string>>
   referringTextsLiensById: Record<string, TexteVersionLienDb[]>
   referringArticlesLiensById: Record<string, ArticleLienDb[]>
+  repository: nodegit.Repository
   sectionTaById: Record<string, LegiSectionTa | null>
   sectionTaGitById: Record<
     string,
@@ -80,7 +84,7 @@ interface TextFileCache {
    */
   custom?: string
   id: string
-  treeEntry: { mode: string; path: string; oid: string; type: "blob" }
+  treeEntry: SimpleTreeEntry
 }
 
 export interface TexteManquant {

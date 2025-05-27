@@ -185,7 +185,7 @@ async function gitJsonToGitTableOfContentsMarkdown(
   const [dilaStartDate, dilaStartDateError] = auditChain(
     auditTest(
       (value: string) => dilaDateRegExp.test(value),
-      (value) => `Date not found in "${value}"`,
+      (value: string) => `Date not found in "${value}"`,
     ),
     auditFunction((value: string) => value.match(dilaDateRegExp)?.[0]),
     auditRequire,
@@ -274,8 +274,8 @@ async function gitJsonToGitTableOfContentsMarkdown(
         builder.insert(
           "LICENCE.md",
           licenceOid,
-          nodegit.TreeEntry.FILEMODE.BLOB,
-        ) // 0o040000
+          nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+        )
 
         const targetTreeOid = await builder.write()
 

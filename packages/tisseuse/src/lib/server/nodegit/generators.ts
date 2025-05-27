@@ -2,7 +2,7 @@ import assert from "assert"
 import dedent from "dedent-js"
 import fs from "fs-extra"
 import objectHash from "object-hash"
-import nodegit from "nodegit" // Replaced isomorphic-git
+import nodegit from "nodegit"
 import opentelemetry from "@opentelemetry/api"
 import path from "path"
 
@@ -66,7 +66,12 @@ import {
   registerLegiSectionTaModifiersAndReferences,
   registerLegiTextModifiersAndReferences,
 } from "./references.js"
-import { licence, writeTextFileBlob } from "./repositories.js"
+import {
+  licence,
+  writeSimpleTree,
+  writeTextFileBlob,
+  type SimpleTreeEntry,
+} from "./repositories.js"
 import {
   addArticleToTree,
   type SectionTaNode,
@@ -151,8 +156,7 @@ async function generateArticlesGit(
   repositoryRelativeDir: string,
 ): Promise<{
   readmeLinks: Array<{ href: string; title: string }>
-  // TreeObject was isomorphicGit.TreeEntry[]. writeTextFileBlob now returns { mode, path, oid, type }
-  tree: { mode: string; path: string; oid: string; type: "blob" }[]
+  tree: SimpleTreeEntry[]
 }> {
   return await tracer.startActiveSpan(`generateArticlesGit`, async (span) => {
     span.setAttribute("date", date)
@@ -163,7 +167,7 @@ async function generateArticlesGit(
     try {
       const readmeLinks: Array<{ href: string; title: string }> = []
       // This tree will hold entries of type { mode, path, oid, type }
-      const tree: { mode: string; path: string; oid: string; type: "blob" }[] = []
+      const tree: SimpleTreeEntry[] = []
 
       if (articles !== undefined) {
         for (const article of articles) {
@@ -274,9 +278,8 @@ async function generateArticlesGit(
                     </details>
                   `
 
-            // writeTextFileBlob now expects a repository object
             const treeEntry = await writeTextFileBlob(
-              (context as any).repository, // Use the repository from context
+              context.repository,
               articleFilename,
               [
                 articleMarkdown,
@@ -333,7 +336,11 @@ export async function generateConsolidatedTextGit(
     async (span) => {
       span.setAttribute("consolidated text", consolidatedTextId)
       try {
-        const context: Context = {
+        await fs.remove(gitdir)
+        await fs.mkdir(gitdir, { recursive: true })
+        const repository = await nodegit.Repository.init(gitdir, 1 /* isBare */)
+
+        const context = {
           articleById: {},
           articleGitById: {},
           consolidatedIdsByActionByModifyingTextIdByDate: {},
@@ -342,13 +349,13 @@ export async function generateConsolidatedTextGit(
           consolidatedTextModifyingTextsIdsByActionByDate: {},
           currentInternalIds: new Set(),
           firstConsolidatedIdByJorfCreatorId: {},
-          gitdir,
           jorfCreatorIdByConsolidatedId: {},
           logReferences,
           modifierByActionByConsolidatedArticleId: {},
           modifyingTextsIdsByArticleActionDate: {},
           referringArticlesLiensById: {},
           referringTextsLiensById: {},
+          repository,
           sectionTaById: {},
           sectionTaGitById: {},
           textelrById: {},
@@ -356,7 +363,7 @@ export async function generateConsolidatedTextGit(
           texteVersionById: {},
           texteVersionGitById: {},
           textFileCacheByRepositoryRelativeFilePath: {},
-        }
+        } as Context
         const consolidatedTextelr = (await getOrLoadTextelr(
           context,
           consolidatedTextId,
@@ -605,18 +612,12 @@ export async function generateConsolidatedTextGit(
           }
         }
 
-        // Generation of Git repository
-
-        await fs.remove(gitdir)
-        await fs.mkdir(gitdir, { recursive: true })
-        // Replace git.init
-        const repository = await nodegit.Repository.init(gitdir, 1 /*isBare*/);
-        (context as any).repository = repository; // Store repository in context for later use
+        // Initialization of Git repository
+        const initialTree: SimpleTreeEntry[] = []
 
         // Generate LICENCE.md file.
         const licenseFilename = "LICENCE.md"
         const licenseRepositoryRelativeFilePath = licenseFilename
-        // writeTextFileBlob now expects a repository, not gitdir
         const licenceTreeEntry = await writeTextFileBlob(
           repository,
           licenseFilename,
@@ -628,33 +629,40 @@ export async function generateConsolidatedTextGit(
           id: licenseRepositoryRelativeFilePath,
           treeEntry: licenceTreeEntry, // This is { mode, path, oid, type }
         }
+        initialTree.push(licenceTreeEntry)
 
-        // Replace git.writeTree for the initial tree
-        const initialTreeBuilder = await nodegit.Treebuilder.create(repository, null);
-        await initialTreeBuilder.insert(
-          licenceTreeEntry.path, // or licenseFilename
-          nodegit.Oid.fromString(licenceTreeEntry.oid),
-          parseInt(licenceTreeEntry.mode, 8)
-        );
-        const initialTreeOid = await initialTreeBuilder.write();
+        const { oid: initialTreeOid } = await writeSimpleTree(
+          repository,
+          "",
+          initialTree,
+        )
 
-        // Replace git.writeCommit for the initial commit
-        const authorSignature = nodegit.Signature.create("Tricoteuses", "tricoteuses@tricoteuses.fr", 0, -60);
-        const committerSignature = nodegit.Signature.create("République française", "republique@tricoteuses.fr", 0, -60);
-        
-        const initialCommitOidNodegit = await repository.createCommit(
-          null, // updateRef - will be handled by Branch.create and setHead
+        const authorSignature = nodegit.Signature.create(
+          "Tricoteuses",
+          "tricoteuses@tricoteuses.fr",
+          0,
+          -60,
+        )
+        const committerSignature = nodegit.Signature.create(
+          "République française",
+          "republique@tricoteuses.fr",
+          0,
+          -60,
+        )
+
+        const initialCommitOid = await repository.createCommit(
+          "HEAD",
           authorSignature,
           committerSignature,
           "Création du dépôt git",
-          initialTreeOid, // This is a nodegit.Oid object
-          [] // No parents for the initial commit
-        );
-        let commitOid = initialCommitOidNodegit.tostrS(); // For compatibility if used as string later
+          initialTreeOid,
+          [], // No parents for the initial commit
+        )
+        let commit = await repository.getCommit(initialCommitOid)
+        let commitOid = initialCommitOid.tostrS() // For compatibility if used as string later
 
-        // Replace git.writeRef for creating the main branch and setting HEAD
-        await nodegit.Branch.create(repository, "main", initialCommitOidNodegit, false /*force*/);
-        await repository.setHead("refs/heads/main");
+        await nodegit.Branch.create(repository, "main", commit, 0 /* force */)
+        await repository.setHead("refs/heads/main")
 
         let future = false
         let latestTreeOid: string | undefined = undefined
@@ -928,57 +936,79 @@ export async function generateConsolidatedTextGit(
                   .map(([key, value]) => `${key}: ${value}`)
                   .join("\n")
               }
-              const repository = (context as any).repository;
+              const repository = context.repository
               if (date > today && !future) {
-                // Replaced git.branch
-                // Create "futur" branch from the current commit (commitOid holds the parent's OID here)
-                const commitToBranchFrom = await repository.getCommit(nodegit.Oid.fromString(commitOid));
-                await nodegit.Branch.create(repository, "futur", commitToBranchFrom, false /*force*/);
-                await repository.setHead("refs/heads/futur"); // Checkout "futur"
+                // Create "futur" branch from the current commit.
+                await nodegit.Branch.create(
+                  repository,
+                  "futur",
+                  commit,
+                  0 /* force */,
+                )
+                await repository.setHead("refs/heads/futur") // Checkout "futur"
                 future = true
               }
 
-              // Replaced git.writeCommit
-              const authorSignature = nodegit.Signature.create("République française", "republique@tricoteuses.fr", timestamp, timezoneOffset);
-              const committerSignature = nodegit.Signature.create("République française", "republique@tricoteuses.fr", timestamp, timezoneOffset);
-              const parentCommit = await repository.getCommit(nodegit.Oid.fromString(commitOid)); // commitOid is the OID of the parent commit
-              
-              const newCommitOidNodegit = await repository.createCommit(
-                null, // updateRef is null, refs are managed explicitly
+              const authorSignature = nodegit.Signature.create(
+                "République française",
+                "republique@tricoteuses.fr",
+                timestamp,
+                timezoneOffset,
+              )
+              const committerSignature = nodegit.Signature.create(
+                "République française",
+                "republique@tricoteuses.fr",
+                timestamp,
+                timezoneOffset,
+              )
+              const parentCommit = commit
+
+              const newCommitOid = await repository.createCommit(
+                "HEAD",
                 authorSignature,
                 committerSignature,
                 [modifyingTextTitle, summary, messageLines]
                   .filter((block) => block !== undefined)
                   .join("\n\n"),
-                nodegit.Oid.fromString(treeOid), // treeOid is string OID from generateTextGit
-                [parentCommit] // Array of parent nodegit.Commit objects
-              );
-              commitOid = newCommitOidNodegit.tostrS(); // Update commitOid to the new commit's OID string for the next iteration
+                nodegit.Oid.fromString(treeOid),
+                [parentCommit],
+              )
+              commit = await repository.getCommit(newCommitOid)
+              commitOid = newCommitOid.tostrS()
 
-              // Replaced git.writeRef for branch update
-              const branchName = future ? "futur" : "main";
-              const branchRef = `refs/heads/${branchName}`;
-              
+              const branchName = future ? "futur" : "main"
+              const branchRef = `refs/heads/${branchName}`
+
               // Create or update the branch reference to point to the new commit
-              await nodegit.Reference.create(repository, branchRef, newCommitOidNodegit, true /*force*/, `Update ${branchName} to ${commitOid}`);
-              
+              await nodegit.Reference.create(
+                repository,
+                branchRef,
+                newCommitOid,
+                1 /* force */,
+                `Update ${branchName} to ${commitOid}`,
+              )
+
               // If the updated branch is the one HEAD should be on, ensure HEAD is set.
               // (e.g. if we are on "main" and future is false, or on "futur" and future is true)
-              const currentHeadName = (await repository.head()).shorthand(); // e.g. "main" or "futur"
+              const currentHeadName = (await repository.head()).shorthand() // e.g. "main" or "futur"
               if (currentHeadName === branchName) {
-                await repository.setHead(branchRef);
+                await repository.setHead(branchRef)
               }
-              
-              latestTreeOid = treeOid; // treeOid is string OID of the tree for this commit
+
+              latestTreeOid = treeOid
             }
             if (
               modifyingTextIndex === modifyingTexteVersionArray.length - 1 &&
               hasCommitsForDate
             ) {
-              // Replaced git.writeRef for tag
-              const tagName = date === "2222-02-22" ? "différé" : date;
-              // Create a lightweight tag pointing to the commitOid (string) of the last commit for this date
-              await nodegit.Tag.createLightweight(repository, tagName, nodegit.Oid.fromString(commitOid));
+              // Create a lightweight tag pointing to the last commit for this date.
+              await nodegit.Reference.create(
+                repository,
+                `refs/tags/${date === "2222-02-22" ? "différé" : date}`,
+                commit.id(),
+                1 /* force */,
+                "Ajout d'un tag de type date", // Log message
+              )
             }
 
             const t4 = performance.now()
@@ -990,10 +1020,9 @@ export async function generateConsolidatedTextGit(
           }
         }
 
-        const repository = (context as any).repository;
         if (future) {
-          // Return to main branch. Replaced git.writeRef for HEAD update
-          await repository.setHead("refs/heads/main");
+          // Return to main branch.
+          await repository.setHead("refs/heads/main")
         }
 
         for await (const articleGitRows of db<ArticleGitDb[]>`
@@ -1128,10 +1157,12 @@ async function generateSectionTaGit(
   date: string,
   parentRepositoryRelativeDir: string,
   modifyingTextId: string,
-): Promise<{ mode: string; path: string; oid: string; type: "tree" }> { // Replaced TreeEntry
+): Promise<SimpleTreeEntry> {
+  // Replaced TreeEntry
   return await tracer.startActiveSpan(
     `generateSectionTaGit ${sectionTa.ID}`,
-    async (span): Promise<{ mode: string; path: string; oid: string; type: "tree" }> => { // Replaced TreeEntry
+    async (span): Promise<SimpleTreeEntry> => {
+      // Replaced TreeEntry
       span.setAttribute("date", date)
       span.setAttribute("sectionTa", sectionTa.ID)
       try {
@@ -1251,7 +1282,7 @@ async function generateSectionTaGit(
                 `
 
           const treeEntry = await writeTextFileBlob(
-            context.gitdir,
+            context.repository,
             readmeFilename,
             [
               readmeMarkdown,
@@ -1277,18 +1308,7 @@ async function generateSectionTaGit(
           tree.push(readmeCache.treeEntry)
         }
 
-        const treeOid = await git.writeTree({
-          fs,
-          gitdir: context.gitdir,
-          tree,
-        })
-
-        return {
-          mode: "040000",
-          path: sectionTaDirName,
-          oid: treeOid,
-          type: "tree",
-        }
+        return await writeSimpleTree(context.repository, sectionTaDirName, tree)
       } finally {
         span.end()
       }
@@ -1452,9 +1472,9 @@ async function generateTextGit(
                   </details>
                 `
 
-            // writeTextFileBlob now expects a repository object
+          // writeTextFileBlob now expects a repository object
           const treeEntry = await writeTextFileBlob(
-              (context as any).repository, // Use the repository from context
+            context.repository, // Use the repository from context
             readmeFilename,
             [
               readmeMarkdown,
@@ -1485,11 +1505,7 @@ async function generateTextGit(
             .treeEntry,
         )
 
-        return await git.writeTree({
-          fs,
-          gitdir: context.gitdir,
-          tree,
-        })
+        return (await writeSimpleTree(context.repository, "", tree)).oid
       } finally {
         span.end()
       }

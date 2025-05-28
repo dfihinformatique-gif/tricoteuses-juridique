@@ -59,8 +59,10 @@ function auditBlocTextuel(
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -297,7 +299,7 @@ function auditMcsArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(
       auditSwitch(
-        [auditNumber, auditFunction((num) => num.toString())],
+        [auditNumber, auditFunction((num: number) => num.toString())],
         [auditTrimString, auditEmptyToNull],
       ),
     ),
@@ -382,7 +384,7 @@ function auditMetaArticle(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((num) => num.toString())],
+      [auditNumber, auditFunction((num: number) => num.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )
@@ -422,7 +424,7 @@ function auditMetaCommun(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((id) => id.toString())],
+      [auditNumber, auditFunction((id: number) => id.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )
@@ -517,8 +519,10 @@ function auditSm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
     auditNullish,
   )
 

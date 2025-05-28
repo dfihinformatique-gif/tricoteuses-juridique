@@ -53,8 +53,10 @@ function auditAbro(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -313,7 +315,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((num) => num.toString())],
+      [auditNumber, auditFunction((num: number) => num.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )
@@ -443,7 +445,7 @@ function auditMcsTxt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(
       auditSwitch(
-        [auditNumber, auditFunction((num) => num.toString())],
+        [auditNumber, auditFunction((num: number) => num.toString())],
         [auditTrimString, auditEmptyToNull],
       ),
     ),
@@ -509,7 +511,7 @@ function auditMetaCommun(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((id) => id.toString())],
+      [auditNumber, auditFunction((id: number) => id.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )
@@ -682,8 +684,10 @@ function auditNotice(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -707,8 +711,10 @@ function auditRect(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -761,7 +767,7 @@ function auditSm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((num) => num.toString())],
+      [auditNumber, auditFunction((num: number) => num.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )

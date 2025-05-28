@@ -79,7 +79,7 @@ function auditArborescenceLien(
       [
         auditNumber,
         auditInteger,
-        auditFunction((article) => article.toString()),
+        auditFunction((article: number) => article.toString()),
       ],
       auditTrimString,
     ),
@@ -440,7 +440,7 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       [
         auditNumber,
         auditInteger,
-        auditFunction((article) => article.toString()),
+        auditFunction((article: number) => article.toString()),
       ],
       auditTrimString,
     ),
@@ -493,7 +493,7 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((numero) => numero.toString())],
+      [auditNumber, auditFunction((numero: number) => numero.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )

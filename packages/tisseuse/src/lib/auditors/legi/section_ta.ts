@@ -119,7 +119,7 @@ export function auditLegiSectionTa(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((num) => num.toString())],
+      [auditNumber, auditFunction((num: number) => num.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )
@@ -227,7 +227,7 @@ function auditLienSectionTa(
       errors,
       remainingKeys,
       auditSwitch(
-        [auditNumber, auditFunction((num) => num.toString())],
+        [auditNumber, auditFunction((num: number) => num.toString())],
         [auditTrimString, auditEmptyToNull],
       ),
     )
@@ -423,7 +423,7 @@ function auditTitreTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((num) => num.toString())],
+      [auditNumber, auditFunction((num: number) => num.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )

@@ -741,8 +741,10 @@ function auditSignataires(
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -793,8 +795,10 @@ function auditTp(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
@@ -818,8 +822,10 @@ function auditVisas(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
+    auditSwitch(
+      [auditNumber, auditFunction((num: number) => num.toString())],
+      [auditTrimString, auditEmptyToNull],
+    ),
   )
 
   return audit.reduceRemaining(data, errors, remainingKeys)

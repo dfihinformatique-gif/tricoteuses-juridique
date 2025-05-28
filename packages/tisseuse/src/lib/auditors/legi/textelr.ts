@@ -353,7 +353,7 @@ function auditMetaCommun(
     errors,
     remainingKeys,
     auditSwitch(
-      [auditNumber, auditFunction((id) => id.toString())],
+      [auditNumber, auditFunction((id: number) => id.toString())],
       [auditTrimString, auditEmptyToNull],
     ),
   )

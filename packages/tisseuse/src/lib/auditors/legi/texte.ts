@@ -59,7 +59,7 @@ export function auditMetaTexteChronicle(
       errors,
       remainingKeys,
       auditSwitch(
-        [auditNumber, auditFunction((num) => num.toString())],
+        [auditNumber, auditFunction((num: number) => num.toString())],
         [auditTrimString, auditEmptyToNull],
       ),
     )

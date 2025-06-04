@@ -147,6 +147,14 @@ export async function configureDatabase() {
     )
   `
 
+  // Table: article_liens_extraits
+  await db`
+    CREATE TABLE IF NOT EXISTS article_liens_extraits (
+      id char(20) PRIMARY KEY REFERENCES article(id) ON DELETE CASCADE,
+      data jsonb NOT NULL
+    )
+  `
+
   // Table: consolidated_texts_git_states
   await db`
     CREATE TABLE IF NOT EXISTS consolidated_texts_git_hashes (

@@ -23,7 +23,7 @@ export const db = postgres({
   port: config.db.port,
   user: config.db.user,
 })
-export const versionNumber = 14
+export const versionNumber = 15
 
 /// Check that assemblee database exists and is up to date.
 export async function checkAssembleeDb(): Promise<void> {

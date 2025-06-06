@@ -1,16 +1,20 @@
 <script lang="ts">
-  import { Minus, Triangle } from "lucide-svelte"
+  import Minus from "@lucide/svelte/icons/minus"
+  import Triangle from "@lucide/svelte/icons/triangle"
 
   import type { Aggregate } from "$lib/aggregates.js"
   import ArticleView from "$lib/components/ArticleView.svelte"
   import SectionTaView from "$lib/components/SectionTaView.svelte"
   import TexteVersionView from "$lib/components/TexteVersionView.svelte"
   import {
+    type Article,
     type LegalObject,
     type LegalObjectType,
     type Lien,
     pathnameFromLegalId,
     rootTypeFromLegalId,
+    type SectionTa,
+    type TexteVersion,
   } from "$lib/legal/index.js"
 
   export let data: Aggregate
@@ -29,7 +33,32 @@
 
   function componentAndPropertiesFromTypeAndTarget(
     type: LegalObjectType | undefined,
-  ) {
+  ):
+    | {
+        component: typeof ArticleView
+        properties: {
+          article: Article | undefined
+          data: Aggregate
+          level: number
+        }
+      }
+    | {
+        component: typeof SectionTaView
+        properties: {
+          data: Aggregate
+          level: number
+          sectionTa: SectionTa | undefined
+        }
+      }
+    | {
+        component: typeof TexteVersionView
+        properties: {
+          data: Aggregate
+          level: number
+          texteVersion: LegalObject | undefined
+        }
+      }
+    | undefined {
     if (type === undefined) {
       return undefined
     }
@@ -41,17 +70,17 @@
       case "article":
         return {
           component: ArticleView,
-          properties: { article: target, data, level },
+          properties: { article: target as Article, data, level },
         }
       case "section_ta":
         return {
           component: SectionTaView,
-          properties: { data, level, sectionTa: target },
+          properties: { data, level, sectionTa: target as SectionTa },
         }
       case "texte_version":
         return {
           component: TexteVersionView,
-          properties: { data, level, texteVersion: target },
+          properties: { data, level, texteVersion: target as TexteVersion },
         }
       default:
         return undefined
@@ -91,11 +120,10 @@
     {lien["#text"]}
   </div>
   {#if open}
-    <div
-      class="ml-2 border-l-4 pl-2"
-      <svelte:component
-      this={componentAndProperties.component}
-      {...componentAndProperties.properties}
-    ></div>
+    <div class="ml-2 border-l-4 pl-2">
+      <componentAndProperties.component
+        {...componentAndProperties.properties}
+      />
+    </div>
   {/if}
 {/if}

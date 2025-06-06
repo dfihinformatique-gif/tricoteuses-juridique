@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CircleX } from "lucide-svelte"
+  import CircleX from "@lucide/svelte/icons/circle-x"
 
   import { realErrorFromError } from "./errors.js"
   import ErrorValue from "./ErrorValue.svelte"

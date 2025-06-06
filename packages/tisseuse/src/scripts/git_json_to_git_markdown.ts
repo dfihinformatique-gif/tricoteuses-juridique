@@ -1864,7 +1864,7 @@ async function gitJsonToGitMarkdown(
         builder.insert(
           "LICENCE.md",
           licenceOid,
-          nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+          0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
         )
 
         const readmeOid = await targetRepository.createBlobFromBuffer(
@@ -1882,7 +1882,7 @@ async function gitJsonToGitMarkdown(
         builder.insert(
           "README.md",
           readmeOid,
-          nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+          0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
         )
 
         const targetTreeOid = await builder.write()

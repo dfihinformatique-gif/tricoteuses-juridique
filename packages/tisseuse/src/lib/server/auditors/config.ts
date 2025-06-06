@@ -105,7 +105,7 @@ export function auditDb(
     auditStringToNumber,
     auditInteger,
     auditTest(
-      (value) => 0 <= value && value <= 65536,
+      (value: number) => 0 <= value && value <= 65536,
       "Must be an integer between 0 and 65536",
     ),
     auditRequire,
@@ -148,7 +148,7 @@ export function auditForgejo(
     auditStringToNumber,
     auditInteger,
     auditTest(
-      (value) => 0 <= value && value <= 65536,
+      (value: number) => 0 <= value && value <= 65536,
       "Must be an integer between 0 and 65536",
     ),
     auditRequire,

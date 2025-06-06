@@ -45,7 +45,9 @@ export function auditMetaTexteChronicle(
       true,
       errors,
       remainingKeys,
-      auditFunction((date) => date.replace(/^11992-12-27$/, "1992-12-27")),
+      auditFunction((date: string) =>
+        date.replace(/^11992-12-27$/, "1992-12-27"),
+      ),
       auditDateIso8601String,
       auditRequire,
     )

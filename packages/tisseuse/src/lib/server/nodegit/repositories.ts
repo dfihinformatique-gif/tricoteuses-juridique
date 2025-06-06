@@ -94,7 +94,7 @@ export async function writeSimpleTree(
   }
   const treeOid = await treeBuilder.write()
   return {
-    mode: nodegit.TreeEntry.FILEMODE.TREE,
+    mode: 0o40000, // nodegit.TreeEntry.FILEMODE.TREE
     name: dirName,
     oid: treeOid.tostrS(),
     type: "tree",
@@ -108,7 +108,7 @@ export async function writeTextFileBlob(
 ): Promise<SimpleTreeEntry> {
   const blobOid = await repository.createBlobFromBuffer(Buffer.from(text))
   return {
-    mode: nodegit.TreeEntry.FILEMODE.BLOB,
+    mode: 0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
     name: filename,
     oid: blobOid.tostrS(),
     type: "blob",

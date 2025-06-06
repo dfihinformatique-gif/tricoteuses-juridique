@@ -9,7 +9,7 @@ import {
 
 export const auditId = auditChain(
   auditString,
-  auditTest((id) => id.length === 20, "Invalid length for ID"),
+  auditTest((id: string) => id.length === 20, "Invalid length for ID"),
 )
 
 export function auditVersions(

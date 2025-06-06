@@ -148,7 +148,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((etat: unknown) => {
     //   jorfSectionTaStats.countByLienArtEtat[etat] =
     //     (jorfSectionTaStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
@@ -182,7 +182,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((origine) => {
+    // auditFunction((origine: unknown) => {
     //   jorfSectionTaStats.countByLienArtOrigine[origine] =
     //     (jorfSectionTaStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
@@ -251,7 +251,7 @@ function auditLienSectionTa(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((etat: unknown) => {
     //   jorfSectionTaStats.countByLienSectionTaEtat[etat] =
     //     (jorfSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
@@ -294,7 +294,7 @@ function auditStructureTa(
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienArt, auditRequire),
   )
   audit.attribute(
@@ -303,7 +303,7 @@ function auditStructureTa(
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienSectionTa, auditRequire),
   )
 
@@ -356,7 +356,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       true,
       errors,
       remainingKeys,
-      //   auditFunction((date) => date.replace(/^11992-12-27$/, "1992-12-27")),
+      //   auditFunction((date: string) => date.replace(/^11992-12-27$/, "1992-12-27")),
       auditDateIso8601String,
       auditRequire,
     )
@@ -369,7 +369,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((nature) => {
+    // auditFunction((nature: string) => {
     //   jorfSectionTaStats.countByTexteNature[nature] =
     //     (jorfSectionTaStats.countByTexteNature[nature] ?? 0) + 1
     //   return nature
@@ -382,7 +382,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((titreTxt) =>
+    auditFunction((titreTxt: unknown) =>
       Array.isArray(titreTxt) ? titreTxt : [titreTxt],
     ),
     auditCleanArray(auditTitreTxt, auditRequire),

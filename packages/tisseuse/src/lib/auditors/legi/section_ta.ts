@@ -158,7 +158,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((date: unknown) => {
     //   legiSectionTaStats.countByLienArtEtat[etat] =
     //     (legiSectionTaStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
@@ -192,7 +192,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((origine) => {
+    // auditFunction((date: unknown) => {
     //   legiSectionTaStats.countByLienArtOrigine[origine] =
     //     (legiSectionTaStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
@@ -263,7 +263,7 @@ function auditLienSectionTa(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((date: unknown) => {
     //   legiSectionTaStats.countByLienSectionTaEtat[etat] =
     //     (legiSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
@@ -305,7 +305,7 @@ function auditStructureTa(
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienArt, auditRequire),
   )
   audit.attribute(
@@ -314,7 +314,7 @@ function auditStructureTa(
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienSectionTa, auditRequire),
   )
 
@@ -367,7 +367,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       true,
       errors,
       remainingKeys,
-      //   auditFunction((date) => date.replace(/^11992-12-27$/, "1992-12-27")),
+      //   auditFunction((date: unknown) => date.replace(/^11992-12-27$/, "1992-12-27")),
       auditDateIso8601String,
       auditRequire,
     )
@@ -380,7 +380,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((nature) => {
+    // auditFunction((date: unknown) => {
     //   legiSectionTaStats.countByTexteNature[nature] =
     //     (legiSectionTaStats.countByTexteNature[nature] ?? 0) + 1
     //   return nature
@@ -393,7 +393,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((titreTxt) =>
+    auditFunction((titreTxt: unknown) =>
       Array.isArray(titreTxt) ? titreTxt : [titreTxt],
     ),
     auditCleanArray(auditTitreTxt, auditRequire),
@@ -519,7 +519,9 @@ function auditTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((titreTm) => (Array.isArray(titreTm) ? titreTm : [titreTm])),
+    auditFunction((titreTm: unknown) =>
+      Array.isArray(titreTm) ? titreTm : [titreTm],
+    ),
     auditCleanArray(auditTitreTm, auditRequire),
     auditRequire,
   )

@@ -154,7 +154,7 @@ export function auditQQueryParameter(
 export const auditQueryArray = auditChain(
   auditSwitch(
     auditNullish,
-    [auditTrimString, auditFunction((value) => [value])],
+    [auditTrimString, auditFunction((value: string) => [value])],
     auditCleanArray(auditTrimString),
   ),
   auditSetNullish([]),
@@ -176,14 +176,14 @@ export function auditQueryOptionsSet(
 ): Auditor {
   return auditChain(
     auditQueryOptionsArray(possibleValues),
-    auditFunction((values) => new Set(values)),
+    auditFunction((values: string[]) => new Set(values)),
     auditSetNullish(new Set()),
   )
 }
 
 export const auditQuerySet = auditChain(
   auditQueryArray,
-  auditFunction((values) => new Set(values)),
+  auditFunction((values: string[]) => new Set(values)),
   auditSetNullish(new Set()),
 )
 

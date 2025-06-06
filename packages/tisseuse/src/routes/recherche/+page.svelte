@@ -1,6 +1,6 @@
 <script lang="ts">
+  import Search from "@lucide/svelte/icons/search"
   import { TreeView } from "augmented-data-viewer"
-  import { Search } from "lucide-svelte"
 
   import { page } from "$app/stores"
   // import Pagination from "$lib/components/Pagination.svelte"

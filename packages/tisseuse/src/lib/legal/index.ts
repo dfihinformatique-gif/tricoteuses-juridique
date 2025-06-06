@@ -21,6 +21,162 @@ import type {
   LegiTextelr,
 } from "./legi.js"
 
+export {
+  allDossierLegislatifTypes,
+  type ArborescenceLien,
+  type ArborescenceNiveau,
+  type DossierLegislatif,
+  type DossierLegislatifType,
+  type Echeancier,
+  type EcheancierLigne,
+} from "./dole.js"
+export {
+  allJoNatures,
+  allJoOrigines,
+  allJorfArticleEtats,
+  allJorfArticleLienArticleOrigines,
+  allJorfArticleNatures,
+  allJorfArticleOrigines,
+  allJorfArticleTexteNatures,
+  allJorfCategoriesTags,
+  allJorfSectionTaLienArtEtats,
+  allJorfSectionTaLienArtOrigines,
+  allJorfSectionTaLienSectionTaEtats,
+  allJorfSectionTaTexteNatures,
+  allJorfTexteNatures,
+  allJorfTexteOrigines,
+  allJorfTexteVersionLienNatures,
+  allJorfTexteVersionLienTypes,
+  allJorfTextelrEtats,
+  allJorfTextelrLienArtEtats,
+  allJorfTextelrLienArtNatures,
+  allJorfTextelrLienArtOrigines,
+  type Jo,
+  type JoLienTxt,
+  type JoNature,
+  type JoOrigine,
+  type JoTm,
+  type JorfArticle,
+  type JorfArticleEtat,
+  type JorfArticleLienArticleOrigine,
+  type JorfArticleMetaArticle,
+  type JorfArticleNature,
+  type JorfArticleOrigine,
+  type JorfArticleTexteNature,
+  type JorfArticleTm,
+  type JorfArticleVersion,
+  type JorfCategorieTag,
+  type JorfMetaTexteChronicle,
+  type JorfMetaTexteVersion,
+  type JorfSectionTa,
+  type JorfSectionTaLienArt,
+  type JorfSectionTaLienArtEtat,
+  type JorfSectionTaLienArtOrigine,
+  type JorfSectionTaLienSectionTa,
+  type JorfSectionTaLienSectionTaEtat,
+  type JorfSectionTaStructure,
+  type JorfSectionTaTexteNature,
+  type JorfSectionTaTm,
+  type JorfTexte,
+  type JorfTexteMetaCommun,
+  type JorfTexteNature,
+  type JorfTexteOrigine,
+  type JorfTexteVersion,
+  type JorfTexteVersionLien,
+  type JorfTexteVersionLienNature,
+  type JorfTexteVersionLienType,
+  type JorfTextelr,
+  type JorfTextelrEtat,
+  type JorfTextelrLienArt,
+  type JorfTextelrLienArtEtat,
+  type JorfTextelrLienArtNature,
+  type JorfTextelrLienArtOrigine,
+  type JorfTextelrLienSectionTa,
+  type JorfTextelrStructure,
+  type JorfTextelrVersion,
+  type JorfTextelrVersions,
+  walkJoTm,
+} from "./jorf.js"
+export {
+  allLegiArticleEtats,
+  allLegiArticleLienArticleOrigines,
+  allLegiArticleLienNatures,
+  allLegiArticleLienTypes,
+  allLegiArticleNatures,
+  allLegiArticleOrigines,
+  allLegiArticleTexteNatures,
+  allLegiCategoriesTags,
+  allLegiSectionTaLienArtEtats,
+  allLegiSectionTaLienArtOrigines,
+  allLegiSectionTaLienSectionTaEtats,
+  allLegiSectionTaTexteNatures,
+  allLegiTexteEtats,
+  allLegiTexteNatures,
+  allLegiTexteOrigines,
+  allLegiTexteVersionLienNatures,
+  allLegiTexteVersionLienTypes,
+  allLegiTextelrLienArtEtats,
+  allLegiTextelrLienArtOrigines,
+  allLegiTextelrLienSectionTaEtats,
+  type LegiArticle,
+  type LegiArticleEtat,
+  type LegiArticleLien,
+  type LegiArticleLienArticleOrigine,
+  type LegiArticleLienNature,
+  type LegiArticleLienType,
+  type LegiArticleMetaArticle,
+  type LegiArticleNature,
+  type LegiArticleOrigine,
+  type LegiArticleTexteNature,
+  type LegiArticleTm,
+  type LegiArticleVersion,
+  type LegiCategorieTag,
+  type LegiMetaTexteChronicle,
+  type LegiMetaTexteVersion,
+  type LegiSectionTa,
+  type LegiSectionTaLienArt,
+  type LegiSectionTaLienArtEtat,
+  type LegiSectionTaLienArtOrigine,
+  type LegiSectionTaLienSectionTa,
+  type LegiSectionTaLienSectionTaEtat,
+  type LegiSectionTaStructure,
+  type LegiSectionTaTexteNature,
+  type LegiSectionTaTm,
+  type LegiTexte,
+  type LegiTexteEtat,
+  type LegiTexteNature,
+  type LegiTexteOrigine,
+  type LegiTexteVersion,
+  type LegiTexteVersionLien,
+  type LegiTexteVersionLienNature,
+  type LegiTexteVersionLienType,
+  type LegiTextelr,
+  type LegiTextelrLienArt,
+  type LegiTextelrLienArtEtat,
+  type LegiTextelrLienArtOrigine,
+  type LegiTextelrLienSectionTa,
+  type LegiTextelrLienSectionTaEtat,
+  type LegiTextelrStructure,
+  type LegiTextelrVersion,
+  type LegiTextelrVersions,
+} from "./legi.js"
+export { type LegalObjectReferences } from "./references.js"
+export {
+  allArticleTypes,
+  allSens,
+  type ArticleGitDb,
+  type ArticleLienDb,
+  type ArticleType,
+  type SectionTaGitDb,
+  type Sens,
+  type TexteVersionGitDb,
+  type TexteVersionLienDb,
+} from "./shared.js"
+
+/**
+
+* @ignore
+ */
 export interface Article {
   META: {
     META_COMMUN: MetaCommun
@@ -49,11 +205,17 @@ export interface Article {
   }
 }
 
+/**
+ * @ignore
+ */
 export interface ArticleVersion {
   "@etat": Etat
   LIEN_ART: LienArt
 }
 
+/**
+ * @ignore
+ */
 export interface Contexte {
   TEXTE: {
     "@cid": string
@@ -69,6 +231,9 @@ export interface Contexte {
   }
 }
 
+/**
+ * @ignore
+ */
 export type Etat =
   | ""
   | "ABROGE_DIFF"
@@ -87,6 +252,9 @@ export type Etat =
   | "VIGUEUR_NON_ETEN"
   | "VIGUEUR"
 
+/**
+ * @ignore
+ */
 export interface Idcc {
   META: {
     META_COMMUN: MetaCommun
@@ -101,11 +269,17 @@ export interface Idcc {
   }
 }
 
+/**
+ * @ignore
+ */
 export interface IdWrapper {
   eli: string
   id: string
 }
 
+/**
+ * @ignore
+ */
 export type LegalObject =
   | Article
   | DossierLegislatif
@@ -118,6 +292,9 @@ export type LegalObject =
   | TexteVersion
   | VersionsWrapper
 
+/**
+ * @ignore
+ */
 export type LegalObjectType =
   | "article"
   | "dossier_legislatif"
@@ -130,6 +307,9 @@ export type LegalObjectType =
   | "textelr"
   | "versions"
 
+/**
+ * @ignore
+ */
 export interface Lien {
   "@id": string
   "@num": string
@@ -177,6 +357,9 @@ export interface Lien {
   "#text": string
 }
 
+/**
+ * @ignore
+ */
 export interface LienArt {
   "@id": string
   "@fin": string
@@ -186,6 +369,9 @@ export interface LienArt {
   "@origine": Origine
 }
 
+/**
+ * @ignore
+ */
 export interface LienSectionTa {
   "@id": string
   "@cid": string
@@ -197,6 +383,9 @@ export interface LienSectionTa {
   "#text": string
 }
 
+/**
+ * @ignore
+ */
 export interface MetaCommun {
   ID: string
   URL: string
@@ -205,6 +394,9 @@ export interface MetaCommun {
   ANCIEN_ID: string
 }
 
+/**
+ * @ignore
+ */
 export interface MetaTexteChronicle {
   CID: string
   NUM: string
@@ -220,6 +412,9 @@ export interface MetaTexteChronicle {
   VERSIONS_A_VENIR?: string
 }
 
+/**
+ * @ignore
+ */
 export type Nature =
   | ""
   | "ACCORD COLLECTIF NATIONAL"
@@ -305,8 +500,14 @@ export type Nature =
   | "Recommandation patronale"
   | "Rectificatif"
 
+/**
+ * @ignore
+ */
 export type Origine = "JORF" | "KALI" | "LEGI"
 
+/**
+ * @ignore
+ */
 export interface SectionTa {
   ID: string
   CONTEXTE: Contexte
@@ -317,9 +518,15 @@ export interface SectionTa {
   }
 }
 
+/**
+ * @ignore
+ */
 export type Textekali = Textelr
 
-/// Racine de l'arborescence d'un texte législatif ou règlementaire
+/**
+ * Racine de l'arborescence d'un texte législatif ou règlementaire
+ * @ignore
+ */
 export interface Textelr {
   META: {
     META_COMMUN: MetaCommun
@@ -336,11 +543,17 @@ export interface Textelr {
   }
 }
 
+/**
+ * @ignore
+ */
 export interface TextelrVersion {
   "@etat": Etat
   LIEN_TXT: TextelrVersionLienTxt
 }
 
+/**
+ * @ignore
+ */
 export interface TextelrVersionLienTxt {
   "@id": string
   "@fin": string
@@ -348,6 +561,9 @@ export interface TextelrVersionLienTxt {
   "@debut": string
 }
 
+/**
+ * @ignore
+ */
 export interface TexteVersion {
   ABRO?: {
     CONTENU: string
@@ -386,6 +602,9 @@ export interface TexteVersion {
   }
 }
 
+/**
+ * @ignore
+ */
 export interface TitreTm {
   "#text": string
   "@debut": string
@@ -393,6 +612,9 @@ export interface TitreTm {
   "@id": string
 }
 
+/**
+ * @ignore
+ */
 export interface TitreTxt {
   "#text": string
   "@c_titre_court": string
@@ -401,7 +623,10 @@ export interface TitreTxt {
   "@id_txt": string
 }
 
-/// Table des matières (TM)
+/**
+ * Table des matières (TM)
+ * @ignore
+ */
 export interface Tm {
   "@niv": string // 1, 2, 3…
   LIEN_TXT?: TmLienTxt | TmLienTxt[]
@@ -409,11 +634,17 @@ export interface Tm {
   TM?: Tm | Tm[]
 }
 
+/**
+ * @ignore
+ */
 export interface TmLienTxt {
   "@idtxt": string
   "@titretxt": string
 }
 
+/**
+ * @ignore
+ */
 export interface Versions {
   VERSION: {
     "@id": string
@@ -423,16 +654,25 @@ export interface Versions {
   }
 }
 
+/**
+ * @ignore
+ */
 export interface VersionsWrapper {
   eli: string
   versions: Versions
 }
 
+/**
+ * @ignore
+ */
 export interface XmlHeader {
   "@encoding": "UTF-8"
   "@version": "1.0"
 }
 
+/**
+ * @ignore
+ */
 export const appMenu: MenuItem[] = [
   { href: "/recherche", label: "Recherche" },
   {
@@ -480,6 +720,9 @@ export const appMenu: MenuItem[] = [
   // },
 ]
 
+/**
+ * @ignore
+ */
 export function assertNeverLegalObjectType(type: never): never {
   throw `Unexpected type for legal object: ${type}`
 }
@@ -556,6 +799,9 @@ export function menuItemsFromLegalId(
   }
 }
 
+/**
+ * @ignore
+ */
 export function pathnameFromLegalId(id: string): string | undefined {
   const rootType = rootTypeFromLegalId(id)
   if (rootType === undefined) {
@@ -570,6 +816,9 @@ export function pathnameFromLegalId(id: string): string | undefined {
   return `/${rootType}/${id}`
 }
 
+/**
+ * @ignore
+ */
 export function pathnameFromLegalObject(
   type: LegalObjectType,
   object: LegalObject,
@@ -606,6 +855,9 @@ export function pathnameFromLegalObject(
   }
 }
 
+/**
+ * @ignore
+ */
 export function pathnameFromLegalObjectTypeAndId(
   type: LegalObjectType,
   id: string,
@@ -642,6 +894,9 @@ export function pathnameFromLegalObjectTypeAndId(
   }
 }
 
+/**
+ * @ignore
+ */
 export function rootTypeFromLegalId(id: string): LegalObjectType | undefined {
   if (!id) {
     return undefined

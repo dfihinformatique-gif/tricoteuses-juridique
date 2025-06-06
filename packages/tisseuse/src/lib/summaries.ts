@@ -1,5 +1,5 @@
 import type { Access, Summarizer, Summary } from "augmented-data-viewer"
-import { MoveRight } from "lucide-svelte"
+import MoveRight from "@lucide/svelte/icons/move-right"
 
 import type { DossierLegislatif } from "$lib/legal/dole.js"
 import {
@@ -9,7 +9,6 @@ import {
   bestItemForDate,
   type Idcc,
   type IdWrapper,
-  type Jo,
   type LegalObject,
   type LegalObjectType,
   type Lien,
@@ -29,6 +28,7 @@ import {
   type TmLienTxt,
   type VersionsWrapper,
 } from "$lib/legal/index.js"
+import type { Jo } from "$lib/legal/jorf.ts"
 import type { ArticleLienDb, TexteVersionLienDb } from "$lib/legal/shared.js"
 
 export const summarizeAggregateProperties: Summarizer = (access, value) => {

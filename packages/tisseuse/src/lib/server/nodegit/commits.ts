@@ -12,7 +12,7 @@ export async function* iterCommitsOids(
   const revisionWalker = repository.createRevWalk()
   revisionWalker.pushHead()
   if (reverse) {
-    revisionWalker.sorting(nodegit.Revwalk.SORT.REVERSE)
+    revisionWalker.sorting(4) //nodegit.Revwalk.SORT.REVERSE
   }
   while (true) {
     try {

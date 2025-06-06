@@ -145,7 +145,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((date: unknown) => {
     //   jorfTextelrStats.countByLienArtEtat[etat] =
     //     (jorfTextelrStats.countByLienArtEtat[etat] ?? 0) + 1
     //   return etat
@@ -172,7 +172,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((nature) => {
+    // auditFunction((date: unknown) => {
     //   jorfTextelrStats.countByLienArtNature[nature] =
     //     (jorfTextelrStats.countByLienArtNature[nature] ?? 0) + 1
     //   return nature
@@ -199,7 +199,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((origine) => {
+    // auditFunction((date: unknown) => {
     //   jorfTextelrStats.countByLienArtOrigine[origine] =
     //     (jorfTextelrStats.countByLienArtOrigine[origine] ?? 0) + 1
     //   return origine
@@ -265,7 +265,7 @@ function auditLienSectionTa(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((date: unknown) => {
     //   jorfSectionTaStats.countByLienSectionTaEtat[etat] =
     //     (jorfSectionTaStats.countByLienSectionTaEtat[etat] ?? 0) + 1
     //   return etat
@@ -424,7 +424,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((nature) => {
+    // auditFunction((date: unknown) => {
     //   jorfTextelrStats.countByNature[nature] =
     //     (jorfTextelrStats.countByNature[nature] ?? 0) + 1
     //   return nature
@@ -439,7 +439,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((origine) => {
+    // auditFunction((date: unknown) => {
     //   jorfTextelrStats.countByOrigine[origine] =
     //     (jorfTextelrStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
@@ -494,7 +494,7 @@ function auditStruct(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienArt, auditRequire),
   )
   audit.attribute(
@@ -503,7 +503,7 @@ function auditStruct(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienSectionTa, auditRequire),
   )
 
@@ -530,7 +530,7 @@ function auditVersion(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((date: unknown) => {
     //   jorfTextelrStats.countByEtat[etat] =
     //     (jorfTextelrStats.countByEtat[etat] ?? 0) + 1
     //   return etat
@@ -568,7 +568,9 @@ function auditVersions(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((version) => (Array.isArray(version) ? version : [version])),
+    auditFunction((version: unknown) =>
+      Array.isArray(version) ? version : [version],
+    ),
     auditCleanArray(auditVersion, auditRequire),
     auditRequire,
   )

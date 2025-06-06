@@ -225,7 +225,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((nature) => {
+    // auditFunction((date: unknown) => {
     //   legiTexteVersionStats.countByLienNature[nature] =
     //     (legiTexteVersionStats.countByLienNature[nature] ?? 0) + 1
     //   return nature
@@ -251,7 +251,7 @@ function auditLien(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((type) => {
+    // auditFunction((date: unknown) => {
     //   legiTexteVersionStats.countByLienType[type] =
     //     (legiTexteVersionStats.countByLienType[type] ?? 0) + 1
     //   return type
@@ -281,7 +281,7 @@ function auditLiens(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLien, auditRequire),
     auditRequire,
   )
@@ -308,7 +308,7 @@ function auditMcsTxt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(
       auditSwitch(
         [auditNumber, auditFunction((num: number) => num.toString())],
@@ -412,7 +412,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((nature) => {
+    // auditFunction((date: unknown) => {
     //   legiTexteVersionStats.countByNature[nature] =
     //     (legiTexteVersionStats.countByNature[nature] ?? 0) + 1
     //   return nature
@@ -427,7 +427,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((origine) => {
+    // auditFunction((date: unknown) => {
     //   legiTexteVersionStats.countByOrigine[origine] =
     //     (legiTexteVersionStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
@@ -519,7 +519,7 @@ function auditMetaTexteVersion(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((etat) => {
+    // auditFunction((date: unknown) => {
     //   legiTexteVersionStats.countByEtat[etat] =
     //     (legiTexteVersionStats.countByEtat[etat] ?? 0) + 1
     //   return etat

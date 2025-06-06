@@ -190,7 +190,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((nature) => {
+    // auditFunction((nature: unknown) => {
     //   joStats.countByNature[nature] = (joStats.countByNature[nature] ?? 0) + 1
     //   return nature
     // }),
@@ -205,7 +205,7 @@ function auditMetaCommun(
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    // auditFunction((origine) => {
+    // auditFunction((origine: unknown) => {
     //   joStats.countByOrigine[origine] =
     //     (joStats.countByOrigine[origine] ?? 0) + 1
     //   return origine
@@ -312,7 +312,7 @@ function auditStructureTxt(
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienTxt, auditRequire),
   )
   audit.attribute(
@@ -321,7 +321,7 @@ function auditStructureTxt(
     true,
     errors,
     remainingKeys,
-    auditFunction((tm) => (Array.isArray(tm) ? tm : [tm])),
+    auditFunction((tm: unknown) => (Array.isArray(tm) ? tm : [tm])),
     auditCleanArray(auditTm, auditRequire),
   )
 
@@ -357,7 +357,7 @@ function auditTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienTxt, auditRequire),
   )
   audit.attribute(
@@ -376,7 +376,7 @@ function auditTm(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((tm) => (Array.isArray(tm) ? tm : [tm])),
+    auditFunction((tm: unknown) => (Array.isArray(tm) ? tm : [tm])),
     auditCleanArray(auditTm, auditRequire),
   )
 

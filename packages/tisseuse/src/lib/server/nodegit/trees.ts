@@ -210,7 +210,7 @@ export async function writeOidBySplitPathTree(
           builder.insert(
             filename,
             child.oid!,
-            nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+            0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
           )
         } else {
           const childOid = await writeOidBySplitPathTree(
@@ -221,7 +221,7 @@ export async function writeOidBySplitPathTree(
           builder.insert(
             key,
             childOid,
-            nodegit.TreeEntry.FILEMODE.TREE, // 0o100644
+            0o40000, // nodegit.TreeEntry.FILEMODE.TREE
           )
         }
       }

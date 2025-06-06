@@ -274,7 +274,7 @@ async function gitJsonToGitTableOfContentsMarkdown(
         builder.insert(
           "LICENCE.md",
           licenceOid,
-          nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+          0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
         )
 
         const targetTreeOid = await builder.write()
@@ -517,7 +517,7 @@ async function gitJsonToGitTableOfContentsMarkdown(
         natureBuilder.insert(
           year.toString() + ".md",
           yearOid,
-          nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+          0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
         )
 
         natureSummaryMarkdownArray.push({
@@ -536,14 +536,14 @@ async function gitJsonToGitTableOfContentsMarkdown(
       natureBuilder.insert(
         "README.md",
         natureOid,
-        nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+        0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
       )
 
       const natureTreeOid = await natureBuilder.write()
       tableOfContentsBuilder.insert(
         natureDir,
         natureTreeOid,
-        nodegit.TreeEntry.FILEMODE.TREE, // 0o100644
+        0o40000, // nodegit.TreeEntry.FILEMODE.TREE
       )
 
       tableOfContentsSummaryMarkdownArray.push({
@@ -564,7 +564,7 @@ async function gitJsonToGitTableOfContentsMarkdown(
     tableOfContentsBuilder.insert(
       "README.md",
       tableOfContentsOid,
-      nodegit.TreeEntry.FILEMODE.BLOB, // 0o040000
+      0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
     )
 
     const targetTreeOid = await tableOfContentsBuilder.write()

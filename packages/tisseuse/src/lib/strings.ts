@@ -1,5 +1,5 @@
 import * as prettier from "prettier"
-import originalSlugify from "slug"
+import originalSlugify, { type Options } from "slug"
 
 export const diacritiquesMinuscule: { [letter: string]: string } = {
   ae: "(ae|æ)",
@@ -94,11 +94,7 @@ export function escapeHtml<StringOrUndefined extends string | undefined>(
 }
 
 export function slugify(string: string, replacement?: string | null) {
-  const options: {
-    charmap: { [character: string]: string }
-    mode: string
-    replacement: string
-  } = {
+  const options: Options = {
     charmap: slugifyCharmap,
     mode: "rfc3986",
     replacement: replacement || "-",

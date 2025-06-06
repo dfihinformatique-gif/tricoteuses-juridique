@@ -38,7 +38,7 @@ function auditArborescence(
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditArborescenceLien, auditRequire),
   )
   audit.attribute(
@@ -47,7 +47,9 @@ function auditArborescence(
     true,
     errors,
     remainingKeys,
-    auditFunction((niveau) => (Array.isArray(niveau) ? niveau : [niveau])),
+    auditFunction((niveau: unknown) =>
+      Array.isArray(niveau) ? niveau : [niveau],
+    ),
     auditCleanArray(auditArborescenceNiveau, auditRequire),
   )
 
@@ -110,9 +112,9 @@ function auditArborescenceLien(
     true,
     errors,
     remainingKeys,
-    // auditFunction((url) => url.replace(/‎/g, "")),
+    // auditFunction((url: unknown) => url.replace(/‎/g, "")),
     // auditTrimString,
-    // auditFunction((url) =>
+    // auditFunction((url: unknown) =>
     //   url
     //     .replace(/^http:\/\/webdim\//, "http://www.assemblee-nationale.fr/")
     //     .replace(/^https?:\/\/.*(https?):\/\//, "$1://"),
@@ -159,7 +161,7 @@ function auditArborescenceNiveau(
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditArborescenceLien, auditRequire),
   )
   audit.attribute(
@@ -168,7 +170,9 @@ function auditArborescenceNiveau(
     true,
     errors,
     remainingKeys,
-    auditFunction((niveau) => (Array.isArray(niveau) ? niveau : [niveau])),
+    auditFunction((niveau: unknown) =>
+      Array.isArray(niveau) ? niveau : [niveau],
+    ),
     auditCleanArray(auditArborescenceNiveau, auditRequire),
   )
 
@@ -302,7 +306,7 @@ function auditEcheancier(
     true,
     errors,
     remainingKeys,
-    auditFunction((ligne) => (Array.isArray(ligne) ? ligne : [ligne])),
+    auditFunction((ligne: unknown) => (Array.isArray(ligne) ? ligne : [ligne])),
     auditCleanArray(auditLigne, auditRequire),
     auditRequire,
   )
@@ -411,7 +415,7 @@ function auditLienArticle(
     remainingKeys,
     auditString,
     auditEmptyToNull,
-    auditTest((id) => /^JORFARTI\d{12}$/.test(id), "Invalid ID"),
+    auditTest((id: string) => /^JORFARTI\d{12}$/.test(id), "Invalid ID"),
     auditRequire,
   )
 
@@ -465,7 +469,7 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditString,
     auditEmptyToNull,
-    auditTest((id) => /^JORFTEXT\d{12}$/.test(id), "Invalid ID"),
+    auditTest((id: string) => /^JORFTEXT\d{12}$/.test(id), "Invalid ID"),
   )
   audit.attribute(
     data,
@@ -483,7 +487,7 @@ function auditLigne(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(auditLienArticle, auditRequire),
   )
   audit.attribute(

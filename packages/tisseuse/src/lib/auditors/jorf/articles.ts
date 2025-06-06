@@ -22,21 +22,23 @@ import {
 } from "$lib/legal/jorf.js"
 import { allArticleTypes } from "$lib/legal/shared.js"
 
-export const jorfArticleStats: {
-  // countByEtat: { [etat: string]: number }
-  // countByLienArtEtat: { [etat: string]: number }
-  // countByLienNature: { [nature: string]: number }
-  // countByLienType: { [type: string]: number }
-  // countByTexteNature: { [nature: string]: number }
-  // countByVersionEtat: { [etat: string]: number }
-} = {
-  // countByEtat: {},
-  // countByLienArtEtat: {},
-  // countByLienNature: {},
-  // countByLienType: {},
-  // countByTexteNature: {},
-  // countByVersionEtat: {},
-}
+export const jorfArticleStats: Record<string, never> =
+  // {
+  //   countByEtat: { [etat: string]: number }
+  //   countByLienArtEtat: { [etat: string]: number }
+  //   countByLienNature: { [nature: string]: number }
+  //   countByLienType: { [type: string]: number }
+  //   countByTexteNature: { [nature: string]: number }
+  //   countByVersionEtat: { [etat: string]: number }
+  // }
+  {
+    // countByEtat: {},
+    // countByLienArtEtat: {},
+    // countByLienNature: {},
+    // countByLienType: {},
+    // countByTexteNature: {},
+    // countByVersionEtat: {},
+  }
 
 function auditBlocTextuel(
   audit: Audit,
@@ -296,7 +298,7 @@ function auditMcsArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((lien) => (Array.isArray(lien) ? lien : [lien])),
+    auditFunction((lien: unknown) => (Array.isArray(lien) ? lien : [lien])),
     auditCleanArray(
       auditSwitch(
         [auditNumber, auditFunction((num: number) => num.toString())],
@@ -558,7 +560,9 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       true,
       errors,
       remainingKeys,
-      auditFunction((date) => date.replace(/^11992-12-27$/, "1992-12-27")),
+      auditFunction((date: string) =>
+        date.replace(/^11992-12-27$/, "1992-12-27"),
+      ),
       auditDateIso8601String,
       auditRequire,
     )
@@ -590,7 +594,7 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((titreTxt) =>
+    auditFunction((titreTxt: unknown) =>
       Array.isArray(titreTxt) ? titreTxt : [titreTxt],
     ),
     auditCleanArray(auditTitreTxt, auditRequire),
@@ -782,7 +786,9 @@ function auditVersions(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     true,
     errors,
     remainingKeys,
-    auditFunction((version) => (Array.isArray(version) ? version : [version])),
+    auditFunction((version: unknown) =>
+      Array.isArray(version) ? version : [version],
+    ),
     auditCleanArray(auditVersion, auditRequire),
     auditRequire,
   )

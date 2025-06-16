@@ -25,9 +25,9 @@ import config from "$lib/server/config.js"
 import { licence } from "$lib/server/nodegit/repositories.js"
 import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits.js"
 import {
-  readOidBySplitPathTree,
-  walkPreviousAndCurrentOidByIdTrees,
-  type OidBySplitPathTree,
+  readNodeBySplitPathTree,
+  walkPreviousAndCurrentNodeByIdTrees,
+  type NodeBySplitPathTree,
 } from "$lib/server/nodegit/trees.js"
 import { capitalizeFirstLetter, slugify } from "$lib/strings.js"
 
@@ -56,8 +56,8 @@ const monthYearFormatter = new Intl.DateTimeFormat("fr-FR", {
 })
 
 async function convertJsonTreeToDescriptionById(
-  previousJsonOidByIdTree: OidBySplitPathTree,
-  jsonOidByIdTree: OidBySplitPathTree,
+  previousJsonNodeByIdTree: NodeBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   descriptionById: DescriptionById,
   {
@@ -71,9 +71,9 @@ async function convertJsonTreeToDescriptionById(
     blobOid,
     id,
     previousBlobOid,
-  } of walkPreviousAndCurrentOidByIdTrees(
-    previousJsonOidByIdTree,
-    jsonOidByIdTree,
+  } of walkPreviousAndCurrentNodeByIdTrees(
+    previousJsonNodeByIdTree,
+    jsonNodeByIdTree,
   )) {
     if (blobOid?.tostrS() === previousBlobOid?.tostrS()) {
       continue
@@ -213,7 +213,7 @@ async function gitJsonToGitTableOfContentsMarkdown(
 
   let commitsChanged = false
   const descriptionById: DescriptionById = new Map()
-  let jsonOidByIdTree: OidBySplitPathTree = { childByKey: new Map() }
+  let jsonNodeByIdTree: NodeBySplitPathTree = { childByKey: new Map() }
   let previousJsonCommit: nodegit.Commit | undefined = undefined
   let skip = true
   let targetBaseCommitFound = false
@@ -347,34 +347,34 @@ async function gitJsonToGitTableOfContentsMarkdown(
         console.log(`Resuming conversion at date ${dilaDate}…`)
       }
       if (previousJsonCommit !== undefined) {
-        // Read the jsonOidByIdTree of the previous commi
+        // Read the jsonNodeByIdTree of the previous commi
         // to ensure that the first call to convertJsonTreeToMarkdown will only
         // convert the changes.
         const previousJsonTree = await jsonCommit.getTree()
-        jsonOidByIdTree = await readOidBySplitPathTree(
+        jsonNodeByIdTree = await readNodeBySplitPathTree(
           jsonRepository,
           previousJsonTree,
           ".json",
-          jsonOidByIdTree,
+          jsonNodeByIdTree,
           { only: [undefined, ["CONT", "TEXT"]] },
         )
       }
     }
 
     steps.push({
-      label: "Read JSON oidByIdTree",
+      label: "Read JSON nodeByIdTree",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
     const jsonTree = await jsonCommit.getTree()
-    const previousJsonOidByIdTree = jsonOidByIdTree
-    jsonOidByIdTree = await readOidBySplitPathTree(
+    const previousJsonNodeByIdTree = jsonNodeByIdTree
+    jsonNodeByIdTree = await readNodeBySplitPathTree(
       jsonRepository,
       jsonTree,
       ".json",
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
       { only: [undefined, ["CONT", "TEXT"]] },
     )
 
@@ -388,8 +388,8 @@ async function gitJsonToGitTableOfContentsMarkdown(
     let descriptionByIdChanged = false
     if (
       await convertJsonTreeToDescriptionById(
-        previousJsonOidByIdTree,
-        jsonOidByIdTree,
+        previousJsonNodeByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         descriptionById,
         { verbose },

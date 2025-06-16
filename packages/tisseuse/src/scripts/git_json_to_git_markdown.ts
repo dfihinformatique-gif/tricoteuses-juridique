@@ -67,12 +67,12 @@ import {
 } from "$lib/server/nodegit/commits.js"
 import {
   getOidFromIdTree,
-  readOidBySplitPathTree,
+  readNodeBySplitPathTree,
   removeOidBySplitPathTreeEmptyNodes,
   setOidInIdTree,
-  walkPreviousAndCurrentOidByIdTrees,
-  writeOidBySplitPathTree,
-  type OidBySplitPathTree,
+  walkPreviousAndCurrentNodeByIdTrees,
+  writeNodeBySplitPathTree,
+  type NodeBySplitPathTree,
 } from "$lib/server/nodegit/trees.js"
 import { cleanHtmlFragment } from "$lib/strings.js"
 
@@ -94,7 +94,7 @@ const { forgejo } = config
 
 async function* convertArticleOutgoingReferencesToMarkdown(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   origine: Origine,
   articleDir: string,
@@ -103,7 +103,7 @@ async function* convertArticleOutgoingReferencesToMarkdown(
   const texte = article.CONTEXTE.TEXTE
   yield* convertOutgoingReferenceToMarkdown(
     referenceById,
-    jsonOidByIdTree,
+    jsonNodeByIdTree,
     jsonRepository,
     articleDir,
     texte["@cid"],
@@ -114,7 +114,7 @@ async function* convertArticleOutgoingReferencesToMarkdown(
     for (const titreTxt of titreTxtArray) {
       yield* convertOutgoingReferenceToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         articleDir,
         titreTxt["@id_txt"],
@@ -126,7 +126,7 @@ async function* convertArticleOutgoingReferencesToMarkdown(
   if (tm !== undefined) {
     yield* convertContexteTexteTmOutgoingReferencesToMarkdown(
       referenceById,
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
       jsonRepository,
       origine,
       articleDir,
@@ -139,7 +139,7 @@ async function* convertArticleOutgoingReferencesToMarkdown(
     for (const lien of liens.LIEN) {
       yield* convertOutgoingReferenceToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         articleDir,
         lien["@id"],
@@ -151,7 +151,7 @@ async function* convertArticleOutgoingReferencesToMarkdown(
       )
       yield* convertOutgoingReferenceToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         articleDir,
         lien["@cidtexte"],
@@ -167,7 +167,7 @@ async function* convertArticleOutgoingReferencesToMarkdown(
             await Array.fromAsync(
               convertOutgoingReferenceToMarkdown(
                 referenceById,
-                jsonOidByIdTree,
+                jsonNodeByIdTree,
                 jsonRepository,
                 articleDir,
                 version.LIEN_ART["@id"],
@@ -182,7 +182,7 @@ async function* convertArticleOutgoingReferencesToMarkdown(
 
 async function convertArticleToMarkdown(
   referrerById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
   origine: Origine,
@@ -226,7 +226,7 @@ async function convertArticleToMarkdown(
   const outgoingReferenceMarkdownArray = await Array.fromAsync(
     convertArticleOutgoingReferencesToMarkdown(
       referenceById,
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
       jsonRepository,
       origine,
       articleDir,
@@ -290,7 +290,7 @@ async function convertArticleToMarkdown(
 
 async function* convertContexteTexteTmOutgoingReferencesToMarkdown(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   origine: Origine,
   articleDir: string,
@@ -307,7 +307,7 @@ async function* convertContexteTexteTmOutgoingReferencesToMarkdown(
       if (tm.TITRE_TM.length === 1) {
         yield* convertOutgoingReferenceToMarkdown(
           referenceById,
-          jsonOidByIdTree,
+          jsonNodeByIdTree,
           jsonRepository,
           articleDir,
           tm.TITRE_TM[0]["@id"],
@@ -324,7 +324,7 @@ async function* convertContexteTexteTmOutgoingReferencesToMarkdown(
                   await Array.fromAsync(
                     convertOutgoingReferenceToMarkdown(
                       referenceById,
-                      jsonOidByIdTree,
+                      jsonNodeByIdTree,
                       jsonRepository,
                       articleDir,
                       titreTm["@id"],
@@ -340,7 +340,7 @@ async function* convertContexteTexteTmOutgoingReferencesToMarkdown(
       // JorfArticleTm
       yield* convertOutgoingReferenceToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         articleDir,
         tm.TITRE_TM["@id"],
@@ -679,7 +679,7 @@ async function convertIncomingTexteReferencesToMarkdown(
 
 async function* convertJoOutgoingReferencesToMarkdown(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   origine: Origine,
   joDir: string,
@@ -695,7 +695,7 @@ async function* convertJoOutgoingReferencesToMarkdown(
             return await Array.fromAsync(
               convertOutgoingReferenceToMarkdown(
                 referenceById,
-                jsonOidByIdTree,
+                jsonNodeByIdTree,
                 jsonRepository,
                 joDir,
                 lienTxt["@idtxt"],
@@ -707,7 +707,7 @@ async function* convertJoOutgoingReferencesToMarkdown(
       ...(await Array.fromAsync(
         convertJoTmOutgoingReferencesToMarkdown(
           referenceById,
-          jsonOidByIdTree,
+          jsonNodeByIdTree,
           jsonRepository,
           joDir,
           structureTxt?.TM,
@@ -726,7 +726,7 @@ async function* convertJoOutgoingReferencesToMarkdown(
 
 async function convertJorfObjectToMarkdown(
   referrerById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
   id: string,
@@ -737,7 +737,7 @@ async function convertJorfObjectToMarkdown(
     case "ARTI": {
       return await convertArticleToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         "JORF",
@@ -747,7 +747,7 @@ async function convertJorfObjectToMarkdown(
     case "CONT": {
       return await convertJoToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         "JORF",
@@ -758,7 +758,7 @@ async function convertJorfObjectToMarkdown(
     case "SCTA": {
       return await convertSectionTaToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         "JORF",
@@ -769,7 +769,7 @@ async function convertJorfObjectToMarkdown(
     case "TEXT": {
       return await convertTexteToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         "JORF",
@@ -788,7 +788,7 @@ async function convertJorfObjectToMarkdown(
 
 async function* convertJoTmOutgoingReferencesToMarkdown(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   joDir: string,
   joTmArray: JoTm[],
@@ -814,7 +814,7 @@ async function* convertJoTmOutgoingReferencesToMarkdown(
         } else {
           for await (const referenceMarkdown of convertOutgoingReferenceToMarkdown(
             referenceById,
-            jsonOidByIdTree,
+            jsonNodeByIdTree,
             jsonRepository,
             joDir,
             lienTxt["@idtxt"],
@@ -827,7 +827,7 @@ async function* convertJoTmOutgoingReferencesToMarkdown(
     if (joTm.TM !== undefined) {
       for await (const referenceMarkdown of convertJoTmOutgoingReferencesToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         joDir,
         joTm.TM,
@@ -847,7 +847,7 @@ async function* convertJoTmOutgoingReferencesToMarkdown(
 
 async function convertJoToMarkdown(
   referrerById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
   origine: Origine,
@@ -874,7 +874,7 @@ async function convertJoToMarkdown(
       ...(await Array.fromAsync(
         convertJoTmOutgoingReferencesToMarkdown(
           referenceById,
-          jsonOidByIdTree,
+          jsonNodeByIdTree,
           jsonRepository,
           joDir,
           structureTxt.TM,
@@ -894,7 +894,7 @@ async function convertJoToMarkdown(
   const outgoingReferenceMarkdownArray = await Array.fromAsync(
     convertJoOutgoingReferencesToMarkdown(
       referenceById,
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
       jsonRepository,
       origine,
       joDir,
@@ -946,7 +946,7 @@ async function convertJoToMarkdown(
 
 async function convertLegalObjectToMarkdown(
   referrerById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
   id: string,
@@ -958,7 +958,7 @@ async function convertLegalObjectToMarkdown(
     case "JORF": {
       return convertJorfObjectToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         id,
@@ -991,7 +991,7 @@ async function convertLegalObjectToMarkdown(
     case "LEGI": {
       return convertLegiObjectToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         id,
@@ -1007,7 +1007,7 @@ async function convertLegalObjectToMarkdown(
 
 async function convertLegiObjectToMarkdown(
   referrerById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
   id: string,
@@ -1018,7 +1018,7 @@ async function convertLegiObjectToMarkdown(
     case "ARTI": {
       return await convertArticleToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         "LEGI",
@@ -1029,7 +1029,7 @@ async function convertLegiObjectToMarkdown(
     case "SCTA": {
       return await convertSectionTaToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         "LEGI",
@@ -1040,7 +1040,7 @@ async function convertLegiObjectToMarkdown(
     case "TEXT": {
       return await convertTexteToMarkdown(
         referrerById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         targetRepository,
         "LEGI",
@@ -1058,13 +1058,13 @@ async function convertLegiObjectToMarkdown(
 }
 
 async function convertJsonTreeToMarkdown(
-  previousJsonOidByIdTree: OidBySplitPathTree,
-  jsonOidByIdTree: OidBySplitPathTree,
+  previousJsonNodeByIdTree: NodeBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
-  previousReferencesOidByIdTree: OidBySplitPathTree,
-  referencesOidByIdTree: OidBySplitPathTree,
+  previousReferencesNodeByIdTree: NodeBySplitPathTree,
+  referencesNodeByIdTree: NodeBySplitPathTree,
   referencesRepository: nodegit.Repository,
-  targetOidByIdTree: OidBySplitPathTree,
+  targetNodeByIdTree: NodeBySplitPathTree,
   targetRepository: nodegit.Repository,
   {
     only,
@@ -1078,18 +1078,18 @@ async function convertJsonTreeToMarkdown(
   for (const { blobOid, id, previousBlobOid } of only
     ? [
         {
-          blobOid: getOidFromIdTree(jsonOidByIdTree, only),
+          blobOid: getOidFromIdTree(jsonNodeByIdTree, only),
           id: only,
-          previousBlobOid: getOidFromIdTree(previousJsonOidByIdTree, only),
+          previousBlobOid: getOidFromIdTree(previousJsonNodeByIdTree, only),
         },
       ]
-    : walkPreviousAndCurrentOidByIdTrees(
-        previousJsonOidByIdTree,
-        jsonOidByIdTree,
+    : walkPreviousAndCurrentNodeByIdTrees(
+        previousJsonNodeByIdTree,
+        jsonNodeByIdTree,
       )) {
     const previousReferences = (
       await loadJsonObject<LegalObjectReferences>(
-        previousReferencesOidByIdTree,
+        previousReferencesNodeByIdTree,
         referencesRepository,
         id,
       )
@@ -1099,7 +1099,7 @@ async function convertJsonTreeToMarkdown(
         (previousReferences === undefined ? [] : previousReferences).map(
           async (referrerId) => [
             referrerId,
-            getOidFromIdTree(jsonOidByIdTree, referrerId),
+            getOidFromIdTree(jsonNodeByIdTree, referrerId),
           ],
         ),
       ),
@@ -1107,7 +1107,7 @@ async function convertJsonTreeToMarkdown(
 
     const references = (
       await loadJsonObject<LegalObjectReferences>(
-        referencesOidByIdTree,
+        referencesNodeByIdTree,
         referencesRepository,
         id,
       )
@@ -1116,7 +1116,7 @@ async function convertJsonTreeToMarkdown(
       await Promise.all(
         (references === undefined ? [] : references).map(async (referrerId) => [
           referrerId,
-          getOidFromIdTree(jsonOidByIdTree, referrerId),
+          getOidFromIdTree(jsonNodeByIdTree, referrerId),
         ]),
       ),
     ) as Record<string, nodegit.Oid | undefined>
@@ -1165,16 +1165,16 @@ async function convertJsonTreeToMarkdown(
 
     if (legalObject === undefined && Object.keys(referrerById).length === 0) {
       // Object is empty and has no referrers => delete it.
-      if (setOidInIdTree(targetOidByIdTree, id, undefined)) {
+      if (setOidInIdTree(targetNodeByIdTree, id, undefined)) {
         changed = true
       }
     } else if (
       setOidInIdTree(
-        targetOidByIdTree,
+        targetNodeByIdTree,
         id,
         await convertLegalObjectToMarkdown(
           referrerById,
-          jsonOidByIdTree,
+          jsonNodeByIdTree,
           jsonRepository,
           targetRepository,
           id,
@@ -1191,7 +1191,7 @@ async function convertJsonTreeToMarkdown(
 
 async function* convertOutgoingReferenceToMarkdown(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   referrerDir: string,
   referrentId: string | undefined,
@@ -1210,7 +1210,7 @@ async function* convertOutgoingReferenceToMarkdown(
       id: referrentId,
       markdown: `${label === undefined ? "" : `${escapeMarkdownText(label)} : `}${await markdownLinkFromOutgoingReference(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         referrerDir,
         referrentId,
@@ -1225,7 +1225,7 @@ async function* convertOutgoingReferenceToMarkdown(
 
 async function* convertSectionTaOutgoingReferencesToMarkdown(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   origine: Origine,
   sectionTaDir: string,
@@ -1234,7 +1234,7 @@ async function* convertSectionTaOutgoingReferencesToMarkdown(
   const texte = sectionTa.CONTEXTE.TEXTE
   yield* convertOutgoingReferenceToMarkdown(
     referenceById,
-    jsonOidByIdTree,
+    jsonNodeByIdTree,
     jsonRepository,
     sectionTaDir,
     texte["@cid"],
@@ -1245,7 +1245,7 @@ async function* convertSectionTaOutgoingReferencesToMarkdown(
     for (const titreTxt of titreTxtArray) {
       yield* convertOutgoingReferenceToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         sectionTaDir,
         titreTxt["@id_txt"],
@@ -1257,7 +1257,7 @@ async function* convertSectionTaOutgoingReferencesToMarkdown(
   if (tm !== undefined) {
     yield* convertContexteTexteTmOutgoingReferencesToMarkdown(
       referenceById,
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
       jsonRepository,
       origine,
       sectionTaDir,
@@ -1275,7 +1275,7 @@ async function* convertSectionTaOutgoingReferencesToMarkdown(
           id: lienArt["@id"],
           markdown: await markdownLinkFromOutgoingReference(
             referenceById,
-            jsonOidByIdTree,
+            jsonNodeByIdTree,
             jsonRepository,
             sectionTaDir,
             lienArt["@id"],
@@ -1290,7 +1290,7 @@ async function* convertSectionTaOutgoingReferencesToMarkdown(
           id: lienSectionTa["@id"],
           markdown: await markdownLinkFromOutgoingReference(
             referenceById,
-            jsonOidByIdTree,
+            jsonNodeByIdTree,
             jsonRepository,
             sectionTaDir,
             lienSectionTa["@id"],
@@ -1307,7 +1307,7 @@ async function* convertSectionTaOutgoingReferencesToMarkdown(
 
 async function convertSectionTaToMarkdown(
   referrerById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
   origine: Origine,
@@ -1373,7 +1373,7 @@ async function convertSectionTaToMarkdown(
           id: lienArt["@id"],
           markdown: await markdownLinkFromOutgoingReference(
             referenceById,
-            jsonOidByIdTree,
+            jsonNodeByIdTree,
             jsonRepository,
             sectionTaDir,
             lienArt["@id"],
@@ -1422,7 +1422,7 @@ async function convertSectionTaToMarkdown(
   const outgoingReferenceMarkdownArray = await Array.fromAsync(
     convertSectionTaOutgoingReferencesToMarkdown(
       referenceById,
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
       jsonRepository,
       origine,
       sectionTaDir,
@@ -1474,7 +1474,7 @@ async function convertSectionTaToMarkdown(
 
 async function* convertTexteOutgoingReferencesToMarkdown(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   origine: Origine,
   texteDir: string,
@@ -1490,7 +1490,7 @@ async function* convertTexteOutgoingReferencesToMarkdown(
           id: lienArt["@id"],
           markdown: await markdownLinkFromOutgoingReference(
             referenceById,
-            jsonOidByIdTree,
+            jsonNodeByIdTree,
             jsonRepository,
             texteDir,
             lienArt["@id"],
@@ -1505,7 +1505,7 @@ async function* convertTexteOutgoingReferencesToMarkdown(
           id: lienSectionTa["@id"],
           markdown: await markdownLinkFromOutgoingReference(
             referenceById,
-            jsonOidByIdTree,
+            jsonNodeByIdTree,
             jsonRepository,
             texteDir,
             lienSectionTa["@id"],
@@ -1523,7 +1523,7 @@ async function* convertTexteOutgoingReferencesToMarkdown(
     for (const lien of liens.LIEN) {
       yield* convertOutgoingReferenceToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         texteDir,
         lien["@id"],
@@ -1535,7 +1535,7 @@ async function* convertTexteOutgoingReferencesToMarkdown(
       )
       yield* convertOutgoingReferenceToMarkdown(
         referenceById,
-        jsonOidByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
         texteDir,
         lien["@cidtexte"],
@@ -1553,7 +1553,7 @@ async function* convertTexteOutgoingReferencesToMarkdown(
               await Array.fromAsync(
                 convertOutgoingReferenceToMarkdown(
                   referenceById,
-                  jsonOidByIdTree,
+                  jsonNodeByIdTree,
                   jsonRepository,
                   texteDir,
                   version.LIEN_TXT["@id"],
@@ -1569,7 +1569,7 @@ async function* convertTexteOutgoingReferencesToMarkdown(
 
 async function convertTexteToMarkdown(
   referrerById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   targetRepository: nodegit.Repository,
   origine: Origine,
@@ -1612,7 +1612,7 @@ async function convertTexteToMarkdown(
           id: lienArt["@id"],
           markdown: await markdownLinkFromOutgoingReference(
             referenceById,
-            jsonOidByIdTree,
+            jsonNodeByIdTree,
             jsonRepository,
             texteDir,
             lienArt["@id"],
@@ -1661,7 +1661,7 @@ async function convertTexteToMarkdown(
   const outgoingReferenceMarkdownArray = await Array.fromAsync(
     convertTexteOutgoingReferencesToMarkdown(
       referenceById,
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
       jsonRepository,
       origine,
       texteDir,
@@ -1730,7 +1730,7 @@ async function convertTexteToMarkdown(
 
 async function getOrLoadJsonObject<ObjectType>(
   jsonObjectByIdCache: Record<string, ObjectType | null>,
-  oidByIdTree: OidBySplitPathTree,
+  nodeByIdTree: NodeBySplitPathTree,
   repository: nodegit.Repository,
   id: string,
 ): Promise<ObjectType | undefined> {
@@ -1738,7 +1738,7 @@ async function getOrLoadJsonObject<ObjectType>(
   if (jsonObject !== undefined) {
     return (jsonObject as ObjectType) ?? undefined
   }
-  jsonObject = await loadJsonObject<ObjectType>(oidByIdTree, repository, id)
+  jsonObject = await loadJsonObject<ObjectType>(nodeByIdTree, repository, id)
   jsonObjectByIdCache[id] = jsonObject ?? null
   return jsonObject
 }
@@ -1808,17 +1808,17 @@ async function gitJsonToGitMarkdown(
     : await nodegit.Repository.init(targetGitDir, 1 /* bare */)
 
   let commitsChanged = false
-  let jsonOidByIdTree: OidBySplitPathTree = { childByKey: new Map() }
+  let jsonNodeByIdTree: NodeBySplitPathTree = { childByKey: new Map() }
   let previousSourceCommitBySymbol:
     | Record<SourceRepositorySymbol, nodegit.Commit>
     | undefined = undefined
-  let referencesOidByIdTree: OidBySplitPathTree = { childByKey: new Map() }
+  let referencesNodeByIdTree: NodeBySplitPathTree = { childByKey: new Map() }
   let skip = true
   let targetBaseCommitFound = false
   let targetCommitOid: nodegit.Oid | undefined = undefined
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
-  let targetOidByIdTree: OidBySplitPathTree = { childByKey: new Map() }
+  let targetNodeByIdTree: NodeBySplitPathTree = { childByKey: new Map() }
   for await (const {
     dilaDate,
     sourceCommitByOrigine: sourceCommitBySymbol,
@@ -1955,31 +1955,31 @@ async function gitJsonToGitMarkdown(
         console.log(`Resuming conversion at date ${dilaDate}…`)
       }
       if (previousSourceCommitBySymbol !== undefined) {
-        // Read the jsonOidByIdTree & referencesOidByIdTree of the previous commi
+        // Read the jsonNodeByIdTree & referencesNodeByIdTree of the previous commi
         // to ensure that the first call to convertJsonTreeToMarkdown will only
         // convert the changes.
         const previousJsonCommit = previousSourceCommitBySymbol.json
         const previousJsonTree = await previousJsonCommit.getTree()
-        jsonOidByIdTree = await readOidBySplitPathTree(
+        jsonNodeByIdTree = await readNodeBySplitPathTree(
           jsonRepository,
           previousJsonTree,
           ".json",
-          jsonOidByIdTree,
+          jsonNodeByIdTree,
         )
 
         const previousReferencesCommit = previousSourceCommitBySymbol.references
         const previousReferencesTree = await previousReferencesCommit.getTree()
-        referencesOidByIdTree = await readOidBySplitPathTree(
+        referencesNodeByIdTree = await readNodeBySplitPathTree(
           referencesRepository,
           previousReferencesTree,
           ".json",
-          referencesOidByIdTree,
+          referencesNodeByIdTree,
         )
       }
     }
 
     steps.push({
-      label: "Read JSON oidByIdTree",
+      label: "Read JSON nodeByIdTree",
       start: performance.now(),
     })
     console.log(
@@ -1987,16 +1987,16 @@ async function gitJsonToGitMarkdown(
     )
     const jsonCommit = sourceCommitBySymbol.json
     const jsonTree = await jsonCommit.getTree()
-    const previousJsonOidByIdTree = jsonOidByIdTree
-    jsonOidByIdTree = await readOidBySplitPathTree(
+    const previousJsonNodeByIdTree = jsonNodeByIdTree
+    jsonNodeByIdTree = await readNodeBySplitPathTree(
       jsonRepository,
       jsonTree,
       ".json",
-      jsonOidByIdTree,
+      jsonNodeByIdTree,
     )
 
     steps.push({
-      label: "Read references oidByIdTree",
+      label: "Read references nodeByIdTree",
       start: performance.now(),
     })
     console.log(
@@ -2004,12 +2004,12 @@ async function gitJsonToGitMarkdown(
     )
     const referencesCommit = sourceCommitBySymbol.references
     const referencesTree = await referencesCommit.getTree()
-    const previousReferencesOidByIdTree = referencesOidByIdTree
-    referencesOidByIdTree = await readOidBySplitPathTree(
+    const previousReferencesNodeByIdTree = referencesNodeByIdTree
+    referencesNodeByIdTree = await readNodeBySplitPathTree(
       referencesRepository,
       referencesTree,
       ".json",
-      referencesOidByIdTree,
+      referencesNodeByIdTree,
     )
 
     const targetExistingCommit =
@@ -2018,20 +2018,20 @@ async function gitJsonToGitMarkdown(
         : await targetRepository.getCommit(targetExistingCommitOid)
     const targetExistingTree = await targetExistingCommit?.getTree()
 
-    // Read target oidByIdTree if it has not been read yet.
-    if (targetOidByIdTree.oid === undefined) {
+    // Read target nodeByIdTree if it has not been read yet.
+    if (targetNodeByIdTree.oid === undefined) {
       steps.push({
-        label: "Read target oidByIdTree",
+        label: "Read target nodeByIdTree",
         start: performance.now(),
       })
       console.log(
         `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
       )
-      targetOidByIdTree = await readOidBySplitPathTree(
+      targetNodeByIdTree = await readNodeBySplitPathTree(
         targetRepository,
         targetExistingTree,
         ".md",
-        targetOidByIdTree,
+        targetNodeByIdTree,
       )
     }
 
@@ -2046,13 +2046,13 @@ async function gitJsonToGitMarkdown(
     console.log("Converting JSON to Markdown")
     if (
       await convertJsonTreeToMarkdown(
-        previousJsonOidByIdTree,
-        jsonOidByIdTree,
+        previousJsonNodeByIdTree,
+        jsonNodeByIdTree,
         jsonRepository,
-        previousReferencesOidByIdTree,
-        referencesOidByIdTree,
+        previousReferencesNodeByIdTree,
+        referencesNodeByIdTree,
         referencesRepository,
-        targetOidByIdTree,
+        targetNodeByIdTree,
         targetRepository,
         { only, verbose },
       )
@@ -2064,27 +2064,27 @@ async function gitJsonToGitMarkdown(
       continue
     }
 
-    // Cleanup oidByIdTree.
+    // Cleanup nodeByIdTree.
     steps.push({
-      label: "Cleanup oidByIdTree",
+      label: "Cleanup nodeByIdTree",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    removeOidBySplitPathTreeEmptyNodes(targetOidByIdTree)
+    removeOidBySplitPathTreeEmptyNodes(targetNodeByIdTree)
 
-    // Write updated oidByIdTree.
+    // Write updated nodeByIdTree.
     steps.push({
-      label: "Write updated oidByIdTree",
+      label: "Write updated nodeByIdTree",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    const targetTreeOid = await writeOidBySplitPathTree(
+    const targetTreeOid = await writeNodeBySplitPathTree(
       targetRepository,
-      targetOidByIdTree,
+      targetNodeByIdTree,
       ".md",
     )
     if (targetTreeOid.tostrS() === targetExistingTree?.id().tostrS()) {
@@ -2262,7 +2262,7 @@ function markdownLinkFromIdAndTitle(
 
 async function markdownLinkFromOutgoingReference(
   referenceById: Record<string, unknown>,
-  jsonOidByIdTree: OidBySplitPathTree,
+  jsonNodeByIdTree: NodeBySplitPathTree,
   jsonRepository: nodegit.Repository,
   referrerDir: string,
   referrentId: string,
@@ -2280,7 +2280,7 @@ async function markdownLinkFromOutgoingReference(
 ): Promise<string> {
   const referrent = await getOrLoadJsonObject(
     referenceById,
-    jsonOidByIdTree,
+    jsonNodeByIdTree,
     jsonRepository,
     referrentId,
   )
@@ -2551,11 +2551,11 @@ function markdownTreeFromTmWithTitreArray(
 }
 
 async function loadJsonObject<ObjectType>(
-  oidByIdTree: OidBySplitPathTree,
+  nodeByIdTree: NodeBySplitPathTree,
   repository: nodegit.Repository,
   id: string,
 ): Promise<ObjectType | undefined> {
-  const oid = getOidFromIdTree(oidByIdTree, id)
+  const oid = getOidFromIdTree(nodeByIdTree, id)
   if (oid === undefined) {
     return undefined
   }

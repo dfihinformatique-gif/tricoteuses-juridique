@@ -33,11 +33,11 @@ import type { LegalObjectReferences } from "$lib/legal/references.js"
 import config from "$lib/server/config.js"
 import { dilaDateRegExp, iterCommitsOids } from "$lib/server/nodegit/commits.js"
 import {
-  readOidBySplitPathTree,
+  readNodeBySplitPathTree,
   removeOidBySplitPathTreeEmptyNodes,
   setOidInIdTree,
-  writeOidBySplitPathTree,
-  type OidBySplitPathTree,
+  writeNodeBySplitPathTree,
+  type NodeBySplitPathTree,
 } from "$lib/server/nodegit/trees.js"
 import { extractOrigineFromId } from "$lib/legal/ids.js"
 import { extractTypeFromId } from "$lib/legal/ids.js"
@@ -125,7 +125,7 @@ async function exportReferencesToGit(
   let targetCommitOid: nodegit.Oid | undefined = undefined
   let targetCommitsOidsIterationsDone = false
   const targetCommitsOidsIterator = iterCommitsOids(targetRepository, true)
-  let targetOidByIdTree: OidBySplitPathTree = { childByKey: new Map() }
+  let targetNodeByIdTree: NodeBySplitPathTree = { childByKey: new Map() }
   for await (const sourceCommitOid of iterCommitsOids(sourceRepository, true)) {
     const sourceCommit = await sourceRepository.getCommit(sourceCommitOid)
     const sourceMessage = sourceCommit.message()
@@ -234,26 +234,26 @@ async function exportReferencesToGit(
     // Ensure that sourcePreviousCommit will be updated for next iteration.
     sourcePreviousCommit = sourceCommit
 
-    // Read oidByIdTree if it has not been read yet.
-    if (targetOidByIdTree.oid === undefined) {
+    // Read nodeByIdTree if it has not been read yet.
+    if (targetNodeByIdTree.oid === undefined) {
       steps.push({
-        label: "Read oidByIdTree",
+        label: "Read nodeByIdTree",
         start: performance.now(),
       })
       console.log(
         `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
       )
-      targetOidByIdTree = await readOidBySplitPathTree(
+      targetNodeByIdTree = await readNodeBySplitPathTree(
         targetRepository,
         targetExistingTree,
         ".json",
-        targetOidByIdTree,
+        targetNodeByIdTree,
       )
     }
 
-    // Update oidByIdTree with modified relations.
+    // Update nodeByIdTree with modified relations.
     steps.push({
-      label: "Update oidByIdTree with modified relations",
+      label: "Update nodeByIdTree with modified relations",
       start: performance.now(),
     })
     console.log(
@@ -264,7 +264,7 @@ async function exportReferencesToGit(
       const references = referencesById.get(id)
       if (
         setOidInIdTree(
-          targetOidByIdTree,
+          targetNodeByIdTree,
           id,
           references === undefined
             ? undefined
@@ -291,27 +291,27 @@ async function exportReferencesToGit(
       continue
     }
 
-    // Cleanup oidByIdTree.
+    // Cleanup nodeByIdTree.
     steps.push({
-      label: "Cleanup oidByIdTree",
+      label: "Cleanup nodeByIdTree",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    removeOidBySplitPathTreeEmptyNodes(targetOidByIdTree)
+    removeOidBySplitPathTreeEmptyNodes(targetNodeByIdTree)
 
-    // Write updated oidByIdTree.
+    // Write updated nodeByIdTree.
     steps.push({
-      label: "Write updated oidByIdTree",
+      label: "Write updated nodeByIdTree",
       start: performance.now(),
     })
     console.log(
       `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
     )
-    const targetTreeOid = await writeOidBySplitPathTree(
+    const targetTreeOid = await writeNodeBySplitPathTree(
       targetRepository,
-      targetOidByIdTree,
+      targetNodeByIdTree,
       ".json",
     )
     if (targetTreeOid.tostrS() === targetExistingTree?.id().tostrS()) {

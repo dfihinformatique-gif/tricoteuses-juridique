@@ -3,25 +3,29 @@ import nodegit from "nodegit"
 
 import { idRegExp } from "$lib/legal/ids.js"
 
-export type OidBySplitPathTree = {
-  childByKey?: Map<string, OidBySplitPathTree>
+export type NodeBySplitPathTree = {
+  childByKey?: Map<string, NodeBySplitPathTree>
+  /**
+   * Used only when `oid` is defined
+   */
+  isSymbolicLink?: boolean
   oid?: nodegit.Oid
 }
 
 export function getOidFromIdTree(
-  oidByIdTree: OidBySplitPathTree,
+  nodeByIdTree: NodeBySplitPathTree,
   id: string,
 ): nodegit.Oid | undefined {
   const idMatch = id.match(idRegExp)
   assert.notStrictEqual(idMatch, null, `Unknown ID format: ${id}`)
-  return getOidFromSplitPathTree(oidByIdTree, [...idMatch!.slice(1, -1), id])
+  return getOidFromSplitPathTree(nodeByIdTree, [...idMatch!.slice(1, -1), id])
 }
 
 export function getOidFromSplitPathTree(
-  oidBySplitPathTree: OidBySplitPathTree,
+  nodeBySplitPathTree: NodeBySplitPathTree,
   splitPath: string[],
 ): nodegit.Oid | undefined {
-  let { childByKey } = oidBySplitPathTree
+  let { childByKey } = nodeBySplitPathTree
   for (const key of splitPath.slice(0, -1)) {
     if (childByKey === undefined) {
       return undefined
@@ -33,29 +37,29 @@ export function getOidFromSplitPathTree(
 }
 
 /**
- * Update an existing OidBySplitPathTree or create a new one.
+ * Update an existing NodeBySplitPathTree or create a new one.
  */
-export async function readOidBySplitPathTree(
+export async function readNodeBySplitPathTree(
   repository: nodegit.Repository,
   tree: nodegit.Tree | undefined,
-  extension: ".json" | ".md",
-  oidBySplitPathTree?: OidBySplitPathTree | undefined,
+  extension: ".json" | ".md" | ".xml" | undefined,
+  nodeBySplitPathTree?: NodeBySplitPathTree | undefined,
   { only }: { only?: Array<string[] | undefined> } = {},
-): Promise<OidBySplitPathTree> {
-  if (oidBySplitPathTree === undefined) {
-    oidBySplitPathTree = {}
+): Promise<NodeBySplitPathTree> {
+  if (nodeBySplitPathTree === undefined) {
+    nodeBySplitPathTree = {}
   }
   if (tree === undefined) {
-    return oidBySplitPathTree
+    return nodeBySplitPathTree
   }
   const oid = tree.id()
   if (
-    oidBySplitPathTree.oid !== undefined &&
-    oid.equal(oidBySplitPathTree.oid)
+    nodeBySplitPathTree.oid !== undefined &&
+    oid.equal(nodeBySplitPathTree.oid)
   ) {
-    return oidBySplitPathTree
+    return nodeBySplitPathTree
   }
-  const childByKey: Map<string, OidBySplitPathTree> = new Map()
+  const childByKey: Map<string, NodeBySplitPathTree> = new Map()
   const onlyKeys = only?.[0]
   for (const entry of tree.entries()) {
     if (entry.isTree()) {
@@ -66,16 +70,25 @@ export async function readOidBySplitPathTree(
       const subTree = await nodegit.Tree.lookup(repository, entry.id())
       childByKey.set(
         key,
-        await readOidBySplitPathTree(
+        await readNodeBySplitPathTree(
           repository,
           subTree,
           extension,
-          oidBySplitPathTree.childByKey?.get(key),
+          nodeBySplitPathTree.childByKey?.get(key),
           { only: only?.slice(1) },
         ),
       )
     } else {
-      childByKey.set(entry.name().replace(extension, ""), { oid: entry.id() })
+      const child: NodeBySplitPathTree = { oid: entry.id() }
+      if ((entry.filemode() & 0o120000) === 0o120000) {
+        // nodegit.TreeEntry.FILEMODE.LINK
+        child.isSymbolicLink = true
+      }
+      let key = entry.name()
+      if (extension !== undefined) {
+        key = key.replace(extension, "")
+      }
+      childByKey.set(key, child)
     }
   }
   return {
@@ -85,9 +98,9 @@ export async function readOidBySplitPathTree(
 }
 
 export function removeOidBySplitPathTreeEmptyNodes(
-  oidBySplitPathTree: OidBySplitPathTree,
+  nodeBySplitPathTree: NodeBySplitPathTree,
 ): void {
-  const { childByKey } = oidBySplitPathTree
+  const { childByKey } = nodeBySplitPathTree
   if (childByKey !== undefined) {
     for (const [key, child] of childByKey.entries()) {
       if (child.childByKey !== undefined) {
@@ -101,29 +114,36 @@ export function removeOidBySplitPathTreeEmptyNodes(
 }
 
 export function setOidInIdTree(
-  oidByIdTree: OidBySplitPathTree,
+  nodeByIdTree: NodeBySplitPathTree,
   id: string,
   oid: nodegit.Oid | undefined,
+  options: { isSymbolicLink?: boolean } = {},
 ): boolean {
   const idMatch = id.match(idRegExp)
   assert.notStrictEqual(idMatch, null, `Unknown ID format: ${id}`)
-  return setOidInSplitPathTree(oidByIdTree, [...idMatch!.slice(1, -1), id], oid)
+  return setOidInSplitPathTree(
+    nodeByIdTree,
+    [...idMatch!.slice(1, -1), id],
+    oid,
+    options,
+  )
 }
 
 export function setOidInSplitPathTree(
-  oidBySplitPathTree: OidBySplitPathTree,
+  nodeBySplitPathTree: NodeBySplitPathTree,
   splitPath: string[],
   oid: nodegit.Oid | undefined,
+  { isSymbolicLink }: { isSymbolicLink?: boolean } = {},
 ): boolean {
-  const levels: OidBySplitPathTree[] = []
-  let currentLevel = oidBySplitPathTree
+  const levels: NodeBySplitPathTree[] = []
+  let currentLevel = nodeBySplitPathTree
   for (const key of splitPath.slice(0, -1)) {
     levels.push(currentLevel)
     const childByKey = (currentLevel.childByKey ??= new Map()) as Map<
       string,
-      OidBySplitPathTree
+      NodeBySplitPathTree
     >
-    let subLevel = childByKey.get(key) as OidBySplitPathTree
+    let subLevel = childByKey.get(key) as NodeBySplitPathTree
     if (subLevel === undefined) {
       subLevel = {}
       childByKey.set(key, subLevel)
@@ -133,7 +153,7 @@ export function setOidInSplitPathTree(
 
   const childByKey = (currentLevel.childByKey ??= new Map()) as Map<
     string,
-    OidBySplitPathTree
+    NodeBySplitPathTree
   >
   const leafKey = splitPath.at(-1) as string
   const leaf = childByKey.get(leafKey)
@@ -147,73 +167,74 @@ export function setOidInSplitPathTree(
     }
     return false
   }
-  if (leaf?.oid !== undefined && oid.equal(leaf.oid)) {
+  if (
+    leaf?.oid !== undefined &&
+    oid.equal(leaf.oid) &&
+    isSymbolicLink === leaf.isSymbolicLink
+  ) {
     return false
   }
-  childByKey.set(leafKey, { oid })
+  const child: NodeBySplitPathTree = { oid }
+  if (isSymbolicLink) {
+    child.isSymbolicLink = true
+  }
+  childByKey.set(leafKey, child)
   for (const level of levels) {
     delete level.oid
   }
   return true // changed
 }
 
-export function* walkPreviousAndCurrentOidByIdTrees(
-  previousOidByIdTree: OidBySplitPathTree | undefined,
-  oidByIdTree: OidBySplitPathTree | undefined,
+export function* walkPreviousAndCurrentNodeByIdTrees(
+  previousNodeByIdTree: NodeBySplitPathTree | undefined,
+  nodeByIdTree: NodeBySplitPathTree | undefined,
   key: string | undefined = undefined,
 ): Generator<
   { blobOid?: nodegit.Oid; id: string; previousBlobOid?: nodegit.Oid },
   void
 > {
   if (
-    oidByIdTree?.childByKey !== undefined ||
-    (oidByIdTree === undefined && previousOidByIdTree?.childByKey !== undefined)
+    nodeByIdTree?.childByKey !== undefined ||
+    (nodeByIdTree === undefined &&
+      previousNodeByIdTree?.childByKey !== undefined)
   ) {
     // Trees
     const keys = [
       ...new Set([
-        ...(previousOidByIdTree?.childByKey?.keys() ?? []),
-        ...(oidByIdTree?.childByKey?.keys() ?? []),
+        ...(previousNodeByIdTree?.childByKey?.keys() ?? []),
+        ...(nodeByIdTree?.childByKey?.keys() ?? []),
       ]),
     ].sort() as string[]
     for (const key of keys) {
-      yield* walkPreviousAndCurrentOidByIdTrees(
-        previousOidByIdTree?.childByKey?.get(key),
-        oidByIdTree?.childByKey?.get(key),
+      yield* walkPreviousAndCurrentNodeByIdTrees(
+        previousNodeByIdTree?.childByKey?.get(key),
+        nodeByIdTree?.childByKey?.get(key),
         key,
       )
     }
   } else {
     // Blobs
     yield {
-      blobOid: oidByIdTree?.oid,
+      blobOid: nodeByIdTree?.oid,
       id: key!,
-      previousBlobOid: previousOidByIdTree?.oid,
+      previousBlobOid: previousNodeByIdTree?.oid,
     }
   }
 }
 
-export async function writeOidBySplitPathTree(
+export async function writeNodeBySplitPathTree(
   repository: nodegit.Repository,
-  oidBySplitPathTree: OidBySplitPathTree,
-  extension: ".json" | ".md",
+  nodeBySplitPathTree: NodeBySplitPathTree,
+  extension: ".json" | ".md" | ".xml" | undefined,
 ): Promise<nodegit.Oid> {
-  if (oidBySplitPathTree.oid === undefined) {
+  if (nodeBySplitPathTree.oid === undefined) {
     const builder = await nodegit.Treebuilder.create(repository)
-    const { childByKey } = oidBySplitPathTree
+    const { childByKey } = nodeBySplitPathTree
     if (childByKey !== undefined) {
       for (const [key, child] of childByKey.entries()) {
-        if (child.childByKey === undefined) {
-          // Child is a blob and key is an ID.
-          assert.notStrictEqual(child.oid, undefined)
-          const filename = key + extension
-          builder.insert(
-            filename,
-            child.oid!,
-            0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
-          )
-        } else {
-          const childOid = await writeOidBySplitPathTree(
+        if (child.childByKey !== undefined) {
+          // Child is a directory.
+          const childOid = await writeNodeBySplitPathTree(
             repository,
             child,
             extension,
@@ -223,10 +244,26 @@ export async function writeOidBySplitPathTree(
             childOid,
             0o40000, // nodegit.TreeEntry.FILEMODE.TREE
           )
+        } else if (child.isSymbolicLink) {
+          const filename = extension === undefined ? key : key + extension
+          builder.insert(
+            filename,
+            child.oid!,
+            0o120000, // nodegit.TreeEntry.FILEMODE.LINK
+          )
+        } else {
+          // Child is a blob and key is an ID.
+          assert.notStrictEqual(child.oid, undefined)
+          const filename = extension === undefined ? key : key + extension
+          builder.insert(
+            filename,
+            child.oid!,
+            0o100644, // nodegit.TreeEntry.FILEMODE.BLOB
+          )
         }
       }
     }
-    oidBySplitPathTree.oid = await builder.write()
+    nodeBySplitPathTree.oid = await builder.write()
   }
-  return oidBySplitPathTree.oid
+  return nodeBySplitPathTree.oid
 }

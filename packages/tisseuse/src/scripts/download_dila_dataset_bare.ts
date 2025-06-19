@@ -1,24 +1,16 @@
 import assert from "assert"
 import fs from "fs-extra"
+import gunzip from "gunzip-maybe"
 import { JSDOM } from "jsdom"
 import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
 import { Readable } from "stream"
 import tar from "tar-stream"
-import { createGunzip } from "zlib"
 
 import config from "$lib/server/config.js"
 import { iterCommitsOids } from "$lib/server/nodegit/commits.js"
 import { WorkingTree } from "$lib/server/nodegit/working_trees.js"
-
-interface TarNodeInfo {
-  content: Buffer
-  isDirectory: boolean
-  isSymlink: boolean
-  linkTarget?: string
-  path: string
-}
 
 const { forgejo } = config
 
@@ -134,6 +126,16 @@ async function downloadDataset(
     )
     if (baseDate !== undefined) {
       baseCommitOid = commitOidByDate[baseDate]
+
+      // Set current tip of the main branch to this base commit.
+      const branchReference = await nodegit.Reference.lookup(
+        repository,
+        "refs/heads/main",
+      )
+      await branchReference.setTarget(
+        baseCommitOid,
+        "Reset main branch to first commit before full archive",
+      )
     }
   } else {
     // Latest full archive has a matching commit.
@@ -146,10 +148,22 @@ async function downloadDataset(
       if (commitOid !== undefined) {
         baseCommitOid = commitOid
         baseDate = date
+
+        // Set current tip of the main branch to this base commit.
+        const branchReference = await nodegit.Reference.lookup(
+          repository,
+          "refs/heads/main",
+        )
+        await branchReference.setTarget(
+          baseCommitOid,
+          "Reset main branch to first commit before full archive",
+        )
+
         break
       }
     }
   }
+  console.log(`Base commit OID: ${baseCommitOid}, date: ${baseDate}`)
 
   let commitOid = baseCommitOid
   let commitsChanged = false
@@ -179,93 +193,150 @@ async function downloadDataset(
         ? "incremental"
         : "full",
     )
-    for await (const tarNodeInfo of streamTarGz(
-      new URL(archiveName, archivesUrl).toString(),
-    )) {
-      if (!tarNodeInfo.isDirectory) {
-        const nodeSplitPath = tarNodeInfo.path
-          .split("/")
-          .filter((name) => !["", "."].includes(name))
-        // Sometimes, paths in tar archive begin with date. Ignore it.
-        if (nodeSplitPath[0] === date) {
-          nodeSplitPath.splice(0, 1)
-        }
-        // Sometimes, paths in tar archive begin with dataset name. Ignore it.
-        if (nodeSplitPath[0] === datasetName) {
-          nodeSplitPath.splice(0, 1)
-        }
-        if (
-          nodeSplitPath.length === 1 &&
-          nodeSplitPath[0] === `liste_suppression_${datasetName}.dat`
-        ) {
-          assert.strictEqual(
-            archiveName.match(fullArchiveNameRegExp),
-            null,
-            `Unexpected list of files to remove in full archive: "${tarNodeInfo.path}"`,
-          )
-          const filesSplitPathToRemove = tarNodeInfo.content
-            .toString("utf-8")
-            .split(/\r?\n/)
-            .map((filePath) => {
-              const fileSplitPath = filePath
-                .trim()
-                .split("/")
-                .filter((name) => !["", "."].includes(name))
-              // Sometimes, paths in tar archive begin with date. Ignore it.
-              if (fileSplitPath[0] === date) {
-                fileSplitPath.splice(0, 1)
-              }
-              // Sometimes, paths in tar archive begin with dataset name. Ignore it.
-              if (fileSplitPath[0] === datasetName) {
-                fileSplitPath.splice(0, 1)
-              }
-              fileSplitPath.splice(0, 1)
-              return fileSplitPath
-            })
-            .filter((fileSplitPath) => fileSplitPath.length !== 0)
-          console.log("!!!!!!!!!!!!!!!!", filesSplitPathToRemove)
-          for (const fileSplitPathToRemove of filesSplitPathToRemove) {
-            if (
-              await workingTree.setItemAtSplitPath(
-                fileSplitPathToRemove,
-                undefined,
-              )
-            ) {
-              commitChanged = true
-            }
-          }
-        } else {
-          // Node is not a removal list.
 
-          if (tarNodeInfo.isSymlink && tarNodeInfo.linkTarget !== undefined) {
-            // Create blob for symlink target.
-            const oid = await repository.createBlobFromBuffer(
-              Buffer.from(tarNodeInfo.linkTarget),
+    const archiveUrl = new URL(archiveName, archivesUrl).toString()
+    const response = await fetch(archiveUrl)
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${archiveUrl}: ${response.status} ${response.statusText}`,
+      )
+    }
+    if (response.body === null) {
+      throw new Error("Response body is null")
+    }
+    const reader = response.body.getReader()
+    const nodeStream = new Readable({
+      async read() {
+        try {
+          const { done, value } = await reader.read()
+          if (done) {
+            this.push(null)
+          } else {
+            this.push(Buffer.from(value))
+          }
+        } catch (err) {
+          this.destroy(err as Error)
+        }
+      },
+    })
+
+    const extract = tar.extract()
+    nodeStream.pipe(gunzip()).pipe(extract)
+
+    for await (const tarEntry of extract) {
+      const { header } = tarEntry
+      switch (header.type) {
+        case "directory": {
+          // Ignore directories.
+          break
+        }
+
+        case "file":
+        case "symlink": {
+          const nodeSplitPath = header.name
+            .split("/")
+            .filter((name) => !["", "."].includes(name))
+          // Sometimes, paths in tar archive begin with date. Ignore it.
+          if (nodeSplitPath[0] === date) {
+            nodeSplitPath.splice(0, 1)
+          }
+          // Sometimes, paths in tar archive begin with dataset name. Ignore it.
+          if (nodeSplitPath[0] === datasetName) {
+            nodeSplitPath.splice(0, 1)
+          }
+          if (
+            nodeSplitPath.length === 1 &&
+            nodeSplitPath[0] === `liste_suppression_${datasetName}.dat`
+          ) {
+            assert.strictEqual(
+              archiveName.match(fullArchiveNameRegExp),
+              null,
+              `Unexpected list of files to remove in full archive: "${header.name}"`,
             )
-            if (
-              await workingTree.setItemAtSplitPath(nodeSplitPath, {
-                oid,
-                type: "symbolic_link",
+            const chunks: Buffer[] = []
+            for await (const chunk of tarEntry) {
+              chunks.push(chunk)
+            }
+            const filesSplitPathToRemove = Buffer.concat(chunks)
+              .toString("utf-8")
+              .split(/\r?\n/)
+              .map((filePath) => {
+                const fileSplitPath = filePath
+                  .trim()
+                  .split("/")
+                  .filter((name) => !["", "."].includes(name))
+                // Sometimes, paths in tar archive begin with date. Ignore it.
+                if (fileSplitPath[0] === date) {
+                  fileSplitPath.splice(0, 1)
+                }
+                // Sometimes, paths in tar archive begin with dataset name. Ignore it.
+                if (fileSplitPath[0] === datasetName) {
+                  fileSplitPath.splice(0, 1)
+                }
+                fileSplitPath.splice(0, 1)
+                return fileSplitPath
               })
-            ) {
-              commitChanged = true
+              .filter((fileSplitPath) => fileSplitPath.length !== 0)
+            for (const fileSplitPathToRemove of filesSplitPathToRemove) {
+              console.log("!!!!", fileSplitPathToRemove.join("/"))
+              if (
+                await workingTree.setItemAtSplitPath(
+                  fileSplitPathToRemove,
+                  undefined,
+                )
+              ) {
+                console.log(">>>>", fileSplitPathToRemove.join("/"))
+                commitChanged = true
+              }
             }
           } else {
-            // Create blob for regular file.
-            const oid = await repository.createBlobFromBuffer(
-              tarNodeInfo.content,
-            )
-            if (
-              await workingTree.setItemAtSplitPath(nodeSplitPath, {
-                oid,
-                type: "file",
-              })
-            ) {
-              commitChanged = true
+            // Node is not a removal list.
+
+            if (header.type === "symlink") {
+              // Create blob for symlink target.
+              assert(header.linkname != null, "Missing linkname in symlink")
+              const oid = await repository.createBlobFromBuffer(
+                Buffer.from(header.linkname),
+              )
+              if (
+                await workingTree.setItemAtSplitPath(nodeSplitPath, {
+                  oid,
+                  type: "symbolic_link",
+                })
+              ) {
+                commitChanged = true
+              }
+            } else {
+              // Create blob for regular file.
+
+              const chunks: Buffer[] = []
+              for await (const chunk of tarEntry) {
+                chunks.push(chunk)
+              }
+              const oid = await repository.createBlobFromBuffer(
+                Buffer.concat(chunks),
+              )
+              if (
+                await workingTree.setItemAtSplitPath(nodeSplitPath, {
+                  oid,
+                  type: "file",
+                })
+              ) {
+                commitChanged = true
+              }
             }
           }
+
+          break
+        }
+
+        default: {
+          throw new TypeError(
+            `Unhandled entry type "${header.type}" in tar archive`,
+          )
         }
       }
+      tarEntry.resume()
     }
 
     // Write pending working tree.
@@ -354,127 +425,6 @@ async function downloadDataset(
   return commitsChanged
     ? 0 // Some new versions of dataset have been added to git repository
     : 10 // No new version of dataset has been added to git repository.
-}
-
-async function* streamTarGz(archiveUrl: string): AsyncGenerator<TarNodeInfo> {
-  const response = await fetch(archiveUrl)
-  if (!response.ok) {
-    throw new Error(`Failed to fetch ${archiveUrl}: ${response.statusText}`)
-  }
-
-  const extract = tar.extract()
-  const fileQueue: TarNodeInfo[] = []
-  let error: Error | undefined = undefined
-  let finished = false
-  let resolveYield: (() => void) | undefined
-  const yieldPromise = () =>
-    new Promise<void>((resolve) => {
-      resolveYield = resolve
-    })
-
-  // Initial promise for the first yield
-  let currentYieldPromise = yieldPromise()
-
-  extract.on("entry", (header, stream, next) => {
-    const chunks: Buffer[] = []
-
-    // Handle directories
-    if (header.type === "directory") {
-      fileQueue.push({
-        path: header.name,
-        content: Buffer.alloc(0),
-        isSymlink: false,
-        isDirectory: true,
-      })
-      if (resolveYield) resolveYield() // Signal that a file is available
-      stream.resume() // Ensure the stream is consumed for tar to proceed
-      next()
-      return
-    }
-
-    stream.on("data", (chunk: Buffer) => {
-      chunks.push(chunk)
-    })
-
-    stream.on("end", () => {
-      const content = Buffer.concat(chunks)
-      fileQueue.push({
-        path: header.name,
-        content,
-        isSymlink: header.type === "symlink" || header.type === "link",
-        isDirectory: false,
-        linkTarget:
-          header.linkname || header.type === "symlink"
-            ? (header.linkname ?? undefined)
-            : undefined,
-      })
-      if (resolveYield) resolveYield() // Signal that a file is available
-      next()
-    })
-
-    stream.on("error", (err) => {
-      error = err
-      if (resolveYield) resolveYield() // Signal to unblock the generator and throw
-      next(err) // Pass error to tar-stream to potentially stop extraction
-    })
-
-    stream.resume() // Ensure the stream is flowing
-  })
-
-  extract.on("finish", () => {
-    finished = true
-    if (resolveYield) resolveYield() // Signal that all files have been processed
-  })
-
-  extract.on("error", (err) => {
-    error = err
-    if (resolveYield) resolveYield() // Signal to unblock the generator and throw
-  })
-
-  // Convert fetch response to Node.js readable stream
-  const gunzip = createGunzip()
-
-  if (response.body) {
-    const reader = response.body.getReader()
-    const nodeStream = new Readable({
-      async read() {
-        try {
-          const { done, value } = await reader.read()
-          if (done) {
-            this.push(null)
-          } else {
-            this.push(Buffer.from(value))
-          }
-        } catch (err) {
-          this.destroy(err as Error)
-        }
-      },
-    })
-
-    nodeStream.pipe(gunzip).pipe(extract)
-  } else {
-    throw new Error("Response body is null")
-  }
-
-  // The async generator loop
-  while (true) {
-    if (fileQueue.length > 0) {
-      yield fileQueue.shift()!
-      continue // Immediately try to yield the next queued file
-    }
-
-    if (finished && fileQueue.length === 0) {
-      break // All files processed and queue is empty, exit
-    }
-
-    if (error) {
-      throw error // An error occurred, rethrow it
-    }
-
-    // No files in queue, not finished, no error - wait for a new file or finish/error signal
-    currentYieldPromise = yieldPromise() // Create a new promise to wait on
-    await currentYieldPromise // Wait until a file is added, or stream finishes/errors
-  }
 }
 
 sade("download_dila_dataset <dataset> <dilaDir>", true)

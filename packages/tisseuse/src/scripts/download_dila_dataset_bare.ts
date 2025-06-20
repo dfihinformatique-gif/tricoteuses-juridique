@@ -254,6 +254,7 @@ async function downloadDataset(
             nodeSplitPath.length === 1 &&
             nodeSplitPath[0] === `liste_suppression_${datasetName}.dat`
           ) {
+            assert.strictEqual(header.type, "file")
             assert.strictEqual(
               archiveName.match(fullArchiveNameRegExp),
               null,
@@ -279,10 +280,15 @@ async function downloadDataset(
                 if (fileSplitPath[0] === datasetName) {
                   fileSplitPath.splice(0, 1)
                 }
-                fileSplitPath.splice(0, 1)
                 return fileSplitPath
               })
               .filter((fileSplitPath) => fileSplitPath.length !== 0)
+              .map((fileSplitPath) => {
+                if (!fileSplitPath.at(-1)!.includes(".")) {
+                  fileSplitPath[fileSplitPath.length - 1] += ".xml"
+                }
+                return fileSplitPath
+              })
             for (const fileSplitPathToRemove of filesSplitPathToRemove) {
               if (verbose) {
                 console.log(

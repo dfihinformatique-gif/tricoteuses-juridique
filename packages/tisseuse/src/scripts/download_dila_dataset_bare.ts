@@ -17,7 +17,11 @@ const { forgejo } = config
 async function downloadDataset(
   datasetName: string,
   dilaDir: string,
-  { push, silent }: { push?: boolean; silent?: boolean } = {},
+  {
+    push,
+    silent,
+    verbose,
+  }: { push?: boolean; silent?: boolean; verbose?: boolean } = {},
 ): Promise<number> {
   const steps: Array<{ label: string; start: number }> = []
   steps.push({ label: "Resuming", start: performance.now() })
@@ -163,7 +167,9 @@ async function downloadDataset(
       }
     }
   }
-  console.log(`Base commit OID: ${baseCommitOid}, date: ${baseDate}`)
+  if (!silent) {
+    console.log(`Base commit OID: ${baseCommitOid}, date: ${baseDate}`)
+  }
 
   let commitOid = baseCommitOid
   let commitsChanged = false
@@ -278,14 +284,24 @@ async function downloadDataset(
               })
               .filter((fileSplitPath) => fileSplitPath.length !== 0)
             for (const fileSplitPathToRemove of filesSplitPathToRemove) {
-              console.log("!!!!", fileSplitPathToRemove.join("/"))
+              if (verbose) {
+                console.log(
+                  ">>> File to remove:",
+                  fileSplitPathToRemove.join("/"),
+                )
+              }
               if (
                 await workingTree.setItemAtSplitPath(
                   fileSplitPathToRemove,
                   undefined,
                 )
               ) {
-                console.log(">>>>", fileSplitPathToRemove.join("/"))
+                if (verbose) {
+                  console.log(
+                    "<<< File removed:  ",
+                    fileSplitPathToRemove.join("/"),
+                  )
+                }
                 commitChanged = true
               }
             }
@@ -295,6 +311,14 @@ async function downloadDataset(
             if (header.type === "symlink") {
               // Create blob for symlink target.
               assert(header.linkname != null, "Missing linkname in symlink")
+              if (verbose) {
+                console.log(
+                  "symlink",
+                  nodeSplitPath.join("/"),
+                  "→",
+                  header.linkname,
+                )
+              }
               const oid = await repository.createBlobFromBuffer(
                 Buffer.from(header.linkname),
               )
@@ -385,9 +409,11 @@ async function downloadDataset(
         label: "Push new commits",
         start: performance.now(),
       })
-      console.log(
-        `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
-      )
+      if (!silent) {
+        console.log(
+          `${steps.at(-2)!.label}: ${steps.at(-1)!.start - steps.at(-2)!.start}`,
+        )
+      }
       let remote: nodegit.Remote
       try {
         remote = await repository.getRemote("origin")
@@ -432,6 +458,7 @@ sade("download_dila_dataset <dataset> <dilaDir>", true)
   .example("dole ../dila-data/")
   .option("-p, --push", "Push dataset repository")
   .option("-s, --silent", "Hide log messages")
+  .option("-v, --verbose", "Show more log messages")
   .action(async (dataset, dilaDir, options) => {
     process.exit(await downloadDataset(dataset, dilaDir, options))
   })

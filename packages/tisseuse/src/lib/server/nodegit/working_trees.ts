@@ -18,7 +18,6 @@ export class WorkingTree {
     if (mode === "incremental" && tree !== undefined) {
       this.root.childByKey = this.readTree(tree)
       this.root.oid = tree.id()
-      this.root.tree = tree
     } else {
       this.root.childByKey = new Map()
     }
@@ -64,15 +63,15 @@ export class WorkingTree {
             type: "directory",
           }
         } else {
-          const directoryEntry = parentDirectory.tree!.entryByName(key)
-          assert(directoryEntry.isTree())
-          const tree = await nodegit.Tree.lookup(
-            this.repository,
-            directoryEntry.id(),
-          )
-          directory.childByKey = this.readTree(tree)
-          directory.oid = directoryEntry.id()
-          directory.tree = tree
+          assert.strictEqual(directory.type, "directory")
+          assert.notStrictEqual(directory.oid, undefined)
+          if (directory.childByKey === undefined) {
+            const tree = await nodegit.Tree.lookup(
+              this.repository,
+              directory.oid!,
+            )
+            directory.childByKey = this.readTree(tree)
+          }
         }
       } else {
         directory = {
@@ -178,7 +177,6 @@ export class WorkingTree {
       }
     }
     directory.oid = await builder.write()
-    delete directory.tree // Tree is obsolete now.
   }
 }
 
@@ -197,10 +195,6 @@ export interface WorkingTreeDirectory extends WorkingTreeBase {
    * Exists only when directory is open
    */
   childByKey?: Map<string, WorkingTreeNode>
-  /**
-   * Exiss only in incremental mode and when directory is open
-   */
-  tree?: nodegit.Tree
   type: "directory"
 }
 

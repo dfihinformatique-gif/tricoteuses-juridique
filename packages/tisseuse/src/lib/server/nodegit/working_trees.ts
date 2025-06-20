@@ -122,7 +122,8 @@ export class WorkingTree {
       if (
         existingItem === undefined ||
         item.type !== existingItem.type ||
-        item.oid !== existingItem.oid
+        existingItem.oid === undefined ||
+        !item.oid!.equal(existingItem.oid)
       ) {
         directory.childByKey!.set(key, item)
         return true // Item changed

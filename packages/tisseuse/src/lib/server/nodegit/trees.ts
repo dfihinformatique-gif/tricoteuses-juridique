@@ -67,7 +67,7 @@ export async function readNodeBySplitPathTree(
       if (onlyKeys !== undefined && !onlyKeys.includes(key)) {
         continue
       }
-      const subTree = await nodegit.Tree.lookup(repository, entry.id())
+      const subTree = await entry.getTree()
       childByKey.set(
         key,
         await readNodeBySplitPathTree(
@@ -192,7 +192,7 @@ export async function* walkTree(
   for (const entry of tree.entries()) {
     yield entry
     if (entry.isTree()) {
-      const subTree = await nodegit.Tree.lookup(repository, entry.id())
+      const subTree = await entry.getTree()
       yield* walkTree(repository, subTree)
     }
   }

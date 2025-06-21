@@ -246,13 +246,21 @@ async function downloadDataset(
           if (nodeSplitPath[0] === date) {
             nodeSplitPath.splice(0, 1)
           }
+          // CAPP, CASS & INCA data may be prefixed by "juri", before "capp".
+          if (
+            ["capp", "cass", "inca"].includes(datasetName) &&
+            nodeSplitPath[0] === "juri"
+          ) {
+            nodeSplitPath.splice(0, 1)
+          }
           // Sometimes, paths in tar archive begin with dataset name. Ignore it.
           if (nodeSplitPath[0] === datasetName) {
             nodeSplitPath.splice(0, 1)
           }
           if (
             nodeSplitPath.length === 1 &&
-            nodeSplitPath[0] === `liste_suppression_${datasetName}.dat`
+            nodeSplitPath[0] ===
+              `liste_suppression_${["capp", "cass", "inca"].includes(datasetName) ? "juri" : datasetName}.dat`
           ) {
             assert.strictEqual(header.type, "file")
             assert.strictEqual(
@@ -272,6 +280,13 @@ async function downloadDataset(
                   .trim()
                   .split("/")
                   .filter((name) => !["", "."].includes(name))
+                // CAPP, CASS & INCA data may be prefixed by "juri", before "capp".
+                if (
+                  ["capp", "cass", "inca"].includes(datasetName) &&
+                  fileSplitPath[0] === "juri"
+                ) {
+                  nodeSplitPath.splice(0, 1)
+                }
                 // Sometimes, paths in tar archive begin with date. Ignore it.
                 if (fileSplitPath[0] === date) {
                   fileSplitPath.splice(0, 1)

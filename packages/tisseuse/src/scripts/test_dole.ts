@@ -1,5 +1,5 @@
 import assert from "assert"
-import fs from "fs-extra"
+import nodegit from "nodegit"
 import path from "path"
 import sade from "sade"
 
@@ -7,22 +7,30 @@ import type { DossierLegislatif } from "$lib/legal/dole.js"
 import type { JorfTexteVersion, JorfTextelr } from "$lib/legal/jorf.js"
 import { parseDossierLegislatif } from "$lib/parsers/dole.js"
 import { db } from "$lib/server/databases/index.js"
-import { walkDir } from "$lib/server/file_systems.js"
+import { walkTree } from "$lib/server/nodegit/trees.js"
 
 async function testDole(dilaDir: string): Promise<void> {
-  const dataDir = path.join(dilaDir, "dole")
-  assert(await fs.pathExists(dataDir))
-  iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
-    const relativePath = path.join(...relativeSplitPath)
-    const filePath = path.join(dataDir, relativePath)
+  const repository = await nodegit.Repository.open(
+    path.join(dilaDir, "dole.git"),
+  )
+  const headReference = await repository.head()
+  const commit = await repository.getCommit(headReference.target())
+  const tree = await commit.getTree()
+
+  iterXmlFiles: for await (const entry of walkTree(repository, tree)) {
+    if (entry.isTree()) {
+      continue
+    }
+
+    const filePath = entry.path()
     if (!filePath.endsWith(".xml")) {
       console.info(`Skipping non XML file at ${filePath}`)
       continue
     }
 
-    const xmlString: string = await fs.readFile(filePath, {
-      encoding: "utf8",
-    })
+    const blob = await entry.getBlob()
+    const buffer = blob.content()
+    const xmlString = buffer.toString("utf8")
     const dossierLegislatif = parseDossierLegislatif(filePath, xmlString)
     if (dossierLegislatif === undefined) {
       break iterXmlFiles

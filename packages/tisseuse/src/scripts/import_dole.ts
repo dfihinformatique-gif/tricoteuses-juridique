@@ -1,5 +1,5 @@
 import assert from "assert"
-import fs from "fs-extra"
+import nodegit from "nodegit"
 import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -8,11 +8,11 @@ import type { DossierLegislatif } from "$lib/legal/dole.js"
 import type { JorfTextelr } from "$lib/legal/jorf.js"
 import { parseDossierLegislatif } from "$lib/parsers/dole.js"
 import { db } from "$lib/server/databases/index.js"
-import { walkDir } from "$lib/server/file_systems.js"
+import { walkTree } from "$lib/server/nodegit/trees.js"
 
 async function importDole(
   dilaDir: string,
-  { resume }: { resume?: string } = {},
+  { resume, verbose }: { resume?: string; verbose?: boolean } = {},
 ): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
@@ -26,29 +26,37 @@ async function importDole(
     ).map(({ id }) => id),
   )
 
-  const dataDir = path.join(dilaDir, "dole")
-  assert(await fs.pathExists(dataDir))
-  iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
-    const relativePath = path.join(...relativeSplitPath)
+  const repository = await nodegit.Repository.open(
+    path.join(dilaDir, "dole.git"),
+  )
+  const headReference = await repository.head()
+  const commit = await repository.getCommit(headReference.target())
+  const tree = await commit.getTree()
+
+  iterXmlFiles: for await (const entry of walkTree(repository, tree)) {
+    if (entry.isTree()) {
+      continue
+    }
+
+    const filePath = entry.path()
     if (skip) {
-      if (relativePath.startsWith(resume as string)) {
+      if (filePath.startsWith(resume as string)) {
         skip = false
-        console.log(`Resuming at file ${relativePath}...`)
+        console.log(`Resuming at file ${filePath}...`)
       } else {
         continue
       }
     }
 
-    const filePath = path.join(dataDir, relativePath)
     if (!filePath.endsWith(".xml")) {
       console.info(`Skipping non XML file at ${filePath}`)
       continue
     }
 
     try {
-      const xmlString: string = await fs.readFile(filePath, {
-        encoding: "utf8",
-      })
+      const blob = await entry.getBlob()
+      const buffer = blob.content()
+      const xmlString = buffer.toString("utf8")
       const dossierLegislatif = parseDossierLegislatif(filePath, xmlString)
       if (dossierLegislatif === undefined) {
         break iterXmlFiles
@@ -130,7 +138,9 @@ async function importDole(
 
   if (deleteRemainingIds) {
     for (const id of dossierLegislatifRemainingIds) {
-      console.log(`Deleting DOSSIER_LEGISLATIF ${id}…`)
+      if (verbose) {
+        console.log(`Deleting DOSSIER_LEGISLATIF ${id}…`)
+      }
       await db`
         DELETE FROM dossier_legislatif
         WHERE id = ${id}
@@ -142,6 +152,7 @@ async function importDole(
 sade("import_dole <dilaDir>", true)
   .describe("Import Dila's DOLE database")
   .option("-r, --resume", "Resume import at given relative file path")
+  .option("-v, --verbose", "Show more log messages")
   .example(
     "--resume dole/global/JORF/DOLE/00/00/36/07/36/JORFDOLE000036073697.xml ../dila-data/",
   )

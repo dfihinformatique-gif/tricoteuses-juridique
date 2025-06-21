@@ -354,7 +354,7 @@ async function gitXmlToGitJson(
       origines.map(async (origine) => [
         origine,
         await nodegit.Repository.open(
-          path.join(dilaDir, origine.toLowerCase(), ".git"),
+          path.join(dilaDir, origine.toLowerCase() + ".git"),
         ),
       ]),
     ),

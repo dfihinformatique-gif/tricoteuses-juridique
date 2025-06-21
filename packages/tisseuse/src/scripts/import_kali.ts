@@ -1,5 +1,5 @@
 import assert from "assert"
-import fs from "fs-extra"
+import nodegit from "nodegit"
 import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -15,11 +15,11 @@ import type {
 } from "$lib/legal/index.js"
 import { xmlParser } from "$lib/parsers/shared.js"
 import { db } from "$lib/server/databases/index.js"
-import { walkDir } from "$lib/server/file_systems.js"
+import { walkTree } from "$lib/server/nodegit/trees.js"
 
 async function importKali(
   dilaDir: string,
-  { resume }: { resume?: string } = {},
+  { resume, verbose }: { resume?: string; verbose?: boolean } = {},
 ): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
@@ -77,29 +77,37 @@ async function importKali(
     ).map(({ id }) => id),
   )
 
-  const dataDir = path.join(dilaDir, "kali")
-  assert(await fs.pathExists(dataDir))
-  iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
-    const relativePath = path.join(...relativeSplitPath)
+  const repository = await nodegit.Repository.open(
+    path.join(dilaDir, "kali.git"),
+  )
+  const headReference = await repository.head()
+  const commit = await repository.getCommit(headReference.target())
+  const tree = await commit.getTree()
+
+  iterXmlFiles: for await (const entry of walkTree(repository, tree)) {
+    if (entry.isTree()) {
+      continue
+    }
+
+    const filePath = entry.path()
     if (skip) {
-      if (relativePath.startsWith(resume as string)) {
+      if (filePath.startsWith(resume as string)) {
         skip = false
-        console.log(`Resuming at file ${relativePath}...`)
+        console.log(`Resuming at file ${filePath}...`)
       } else {
         continue
       }
     }
 
-    const filePath = path.join(dataDir, relativePath)
     if (!filePath.endsWith(".xml")) {
       console.info(`Skipping non XML file at ${filePath}`)
       continue
     }
 
     try {
-      const xmlString: string = await fs.readFile(filePath, {
-        encoding: "utf8",
-      })
+      const blob = await entry.getBlob()
+      const buffer = blob.content()
+      const xmlString = buffer.toString("utf8")
       const xmlData = xmlParser.parse(xmlString)
       for (const [key, element] of Object.entries(xmlData) as [
         string,
@@ -251,42 +259,54 @@ async function importKali(
 
   if (deleteRemainingIds) {
     for (const id of articleRemainingIds) {
-      console.log(`Deleting ARTICLE ${id}…`)
+      if (verbose) {
+        console.log(`Deleting ARTICLE ${id}…`)
+      }
       await db`
         DELETE FROM article
         WHERE id = ${id}
       `
     }
     for (const id of idccRemainingIds) {
-      console.log(`Deleting IDCC ${id}…`)
+      if (verbose) {
+        console.log(`Deleting IDCC ${id}…`)
+      }
       await db`
         DELETE FROM idcc
         WHERE id = ${id}
       `
     }
     for (const id of sectionTaRemainingIds) {
-      console.log(`Deleting SECTION_TA ${id}…`)
+      if (verbose) {
+        console.log(`Deleting SECTION_TA ${id}…`)
+      }
       await db`
         DELETE FROM section_ta
         WHERE id = ${id}
       `
     }
     for (const id of textekaliRemainingIds) {
-      console.log(`Deleting TEXTEKALI ${id}…`)
+      if (verbose) {
+        console.log(`Deleting TEXTEKALI ${id}…`)
+      }
       await db`
         DELETE FROM textekali
         WHERE id = ${id}
       `
     }
     for (const id of textelrRemainingIds) {
-      console.log(`Deleting TEXTELR ${id}…`)
+      if (verbose) {
+        console.log(`Deleting TEXTELR ${id}…`)
+      }
       await db`
         DELETE FROM textelr
         WHERE id = ${id}
       `
     }
     for (const id of texteVersionRemainingIds) {
-      console.log(`Deleting TEXTE_VERSION ${id}…`)
+      if (verbose) {
+        console.log(`Deleting TEXTE_VERSION ${id}…`)
+      }
       await db`
         DELETE FROM texte_version
         WHERE id = ${id}
@@ -298,6 +318,7 @@ async function importKali(
 sade("import_kali <dilaDir>", true)
   .describe("Import Dila's KALI database")
   .option("-r, --resume", "Resume import at given relative file path")
+  .option("-v, --verbose", "Show more log messages")
   .example(
     "--resume global/conteneur/KALI/CONT/00/00/05/63/50/KALICONT000005635082.xml ../dila-data/",
   )

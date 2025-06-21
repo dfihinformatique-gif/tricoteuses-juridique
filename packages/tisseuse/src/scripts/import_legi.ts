@@ -5,7 +5,7 @@ import {
   strictAudit,
 } from "@auditors/core"
 import assert from "assert"
-import fs from "fs-extra"
+import nodegit from "nodegit"
 import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -38,11 +38,15 @@ import {
 } from "$lib/legal/legi.js"
 import { xmlParser } from "$lib/parsers/shared.js"
 import { db } from "$lib/server/databases/index.js"
-import { walkDir } from "$lib/server/file_systems.js"
+import { walkTree } from "$lib/server/nodegit/trees.js"
 
 async function importLegi(
   dilaDir: string,
-  { category, resume }: { category?: string; resume?: string } = {},
+  {
+    category,
+    resume,
+    verbose,
+  }: { category?: string; resume?: string; verbose?: boolean } = {},
 ): Promise<void> {
   const [categorieTag, categorieError] = auditOptions([
     ...[...allLegiCategoriesTags],
@@ -131,24 +135,32 @@ async function importLegi(
         )
       : new Set<string>()
 
-  const dataDir = path.join(dilaDir, "legi")
-  assert(await fs.pathExists(dataDir))
-  iterXmlFiles: for (const relativeSplitPath of walkDir(dataDir)) {
-    const relativePath = path.join(...relativeSplitPath)
+  const repository = await nodegit.Repository.open(
+    path.join(dilaDir, "legi.git"),
+  )
+  const headReference = await repository.head()
+  const commit = await repository.getCommit(headReference.target())
+  const tree = await commit.getTree()
+
+  iterXmlFiles: for await (const entry of walkTree(repository, tree)) {
+    if (entry.isTree()) {
+      continue
+    }
+
+    const filePath = entry.path()
     if (skip) {
-      if (relativePath.startsWith(resume as string)) {
+      if (filePath.startsWith(resume as string)) {
         skip = false
-        console.log(`Resuming at file ${relativePath}...`)
+        console.log(`Resuming at file ${filePath}...`)
       } else {
         continue
       }
     }
 
-    const filePath = path.join(dataDir, relativePath)
     if (!filePath.endsWith(".xml")) {
       if (
         filePath.includes("/eli/") &&
-        (await fs.lstat(filePath)).isSymbolicLink()
+        (entry.filemode() & 0o120000) === 0o120000 // nodegit.TreeEntry.FILEMODE.LINK
       ) {
         // Ignore ELI symbolic links, because the name of the link is present in TexteVersion.
         continue
@@ -157,10 +169,11 @@ async function importLegi(
       continue
     }
 
+    const fileSplitPath = filePath.split("/")
     try {
-      const xmlString: string = await fs.readFile(filePath, {
-        encoding: "utf8",
-      })
+      const blob = await entry.getBlob()
+      const buffer = blob.content()
+      const xmlString = buffer.toString("utf8")
       const xmlData = xmlParser.parse(xmlString)
       for (const [tag, element] of Object.entries(xmlData) as [
         LegiCategorieTag | "?xml",
@@ -206,9 +219,9 @@ async function importLegi(
             break
           case "ID":
             if (categorieTag === undefined || categorieTag === tag) {
-              assert.strictEqual(relativeSplitPath[0], "global")
-              assert.strictEqual(relativeSplitPath[1], "eli")
-              const eli = relativeSplitPath.slice(2, -1).join("/")
+              assert.strictEqual(fileSplitPath[0], "global")
+              assert.strictEqual(fileSplitPath[1], "eli")
+              const eli = fileSplitPath.slice(2, -1).join("/")
               const [id, idError] = auditChain(auditId, auditRequire)(
                 strictAudit,
                 element,
@@ -348,9 +361,9 @@ async function importLegi(
             break
           case "VERSIONS":
             if (categorieTag === undefined || categorieTag === tag) {
-              assert.strictEqual(relativeSplitPath[0], "global")
-              assert.strictEqual(relativeSplitPath[1], "eli")
-              const eli = relativeSplitPath.slice(2, -1).join("/")
+              assert.strictEqual(fileSplitPath[0], "global")
+              assert.strictEqual(fileSplitPath[1], "eli")
+              const eli = fileSplitPath.slice(2, -1).join("/")
               const [versions, versionsError] = auditChain(
                 auditVersions,
                 auditRequire,
@@ -402,42 +415,54 @@ async function importLegi(
 
   if (deleteRemainingIds) {
     for (const id of articleRemainingIds) {
-      console.log(`Deleting ARTICLE ${id}…`)
+      if (verbose) {
+        console.log(`Deleting ARTICLE ${id}…`)
+      }
       await db`
         DELETE FROM article
         WHERE id = ${id}
       `
     }
     for (const eli of idRemainingElis) {
-      console.log(`Deleting ID ${eli}…`)
+      if (verbose) {
+        console.log(`Deleting ID ${eli}…`)
+      }
       await db`
         DELETE FROM id
         WHERE eli = ${eli}
       `
     }
     for (const id of sectionTaRemainingIds) {
-      console.log(`Deleting SECTION_TA ${id}…`)
+      if (verbose) {
+        console.log(`Deleting SECTION_TA ${id}…`)
+      }
       await db`
         DELETE FROM section_ta
         WHERE id = ${id}
       `
     }
     for (const id of textelrRemainingIds) {
-      console.log(`Deleting TEXTELR ${id}…`)
+      if (verbose) {
+        console.log(`Deleting TEXTELR ${id}…`)
+      }
       await db`
         DELETE FROM textelr
         WHERE id = ${id}
       `
     }
     for (const id of texteVersionRemainingIds) {
-      console.log(`Deleting TEXTE_VERSION ${id}…`)
+      if (verbose) {
+        console.log(`Deleting TEXTE_VERSION ${id}…`)
+      }
       await db`
         DELETE FROM texte_version
         WHERE id = ${id}
       `
     }
     for (const eli of versionsRemainingElis) {
-      console.log(`Deleting VERSIONS ${eli}…`)
+      if (verbose) {
+        console.log(`Deleting VERSIONS ${eli}…`)
+      }
       await db`
         DELETE FROM versions
         WHERE eli = ${eli}
@@ -461,7 +486,9 @@ async function importLegi(
 
 sade("import_legi <dilaDir>", true)
   .describe("Import Dila's LEGI database")
+  .option("-k, --category", "Import only given type of data")
   .option("-r, --resume", "Resume import at given relative file path")
+  .option("-v, --verbose", "Show more log messages")
   .example(
     "--resume global/eli/accord/2002/5/5/MESS0221690X/jo/article_1/versions.xml ../dila-data/",
   )

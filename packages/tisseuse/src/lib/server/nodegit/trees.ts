@@ -185,6 +185,19 @@ export function setOidInSplitPathTree(
   return true // changed
 }
 
+export async function* walkTree(
+  repository: nodegit.Repository,
+  tree: nodegit.Tree,
+): AsyncGenerator<nodegit.TreeEntry, void> {
+  for (const entry of tree.entries()) {
+    yield entry
+    if (entry.isTree()) {
+      const subTree = await nodegit.Tree.lookup(repository, entry.id())
+      yield* walkTree(repository, subTree)
+    }
+  }
+}
+
 export function* walkPreviousAndCurrentNodeByIdTrees(
   previousNodeByIdTree: NodeBySplitPathTree | undefined,
   nodeByIdTree: NodeBySplitPathTree | undefined,

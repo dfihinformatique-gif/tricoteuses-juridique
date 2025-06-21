@@ -358,7 +358,11 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditRequire,
+    /**
+     * Présent le plus souvent
+     * Absent sur LEGISCTA000006090461, qui est une section d'un arrêté périmé.
+     */
+    // auditRequire,
   )
   for (const key of ["@date_publi", "@date_signature"]) {
     audit.attribute(
@@ -369,7 +373,11 @@ function auditTexte(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
       remainingKeys,
       //   auditFunction((date: unknown) => date.replace(/^11992-12-27$/, "1992-12-27")),
       auditDateIso8601String,
-      auditRequire,
+      /**
+       * Présent le plus souvent
+       * Absent sur LEGISCTA000006090461, qui est une section d'un arrêté périmé.
+       */
+      // auditRequire,
     )
   }
   audit.attribute(

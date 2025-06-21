@@ -351,9 +351,21 @@ export interface LegiSectionTa {
     /** Informations sur le texte législatif parent. */
     TEXTE: {
       "@autorite"?: string
-      "@cid": string
-      "@date_publi": string
-      "@date_signature": string
+      /**
+       * Présent le plus souvent
+       * Absent sur LEGISCTA000006090461, qui est une section d'un arrêté périmé.
+       */
+      "@cid"?: string
+      /**
+       * Présent le plus souvent
+       * Absent sur LEGISCTA000006090461, qui est une section d'un arrêté périmé.
+       */
+      "@date_publi"?: string
+      /**
+       * Présent le plus souvent
+       * Absent sur LEGISCTA000006090461, qui est une section d'un arrêté périmé.
+       */
+      "@date_signature"?: string
       "@ministere"?: string
       "@nature"?: LegiSectionTaTexteNature
       "@nor"?: string

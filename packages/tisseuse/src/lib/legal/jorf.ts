@@ -932,6 +932,7 @@ export const allJorfSectionTaTexteNatures = [
   "ACCORD", // 3
   "ACCORD_FONCTION_PUBLIQUE", // 2
   "ADDITIF", // 3
+  "ANNONCES",
   "ARRETE", // 53716
   "AVENANT", // 89
   "AVIS", // 3212

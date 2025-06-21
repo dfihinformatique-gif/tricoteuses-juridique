@@ -167,7 +167,15 @@ async function downloadDoleHtml(
 
 async function fetchHtmlPage(url: string): Promise<string> {
   for (let retriesCount = 0; ; retriesCount++) {
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "tricoteuses-legifrance https://tricoteuses.fr",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "fr-FR,fr;q=0.5",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+      },
+    })
     if (!response.ok) {
       if (retriesCount === 0) {
         console.warn(`Error while retrieving HTML page at ${url}`)
@@ -177,7 +185,7 @@ async function fetchHtmlPage(url: string): Promise<string> {
       }
       if (retriesCount < 10) {
         await sleep(30)
-        console.info("Retrying…")
+        console.info(`Retrying ${url}…`)
         continue
       } else {
         throw new Error(`Retrieval of HTML page at <${url}> failed`)
@@ -193,7 +201,7 @@ async function fetchHtmlPage(url: string): Promise<string> {
       }
       if (retriesCount < 10) {
         await sleep(30)
-        console.info("Retrying…")
+        console.info(`Retrying ${url}…`)
         continue
       } else {
         throw new Error(`Retrieval of HTML page at <${url}> failed`)

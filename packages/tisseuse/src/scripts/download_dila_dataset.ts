@@ -86,7 +86,7 @@ async function downloadDataset(
   const repository = (await fs.pathExists(gitDir))
     ? await nodegit.Repository.open(gitDir)
     : await nodegit.Repository.init(gitDir, 1 /* bare */)
-  // Use main branc instead of master.
+  // Use main branch instead of master.
   await nodegit.Reference.symbolicCreate(
     repository,
     "HEAD",

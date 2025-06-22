@@ -1120,6 +1120,7 @@ export const allJorfTexteVersionLienNatures = [
   "Accord-type", // 1
   "ACCORD_FONCTION_PUBLIQUE", // 12
   "ACTE", // 5
+  "Addendum",
   "Additif", // 24
   "ADDITIF", // 39
   "Adhésion par lettre", // 8

@@ -185,19 +185,6 @@ export function setOidInSplitPathTree(
   return true // changed
 }
 
-export async function* walkTree(
-  repository: nodegit.Repository,
-  tree: nodegit.Tree,
-): AsyncGenerator<nodegit.TreeEntry, void> {
-  for (const entry of tree.entries()) {
-    yield entry
-    if (entry.isTree()) {
-      const subTree = await entry.getTree()
-      yield* walkTree(repository, subTree)
-    }
-  }
-}
-
 export function* walkPreviousAndCurrentNodeByIdTrees(
   previousNodeByIdTree: NodeBySplitPathTree | undefined,
   nodeByIdTree: NodeBySplitPathTree | undefined,
@@ -279,4 +266,54 @@ export async function writeNodeBySplitPathTree(
     nodeBySplitPathTree.oid = await builder.write()
   }
   return nodeBySplitPathTree.oid
+}
+
+export async function* walkTree(
+  repository: nodegit.Repository,
+  tree: nodegit.Tree,
+): AsyncGenerator<nodegit.TreeEntry, void> {
+  for (const entry of tree.entries()) {
+    yield entry
+    if (entry.isTree()) {
+      const subTree = await entry.getTree()
+      yield* walkTree(repository, subTree)
+    }
+  }
+}
+
+export async function* walkTreesChanges(
+  repository: nodegit.Repository,
+  leftTree: nodegit.Tree | undefined,
+  rightTree: nodegit.Tree | undefined,
+): AsyncGenerator<
+  [nodegit.TreeEntry | undefined, nodegit.TreeEntry | undefined],
+  void
+> {
+  const leftEntryByName = new Map(
+    leftTree?.entries()?.map((entry) => [entry.name(), entry]) ?? [],
+  )
+  const rightEntryByName = new Map(
+    rightTree?.entries()?.map((entry) => [entry.name(), entry]) ?? [],
+  )
+  const names = [
+    ...new Set([...leftEntryByName.keys(), ...rightEntryByName.keys()]),
+  ].sort()
+  for (const name of names) {
+    const leftEntry = leftEntryByName.get(name)
+    const rightEntry = rightEntryByName.get(name)
+    if (leftEntry?.oid() === rightEntry?.oid()) {
+      // Entry has not changed => Ignore it.
+      continue
+    }
+    yield [leftEntry, rightEntry]
+    if (leftEntry?.isTree() || rightEntry?.isTree()) {
+      const leftSubTree = leftEntry?.isTree()
+        ? await leftEntry.getTree()
+        : undefined
+      const rightSubTree = rightEntry?.isTree()
+        ? await rightEntry.getTree()
+        : undefined
+      yield* walkTreesChanges(repository, leftSubTree, rightSubTree)
+    }
+  }
 }

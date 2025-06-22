@@ -1216,6 +1216,7 @@ export const allJorfTexteVersionLienNatures = [
   "REGLEMENT", // 800
   "REGLEMENTEUROPEEN", // 1897
   "RESULTATS", // 3901
+  "Révision",
   "SAISINE", // 352
   "SALAIRES", // 4
   "SENATUS", // 4

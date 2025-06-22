@@ -1110,6 +1110,7 @@ export const allJorfTexteVersionLienNatures = [
   "Accord régional", // 2
   "Accord territorial",
   "Accord tripartite",
+  "Accord « Salaires »",
   "ACCORD", // 1048
   "accord", // 130
   "Accord", // 22442
@@ -1123,10 +1124,10 @@ export const allJorfTexteVersionLienNatures = [
   "ADDITIF", // 39
   "Adhésion par lettre", // 8
   "Adhésion", // 1
+  "Annexe spécifique", // 2
+  "annexe",
   "ANNEXE", // 149
   "Annexe", // 367
-  "annexe",
-  "Annexe spécifique", // 2
   "ANNEXES", // 3
   "ANNONCES", // 4
   "ARRET", // 48
@@ -1198,8 +1199,8 @@ export const allJorfTexteVersionLienNatures = [
   "OBSERVATION", // 256
   "ORDONNANCE", // 35340
   "Procès-verbal de désaccord", // 4
-  "PROJET", // 93
   "PROJET D'AVENANT",
+  "PROJET", // 93
   "PROTOCOLE D'ACCORD COLLECTIF", // 7
   "Protocole d'accord de méthode", // 1
   "PROTOCOLE D'ACCORD INTERBRANCHE", // 3

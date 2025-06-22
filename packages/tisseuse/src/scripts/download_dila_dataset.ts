@@ -458,7 +458,13 @@ async function downloadDataset(
           },
         },
       })
-      await nodegit.Branch.setUpstream(branch, `origin/${branchName}`)
+      try {
+        await nodegit.Branch.setUpstream(branch, `origin/${branchName}`)
+      } catch (error) {
+        if (!(error as Error).message.includes("cannot set upstream")) {
+          throw error
+        }
+      }
     }
   }
 

@@ -1123,9 +1123,10 @@ export const allJorfTexteVersionLienNatures = [
   "ADDITIF", // 39
   "Adhésion par lettre", // 8
   "Adhésion", // 1
-  "Annexe spécifique", // 2
   "ANNEXE", // 149
   "Annexe", // 367
+  "annexe",
+  "Annexe spécifique", // 2
   "ANNEXES", // 3
   "ANNONCES", // 4
   "ARRET", // 48

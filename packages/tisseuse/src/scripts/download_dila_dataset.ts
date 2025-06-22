@@ -168,7 +168,9 @@ async function downloadDataset(
     }
   }
   if (!silent) {
-    console.log(`Base commit OID: ${baseCommitOid}, date: ${baseDate}`)
+    // Don't modify the the log below, because it is used by CI scripts
+    // to detect base commit and launch incremental imports
+    console.log(`Base commit ID: ${baseCommitOid}, date: ${baseDate}`)
   }
 
   let commitOid = baseCommitOid

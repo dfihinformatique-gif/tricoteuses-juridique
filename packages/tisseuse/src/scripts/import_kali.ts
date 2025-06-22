@@ -19,63 +19,83 @@ import { walkTree } from "$lib/server/nodegit/trees.js"
 
 async function importKali(
   dilaDir: string,
-  { resume, verbose }: { resume?: string; verbose?: boolean } = {},
+  {
+    "dry-run": dryRun,
+    resume,
+    verbose,
+  }: {
+    "dry-run"?: boolean
+    resume?: string
+    verbose?: boolean
+  } = {},
 ): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
 
-  const articleRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM article
-        WHERE id LIKE 'KALI%'
-      `
-    ).map(({ id }) => id),
-  )
-  const idccRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM idcc
-      `
-    ).map(({ id }) => id),
-  )
-  const sectionTaRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM section_ta
-        WHERE id LIKE 'KALI%'
-      `
-    ).map(({ id }) => id),
-  )
-  const textekaliRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM textekali
-      `
-    ).map(({ id }) => id),
-  )
-  const textelrRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM textelr
-        WHERE id LIKE 'KALI%'
-      `
-    ).map(({ id }) => id),
-  )
-  const texteVersionRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM texte_version
-        WHERE id LIKE 'KALI%'
-      `
-    ).map(({ id }) => id),
-  )
+  const articleRemainingIds = !dryRun
+    ? new Set(
+        (
+          await db<{ id: string }[]>`
+            SELECT id
+            FROM article
+            WHERE id LIKE 'KALI%'
+          `
+        ).map(({ id }) => id),
+      )
+    : new Set<string>()
+  const idccRemainingIds = !dryRun
+    ? new Set(
+        (
+          await db<{ id: string }[]>`
+            SELECT id
+            FROM idcc
+          `
+        ).map(({ id }) => id),
+      )
+    : new Set<string>()
+  const sectionTaRemainingIds = !dryRun
+    ? new Set(
+        (
+          await db<{ id: string }[]>`
+            SELECT id
+            FROM section_ta
+            WHERE id LIKE 'KALI%'
+          `
+        ).map(({ id }) => id),
+      )
+    : new Set<string>()
+  const textekaliRemainingIds = !dryRun
+    ? new Set(
+        (
+          await db<{ id: string }[]>`
+            SELECT id
+            FROM textekali
+          `
+        ).map(({ id }) => id),
+      )
+    : new Set<string>()
+  const textelrRemainingIds = !dryRun
+    ? new Set(
+        (
+          await db<{ id: string }[]>`
+            SELECT id
+            FROM textelr
+            WHERE id LIKE 'KALI%'
+          `
+        ).map(({ id }) => id),
+      )
+    : new Set<string>()
+  const texteVersionRemainingIds = !dryRun
+    ? new Set(
+        (
+          await db<{ id: string }[]>`
+            SELECT id
+            FROM texte_version
+            WHERE id LIKE 'KALI%'
+          `
+        ).map(({ id }) => id),
+      )
+    : new Set<string>()
 
   const repository = await nodegit.Repository.open(
     path.join(dilaDir, "kali.git"),
@@ -122,55 +142,61 @@ async function importKali(
           }
           case "ARTICLE": {
             const article = element as Article
-            await db`
-              INSERT INTO article (
-                id,
-                data
-              ) VALUES (
-                ${article.META.META_COMMUN.ID},
-                ${db.json(article as unknown as JSONValue)}
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = EXCLUDED.data
-              WHERE article.data IS DISTINCT FROM EXCLUDED.data
-            `
+            if (!dryRun) {
+              await db`
+                INSERT INTO article (
+                  id,
+                  data
+                ) VALUES (
+                  ${article.META.META_COMMUN.ID},
+                  ${db.json(article as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = EXCLUDED.data
+                WHERE article.data IS DISTINCT FROM EXCLUDED.data
+              `
+            }
             articleRemainingIds.delete(article.META.META_COMMUN.ID)
             break
           }
           case "IDCC": {
             const idcc = element as Idcc
-            await db`
-              INSERT INTO idcc (
-                id,
-                data
-              ) VALUES (
-                ${idcc.META.META_COMMUN.ID},
-                ${db.json(idcc as unknown as JSONValue)}
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = EXCLUDED.data
-              WHERE idcc.data IS DISTINCT FROM EXCLUDED.data
-            `
+            if (!dryRun) {
+              await db`
+                INSERT INTO idcc (
+                  id,
+                  data
+                ) VALUES (
+                  ${idcc.META.META_COMMUN.ID},
+                  ${db.json(idcc as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = EXCLUDED.data
+                WHERE idcc.data IS DISTINCT FROM EXCLUDED.data
+              `
+            }
             idccRemainingIds.delete(idcc.META.META_COMMUN.ID)
             break
           }
           case "SECTION_TA": {
             const section = element as SectionTa
-            await db`
-              INSERT INTO section_ta (
-                id,
-                data
-              ) VALUES (
-                ${section.ID},
-                ${db.json(section as unknown as JSONValue)}
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = EXCLUDED.data
-              WHERE section_ta.data IS DISTINCT FROM EXCLUDED.data
-            `
+            if (!dryRun) {
+              await db`
+                INSERT INTO section_ta (
+                  id,
+                  data
+                ) VALUES (
+                  ${section.ID},
+                  ${db.json(section as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = EXCLUDED.data
+                WHERE section_ta.data IS DISTINCT FROM EXCLUDED.data
+              `
+            }
             sectionTaRemainingIds.delete(section.ID)
             break
           }
@@ -180,66 +206,72 @@ async function importKali(
               texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
               texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
             ].filter((text) => text !== undefined)
-            await db`
-              INSERT INTO texte_version (
-                id,
-                data,
-                nature,
-                text_search
-              ) VALUES (
-                ${texteVersion.META.META_COMMUN.ID},
-                ${db.json(texteVersion as unknown as JSONValue)},
-                ${texteVersion.META.META_COMMUN.NATURE},
-                setweight(to_tsvector('french', ${textAFragments.join(
-                  " ",
-                )}), 'A')
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = EXCLUDED.data,
-                nature = EXCLUDED.nature,
-                text_search = EXCLUDED.text_search
-              WHERE
-                texte_version.data IS DISTINCT FROM EXCLUDED.data OR
-                texte_version.nature IS DISTINCT FROM EXCLUDED.nature OR
-                texte_version.text_search IS DISTINCT FROM EXCLUDED.text_search
-            `
+            if (!dryRun) {
+              await db`
+                INSERT INTO texte_version (
+                  id,
+                  data,
+                  nature,
+                  text_search
+                ) VALUES (
+                  ${texteVersion.META.META_COMMUN.ID},
+                  ${db.json(texteVersion as unknown as JSONValue)},
+                  ${texteVersion.META.META_COMMUN.NATURE},
+                  setweight(to_tsvector('french', ${textAFragments.join(
+                    " ",
+                  )}), 'A')
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = EXCLUDED.data,
+                  nature = EXCLUDED.nature,
+                  text_search = EXCLUDED.text_search
+                WHERE
+                  texte_version.data IS DISTINCT FROM EXCLUDED.data OR
+                  texte_version.nature IS DISTINCT FROM EXCLUDED.nature OR
+                  texte_version.text_search IS DISTINCT FROM EXCLUDED.text_search
+              `
+            }
             texteVersionRemainingIds.delete(texteVersion.META.META_COMMUN.ID)
             break
           }
           case "TEXTEKALI": {
             const textekali = element as Textekali
-            await db`
-              INSERT INTO textekali (
-                id,
-                data
-              ) VALUES (
-                ${textekali.META.META_COMMUN.ID},
-                ${db.json(textekali as unknown as JSONValue)}
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = EXCLUDED.data
-              WHERE textekali.data IS DISTINCT FROM EXCLUDED.data
-            `
+            if (!dryRun) {
+              await db`
+                INSERT INTO textekali (
+                  id,
+                  data
+                ) VALUES (
+                  ${textekali.META.META_COMMUN.ID},
+                  ${db.json(textekali as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = EXCLUDED.data
+                WHERE textekali.data IS DISTINCT FROM EXCLUDED.data
+              `
+            }
             textekaliRemainingIds.delete(textekali.META.META_COMMUN.ID)
             break
           }
           case "TEXTELR": {
             const textelr = element as Textelr
-            await db`
-              INSERT INTO textelr (
-                id,
-                data
-              ) VALUES (
-                ${textelr.META.META_COMMUN.ID},
-                ${db.json(textelr as unknown as JSONValue)}
-              )
-              ON CONFLICT (id)
-              DO UPDATE SET
-                data = EXCLUDED.data
-              WHERE textelr.data IS DISTINCT FROM EXCLUDED.data
-            `
+            if (!dryRun) {
+              await db`
+                INSERT INTO textelr (
+                  id,
+                  data
+                ) VALUES (
+                  ${textelr.META.META_COMMUN.ID},
+                  ${db.json(textelr as unknown as JSONValue)}
+                )
+                ON CONFLICT (id)
+                DO UPDATE SET
+                  data = EXCLUDED.data
+                WHERE textelr.data IS DISTINCT FROM EXCLUDED.data
+              `
+            }
             textelrRemainingIds.delete(textelr.META.META_COMMUN.ID)
             break
           }
@@ -257,7 +289,7 @@ async function importKali(
     }
   }
 
-  if (deleteRemainingIds) {
+  if (!dryRun && deleteRemainingIds) {
     for (const id of articleRemainingIds) {
       if (verbose) {
         console.log(`Deleting ARTICLE ${id}…`)
@@ -317,6 +349,7 @@ async function importKali(
 
 sade("import_kali <dilaDir>", true)
   .describe("Import Dila's KALI database")
+  .option("-d, --dry-run", "Validate only; don't update database")
   .option("-r, --resume", "Resume import at given relative file path")
   .option("-v, --verbose", "Show more log messages")
   .example(

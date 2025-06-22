@@ -49,9 +49,15 @@ async function importJorf(
   dilaDir: string,
   {
     category,
+    "dry-run": dryRun,
     resume,
     verbose,
-  }: { category?: string; resume?: string; verbose?: boolean } = {},
+  }: {
+    category?: string
+    "dry-run"?: boolean
+    resume?: string
+    verbose?: boolean
+  } = {},
 ): Promise<void> {
   const [categorieTag, categorieError] = auditOptions([
     ...[...allJorfCategoriesTags],
@@ -70,7 +76,7 @@ async function importJorf(
   const deleteRemainingIds = !skip
 
   const articleRemainingIds =
-    categorieTag === undefined || categorieTag === "ARTICLE"
+    !dryRun && (categorieTag === undefined || categorieTag === "ARTICLE")
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -82,7 +88,7 @@ async function importJorf(
         )
       : new Set<string>()
   const idRemainingElis =
-    categorieTag === undefined || categorieTag === "ID"
+    !dryRun && (categorieTag === undefined || categorieTag === "ID")
       ? new Set(
           (
             await db<{ eli: string }[]>`
@@ -93,7 +99,7 @@ async function importJorf(
         )
       : new Set<string>()
   const joRemainingIds =
-    categorieTag === undefined || categorieTag === "JO"
+    !dryRun && (categorieTag === undefined || categorieTag === "JO")
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -104,7 +110,7 @@ async function importJorf(
         )
       : new Set<string>()
   const sectionTaRemainingIds =
-    categorieTag === undefined || categorieTag === "SECTION_TA"
+    !dryRun && (categorieTag === undefined || categorieTag === "SECTION_TA")
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -116,7 +122,7 @@ async function importJorf(
         )
       : new Set<string>()
   const textelrRemainingIds =
-    categorieTag === undefined || categorieTag === "TEXTELR"
+    !dryRun && (categorieTag === undefined || categorieTag === "TEXTELR")
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -128,7 +134,7 @@ async function importJorf(
         )
       : new Set<string>()
   const texteVersionRemainingIds =
-    categorieTag === undefined || categorieTag === "TEXTE_VERSION"
+    !dryRun && (categorieTag === undefined || categorieTag === "TEXTE_VERSION")
       ? new Set(
           (
             await db<{ id: string }[]>`
@@ -140,7 +146,7 @@ async function importJorf(
         )
       : new Set<string>()
   const versionsRemainingElis =
-    categorieTag === undefined || categorieTag === "VERSIONS"
+    !dryRun && (categorieTag === undefined || categorieTag === "VERSIONS")
       ? new Set(
           (
             await db<{ eli: string }[]>`
@@ -218,19 +224,21 @@ async function importJorf(
                   2,
                 )}\nError:\n${JSON.stringify(error, null, 2)}`,
               )
-              await db`
-                INSERT INTO article (
-                  id,
-                  data
-                ) VALUES (
-                  ${article.META.META_COMMUN.ID},
-                  ${db.json(article as unknown as JSONValue)}
-                )
-                ON CONFLICT (id)
-                DO UPDATE SET
-                  data = EXCLUDED.data
-                WHERE article.data IS DISTINCT FROM EXCLUDED.data
-              `
+              if (!dryRun) {
+                await db`
+                  INSERT INTO article (
+                    id,
+                    data
+                  ) VALUES (
+                    ${article.META.META_COMMUN.ID},
+                    ${db.json(article as unknown as JSONValue)}
+                  )
+                  ON CONFLICT (id)
+                  DO UPDATE SET
+                    data = EXCLUDED.data
+                  WHERE article.data IS DISTINCT FROM EXCLUDED.data
+                `
+              }
               articleRemainingIds.delete(article.META.META_COMMUN.ID)
             }
             break
@@ -253,19 +261,21 @@ async function importJorf(
                   2,
                 )}\nError:\n${JSON.stringify(idError, null, 2)}`,
               )
-              await db`
-                INSERT INTO id (
-                  eli,
-                  id
-                ) VALUES (
-                  ${eli},
-                  ${id}
-                )
-                ON CONFLICT (eli)
-                DO UPDATE SET
-                  id = EXCLUDED.id
-                WHERE id.id IS DISTINCT FROM EXCLUDED.id
-              `
+              if (!dryRun) {
+                await db`
+                  INSERT INTO id (
+                    eli,
+                    id
+                  ) VALUES (
+                    ${eli},
+                    ${id}
+                  )
+                  ON CONFLICT (eli)
+                  DO UPDATE SET
+                    id = EXCLUDED.id
+                  WHERE id.id IS DISTINCT FROM EXCLUDED.id
+                `
+              }
               idRemainingElis.delete(eli)
             }
             break
@@ -284,19 +294,21 @@ async function importJorf(
                   2,
                 )}\nError:\n${JSON.stringify(error, null, 2)}`,
               )
-              await db`
-                INSERT INTO jo (
-                  id,
-                  data
-                ) VALUES (
-                  ${jo.META.META_COMMUN.ID},
-                  ${db.json(jo as unknown as JSONValue)}
-                )
-                ON CONFLICT (id)
-                DO UPDATE SET
-                  data = EXCLUDED.data
-                WHERE jo.data IS DISTINCT FROM EXCLUDED.data
-              `
+              if (!dryRun) {
+                await db`
+                  INSERT INTO jo (
+                    id,
+                    data
+                  ) VALUES (
+                    ${jo.META.META_COMMUN.ID},
+                    ${db.json(jo as unknown as JSONValue)}
+                  )
+                  ON CONFLICT (id)
+                  DO UPDATE SET
+                    data = EXCLUDED.data
+                  WHERE jo.data IS DISTINCT FROM EXCLUDED.data
+                `
+              }
               joRemainingIds.delete(jo.META.META_COMMUN.ID)
             }
             break
@@ -315,19 +327,21 @@ async function importJorf(
                   2,
                 )}\nError:\n${JSON.stringify(error, null, 2)}`,
               )
-              await db`
-                INSERT INTO section_ta (
-                  id,
-                  data
-                ) VALUES (
-                  ${section.ID},
-                  ${db.json(section as unknown as JSONValue)}
-                )
-                ON CONFLICT (id)
-                DO UPDATE SET
-                  data = EXCLUDED.data
-                WHERE section_ta.data IS DISTINCT FROM EXCLUDED.data
-              `
+              if (!dryRun) {
+                await db`
+                  INSERT INTO section_ta (
+                    id,
+                    data
+                  ) VALUES (
+                    ${section.ID},
+                    ${db.json(section as unknown as JSONValue)}
+                  )
+                  ON CONFLICT (id)
+                  DO UPDATE SET
+                    data = EXCLUDED.data
+                  WHERE section_ta.data IS DISTINCT FROM EXCLUDED.data
+                `
+              }
               sectionTaRemainingIds.delete(section.ID)
             }
             break
@@ -356,33 +370,35 @@ async function importJorf(
                   undefined
                   ? `${texteVersion.META.META_COMMUN.NATURE.toUpperCase()}.${texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NUM}`
                   : null
-              await db`
-                INSERT INTO texte_version (
-                  id,
-                  data,
-                  nature,
-                  nature_et_num,
-                  text_search
-                ) VALUES (
-                  ${texteVersion.META.META_COMMUN.ID},
-                  ${db.json(texteVersion as unknown as JSONValue)},
-                  ${texteVersion.META.META_COMMUN.NATURE ?? null},
-                  ${natureEtNum},
-                  setweight(to_tsvector('french', ${textAFragments.join(
-                    " ",
-                  )}), 'A')
-                )
-                ON CONFLICT (id)
-                DO UPDATE SET
-                  data = EXCLUDED.data,
-                  nature = EXCLUDED.nature,
-                  nature_et_num = EXCLUDED.nature_et_num,
-                  text_search = EXCLUDED.text_search
-                WHERE texte_version.data IS DISTINCT FROM EXCLUDED.data
-                   OR texte_version.nature IS DISTINCT FROM EXCLUDED.nature
-                   OR texte_version.nature_et_num IS DISTINCT FROM EXCLUDED.nature_et_num
-                   OR texte_version.text_search IS DISTINCT FROM EXCLUDED.text_search
-              `
+              if (!dryRun) {
+                await db`
+                  INSERT INTO texte_version (
+                    id,
+                    data,
+                    nature,
+                    nature_et_num,
+                    text_search
+                  ) VALUES (
+                    ${texteVersion.META.META_COMMUN.ID},
+                    ${db.json(texteVersion as unknown as JSONValue)},
+                    ${texteVersion.META.META_COMMUN.NATURE ?? null},
+                    ${natureEtNum},
+                    setweight(to_tsvector('french', ${textAFragments.join(
+                      " ",
+                    )}), 'A')
+                  )
+                  ON CONFLICT (id)
+                  DO UPDATE SET
+                    data = EXCLUDED.data,
+                    nature = EXCLUDED.nature,
+                    nature_et_num = EXCLUDED.nature_et_num,
+                    text_search = EXCLUDED.text_search
+                  WHERE texte_version.data IS DISTINCT FROM EXCLUDED.data
+                    OR texte_version.nature IS DISTINCT FROM EXCLUDED.nature
+                    OR texte_version.nature_et_num IS DISTINCT FROM EXCLUDED.nature_et_num
+                    OR texte_version.text_search IS DISTINCT FROM EXCLUDED.text_search
+                `
+              }
               texteVersionRemainingIds.delete(texteVersion.META.META_COMMUN.ID)
             }
             break
@@ -401,19 +417,21 @@ async function importJorf(
                   2,
                 )}\nError:\n${JSON.stringify(error, null, 2)}`,
               )
-              await db`
-                INSERT INTO textelr (
-                  id,
-                  data
-                ) VALUES (
-                  ${textelr.META.META_COMMUN.ID},
-                  ${db.json(textelr as unknown as JSONValue)}
-                )
-                ON CONFLICT (id)
-                DO UPDATE SET
-                  data = EXCLUDED.data
-                WHERE textelr.data IS DISTINCT FROM EXCLUDED.data
-              `
+              if (!dryRun) {
+                await db`
+                  INSERT INTO textelr (
+                    id,
+                    data
+                  ) VALUES (
+                    ${textelr.META.META_COMMUN.ID},
+                    ${db.json(textelr as unknown as JSONValue)}
+                  )
+                  ON CONFLICT (id)
+                  DO UPDATE SET
+                    data = EXCLUDED.data
+                  WHERE textelr.data IS DISTINCT FROM EXCLUDED.data
+                `
+              }
               textelrRemainingIds.delete(textelr.META.META_COMMUN.ID)
             }
             break
@@ -436,23 +454,25 @@ async function importJorf(
                 )}\nError:\n${JSON.stringify(versionsError, null, 2)}`,
               )
               const id = versions.VERSION["@id"]
-              await db`
-                INSERT INTO versions (
-                  eli,
-                  id,
-                  data
-                ) VALUES (
-                  ${eli},
-                  ${id},
-                  ${db.json(versions as unknown as JSONValue)}
-                )
-                ON CONFLICT (eli)
-                DO UPDATE SET
-                  id = EXCLUDED.id,
-                  data = EXCLUDED.data
-                WHERE versions.id IS DISTINCT FROM EXCLUDED.id
-                   OR versions.data IS DISTINCT FROM EXCLUDED.data
-              `
+              if (!dryRun) {
+                await db`
+                  INSERT INTO versions (
+                    eli,
+                    id,
+                    data
+                  ) VALUES (
+                    ${eli},
+                    ${id},
+                    ${db.json(versions as unknown as JSONValue)}
+                  )
+                  ON CONFLICT (eli)
+                  DO UPDATE SET
+                    id = EXCLUDED.id,
+                    data = EXCLUDED.data
+                  WHERE versions.id IS DISTINCT FROM EXCLUDED.id
+                    OR versions.data IS DISTINCT FROM EXCLUDED.data
+                `
+              }
               versionsRemainingElis.delete(eli) // Corrected: Use eli here as it's the key for versionsRemainingElis set and conflict key.
             }
             break
@@ -470,7 +490,7 @@ async function importJorf(
     }
   }
 
-  if (deleteRemainingIds) {
+  if (!dryRun && deleteRemainingIds) {
     for (const id of articleRemainingIds) {
       if (verbose) {
         console.log(`Deleting ARTICLE ${id}…`)
@@ -554,6 +574,7 @@ async function importJorf(
 
 sade("import_jorf <dilaDir>", true)
   .describe("Import Dila's JORF database")
+  .option("-d, --dry-run", "Validate only; don't update database")
   .option("-k, --category", "Import only given type of data")
   .option("-r, --resume", "Resume import at given relative file path")
   .option("-v, --verbose", "Show more log messages")

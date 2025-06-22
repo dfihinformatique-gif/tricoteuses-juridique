@@ -12,19 +12,29 @@ import { walkTree } from "$lib/server/nodegit/trees.js"
 
 async function importDole(
   dilaDir: string,
-  { resume, verbose }: { resume?: string; verbose?: boolean } = {},
+  {
+    "dry-run": dryRun,
+    resume,
+    verbose,
+  }: {
+    "dry-run"?: boolean
+    resume?: string
+    verbose?: boolean
+  } = {},
 ): Promise<void> {
   let skip = resume !== undefined
   const deleteRemainingIds = !skip
 
-  const dossierLegislatifRemainingIds = new Set(
-    (
-      await db<{ id: string }[]>`
-        SELECT id
-        FROM dossier_legislatif
-      `
-    ).map(({ id }) => id),
-  )
+  const dossierLegislatifRemainingIds = !dryRun
+    ? new Set(
+        (
+          await db<{ id: string }[]>`
+            SELECT id
+            FROM dossier_legislatif
+          `
+        ).map(({ id }) => id),
+      )
+    : new Set<string>()
 
   const repository = await nodegit.Repository.open(
     path.join(dilaDir, "dole.git"),
@@ -105,28 +115,30 @@ async function importDole(
         jorfTextesId.add(idTexte)
       }
 
-      await db`
-        INSERT INTO dossier_legislatif (
-          id,
-          data,
-          jorf_texte_principal_id,
-          jorf_textes_id
-        ) VALUES (
-          ${dossierLegislatif.META.META_COMMUN.ID},
-          ${db.json(dossierLegislatif as unknown as JSONValue)},
-          ${jorfTextePrincipalId ?? null},
-          ${jorfTextesId.size === 0 ? null : [...jorfTextesId]}
-        )
-        ON CONFLICT (id)
-        DO UPDATE SET
-          data = EXCLUDED.data,
-          jorf_texte_principal_id = EXCLUDED.jorf_texte_principal_id,
-          jorf_textes_id = EXCLUDED.jorf_textes_id
-        WHERE
-          dossier_legislatif.data IS DISTINCT FROM EXCLUDED.data OR
-          dossier_legislatif.jorf_texte_principal_id IS DISTINCT FROM EXCLUDED.jorf_texte_principal_id OR
-          dossier_legislatif.jorf_textes_id IS DISTINCT FROM EXCLUDED.jorf_textes_id
-      `
+      if (!dryRun) {
+        await db`
+          INSERT INTO dossier_legislatif (
+            id,
+            data,
+            jorf_texte_principal_id,
+            jorf_textes_id
+          ) VALUES (
+            ${dossierLegislatif.META.META_COMMUN.ID},
+            ${db.json(dossierLegislatif as unknown as JSONValue)},
+            ${jorfTextePrincipalId ?? null},
+            ${jorfTextesId.size === 0 ? null : [...jorfTextesId]}
+          )
+          ON CONFLICT (id)
+          DO UPDATE SET
+            data = EXCLUDED.data,
+            jorf_texte_principal_id = EXCLUDED.jorf_texte_principal_id,
+            jorf_textes_id = EXCLUDED.jorf_textes_id
+          WHERE
+            dossier_legislatif.data IS DISTINCT FROM EXCLUDED.data OR
+            dossier_legislatif.jorf_texte_principal_id IS DISTINCT FROM EXCLUDED.jorf_texte_principal_id OR
+            dossier_legislatif.jorf_textes_id IS DISTINCT FROM EXCLUDED.jorf_textes_id
+        `
+      }
       dossierLegislatifRemainingIds.delete(
         dossierLegislatif.META.META_COMMUN.ID,
       )
@@ -136,7 +148,7 @@ async function importDole(
     }
   }
 
-  if (deleteRemainingIds) {
+  if (!dryRun && deleteRemainingIds) {
     for (const id of dossierLegislatifRemainingIds) {
       if (verbose) {
         console.log(`Deleting DOSSIER_LEGISLATIF ${id}…`)
@@ -151,6 +163,7 @@ async function importDole(
 
 sade("import_dole <dilaDir>", true)
   .describe("Import Dila's DOLE database")
+  .option("-d, --dry-run", "Validate only; don't update database")
   .option("-r, --resume", "Resume import at given relative file path")
   .option("-v, --verbose", "Show more log messages")
   .example(

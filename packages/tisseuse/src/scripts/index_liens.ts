@@ -125,7 +125,7 @@ async function indexLiens(): Promise<void> {
               typelien: JorfTexteVersionLienType | LegiTexteVersionLienType
             }[]
           >`
-          SELECT id, cible, typelien
+          SELECT cible, cidtexte, id, typelien
           FROM texte_version_lien
           WHERE texte_version_id = ${id}
         `
@@ -172,7 +172,7 @@ async function indexLiens(): Promise<void> {
         await db`
           DELETE FROM texte_version_lien
           WHERE
-            texte_version_id_id = ${id}
+            texte_version_id = ${id}
             AND cible = ${cible}
             AND cidtexte = ${cidtexte}
             AND id = ${linkedId}

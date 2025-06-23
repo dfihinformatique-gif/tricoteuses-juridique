@@ -6,6 +6,7 @@ import {
 } from "@auditors/core"
 import assert from "assert"
 import nodegit from "nodegit"
+import objectHash from "object-hash"
 import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -31,10 +32,12 @@ import type { XmlHeader } from "$lib/legal/index.js"
 import {
   allLegiCategoriesTags,
   type LegiArticle,
+  type LegiArticleLienType,
   type LegiCategorieTag,
   type LegiSectionTa,
   type LegiTextelr,
   type LegiTexteVersion,
+  type LegiTexteVersionLienType,
 } from "$lib/legal/legi.js"
 import { xmlParser } from "$lib/parsers/shared.js"
 import { db } from "$lib/server/databases/index.js"
@@ -260,6 +263,7 @@ async function importLegi(
               )
               if (!dryRun) {
                 if (deleteEntry) {
+                  // Note: No need to delete from article_lien because of DELETE CASCADE.
                   await db`
                     DELETE FROM article
                     WHERE id = ${article.META.META_COMMUN.ID}
@@ -278,6 +282,69 @@ async function importLegi(
                       data = EXCLUDED.data
                     WHERE article.data IS DISTINCT FROM EXCLUDED.data
                   `
+
+                  const existingLienByHash = new Map(
+                    (
+                      await db<
+                        {
+                          cible: boolean
+                          cidtexte: string | null
+                          id: string
+                          typelien: LegiArticleLienType
+                        }[]
+                      >`
+                        SELECT cible, cidtexte, id, typelien
+                        FROM article_lien
+                        WHERE article_id = ${article.META.META_COMMUN.ID}
+                      `
+                    ).map((lien) => [objectHash(lien), lien]),
+                  )
+                  for (const lien of article.LIENS?.LIEN ?? []) {
+                    if (lien["@id"] === undefined) {
+                      continue
+                    }
+                    await db`
+                      INSERT INTO article_lien (
+                        article_id,
+                        cible,
+                        cidtexte,
+                        id,
+                        typelien
+                      ) VALUES (
+                        ${article.META.META_COMMUN.ID},
+                        ${lien["@sens"] === "cible"},
+                        ${lien["@cidtexte"] ?? null},
+                        ${lien["@id"]},
+                        ${lien["@typelien"]}
+                      )
+                      ON CONFLICT
+                      DO NOTHING
+                    `
+                    existingLienByHash.delete(
+                      objectHash({
+                        cible: lien["@sens"] === "cible",
+                        cidtexte: lien["@cidtexte"] ?? null,
+                        id: lien["@id"],
+                        typelien: lien["@typelien"],
+                      }),
+                    )
+                  }
+                  for (const {
+                    cible,
+                    cidtexte,
+                    id: linkedId,
+                    typelien,
+                  } of existingLienByHash.values()) {
+                    await db`
+                      DELETE FROM article_lien
+                      WHERE
+                        article_id = ${article.META.META_COMMUN.ID}
+                        AND cible = ${cible}
+                        AND cidtexte = ${cidtexte}
+                        AND id = ${linkedId}
+                        AND typelien = ${typelien}
+                    `
+                  }
                 }
                 articleRemainingIds.delete(article.META.META_COMMUN.ID)
               }
@@ -383,6 +450,7 @@ async function importLegi(
               )
               if (!dryRun) {
                 if (deleteEntry) {
+                  // Note: No need to delete from texte_version_lien because of DELETE CASCADE.
                   await db`
                     DELETE FROM texte_version
                     WHERE id = ${texteVersion.META.META_COMMUN.ID}
@@ -425,6 +493,70 @@ async function importLegi(
                       OR texte_version.nature_et_num IS DISTINCT FROM EXCLUDED.nature_et_num
                       OR texte_version.text_search IS DISTINCT FROM EXCLUDED.text_search
                   `
+
+                  const existingLienByHash = new Map(
+                    (
+                      await db<
+                        {
+                          cible: boolean
+                          cidtexte: string | null
+                          id: string
+                          typelien: LegiTexteVersionLienType
+                        }[]
+                      >`
+                        SELECT cible, cidtexte, id, typelien
+                        FROM texte_version_lien
+                        WHERE texte_version_id = ${texteVersion.META.META_COMMUN.ID}
+                      `
+                    ).map((lien) => [objectHash(lien), lien]),
+                  )
+                  for (const lien of texteVersion.META.META_SPEC
+                    .META_TEXTE_VERSION.LIENS?.LIEN ?? []) {
+                    if (lien["@id"] === undefined) {
+                      continue
+                    }
+                    await db`
+                      INSERT INTO texte_version_lien (
+                        texte_version_id,
+                        cible,
+                        cidtexte,
+                        id,
+                        typelien
+                      ) VALUES (
+                        ${texteVersion.META.META_COMMUN.ID},
+                        ${lien["@sens"] === "cible"},
+                        ${lien["@cidtexte"] ?? null},
+                        ${lien["@id"]},
+                        ${lien["@typelien"]}
+                      )
+                      ON CONFLICT
+                      DO NOTHING
+                    `
+                    existingLienByHash.delete(
+                      objectHash({
+                        cible: lien["@sens"] === "cible",
+                        cidtexte: lien["@cidtexte"] ?? null,
+                        id: lien["@id"],
+                        typelien: lien["@typelien"],
+                      }),
+                    )
+                  }
+                  for (const {
+                    cible,
+                    cidtexte,
+                    id: linkedId,
+                    typelien,
+                  } of existingLienByHash.values()) {
+                    await db`
+                      DELETE FROM texte_version_lien
+                      WHERE
+                        texte_version_id = ${texteVersion.META.META_COMMUN.ID}
+                        AND cible = ${cible}
+                        AND cidtexte = ${cidtexte}
+                        AND id = ${linkedId}
+                        AND typelien = ${typelien}
+                    `
+                  }
                 }
                 texteVersionRemainingIds.delete(
                   texteVersion.META.META_COMMUN.ID,

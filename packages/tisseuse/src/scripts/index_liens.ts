@@ -1,3 +1,7 @@
+/**
+ * Note: This script is redundant with import_jorf.ts & import_legi.ts
+ */
+
 import objectHash from "object-hash"
 import sade from "sade"
 
@@ -41,10 +45,10 @@ async function indexLiens(): Promise<void> {
               typelien: LegiArticleLienType
             }[]
           >`
-          SELECT cible, cidtexte, id, typelien
-          FROM article_lien
-          WHERE article_id = ${id}
-        `
+            SELECT cible, cidtexte, id, typelien
+            FROM article_lien
+            WHERE article_id = ${id}
+          `
         ).map((lien) => [objectHash(lien), lien]),
       )
 
@@ -125,10 +129,10 @@ async function indexLiens(): Promise<void> {
               typelien: JorfTexteVersionLienType | LegiTexteVersionLienType
             }[]
           >`
-          SELECT cible, cidtexte, id, typelien
-          FROM texte_version_lien
-          WHERE texte_version_id = ${id}
-        `
+            SELECT cible, cidtexte, id, typelien
+            FROM texte_version_lien
+            WHERE texte_version_id = ${id}
+          `
         ).map((lien) => [objectHash(lien), lien]),
       )
 

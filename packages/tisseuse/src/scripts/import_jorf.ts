@@ -6,6 +6,7 @@ import {
 } from "@auditors/core"
 import assert from "assert"
 import nodegit from "nodegit"
+import objectHash from "object-hash"
 import path from "path"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -40,6 +41,7 @@ import {
   type JorfSectionTa,
   type JorfTextelr,
   type JorfTexteVersion,
+  type JorfTexteVersionLienType,
 } from "$lib/legal/jorf.js"
 import { xmlParser } from "$lib/parsers/shared.js"
 import { db } from "$lib/server/databases/index.js"
@@ -297,6 +299,7 @@ async function importJorf(
                       data = EXCLUDED.data
                     WHERE article.data IS DISTINCT FROM EXCLUDED.data
                   `
+                  // Note: JORF articles have no LIENS.
                 }
                 articleRemainingIds.delete(article.META.META_COMMUN.ID)
               }
@@ -443,6 +446,7 @@ async function importJorf(
               )
               if (!dryRun) {
                 if (deleteEntry) {
+                  // Note: No need to delete from texte_version_lien because of DELETE CASCADE.
                   await db`
                     DELETE FROM texte_version
                     WHERE id = ${texteVersion.META.META_COMMUN.ID}
@@ -485,6 +489,70 @@ async function importJorf(
                       OR texte_version.nature_et_num IS DISTINCT FROM EXCLUDED.nature_et_num
                       OR texte_version.text_search IS DISTINCT FROM EXCLUDED.text_search
                   `
+
+                  const existingLienByHash = new Map(
+                    (
+                      await db<
+                        {
+                          cible: boolean
+                          cidtexte: string | null
+                          id: string
+                          typelien: JorfTexteVersionLienType
+                        }[]
+                      >`
+                        SELECT cible, cidtexte, id, typelien
+                        FROM texte_version_lien
+                        WHERE texte_version_id = ${texteVersion.META.META_COMMUN.ID}
+                      `
+                    ).map((lien) => [objectHash(lien), lien]),
+                  )
+                  for (const lien of texteVersion.META.META_SPEC
+                    .META_TEXTE_VERSION.LIENS?.LIEN ?? []) {
+                    if (lien["@id"] === undefined) {
+                      continue
+                    }
+                    await db`
+                      INSERT INTO texte_version_lien (
+                        texte_version_id,
+                        cible,
+                        cidtexte,
+                        id,
+                        typelien
+                      ) VALUES (
+                        ${texteVersion.META.META_COMMUN.ID},
+                        ${lien["@sens"] === "cible"},
+                        ${lien["@cidtexte"] ?? null},
+                        ${lien["@id"]},
+                        ${lien["@typelien"]}
+                      )
+                      ON CONFLICT
+                      DO NOTHING
+                    `
+                    existingLienByHash.delete(
+                      objectHash({
+                        cible: lien["@sens"] === "cible",
+                        cidtexte: lien["@cidtexte"] ?? null,
+                        id: lien["@id"],
+                        typelien: lien["@typelien"],
+                      }),
+                    )
+                  }
+                  for (const {
+                    cible,
+                    cidtexte,
+                    id: linkedId,
+                    typelien,
+                  } of existingLienByHash.values()) {
+                    await db`
+                      DELETE FROM texte_version_lien
+                      WHERE
+                        texte_version_id = ${texteVersion.META.META_COMMUN.ID}
+                        AND cible = ${cible}
+                        AND cidtexte = ${cidtexte}
+                        AND id = ${linkedId}
+                        AND typelien = ${typelien}
+                    `
+                  }
                 }
                 texteVersionRemainingIds.delete(
                   texteVersion.META.META_COMMUN.ID,

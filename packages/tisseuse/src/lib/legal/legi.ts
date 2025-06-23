@@ -249,7 +249,7 @@ export interface LegiArticleVersion {
     /** Numéro de l'article lié. Provient de l'attribut `num`. */
     "@num"?: string
     /** Origine de l'article lié (ex: "LEGI"). Provient de l'attribut `origine`. */
-    "@origine": LegiArticleOrigine
+    "@origine": LegiArticleLienArticleOrigine
   }
 }
 
@@ -896,7 +896,7 @@ export const allLegiArticleLienTypes = [
 
 export const allLegiArticleNatures = ["Article"] as const
 
-export const allLegiArticleOrigines = ["JORF", "LEGI"] as const
+export const allLegiArticleOrigines = ["LEGI"] as const
 
 export const allLegiArticleTexteNatures = [
   "ACCORD_FONCTION_PUBLIQUE", // 9,

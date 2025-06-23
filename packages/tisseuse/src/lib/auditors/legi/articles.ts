@@ -13,6 +13,7 @@ import {
 
 import {
   allLegiArticleEtats,
+  allLegiArticleLienArticleOrigines,
   allLegiArticleLienNatures,
   allLegiArticleLienTypes,
   allLegiArticleNatures,
@@ -320,7 +321,7 @@ function auditLienArt(audit: Audit, dataUnknown: unknown): [unknown, unknown] {
     remainingKeys,
     auditTrimString,
     auditEmptyToNull,
-    auditOptions(allLegiArticleOrigines),
+    auditOptions(allLegiArticleLienArticleOrigines),
     auditRequire,
   )
 

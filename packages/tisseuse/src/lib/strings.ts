@@ -53,6 +53,7 @@ export async function cleanHtmlFragment(
               .trim(),
             {
               parser: "html",
+              printWidth: 6666,
             },
           )
         )

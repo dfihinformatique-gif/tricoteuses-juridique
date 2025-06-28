@@ -25,7 +25,10 @@ export function extractTypeFromId(id: string): IdType {
   return idMatch[2] as IdType
 }
 
-export function gitPathFromId(id: string, extension: ".json" | ".md"): string {
+export function gitPathFromId(
+  id: string,
+  extension: ".json" | ".md" | ".xml",
+): string {
   const idMatch = id.match(idRegExp)
   if (idMatch === null) {
     throw new Error(`Unknown ID format: ${id}`)

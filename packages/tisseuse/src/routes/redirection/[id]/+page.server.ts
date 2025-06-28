@@ -93,7 +93,7 @@ export const load: PageLoad = async ({ params, url }) => {
       redirect(
         303,
         new URL(
-          `dila/dole/src/branch/main/global/${gitPathFromId(params.id, ".json")}`,
+          `dila/dole/src/branch/main/global/${gitPathFromId(params.id, ".xml")}`,
           forgejo.url,
         ),
       )

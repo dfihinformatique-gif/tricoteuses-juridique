@@ -7,7 +7,7 @@ export const idsOrigines = ["CNIL", "DOLE", "JORF", "KALI", "LEGI"] as const
 export const idsTypes = ["ARTI", "CONT", "SCTA", "TEXT"] as const
 
 export const idRegExp =
-  /^(CNIL|DOLE|JORF|KALI|LEGI)(ARTI|CONT|SCTA|TEXT)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/
+  /^(CNIL|JORF|KALI|LEGI)(ARTI|CONT|DOLE|SCTA|TEXT)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/
 
 export function extractOrigineFromId(id: string): IdOrigine {
   const idMatch = id.match(idRegExp)

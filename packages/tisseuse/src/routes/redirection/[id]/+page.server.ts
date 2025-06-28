@@ -88,6 +88,18 @@ export const load: PageLoad = async ({ params, url }) => {
     )
   }
 
+  if (/^JORFDOLE\d{12}$/.test(params.id)) {
+    if (forgejo !== undefined) {
+      redirect(
+        303,
+        new URL(
+          `dila/dole/src/branch/main/global/${gitPathFromId(params.id, ".json")}`,
+          forgejo.url,
+        ),
+      )
+    }
+  }
+
   for (const targetType of query.vers) {
     switch (targetType) {
       case "git": {

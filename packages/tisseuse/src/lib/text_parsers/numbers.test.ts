@@ -6,7 +6,10 @@ import {
   nombre,
   nombreCardinal,
   nombreOrdinal,
+  nombreRomainCardinal,
+  nombreRomainOrdinal,
   nombreRomainOu0i,
+  romanNumeralFromNumber,
 } from "./numbers.js"
 
 function* generateLatinNumbers(): Generator<[string, number], void> {
@@ -73,58 +76,91 @@ function* generateLatinNumbers(): Generator<[string, number], void> {
   }
 }
 
-describe("nombre", () => {
-  test("1", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombre(context)).toBe(1)
-    expect(context.input).toBe("")
-  })
+function* generateRomanNumbers(): Generator<[string, number], void> {
+  for (let number = 1; number <= 101; number++) {
+    yield [romanNumeralFromNumber(number), number]
+  }
+  yield [romanNumeralFromNumber(200), 200]
+  yield [romanNumeralFromNumber(443), 443]
+  yield [romanNumeralFromNumber(512), 512]
+  yield [romanNumeralFromNumber(768), 768]
+  yield [romanNumeralFromNumber(1001), 1001]
+  yield [romanNumeralFromNumber(2018), 2018]
+  yield [romanNumeralFromNumber(2023), 2023]
+  yield [romanNumeralFromNumber(2222), 2222]
+}
 
-  test("1er", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombre(context)).toBe(1)
-    expect(context.input).toBe("")
-  })
-
-  test("2", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombre(context)).toBe(2)
-    expect(context.input).toBe("")
-  })
-
-  test("2ème", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombre(context)).toBe(2)
-    expect(context.input).toBe("")
-  })
+describe("adverbeMultiplicatif", () => {
+  for (const [latinNumber, number] of generateLatinNumbers()) {
+    test(`${latinNumber} == ${number}`, () => {
+      const context = new TextParserContext(latinNumber)
+      expect(
+        (adverbeMultiplicatif(context) as TextAstAdverbeMultiplicatif).order,
+      ).toBe(number)
+      expect(context.input).toBe("")
+    })
+  }
 })
 
-describe("nombreCardinal", () => {
-  test("1", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombreCardinal(context)).toBe(1)
-    expect(context.input).toBe("")
-  })
-
-  test("2", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombreCardinal(context)).toBe(2)
-    expect(context.input).toBe("")
-  })
+describe("nombre", function () {
+  for (const number of [0, 1, 7, 15, 89, 1001, 2018]) {
+    const cardinalNumber = number.toString()
+    test(cardinalNumber, ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(nombre(context)).toBe(number)
+      expect(context.input).toBe("")
+    })
+  }
 })
 
-describe("nombreOrdinal", () => {
-  test("1er", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombreOrdinal(context)).toBe(1)
-    expect(context.input).toBe("")
-  })
+describe("nombreCardinal", function () {
+  for (const number of [0, 1, 7, 15, 89, 1001, 2018]) {
+    const cardinalNumber = number.toString()
+    test(cardinalNumber, ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(nombreCardinal(context)).toBe(number)
+      expect(context.input).toBe("")
+    })
+  }
+})
 
-  test("2ème", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombreOrdinal(context)).toBe(2)
-    expect(context.input).toBe("")
-  })
+describe("nombreOrdinal", function () {
+  for (const number of [0, 1, 7, 15, 89, 1001, 2018]) {
+    const ordinalNumber =
+      number.toString() +
+      (number === 1 ? "er" : Math.random() >= 0.5 ? "ème" : "e")
+    test(ordinalNumber, ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(nombreOrdinal(context)).toBe(number)
+      expect(context.input).toBe("")
+    })
+  }
+})
+
+describe("nombreRomainCardinal", () => {
+  for (const [romanNumber, number] of generateRomanNumbers()) {
+    test(`${romanNumber} == ${number}`, () => {
+      const context = new TextParserContext(romanNumber)
+      expect(nombreRomainCardinal(context) as TextAstAdverbeMultiplicatif).toBe(
+        number,
+      )
+      expect(context.input).toBe("")
+    })
+  }
+})
+
+describe("nombreRomainOrdinal", () => {
+  for (const [romanNumber, number] of generateRomanNumbers()) {
+    const ordinalRomanNumber =
+      romanNumber + (number === 1 ? "er" : Math.random() >= 0.5 ? "ème" : "e")
+    test(`${ordinalRomanNumber} == ${number}`, () => {
+      const context = new TextParserContext(ordinalRomanNumber)
+      expect(nombreRomainOrdinal(context) as TextAstAdverbeMultiplicatif).toBe(
+        number,
+      )
+      expect(context.input).toBe("")
+    })
+  }
 })
 
 describe("nombreRomainOu0i", () => {
@@ -133,31 +169,21 @@ describe("nombreRomainOu0i", () => {
     expect(nombreRomainOu0i(context)).toBe(0)
     expect(context.input).toBe("")
   })
-
-  test("I", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombreRomainOu0i(context)).toBe(1)
-    expect(context.input).toBe("")
-  })
-  test("Ier", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombreRomainOu0i(context)).toBe(1)
-    expect(context.input).toBe("")
-  })
-  test("CXIème", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    expect(nombreRomainOu0i(context)).toBe(111)
-    expect(context.input).toBe("")
-  })
-})
-
-describe("adverbeMultiplicatif", () => {
-  for (const [latinNumber, number] of generateLatinNumbers()) {
-    test(`${latinNumber} === ${number}`, () => {
-      const context = new TextParserContext(latinNumber)
-      expect(
-        (adverbeMultiplicatif(context) as TextAstAdverbeMultiplicatif).order,
-      ).toBe(number)
+  for (const [romanNumber, number] of generateRomanNumbers()) {
+    test(`${romanNumber} == ${number}`, () => {
+      const context = new TextParserContext(romanNumber)
+      expect(nombreRomainOu0i(context) as TextAstAdverbeMultiplicatif).toBe(
+        number,
+      )
+      expect(context.input).toBe("")
+    })
+    const ordinalRomanNumber =
+      romanNumber + (number === 1 ? "er" : Math.random() >= 0.5 ? "ème" : "e")
+    test(`${ordinalRomanNumber} == ${number}`, () => {
+      const context = new TextParserContext(ordinalRomanNumber)
+      expect(nombreRomainOu0i(context) as TextAstAdverbeMultiplicatif).toBe(
+        number,
+      )
       expect(context.input).toBe("")
     })
   }

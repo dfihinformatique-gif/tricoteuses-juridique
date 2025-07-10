@@ -79,9 +79,12 @@ export const chain =
     } else if (value !== undefined) {
       result = value
     }
+    if (result === undefined) {
+      result = context.results
+    }
 
     // Success ⇒ Pull context, but keep current input & usedInputs, and push result.
-    savedResults.push(context.results)
+    savedResults.push(result)
     context.results = savedResults
     savedUsedInputs.push(context.usedInputs)
     context.usedInputs = savedUsedInputs

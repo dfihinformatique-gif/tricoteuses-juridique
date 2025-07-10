@@ -49,10 +49,10 @@ export const separateurEnumeration = alternatives(
  * Note: exclusion must be tested before enumeration (because of ",") and
  * before plage (because of "à").
  */
-export const separateurExclusion = chain(
+export const separateurExclusion = chain([
   virguleOuEspace,
   regExp("à l'exception ", { value: "sauf" }),
-)
+])
 
 export function separateurPlage(
   context: TextParserContext,

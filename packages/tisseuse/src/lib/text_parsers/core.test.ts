@@ -39,13 +39,13 @@ describe("run", () => {
   test("defined variable", () => {
     const context = new TextParserContext("OK")
     expect(
-      chain(
+      chain([
         variable("ok", regExp("OK")),
         run(({ variables }) => {
           const { ok } = variables
           return ok === "OK" ? "ok" : undefined
         }),
-      )(context),
+      ])(context),
     ).toBe("ok")
     expect(context.input).toBe("")
   })
@@ -64,19 +64,19 @@ describe("run", () => {
   test("variable outside chain", () => {
     const context = new TextParserContext("OK")
     expect(
-      chain(
-        chain(
+      chain([
+        chain([
           variable("ok", regExp("OK")),
           run(({ variables }) => {
             const { ok } = variables
             return ok === "OK" ? "ok" : undefined
           }),
-        ),
+        ]),
         run(({ variables }) => {
           const { ok } = variables
           return ok === undefined ? "variable ok is no more defined" : undefined
         }),
-      )(context),
+      ])(context),
     ).toBe("variable ok is no more defined")
     expect(context.input).toBe("")
   })

@@ -3,7 +3,6 @@ import {
   chain,
   optional,
   regExp,
-  synthesize,
   variable,
   type TextAst,
   type TextParserContext,
@@ -12,18 +11,8 @@ import { espace, virgule, virguleOuEspace } from "./typography.js"
 
 export const separateurEnumeration = alternatives(
   chain(
-    espace,
-    variable(
-      "etOu",
-      alternatives(regExp("et", { flags: "i" }), regExp("ou", { flags: "i" })),
-    ),
-    espace,
-    synthesize(({ variables }) => variables.etOu),
-  ),
-  chain(
-    virgule,
-    optional(
-      { default: "" },
+    [
+      espace,
       variable(
         "etOu",
         alternatives(
@@ -32,8 +21,27 @@ export const separateurEnumeration = alternatives(
         ),
       ),
       espace,
-    ),
-    synthesize(({ variables }) => variables.etOu ?? ","),
+    ],
+    { value: ({ variables }) => variables.etOu },
+  ),
+  chain(
+    [
+      virgule,
+      optional(
+        [
+          variable(
+            "etOu",
+            alternatives(
+              regExp("et", { flags: "i" }),
+              regExp("ou", { flags: "i" }),
+            ),
+          ),
+          espace,
+        ],
+        { default: "" },
+      ),
+    ],
+    { value: ({ variables }) => variables.etOu ?? "," },
   ),
 )
 
@@ -43,7 +51,7 @@ export const separateurEnumeration = alternatives(
  */
 export const separateurExclusion = chain(
   virguleOuEspace,
-  regExp("à l'exception ", { result: "sauf" }),
+  regExp("à l'exception ", { value: "sauf" }),
 )
 
 export function separateurPlage(

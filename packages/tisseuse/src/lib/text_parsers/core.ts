@@ -12,8 +12,11 @@ export interface TextAstAdverbeMultiplicatif {
 export type TextParser = (context: TextParserContext) => TextAst | undefined
 
 export class TextParserContext {
+  /**
+   * Used only by `regEpx` parser
+   */
+  match?: RegExpExecArray = undefined
   results: TextAst[] = []
-  synthesis?: TextAst = undefined
   usedInputs: UsedInput[] = []
   variables: Record<string, TextAst> = {}
 
@@ -38,10 +41,13 @@ export const alternatives =
     return undefined
   }
 
-export const block =
+export const chain =
   (
-    { exportVariables }: { exportVariables: boolean },
-    ...sequence: Array<TextParser>
+    sequence: Array<TextParser>,
+    {
+      exportVariables,
+      value,
+    }: { exportVariables?: boolean; value?: TextAst | TextParser } = {},
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
     let result: TextAst | undefined
@@ -50,15 +56,12 @@ export const block =
     const savedInput = context.input
     const savedResults = context.results
     context.results = []
-    // Note: No need to save `context.synthesis`, because it is undefined at this
-    // instant.
     const savedUsedInputs = context.usedInputs
     context.usedInputs = []
     const savedVariables = context.variables
     context.variables = { ...savedVariables }
 
     for (const parser of sequence) {
-      delete context.synthesis
       result = parser(context)
       if (result === undefined) {
         // Abort ⇒ Pull context.
@@ -71,10 +74,15 @@ export const block =
       }
       context.results.push(result)
     }
-    // Success ⇒ Pull context, but keep current input, and push result.
-    savedResults.push(context.synthesis ?? context.results)
+    if (typeof value === "function") {
+      result = value(context)
+    } else if (value !== undefined) {
+      result = value
+    }
+
+    // Success ⇒ Pull context, but keep current input & usedInputs, and push result.
+    savedResults.push(context.results)
     context.results = savedResults
-    delete context.synthesis
     savedUsedInputs.push(context.usedInputs)
     context.usedInputs = savedUsedInputs
     if (!exportVariables) {
@@ -84,29 +92,63 @@ export const block =
     return result
   }
 
-export const chain = (...sequence: Array<TextParser>): TextParser =>
-  block({ exportVariables: false }, ...sequence)
-
 export const optional =
   (
-    { default: defaultResult }: { default: TextAst },
-    ...sequence: TextParser[]
+    parser: TextParser | TextParser[],
+    {
+      default: defaultValue,
+      value,
+    }: {
+      default: TextAst | TextParser
+      value?: TextAst | TextParser
+    },
   ): TextParser =>
-  (context: TextParserContext): TextAst | undefined =>
-    block({ exportVariables: true }, ...sequence)(context) ?? defaultResult
+  (context: TextParserContext): TextAst | undefined => {
+    let result: TextAst | undefined
+    if (Array.isArray(parser)) {
+      result = chain(parser, { exportVariables: true, value })(context)
+    } else {
+      result = parser(context)
+      if (typeof value === "function") {
+        result = value(context)
+      } else if (value !== undefined) {
+        result = value
+      }
+    }
+    return (
+      result ??
+      (typeof defaultValue === "function"
+        ? defaultValue(context)
+        : defaultValue)
+    )
+  }
 
 export const parseText = (
   input: string,
-  ...sequence: Array<TextParser>
-): TextAst | undefined => chain(...sequence)(new TextParserContext(input))
+  parser: TextParser | TextParser[],
+  { value }: { value?: TextAst | TextParser } = {},
+): TextAst | undefined => {
+  const context = new TextParserContext(input)
+  if (Array.isArray(parser)) {
+    return chain(parser, { value })(context)
+  }
+  const result = parser(context)
+  if (value === undefined) {
+    return result
+  }
+  if (typeof value === "function") {
+    return value(context)
+  }
+  return value
+}
 
 export const regExp =
   (
     regExp: string,
     {
       flags,
-      result,
-    }: { flags?: "i" | "iv" | "v" | null; result?: TextAst } = {},
+      value,
+    }: { flags?: "i" | "iv" | "v" | null; value?: TextAst | TextParser } = {},
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
     const match = new RegExp(`^${regExp}`, flags ?? undefined).exec(
@@ -117,7 +159,16 @@ export const regExp =
     }
     context.usedInputs.push(context.input.slice(0, match[0].length))
     context.input = context.input.slice(match[0].length)
-    return result ?? match[0]
+    if (value === undefined) {
+      return match[0]
+    }
+    if (typeof value === "function") {
+      context.match = match
+      const result = value(context)
+      delete context.match
+      return result
+    }
+    return value
   }
 
 /**
@@ -131,20 +182,6 @@ export const run =
   (context: TextParserContext): TextAst | undefined =>
     func(context)
 
-export const synthesize =
-  (func: TextParser): TextParser =>
-  (context: TextParserContext): TextAst | undefined => {
-    const result = func(context)
-    if (result !== undefined) {
-      // When synthesize returns a synthesis, it is considered as the final
-      // result of the chain (except when there are other parsers following
-      // it in the chain). It also clears previous partial results.
-      context.results = []
-      context.synthesis = result
-    }
-    return result
-  }
-
 const textFromUsedInputs = (usedInputs: UsedInput[]): string =>
   usedInputs
     .map((usedInput) =>
@@ -153,9 +190,23 @@ const textFromUsedInputs = (usedInputs: UsedInput[]): string =>
     .join("")
 
 export const variable =
-  (name: string, ...sequence: Array<TextParser>): TextParser =>
+  (
+    name: string,
+    parser: TextParser | TextParser[],
+    { value }: { value?: TextAst | TextParser } = {},
+  ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
-    const result = chain(...sequence)(context)
+    let result: TextAst | undefined
+    if (Array.isArray(parser)) {
+      result = chain(parser, { value })(context)
+    } else {
+      result = parser(context)
+      if (typeof value === "function") {
+        result = value(context)
+      } else if (value !== undefined) {
+        result = value
+      }
+    }
     if (result === undefined) {
       delete context.variables[name]
     } else {

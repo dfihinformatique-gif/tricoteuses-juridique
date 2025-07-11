@@ -3,6 +3,7 @@ export type TextAst =
   | string
   | TextAstAdverbeMultiplicatif
   | TextAstCitation
+  | TextAstCitationContent
   | Array<TextAst>
 
 export interface TextAstAdverbeMultiplicatif {
@@ -11,13 +12,15 @@ export interface TextAstAdverbeMultiplicatif {
 }
 
 export interface TextAstCitation {
-  content: Array<{
-    position: TextPosition
-    text: string
-  }>
+  content: TextAstCitationContent[]
   position: TextPosition
   text: string
   type: "citation"
+}
+
+export interface TextAstCitationContent {
+  position: TextPosition
+  text: string
 }
 
 export type TextParser = (context: TextParserContext) => TextAst | undefined
@@ -75,8 +78,6 @@ export const chain =
     }: { exportVariables?: boolean; value?: TextAst | TextParser } = {},
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
-    let result: TextAst | undefined
-
     // Push context.
     const savedInput = context.input
     const savedLength = context.length
@@ -89,8 +90,8 @@ export const chain =
     context.variables = { ...savedVariables }
 
     for (const parser of sequence) {
-      result = parser(context)
-      if (result === undefined) {
+      const partialResult = parser(context)
+      if (partialResult === undefined) {
         // Abort ⇒ Pull context.
         context.input = savedInput
         context.length = savedLength
@@ -101,7 +102,7 @@ export const chain =
 
         return undefined
       }
-      context.results.push(result)
+      context.results.push(partialResult)
     }
 
     // Success
@@ -109,6 +110,7 @@ export const chain =
     context.length = context.offset - savedOffset
     context.offset -= context.length
 
+    let result: TextAst | undefined
     if (value === undefined) {
       result = context.results
     } else if (typeof value === "function") {
@@ -241,6 +243,100 @@ export const regExp =
     savedUsedInputs.push(context.usedInputs[0])
     context.usedInputs = savedUsedInputs
     context.input = context.input.slice(match[0].length)
+
+    return result
+  }
+
+export const repeat =
+  (
+    parser: TextParser,
+    {
+      max,
+      min,
+      separator,
+      value,
+    }: {
+      max?: number
+      min?: number
+      separator?: TextParser
+      value?: TextAst | TextParser
+    } = {},
+  ): TextParser =>
+  (context: TextParserContext): TextAst | undefined => {
+    // Push context.
+    const savedInput = context.input
+    const savedLength = context.length
+    const savedOffset = context.offset
+    const savedResults = context.results
+    context.results = []
+    const savedUsedInputs = context.usedInputs
+    context.usedInputs = []
+    const savedVariables = context.variables
+    context.variables = { ...savedVariables }
+
+    let i = 0
+    for (; max === undefined ? true : i < max; i++) {
+      if (i === 0 || separator === undefined) {
+        const iterationResult = parser(context)
+        if (iterationResult === undefined) {
+          break
+        }
+        context.results.push(iterationResult)
+      } else {
+        const iterationResult = chain([separator, parser])(context)
+        if (iterationResult === undefined) {
+          break
+        }
+        // No need to do context.results.push(iterationResult), because
+        // it is already done by `chain`.`
+      }
+    }
+    if (min !== undefined && i < min) {
+      // Abort ⇒ Pull context.
+      context.input = savedInput
+      context.length = savedLength
+      context.offset = savedOffset
+      context.results = savedResults
+      context.usedInputs = savedUsedInputs
+      context.variables = savedVariables
+
+      return undefined
+    }
+
+    // Success
+
+    context.length = context.offset - savedOffset
+    context.offset -= context.length
+
+    let result: TextAst | undefined
+    if (value === undefined) {
+      result = context.results
+    } else if (typeof value === "function") {
+      const valueResult = value(context)
+      if (valueResult === undefined) {
+        // Abort ⇒ Pull context.
+        context.input = savedInput
+        context.length = savedLength
+        context.offset = savedOffset
+        context.results = savedResults
+        context.usedInputs = savedUsedInputs
+        context.variables = savedVariables
+
+        return undefined
+      }
+      result = valueResult
+    } else {
+      result = value
+    }
+
+    context.offset += context.length
+    context.length = 0
+
+    // Pull context, but keep current input & usedInputs, and push result.
+    savedResults.push(result!)
+    context.results = savedResults
+    savedUsedInputs.push(context.usedInputs)
+    context.usedInputs = savedUsedInputs
 
     return result
   }

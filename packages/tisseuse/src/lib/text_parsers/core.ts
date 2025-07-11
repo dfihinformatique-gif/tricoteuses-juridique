@@ -1,4 +1,5 @@
 export type TextAst =
+  | boolean
   | number
   | string
   | TextAstAdverbeMultiplicatif

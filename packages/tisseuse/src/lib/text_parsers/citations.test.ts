@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest"
 import { TextParserContext } from "./core.js"
 import { citation, citationLigne, citationSimple } from "./citations.js"
 
-describe("citation", function () {
+describe("citation", () => {
   test("« l'article 1er du décret du 2 octobre 2009 »", ({ task }) => {
     const context = new TextParserContext(task.name)
     expect(citation(context)).toStrictEqual({
@@ -143,7 +143,7 @@ describe("citation", function () {
   })
 })
 
-describe("citationLigne", function () {
+describe("citationLigne", () => {
   test("« l'article 1er du décret du 2 octobre 2009 »\n", ({ task }) => {
     const context = new TextParserContext(task.name)
     expect(citationLigne(context)).toStrictEqual({
@@ -181,7 +181,7 @@ describe("citationLigne", function () {
   })
 })
 
-describe("citationSimple", function () {
+describe("citationSimple", () => {
   test("« l'article 1er du décret du 2 octobre 2009 »", ({ task }) => {
     const context = new TextParserContext(task.name)
     expect(citationSimple(context)).toStrictEqual({

@@ -4,6 +4,7 @@ export type TextAst =
   | TextAstAdverbeMultiplicatif
   | TextAstCitation
   | TextAstCitationContent
+  | TextAstLocalisationRelative
   | Array<TextAst>
 
 export interface TextAstAdverbeMultiplicatif {
@@ -22,6 +23,10 @@ export interface TextAstCitationContent {
   position: TextPosition
   text: string
 }
+
+export type TextAstLocalisationRelative =
+  | { relative: number | "+∞" }
+  | { absolute: number }
 
 export type TextParser = (context: TextParserContext) => TextAst | undefined
 

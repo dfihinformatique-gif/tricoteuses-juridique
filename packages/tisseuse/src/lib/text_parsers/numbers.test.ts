@@ -102,7 +102,7 @@ describe("adverbeMultiplicatif", () => {
   }
 })
 
-describe("nombre", function () {
+describe("nombre", () => {
   for (const number of [0, 1, 7, 15, 89, 1001, 2018]) {
     const cardinalNumber = number.toString()
     test(cardinalNumber, ({ task }) => {
@@ -113,7 +113,7 @@ describe("nombre", function () {
   }
 })
 
-describe("nombreCardinal", function () {
+describe("nombreCardinal", () => {
   for (const number of [0, 1, 7, 15, 89, 1001, 2018]) {
     const cardinalNumber = number.toString()
     test(cardinalNumber, ({ task }) => {
@@ -124,7 +124,7 @@ describe("nombreCardinal", function () {
   }
 })
 
-describe("nombreOrdinal", function () {
+describe("nombreOrdinal", () => {
   for (const number of [0, 1, 7, 15, 89, 1001, 2018]) {
     const ordinalNumber =
       number.toString() +

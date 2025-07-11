@@ -40,7 +40,7 @@ function* generateDates(): Generator<[string, string]> {
   }
 }
 
-describe("date", function () {
+describe("date", () => {
   for (const [frenchDate, isoDate] of generateDates()) {
     test(frenchDate, ({ task }) => {
       const context = new TextParserContext(task.name)
@@ -50,7 +50,7 @@ describe("date", function () {
   }
 })
 
-describe("duDate", function () {
+describe("duDate", () => {
   for (const [frenchDate, isoDate] of generateDates()) {
     const duFrenchDate = "du " + frenchDate
     test(duFrenchDate, ({ task }) => {

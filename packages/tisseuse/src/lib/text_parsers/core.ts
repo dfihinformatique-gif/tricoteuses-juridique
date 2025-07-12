@@ -151,7 +151,6 @@ export const chain =
     context.length = 0
 
     // Pull context, but keep current input & usedInputs, and push result.
-    savedResults.push(result!)
     context.results = savedResults
     savedUsedInputs.push(context.usedInputs)
     context.usedInputs = savedUsedInputs
@@ -292,20 +291,13 @@ export const repeat =
 
     let i = 0
     for (; max === undefined ? true : i < max; i++) {
-      if (i === 0 || separator === undefined) {
-        const iterationResult = parser(context)
-        if (iterationResult === undefined) {
-          break
-        }
-        context.results.push(iterationResult)
-      } else {
-        const iterationResult = chain([separator, parser])(context)
-        if (iterationResult === undefined) {
-          break
-        }
-        // No need to do context.results.push(iterationResult), because
-        // it is already done by `chain`.`
+      const iterationResult = (
+        i === 0 || separator === undefined ? parser : chain([separator, parser])
+      )(context)
+      if (iterationResult === undefined) {
+        break
       }
+      context.results.push(iterationResult)
     }
     if (min !== undefined && i < min) {
       // Abort ⇒ Pull context.
@@ -349,7 +341,6 @@ export const repeat =
     context.length = 0
 
     // Pull context, but keep current input & usedInputs, and push result.
-    savedResults.push(result!)
     context.results = savedResults
     savedUsedInputs.push(context.usedInputs)
     context.usedInputs = savedUsedInputs

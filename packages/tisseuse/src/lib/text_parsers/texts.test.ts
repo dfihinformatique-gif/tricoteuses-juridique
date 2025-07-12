@@ -1,0 +1,336 @@
+import { describe, expect, test } from "vitest"
+
+import { TextParserContext } from "./core.js"
+import {
+  identificationTexteEuropeen,
+  identificationTexteFrancais,
+  numeroTexteEuropeen,
+  numeroTexteFrancais,
+  texte,
+  texteEuropeen,
+  texteFrancais,
+  texteInternational,
+} from "./texts.js"
+
+describe("Textes français", () => {
+  describe("identificationTexteFrancais", () => {
+    test("n° 2001-692", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(identificationTexteFrancais(context)).toStrictEqual({
+        id: "2001-692",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("no 2001-692 du 1er août 2001", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(identificationTexteFrancais(context)).toStrictEqual({
+        id: "2001-692",
+        lawDate: "2001-08-01",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("du 30 février 1712", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(identificationTexteFrancais(context)).toStrictEqual({
+        lawDate: "1712-02-30",
+      })
+      expect(context.input).toBe("")
+    })
+  })
+
+  describe("numeroTexteFrancais", () => {
+    test("n° 78-17", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(numeroTexteFrancais(context)).toBe("78-17")
+      expect(context.input).toBe("")
+    })
+  })
+
+  describe("texteFrancais", () => {
+    test("arrêté du 31 décembre 1856", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        lawDate: "1856-12-31",
+        lawType: "arrêté",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("Constitution", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        id: "Constitution",
+        lawType: "constitution",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("Constitution du 4 octobre 1958", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        id: "Constitution",
+        lawDate: "1958-10-04",
+        lawType: "constitution",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        id: "2001-692",
+        lawDate: "2003-09-05",
+        lawType: "loi organique",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+  })
+
+  // matches(
+  //   "nom_code",
+  //   "code général des impôts, annexe 2",
+  //   "Code général des impôts, annexe II",
+  // );
+  // matches(
+  //   "nom_code",
+  //   "code général des impôts annexe III",
+  //   "Code général des impôts, annexe III",
+  // );
+  // matches("nom_code", "code général des  impôts", "Code général des impôts");
+  // matches(
+  //   "nom_code",
+  //   "Livre  Des Procédures  Fiscales",
+  //   "Livre des procédures fiscales",
+  // );
+  // matches("texte_francais", "code forestier de Mayotte", {
+  //   type: "law",
+  //   lawType: "code",
+  //   id: "Code forestier de Mayotte",
+  // })
+})
+
+describe("Textes européens et internationaux", () => {
+  describe("identificationTexteEuropeen", () => {
+    test("2001/73/CEE", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(identificationTexteEuropeen(context)).toStrictEqual({
+        id: "2001/73/CEE",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("no 2001/73/CE du 1er décembre 2001", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(identificationTexteEuropeen(context)).toStrictEqual({
+        id: "2001/73/CE",
+        lawDate: "2001-12-01",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("du 30 février 1712", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(identificationTexteEuropeen(context)).toStrictEqual({
+        lawDate: "1712-02-30",
+      })
+      expect(context.input).toBe("")
+    })
+  })
+
+  describe("numeroTexteEuropeen", () => {
+    test("n° 2001/73", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(numeroTexteEuropeen(context)).toBe("2001/73")
+      expect(context.input).toBe("")
+    })
+
+    test("2001/73/ CE", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(numeroTexteEuropeen(context)).toBe("2001/73/CE")
+      expect(context.input).toBe("")
+    })
+
+    test("2001/73 /CEE", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(numeroTexteEuropeen(context)).toBe("2001/73/CEE")
+      expect(context.input).toBe("")
+    })
+  })
+
+  describe("texteEuropeen", () => {
+    test("directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteEuropeen(context)).toStrictEqual({
+        id: "2001/73/CEE",
+        lawDate: "2003-09-05",
+        lawType: "directive",
+        legislation: "UE",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("règlement n° 2001/73 du 10 mars 2007", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteEuropeen(context)).toStrictEqual({
+        id: "2001/73",
+        lawDate: "2007-03-10",
+        lawType: "règlement",
+        legislation: "UE",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("règlement du 10 mars 2007", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteEuropeen(context)).toStrictEqual({
+        lawDate: "2007-03-10",
+        lawType: "règlement",
+        legislation: "UE",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+  })
+
+  describe("texteInternational", () => {
+    test("convention", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteInternational(context)).toStrictEqual({
+        lawType: "convention",
+        legislation: "international",
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+  })
+})
+
+describe("Règle générale", () => {
+  describe("texte", () => {
+    test("directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        id: "2001/73/CEE",
+        lawDate: "2003-09-05",
+        lawType: "directive",
+        legislation: "UE",
+        position: { start: 0, stop: 46 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("dite même directive", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        lawType: "directive",
+        legislation: "UE",
+        localization: { relative: 0 },
+        ofTheSaid: true,
+        position: { start: 0, stop: 19 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("dite même directive (UE) 2001/73/CEE du 5 septembre 2003", ({
+      task,
+    }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        id: "2001/73/CEE",
+        lawDate: "2003-09-05",
+        lawType: "directive",
+        legislation: "UE",
+        localization: { relative: 0 },
+        ofTheSaid: true,
+        position: { start: 0, stop: 56 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("dite même loi organique", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        lawType: "loi organique",
+        localization: { relative: 0 },
+        ofTheSaid: true,
+        position: { start: 0, stop: 23 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("dite même loi organique", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        lawType: "loi organique",
+        localization: { relative: 0 },
+        ofTheSaid: true,
+        position: { start: 0, stop: 23 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("dite même loi organique n° 2001-692 du 5 septembre 2003", ({
+      task,
+    }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        id: "2001-692",
+        lawDate: "2003-09-05",
+        lawType: "loi organique",
+        localization: { relative: 0 },
+        ofTheSaid: true,
+        position: { start: 0, stop: 55 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("même loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        id: "2001-692",
+        lawDate: "2003-09-05",
+        lawType: "loi organique",
+        localization: { relative: 0 },
+        position: { start: 0, stop: 50 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+
+    test("même directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texte(context)).toStrictEqual({
+        id: "2001/73/CEE",
+        lawDate: "2003-09-05",
+        lawType: "directive",
+        legislation: "UE",
+        localization: { relative: 0 },
+        position: { start: 0, stop: 51 },
+        text: task.name,
+        type: "law",
+      })
+      expect(context.input).toBe("")
+    })
+  })
+})

@@ -1,3 +1,11 @@
+export type EuropeanLawType = (typeof europeanLawTypes)[number]
+
+export type FrenchLawType = (typeof frenchLawTypes)[number]
+
+export type InternationalLawType = (typeof internationalLawTypes)[number]
+
+export type LawType = (typeof lawTypes)[number]
+
 export type TextAst =
   | boolean
   | number
@@ -5,8 +13,11 @@ export type TextAst =
   | TestAstAction
   | TextAstAdverbeMultiplicatif
   | TextAstCitation
-  | TextAstCitationContent
-  | TextAstLocalisationRelative
+  | TextAstLaw
+  | (TextAstLaw & TextAstPositionAndText)
+  | TextAstLawIdentification
+  | TextAstLocalisation
+  | TextAstPositionAndText
   | Array<TextAst>
 
 export interface TestAstAction {
@@ -23,21 +34,34 @@ export interface TextAstAdverbeMultiplicatif {
   order: number
 }
 
-export interface TextAstCitation {
-  content: TextAstCitationContent[]
-  position: TextPosition
-  text: string
+export type TextAstCitation = {
+  content: TextAstPositionAndText[]
   type: "citation"
+} & TextAstPositionAndText
+
+export interface TextAstLaw {
+  id?: string
+  lawDate?: string
+  lawType: LawType
+  legislation?: "international" | "UE"
+  localization?: TextAstLocalisation
+  ofTheSaid?: boolean
+  type: "law"
 }
 
-export interface TextAstCitationContent {
+export interface TextAstLawIdentification {
+  id?: string
+  lawDate?: string
+}
+
+export type TextAstLocalisation =
+  | { absolute: number }
+  | { relative: number | "+∞" }
+
+export interface TextAstPositionAndText {
   position: TextPosition
   text: string
 }
-
-export type TextAstLocalisationRelative =
-  | { relative: number | "+∞" }
-  | { absolute: number }
 
 export type TextParser = (context: TextParserContext) => TextAst | undefined
 
@@ -72,6 +96,29 @@ export interface TextPosition {
 }
 
 type UsedInput = string | Array<UsedInput>
+
+export const europeanLawTypes = ["directive", "règlement"] as const
+
+export const frenchLawTypes = [
+  "arrêté",
+  "circulaire",
+  "code",
+  "constitution",
+  "décret",
+  "décret-loi",
+  "loi",
+  "loi constitutionnelle",
+  "loi organique",
+  "ordonnance",
+] as const
+
+export const internationalLawTypes = ["convention"] as const
+
+export const lawTypes = [
+  ...europeanLawTypes,
+  ...frenchLawTypes,
+  ...internationalLawTypes,
+] as const
 
 export const alternatives =
   (...alternatives: Array<TextParser>): TextParser =>

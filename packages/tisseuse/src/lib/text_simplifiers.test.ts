@@ -7,7 +7,7 @@ import {
   replacePatterns,
   simplifyText,
   type ConversionTaskLeaf,
-} from "./texts_simplifiers.js"
+} from "./text_simplifiers.js"
 
 describe("convertHtmlElementsToText", () => {
   describe("convert br to text", () => {

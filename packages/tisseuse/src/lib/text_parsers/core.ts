@@ -2,11 +2,21 @@ export type TextAst =
   | boolean
   | number
   | string
+  | TestAstAction
   | TextAstAdverbeMultiplicatif
   | TextAstCitation
   | TextAstCitationContent
   | TextAstLocalisationRelative
   | Array<TextAst>
+
+export interface TestAstAction {
+  action:
+    | "CREATION"
+    | "CREATION_OU_MODIFICATION"
+    | "MODIFICATION"
+    | "SUPPRESSION"
+  actionInContent?: boolean
+}
 
 export interface TextAstAdverbeMultiplicatif {
   id: string

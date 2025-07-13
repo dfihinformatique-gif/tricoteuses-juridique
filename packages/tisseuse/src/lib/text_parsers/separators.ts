@@ -1,12 +1,12 @@
+import { type TextAst } from "./ast.js"
 import {
   alternatives,
   chain,
   optional,
   regExp,
+  TextParserContext,
   variable,
-  type TextAst,
-  type TextParserContext,
-} from "./core.js"
+} from "./parsers.js"
 import { espace, virgule, virguleOuEspace } from "./typography.js"
 
 export const separateurEnumeration = alternatives(
@@ -22,7 +22,7 @@ export const separateurEnumeration = alternatives(
       ),
       espace,
     ],
-    { value: ({ variables }) => variables.etOu },
+    { value: (_, { variables }) => variables.etOu },
   ),
   chain(
     [
@@ -41,7 +41,7 @@ export const separateurEnumeration = alternatives(
         { default: "" },
       ),
     ],
-    { value: ({ variables }) => variables.etOu ?? "," },
+    { value: (_, { variables }) => variables.etOu ?? "," },
   ),
 )
 

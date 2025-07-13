@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest"
 
-import { TextParserContext, type TextAstCitation } from "./core.js"
+import { type TextAstCitation } from "./ast.js"
 import { citation, citationLigne, citationSimple } from "./citations.js"
+import { TextParserContext } from "./parsers.js"
 
 describe("citation", () => {
   test("« l'article 1er du décret du 2 octobre 2009 »", ({ task }) => {

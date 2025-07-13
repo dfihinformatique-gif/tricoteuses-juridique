@@ -1,5 +1,5 @@
 import { citation } from "./citations.js"
-import { alternatives, chain, optional, regExp, repeat } from "./core.js"
+import { alternatives, chain, optional, regExp, repeat } from "./parsers.js"
 import { espace, virguleOuEspace } from "./typography.js"
 
 export const action = alternatives(

@@ -1,4 +1,4 @@
-import { regExp } from "./core.js"
+import { regExp } from "./parsers.js"
 
 export const apostrophe = regExp("' ?", { value: "'" })
 

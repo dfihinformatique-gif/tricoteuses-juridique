@@ -1,10 +1,7 @@
 import { describe, expect, test } from "vitest"
 
-import {
-  TextParserContext,
-  type TextAstLaw,
-  type TextAstPosition,
-} from "./core.js"
+import { type TextAstLaw, type TextAstPosition } from "./ast.js"
+import { TextParserContext } from "./parsers.js"
 import {
   identificationTexteEuropeen,
   identificationTexteFrancais,

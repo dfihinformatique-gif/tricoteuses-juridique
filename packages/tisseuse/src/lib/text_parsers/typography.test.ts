@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { TextParserContext } from "./core.js"
+import { TextParserContext } from "./parsers.js"
 import {
   lettreAsciiMinuscule,
   nonLettre,

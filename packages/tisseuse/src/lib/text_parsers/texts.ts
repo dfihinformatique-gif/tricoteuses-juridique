@@ -1,15 +1,12 @@
 import {
-  alternatives,
-  chain,
-  optional,
-  regExp,
   type EuropeanLawType,
   type FrenchLawType,
   type TextAstLaw,
   type TextAstLawIdentification,
-} from "./core.js"
+} from "./ast.js"
 import { duDate, espaceDuDate } from "./dates.js"
 import { nombreCardinal } from "./numbers.js"
+import { alternatives, chain, convert, optional, regExp } from "./parsers.js"
 import { ditSingulier } from "./prepositions.js"
 import { espacePrecite, relatifSingulierPrepose } from "./relative_locations.js"
 import { espace, numero } from "./typography.js"
@@ -25,18 +22,18 @@ export const identifiantTexteFrancais = regExp(String.raw`\d+-\d+`)
  * Symbole « n° » + identifiant d’un texte français, par exemple « n° 2001-692 »
  */
 export const numeroTexteFrancais = chain([numero, identifiantTexteFrancais], {
-  value: ({ results }) => results[1],
+  value: (results) => results[1],
 })
 
 export const identificationTexteFrancais = alternatives(
   chain([numeroTexteFrancais, optional(espaceDuDate, { default: "" })], {
-    value: ({ results }) =>
+    value: (results) =>
       results[1]
         ? { id: results[0] as string, lawDate: results[1] as string }
         : { id: results[0] as string },
   }),
-  chain([duDate], {
-    value: ({ results }) => ({ lawDate: results[0] as string }),
+  convert(duDate, {
+    value: (result) => ({ lawDate: result as string }),
   }),
 )
 
@@ -73,7 +70,7 @@ export const natureTexteFrancais = chain(
     ),
   ],
   {
-    value: ({ results }) => ({
+    value: (results) => ({
       lawType: results[0] as FrenchLawType,
       type: "law",
     }),
@@ -95,7 +92,7 @@ export const texteFrancais = alternatives(
       optional(espacePrecite, { default: "" }),
     ],
     {
-      value: ({ results }) => ({
+      value: (results) => ({
         id: "Constitution",
         ...(results[1] ? { lawDate: results[1] as string } : {}),
         lawType: "constitution",
@@ -111,7 +108,7 @@ export const texteFrancais = alternatives(
       optional(espacePrecite, { default: "" }),
     ],
     {
-      value: ({ results }) => ({
+      value: (results) => ({
         ...(results[2] as TextAstLawIdentification),
         lawType: results[0] as FrenchLawType,
         type: "law",
@@ -130,12 +127,12 @@ export const identifiantTexteEuropeen = chain(
     nombreCardinal,
     regExp("/"),
     nombreCardinal,
-    optional(regExp(" ?/ ?(CEE?)", { value: ({ match }) => match![1] }), {
+    optional(regExp(" ?/ ?(CEE?)", { value: (match) => match[1] }), {
       default: "",
     }),
   ],
   {
-    value: ({ results }) =>
+    value: (results) =>
       `${results[0]}/${results[2]}${results[3] ? `/${results[3]}` : ""}`,
   },
 )
@@ -145,7 +142,7 @@ export const identifiantTexteEuropeen = chain(
  */
 export const numeroTexteEuropeen = chain(
   [optional(numero, { default: "" }), identifiantTexteEuropeen],
-  { value: ({ results }) => results[1] },
+  { value: (results) => results[1] },
 )
 
 /**
@@ -153,13 +150,13 @@ export const numeroTexteEuropeen = chain(
  */
 export const identificationTexteEuropeen = alternatives(
   chain([numeroTexteEuropeen, optional(espaceDuDate, { default: "" })], {
-    value: ({ results }) =>
+    value: (results) =>
       results[1]
         ? { id: results[0] as string, lawDate: results[1] as string }
         : { id: results[0] as string },
   }),
-  chain([duDate], {
-    value: ({ results }) => ({ lawDate: results[0] as string }),
+  convert(duDate, {
+    value: (result) => ({ lawDate: result as string }),
   }),
 )
 
@@ -175,7 +172,7 @@ export const natureTexteEuropeen = chain(
     optional(regExp(String.raw` \(UE\)`, { flags: "i" }), { default: "" }),
   ],
   {
-    value: ({ results }) => ({
+    value: (results) => ({
       lawType: results[0] as EuropeanLawType,
       legislation: "UE",
       type: "law",
@@ -189,7 +186,7 @@ export const natureTexteEuropeen = chain(
 export const texteEuropeen = chain(
   [natureTexteEuropeen, espace, identificationTexteEuropeen],
   {
-    value: ({ results }) => ({
+    value: (results) => ({
       ...(results[2] as TextAstLawIdentification),
       ...(results[0] as TextAstLaw),
     }),
@@ -226,7 +223,7 @@ export const texte = chain(
           ),
         ],
         {
-          value: ({ results }) => ({
+          value: (results) => ({
             ...(results[2] as TextAstLaw),
             ...(results[0] === undefined ? {} : { localization: results[0] }),
           }),
@@ -238,13 +235,10 @@ export const texte = chain(
     ),
   ],
   {
-    value: (context) => {
-      const { results } = context
-      return {
-        ...(results[1] as TextAstLaw),
-        ...(results[0] ? { ofTheSaid: true } : {}),
-        position: context.position(),
-      }
-    },
+    value: (results, context) => ({
+      ...(results[1] as TextAstLaw),
+      ...(results[0] ? { ofTheSaid: true } : {}),
+      position: context.position(),
+    }),
   },
 )

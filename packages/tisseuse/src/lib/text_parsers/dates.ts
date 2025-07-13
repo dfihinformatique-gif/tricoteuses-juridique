@@ -1,12 +1,12 @@
-import { alternatives, chain, regExp, variable } from "./core.js"
+import { alternatives, chain, regExp, variable } from "./parsers.js"
 import { espace } from "./typography.js"
 
 export const annee = regExp(String.raw`[12]\d{3}`)
 
 export const jour = alternatives(
   regExp("1er", { flags: "i", value: "01" }),
-  regExp(String.raw`([12]\d|3[01])`, { value: ({ match }) => match![0] }),
-  regExp(String.raw`\d`, { value: ({ match }) => "0" + match![0] }),
+  regExp(String.raw`([12]\d|3[01])`, { value: (match) => match[0] }),
+  regExp(String.raw`\d`, { value: (match) => "0" + match[0] }),
 )
 
 export const mois = alternatives(
@@ -33,15 +33,15 @@ export const date = chain(
     variable("annee", annee),
   ],
   {
-    value: ({ variables }) =>
+    value: (_, { variables }) =>
       `${variables.annee}-${variables.mois}-${variables.jour}`,
   },
 )
 
 export const duDate = chain([regExp("du ", { flags: "i" }), date], {
-  value: ({ results }) => results[1],
+  value: (results) => results[1],
 })
 
 export const espaceDuDate = chain([espace, duDate], {
-  value: ({ results }) => results[1],
+  value: (results) => results[1],
 })

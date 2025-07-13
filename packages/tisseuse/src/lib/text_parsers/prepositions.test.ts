@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { optional, TextParserContext } from "./core.js"
+import { optional, TextParserContext } from "./parsers.js"
 import {
   ditPluriel,
   ditSingulier,

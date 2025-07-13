@@ -1,13 +1,13 @@
 import { describe, expect, test } from "vitest"
 
-import { chain, regExp, TextParserContext, variable } from "./core.js"
+import { chain, regExp, TextParserContext, variable } from "./parsers.js"
 
 describe("variable", () => {
   test("defined variable", () => {
     const context = new TextParserContext("OK")
     expect(
       chain([variable("ok", regExp("OK"))], {
-        value: ({ variables }) => {
+        value: (_, { variables }) => {
           const { ok } = variables
           return ok === "OK" ? "ok" : undefined
         },
@@ -22,14 +22,14 @@ describe("variable", () => {
       chain(
         [
           chain([variable("ok", regExp("OK"))], {
-            value: ({ variables }) => {
+            value: (_, { variables }) => {
               const { ok } = variables
               return ok === "OK" ? "ok" : undefined
             },
           }),
         ],
         {
-          value: ({ variables }) => {
+          value: (_, { variables }) => {
             const { ok } = variables
             return ok === undefined
               ? "variable ok is no more defined"

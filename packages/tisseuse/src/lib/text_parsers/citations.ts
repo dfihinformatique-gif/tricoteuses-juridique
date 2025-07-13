@@ -1,16 +1,17 @@
-import { alternatives, chain, regExp, repeat, type TextAst } from "./core.js"
+import { type TextAst } from "./ast.js"
+import { alternatives, chain, regExp, repeat } from "./parsers.js"
 import { espaceOuRien } from "./typography.js"
 
 export const citationLigne = regExp(String.raw`« ?([^»\n]+)`, {
   flags: "d",
-  value: (context) => {
-    let stop = context.offset + context.match!.indices![1][1]
-    if (context.match![1].endsWith(" ")) {
+  value: (match, context) => {
+    let stop = context.offset + match.indices![1][1]
+    if (match[1].endsWith(" ")) {
       stop--
     }
     return {
       position: {
-        start: context.offset + context.match!.indices![1][0],
+        start: context.offset + match.indices![1][0],
         stop,
       },
     }
@@ -19,12 +20,12 @@ export const citationLigne = regExp(String.raw`« ?([^»\n]+)`, {
 
 export const citationSimple = regExp(String.raw`« ?(.*?) ?»`, {
   flags: "d",
-  value: (context) => ({
+  value: (match, context) => ({
     content: [
       {
         position: {
-          start: context.offset + context.match!.indices![1][0],
-          stop: context.offset + context.match!.indices![1][1],
+          start: context.offset + match.indices![1][0],
+          stop: context.offset + match.indices![1][1],
         },
       },
     ],
@@ -40,7 +41,7 @@ export const citation = alternatives(
       repeat(citationLigne, {
         separator: regExp(String.raw`»?\n`),
         // Remove separators from results.
-        value: ({ results }) =>
+        value: (results) =>
           results.map((result, index) =>
             index === 0 ? result : (result as TextAst[])[1],
           ),
@@ -48,12 +49,12 @@ export const citation = alternatives(
       regExp("»"),
     ],
     {
-      value: (context) => ({
-        content: context.results[1],
+      value: (results, context) => ({
+        content: results[1],
         position: context.position(),
         type: "citation",
       }),
     },
   ),
-  chain([espaceOuRien, citationSimple], { value: ({ results }) => results[1] }),
+  chain([espaceOuRien, citationSimple], { value: (results) => results[1] }),
 )

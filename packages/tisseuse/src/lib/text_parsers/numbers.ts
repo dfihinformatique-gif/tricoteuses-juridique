@@ -1,4 +1,5 @@
-import { alternatives, chain, optional, regExp, variable } from "./core.js"
+import type { TextAst } from "./ast.js"
+import { alternatives, chain, optional, regExp, variable } from "./parsers.js"
 import { tiret } from "./typography.js"
 
 const romanNumeralConversionTable = [
@@ -69,31 +70,31 @@ export const eme = regExp("(èm)?e")
 export const nombre = alternatives(
   regExp("1er", { value: 1 }),
   chain([regExp(String.raw`\d+`), optional(eme, { default: "" })], {
-    value: ({ results }) => parseInt(results[0] as string),
+    value: (results) => parseInt(results[0] as string),
   }),
 )
 
 export const nombreCardinal = regExp(String.raw`\d+`, {
-  value: ({ match }) => parseInt(match![0] as string),
+  value: (match) => parseInt(match[0] as string),
 })
 
 export const nombreOrdinal = alternatives(
   regExp("1er", { value: 1 }),
   chain([regExp(String.raw`\d+`), eme], {
-    value: ({ results }) => parseInt(results[0] as string),
+    value: (results) => parseInt(results[0] as string),
   }),
 )
 
 // Nombres romains (cardinaux et/ou ordinaux)
 
 export const nombreRomainCardinal = regExp(String.raw`[IVXLCDM]+`, {
-  value: ({ match }) => numberFromRomanNumeral(match![0] as string),
+  value: (match) => numberFromRomanNumeral(match[0] as string),
 })
 
 export const nombreRomainOrdinal = alternatives(
   regExp("Ier", { value: 1 }),
   chain([regExp(String.raw`[IVXLCDM]+`), eme], {
-    value: ({ results }) => numberFromRomanNumeral(results[0] as string),
+    value: (results) => numberFromRomanNumeral(results[0] as string),
   }),
 )
 
@@ -101,7 +102,7 @@ export const nombreRomainOu0i = alternatives(
   regExp("0I", { value: 0 }),
   regExp("Ier", { value: 1 }),
   chain([regExp(String.raw`[IVXLCDM]+`), optional(eme, { default: "" })], {
-    value: ({ results }) => numberFromRomanNumeral(results[0] as string),
+    value: (results) => numberFromRomanNumeral(results[0] as string),
   }),
 )
 
@@ -152,14 +153,14 @@ export const adjectifNumeralCardinal = chain(
             "centaine",
             optional([adjectifNumeralCardinalUnite, tiret], {
               default: 0,
-              value: ({ results }) => results[0] as number,
+              value: (results) => (results as TextAst[])[0] as number,
             }),
           ),
           regExp("cent-", { flags: "i", value: 1 }),
         ],
         {
           default: 0,
-          value: ({ variables }) => 100 * (variables.centaine as number),
+          value: (_, { variables }) => 100 * (variables.centaine as number),
         },
       ),
     ),
@@ -173,7 +174,7 @@ export const adjectifNumeralCardinal = chain(
     variable("unite", optional(adjectifNumeralCardinalUnite, { default: 0 })),
   ],
   {
-    value: ({ variables }) =>
+    value: (_, { variables }) =>
       (variables.centaines as number) +
       (variables.dizaines as number) +
       (variables.dix as number) +
@@ -185,7 +186,7 @@ export const adjectifNumeralOrdinal = alternatives(
   regExp("premi(er|ère)", { flags: "i", value: 1 }),
   regExp("seconde?", { flags: "i", value: 2 }),
   chain([adjectifNumeralCardinal, regExp("ième", { flags: "i" })], {
-    value: ({ results }) => results[0],
+    value: (results) => results[0],
   }),
 )
 
@@ -244,7 +245,7 @@ export const adverbeMultiplicatif = chain(
             ),
           ],
           {
-            value: ({ variables }) =>
+            value: (_, { variables }) =>
               (variables.dizaines as number) + (variables.unites as number),
           },
         ),
@@ -265,7 +266,7 @@ export const adverbeMultiplicatif = chain(
     ),
   ],
   {
-    value: (context) => ({
+    value: (_, context) => ({
       id: context.text().toLowerCase(),
       order: context.variables.order as number,
     }),

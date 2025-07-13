@@ -3,19 +3,24 @@
  */
 
 import {
-  alternatives,
-  chain,
-  createEnumerationOrBoundedInterval,
-  iterAtomicReferences,
-  optional,
-  regExp,
-  repeat,
   type DivisionType,
   type TextAstIncompleteHeader,
   type TextAstLocalisation,
   type TextAstReference,
-} from "./core.js"
+} from "./ast.js"
+import {
+  createEnumerationOrBoundedInterval,
+  iterAtomicReferences,
+} from "./helpers.js"
 import { adjectifOrdinal, nombre, nombreRomainOu0i } from "./numbers.js"
+import {
+  alternatives,
+  chain,
+  convert,
+  optional,
+  regExp,
+  repeat,
+} from "./parsers.js"
 import { ditPluriel, ditSingulier } from "./prepositions.js"
 import {
   adjectifRelatifPluriel,
@@ -40,7 +45,7 @@ export const natureDivisionSingulier = alternatives(
 
 export const natureDivisionPluriel = chain(
   [natureDivisionSingulier, regExp("s", { flags: "i" })],
-  { value: ({ results }) => results[0] },
+  { value: (results) => results[0] },
 )
 
 export const nomDivision = alternatives(
@@ -50,79 +55,64 @@ export const nomDivision = alternatives(
     [
       regExp("réglementaire( ancienne)? ", { flags: "i" }),
       optional(
-        chain([
+        [
           regExp(" [-:] ", { flags: "i" }),
-          alternatives(
-            regExp("arrêtés", { flags: "i" }),
-            chain([
-              regExp("décrets", { flags: "i" }),
-              alternatives(
-                regExp(" en Conseil d'[ÉE]tat", {
-                  flags: "i",
-                  value: " en Conseil d'État",
-                }),
-                regExp(" simples", { flags: "i" }),
-              ),
-            ]),
-          ),
-        ]),
+          alternatives(regExp("arrêtés", { flags: "i" }), [
+            regExp("décrets", { flags: "i" }),
+            alternatives(
+              regExp(" en Conseil d'[ÉE]tat", {
+                flags: "i",
+                value: " en Conseil d'État",
+              }),
+              regExp(" simples", { flags: "i" }),
+            ),
+          ]),
+        ],
         { default: "" },
       ),
     ],
-    { value: (context) => context.textFromResults() },
+    { value: (results, context) => context.textFromResults(results) },
   ),
 )
 
 export const numeroDivision = chain([alternatives(nombreRomainOu0i, nombre)], {
-  value: (context) => context.text(),
+  value: (_, context) => context.text(),
 })
 
 export const designationDivision = alternatives(
   chain([numeroDivision, optional(espaceAdverbeRelatif, { default: "" })], {
-    value: (context) => {
-      const { results } = context
-      return {
-        ...(results[1] ? { adverb: results[1] } : {}),
-        id: results[0] as string,
-        position: context.position(),
-        type: "incomplete-header",
-      }
-    },
+    value: (results, context) => ({
+      ...(results[1] ? { adverb: results[1] } : {}),
+      id: results[0] as string,
+      position: context.position(),
+      type: "incomplete-header",
+    }),
   }),
   chain([nomDivision, optional(espaceAdverbeRelatif, { default: "" })], {
-    value: (context) => {
-      const { results } = context
-      return {
-        ...(results[1] ? { adverb: results[1] } : {}),
-        id: results[0] as string,
-        position: context.position(),
-        type: "incomplete-header",
-      }
-    },
+    value: (results, context) => ({
+      ...(results[1] ? { adverb: results[1] } : {}),
+      id: results[0] as string,
+      position: context.position(),
+      type: "incomplete-header",
+    }),
   }),
-  chain([adjectifRelatifSingulier], {
-    value: (context) => {
-      const { results } = context
-      return {
-        localization: results[0] as TextAstLocalisation,
-        position: context.position(),
-        type: "incomplete-header",
-      }
-    },
+  convert(adjectifRelatifSingulier, {
+    value: (result, context) => ({
+      localization: result as TextAstLocalisation,
+      position: context.position(),
+      type: "incomplete-header",
+    }),
   }),
 )
 
 export const division2Internal = alternatives(
   designationDivision,
-  chain([relatifSingulier], {
-    value: (context) => {
-      const { results } = context
-      return {
-        localization: results[0] as TextAstLocalisation,
-        position: context.position(),
-        type: "incomplete-header",
-      }
-    },
+  convert(relatifSingulier, {
+    value: (result, context) => ({
+      localization: result as TextAstLocalisation,
+      position: context.position(),
+      type: "incomplete-header",
+    }),
   }),
 )
 
@@ -135,8 +125,7 @@ export const division1Internal = alternatives(
       optional([espace, division2Internal], { default: [] }),
     ],
     {
-      value: (context) => {
-        const { results } = context
+      value: (results, context) => {
         const base = (results[3] as [string, TextAstIncompleteHeader])[1] ?? {
           position: context.position(),
           type: results[2] as DivisionType,
@@ -152,18 +141,14 @@ export const division1Internal = alternatives(
     },
   ),
   chain([adjectifOrdinal, espace, natureDivisionSingulier], {
-    value: (context) => {
-      const { results } = context
-      return {
-        order: results[0],
-        position: context.position(),
-        type: results[2] as DivisionType,
-      }
-    },
+    value: (results, context) => ({
+      order: results[0],
+      position: context.position(),
+      type: results[2] as DivisionType,
+    }),
   }),
   chain([natureDivisionSingulier, espace, division2Internal], {
-    value: (context) => {
-      const { results } = context
+    value: (results, context) => {
       for (const reference of iterAtomicReferences(
         results[2] as TextAstReference,
       )) {
@@ -183,8 +168,7 @@ export const division1Internal = alternatives(
 export const division = chain(
   [optional(ditSingulier, { default: false }), division1Internal],
   {
-    value: (context) => {
-      const { results } = context
+    value: (results, context) => {
       if (results[0]) {
         for (const reference of iterAtomicReferences(
           results[1] as TextAstReference,
@@ -206,50 +190,40 @@ export const division = chain(
 export const listeDivisions = chain(
   [
     designationDivision,
-    repeat(
-      chain([
-        alternatives(separateurEnumeration, separateurPlage),
-        alternatives(
-          chain([adjectifRelatifPluriel], {
-            value: (context) => {
-              const { results } = context
-              return {
-                localization: results[0] as TextAstLocalisation,
-                position: context.position(),
-                type: "incomplete-header",
-              }
-            },
+    repeat([
+      alternatives(separateurEnumeration, separateurPlage),
+      alternatives(
+        chain([adjectifRelatifPluriel], {
+          value: (results, context) => ({
+            localization: results[0] as TextAstLocalisation,
+            position: context.position(),
+            type: "incomplete-header",
           }),
-          designationDivision,
-        ),
-      ]),
-    ),
+        }),
+        designationDivision,
+      ),
+    ]),
   ],
   {
-    value: (context) => {
-      const { results } = context
-      return createEnumerationOrBoundedInterval(
+    value: (results, context) =>
+      createEnumerationOrBoundedInterval(
         results[0] as TextAstIncompleteHeader,
         results[1] as Array<
           ["," | "à" | "et" | "ou" | "sauf", TextAstIncompleteHeader]
         >,
         context.position(),
-      )
-    },
+      ),
   },
 )
 
 export const divisions2Internal = alternatives(
   listeDivisions,
-  chain([relatifPluriel], {
-    value: (context) => {
-      const { results } = context
-      return {
-        localization: results[0] as TextAstLocalisation,
-        position: context.position(),
-        type: "incomplete-header",
-      }
-    },
+  convert(relatifPluriel, {
+    value: (result, context) => ({
+      localization: result as TextAstLocalisation,
+      position: context.position(),
+      type: "incomplete-header",
+    }),
   }),
 )
 
@@ -262,8 +236,7 @@ export const divisions1Internal = alternatives(
       optional([espace, divisions2Internal], { default: [] }),
     ],
     {
-      value: (context) => {
-        const { results } = context
+      value: (results, context) => {
         const base = (results[3] as [string, TextAstIncompleteHeader])[1] ?? {
           position: context.position(),
           type: results[2] as DivisionType,
@@ -279,8 +252,7 @@ export const divisions1Internal = alternatives(
     },
   ),
   chain([natureDivisionPluriel, espace, divisions2Internal], {
-    value: (context) => {
-      const { results } = context
+    value: (results, context) => {
       for (const reference of iterAtomicReferences(
         results[2] as TextAstReference,
       )) {
@@ -300,8 +272,7 @@ export const divisions1Internal = alternatives(
 export const divisions = chain(
   [optional(ditPluriel, { default: false }), divisions1Internal],
   {
-    value: (context) => {
-      const { results } = context
+    value: (results, context) => {
       if (results[0]) {
         for (const reference of iterAtomicReferences(
           results[1] as TextAstReference,

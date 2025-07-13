@@ -1,4 +1,4 @@
-import { alternatives, chain, optional, regExp } from "./core.js"
+import { alternatives, chain, optional, regExp } from "./parsers.js"
 import { espace } from "./typography.js"
 
 export const adjectifRelatifPluriel = alternatives(
@@ -65,11 +65,11 @@ export const adjectifRelatifSingulier = alternatives(
 
 export const adverbeRelatif = regExp("ci ?- ?(après|avant|dessous|dessus)", {
   flags: "i",
-  value: ({ match }) => `ci-${match![1]}`,
+  value: (match) => `ci-${match[1]}`,
 })
 
 export const espaceAdverbeRelatif = chain([espace, adverbeRelatif], {
-  value: ({ results }) => results[1],
+  value: (results) => results[1],
 })
 
 export const espacePrecite = regExp(" précitée?", {
@@ -91,7 +91,7 @@ export const relatifPlurielPrepose = chain(
     ),
     adjectifRelatifPluriel,
   ],
-  { value: ({ results }) => results[1] },
+  { value: (results) => results[1] },
 )
 
 export const relatifSingulier = alternatives(
@@ -109,5 +109,5 @@ export const relatifSingulierPrepose = chain(
     ),
     adjectifRelatifSingulier,
   ],
-  { value: ({ results }) => results[1] },
+  { value: (results) => results[1] },
 )

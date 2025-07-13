@@ -1,10 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import {
-  TextParserContext,
-  type TextAstDivision,
-  type TextAstEnumeration,
-} from "./core.js"
+import { type TextAstDivision, type TextAstEnumeration } from "./ast.js"
 import {
   designationDivision,
   division,
@@ -14,6 +10,7 @@ import {
   natureDivisionSingulier,
   numeroDivision,
 } from "./divisions.js"
+import { TextParserContext } from "./parsers.js"
 
 describe("designationDivision", () => {
   // Exemple : section 0I du chapitre III du titre Ier de la première partie du livre Ier du code général des impôts

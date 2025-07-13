@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 
-import { TextParserContext } from "./core.js"
 import { date, duDate } from "./dates.js"
+import { TextParserContext } from "./parsers.js"
 
 const months: Record<string, string> = {
   "1": "janvier",

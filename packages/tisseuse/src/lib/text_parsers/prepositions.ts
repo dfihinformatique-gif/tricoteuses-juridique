@@ -1,4 +1,4 @@
-import { alternatives, chain, regExp } from "./core.js"
+import { alternatives, chain, regExp } from "./parsers.js"
 
 // Les introductions introduisent les expressions de liens.
 // Elles correspondent aux séparateurs des pré-candidats

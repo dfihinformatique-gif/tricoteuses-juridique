@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest"
 
 import { action } from "./actions.js"
-import { TextParserContext } from "./core.js"
+import { TextParserContext } from "./parsers.js"
 
 describe("actions", () => {
   describe("CREATION", () => {

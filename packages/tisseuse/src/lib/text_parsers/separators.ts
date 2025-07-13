@@ -62,5 +62,5 @@ export function separateurPlage(
     return undefined
   }
   context.input = context.input.slice(match[0].length)
-  return " à "
+  return "à"
 }

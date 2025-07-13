@@ -1,3 +1,5 @@
+export type DivisionType = (typeof divisionTypes)[number]
+
 export type EuropeanLawType = (typeof europeanLawTypes)[number]
 
 export type FrenchLawType = (typeof frenchLawTypes)[number]
@@ -6,18 +8,21 @@ export type InternationalLawType = (typeof internationalLawTypes)[number]
 
 export type LawType = (typeof lawTypes)[number]
 
+export type PortionType = (typeof portionTypes)[number]
+
 export type TextAst =
   | boolean
   | number
   | string
   | TestAstAction
   | TextAstAdverbeMultiplicatif
+  | TextAstBoundedInterval
   | TextAstCitation
   | TextAstLaw
-  | (TextAstLaw & TextAstPositionAndText)
   | TextAstLawIdentification
   | TextAstLocalisation
-  | TextAstPositionAndText
+  | TextAstPosition
+  | TextAstReference
   | Array<TextAst>
 
 export interface TestAstAction {
@@ -34,12 +39,65 @@ export interface TextAstAdverbeMultiplicatif {
   order: number
 }
 
+export type TextAstAtomicReference =
+  | TextAstDivision
+  | TextAstIncompleteHeader
+  | (TextAstLaw & TextAstPosition)
+  | TextAstPortion
+
+export type TextAstBoundedInterval = {
+  first: TextAstReference
+  last: TextAstReference
+  type: "bounded-interval"
+} & TextAstPosition
+
 export type TextAstCitation = {
-  content: TextAstPositionAndText[]
+  content: TextAstPosition[]
   type: "citation"
-} & TextAstPositionAndText
+} & TextAstPosition
+
+export type TextAstCompoundReference =
+  | TextAstBoundedInterval
+  | TextAstCountedInterval
+  | TextAstEnumeration
+  | TextAstExclusion
+
+export type TextAstCountedInterval = {
+  count: number
+  first: TextAstReference
+  type: "counted-interval"
+} & TextAstPosition
+
+export type TextAstDivision = {
+  localization?: TextAstLocalisation
+  ofTheSaid?: boolean
+  order?: number
+  type: DivisionType
+} & TextAstPosition
+
+export type TextAstEnumeration = {
+  coordinator: "," | "et" | "ou"
+  left: TextAstReference
+  right: TextAstReference
+  type: "enumeration"
+} & TextAstPosition
+
+export type TextAstExclusion = {
+  left: TextAstReference
+  right: TextAstReference
+  type: "exclusion"
+} & TextAstPosition
+
+export type TextAstIncompleteHeader = {
+  adverb?: "après" | "avant" | "dessous" | "dessus"
+  id?: string
+  localization?: TextAstLocalisation
+  ofTheSaid?: boolean
+  type: "incomplete-header"
+} & TextAstPosition
 
 export interface TextAstLaw {
+  child?: TextAstReference
   id?: string
   lawDate?: string
   lawType: LawType
@@ -58,14 +116,23 @@ export type TextAstLocalisation =
   | { absolute: number }
   | { relative: number | "+∞" }
 
-export interface TextAstPositionAndText {
+export type TextAstPortion = {
+  localization?: TextAstLocalisation
+  ofTheSaid?: boolean
+  order?: number
+  type: PortionType
+} & TextAstPosition
+
+export interface TextAstPosition {
   position: TextPosition
-  text: string
 }
+
+export type TextAstReference = TextAstAtomicReference | TextAstCompoundReference
 
 export type TextParser = (context: TextParserContext) => TextAst | undefined
 
 export class TextParserContext {
+  input: string
   length = 0
   /**
    * Used only by `regEpx` parser
@@ -73,10 +140,12 @@ export class TextParserContext {
   match?: RegExpExecArray = undefined
   offset = 0
   results: TextAst[] = []
-  usedInputs: UsedInput[] = []
+  usedInputs: TextTree[] = []
   variables: Record<string, TextAst> = {}
 
-  constructor(public input: string) {}
+  constructor(public fullInput: string) {
+    this.input = fullInput
+  }
 
   position(): TextPosition {
     return {
@@ -86,7 +155,17 @@ export class TextParserContext {
   }
 
   text(): string {
-    return textFromUsedInputs(this.usedInputs)
+    return this.fullInput.slice(this.offset, this.offset + this.length)
+  }
+
+  textSlice(position: TextPosition): string {
+    return this.fullInput.slice(position.start, position.stop)
+  }
+
+  textFromResults(): string {
+    return this.results === undefined
+      ? ""
+      : textFromTextTrees(this.results as TextTree[])
   }
 }
 
@@ -95,7 +174,7 @@ export interface TextPosition {
   stop: number
 }
 
-type UsedInput = string | Array<UsedInput>
+type TextTree = string | Array<TextTree>
 
 export const europeanLawTypes = ["directive", "règlement"] as const
 
@@ -119,6 +198,18 @@ export const lawTypes = [
   ...frenchLawTypes,
   ...internationalLawTypes,
 ] as const
+
+export const divisionTypes = [
+  "livre",
+  "titre",
+  "chapitre",
+  "section",
+  "sous-section",
+  "paragraphe",
+  "sous-paragraphe",
+] as const
+
+export const portionTypes = ["partie", "alinéa", "phrase"] as const
 
 export const alternatives =
   (...alternatives: Array<TextParser>): TextParser =>
@@ -207,6 +298,149 @@ export const chain =
 
     return result
   }
+
+export const createEnumerationOrBoundedInterval = (
+  reference: TextAstReference,
+  remaining: Array<["," | "à" | "et" | "ou" | "sauf", TextAstAtomicReference]>,
+  position: TextPosition,
+): TextAstReference => {
+  // Parameter `remaining` is an array of the form
+  // [[coordinator1, ref1], ...., [coordinatorN, refN]]
+  // where `coordinators` are either "à", "et", "ou" & ",".
+  if (remaining.length === 0) {
+    // When there is no remaining, reference is always a compound reference.
+    return {
+      ...(reference as TextAstCompoundReference),
+      position,
+    }
+  }
+  const [coordinator, otherReference] = remaining[0]
+  let mergedReference: TextAstReference
+  if (coordinator === "sauf") {
+    // Append exclusion to the deepest non-enumeration rigth of reference.
+    let lastEnumerationReference:
+      | TextAstEnumeration
+      | TextAstAtomicReference
+      | undefined = undefined
+    for (
+      let lastReference = reference;
+      lastReference.type === "enumeration";
+      lastReference = lastReference.right
+    ) {
+      lastEnumerationReference = lastReference
+    }
+    if (lastEnumerationReference === undefined) {
+      // Add exclusion to reference.
+      mergedReference = {
+        left: reference,
+        position: {
+          start: reference.position.start,
+          stop: otherReference.position.stop,
+        },
+        right: otherReference,
+        type: "exclusion",
+      }
+    } else {
+      // Add exclusion to the deepest non-enumeration rigth of reference.
+      lastEnumerationReference.right = {
+        left: lastEnumerationReference.right,
+        position: {
+          start: lastEnumerationReference.right.position.start,
+          stop: otherReference.position.stop,
+        },
+        right: otherReference,
+        type: "exclusion",
+      }
+      mergedReference = reference
+    }
+  } else if (
+    reference.type !== "law" &&
+    otherReference.type === "law" &&
+    otherReference.child !== undefined
+  ) {
+    // Create a Merged reference of type law-reference based on otherReference.
+    mergedReference = {
+      ...otherReference,
+      child:
+        coordinator === "à"
+          ? {
+              first: reference,
+              last: otherReference.child,
+              position: {
+                start: reference.position.start,
+                stop: otherReference.position.stop,
+              },
+              type: "bounded-interval",
+            }
+          : {
+              coordinator,
+              left: reference,
+              right: otherReference.child,
+              position: {
+                start: reference.position.start,
+                stop: otherReference.position.stop,
+              },
+              type: "enumeration",
+            },
+    }
+  } else {
+    // TODO: Handle other combinations of reference.type & otherReference.type.
+    mergedReference =
+      coordinator === "à"
+        ? {
+            first: reference,
+            last: otherReference,
+            position: {
+              start: reference.position.start,
+              stop: otherReference.position.stop,
+            },
+            type: "bounded-interval",
+          }
+        : {
+            coordinator,
+            left: reference,
+            position: {
+              start: reference.position.start,
+              stop: otherReference.position.stop,
+            },
+            right: otherReference,
+            type: "enumeration",
+          }
+  }
+  return createEnumerationOrBoundedInterval(
+    mergedReference,
+    remaining.slice(1),
+    position,
+  )
+}
+
+export function* iterAtomicReferences(
+  reference: TextAstReference,
+): Generator<TextAstAtomicReference, void> {
+  switch (reference.type) {
+    case "bounded-interval": {
+      yield* iterAtomicReferences(reference.first)
+      yield* iterAtomicReferences(reference.last)
+      break
+    }
+
+    case "counted-interval": {
+      yield* iterAtomicReferences(reference.first)
+      break
+    }
+
+    case "enumeration":
+    case "exclusion": {
+      yield* iterAtomicReferences(reference.left)
+      yield* iterAtomicReferences(reference.right)
+      break
+    }
+
+    default: {
+      yield reference
+    }
+  }
+}
 
 export const optional =
   (
@@ -395,11 +629,9 @@ export const repeat =
     return result
   }
 
-const textFromUsedInputs = (usedInputs: UsedInput[]): string =>
-  usedInputs
-    .map((usedInput) =>
-      typeof usedInput === "string" ? usedInput : textFromUsedInputs(usedInput),
-    )
+const textFromTextTrees = (textTrees: TextTree[]): string =>
+  textTrees
+    .map((node) => (typeof node === "string" ? node : textFromTextTrees(node)))
     .join("")
 
 export const variable =

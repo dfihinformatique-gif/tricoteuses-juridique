@@ -25,7 +25,7 @@ export const identifiantTexteFrancais = regExp(String.raw`\d+-\d+`)
  * Symbole « n° » + identifiant d’un texte français, par exemple « n° 2001-692 »
  */
 export const numeroTexteFrancais = chain([numero, identifiantTexteFrancais], {
-  value: ({ results }) => results.at(-1),
+  value: ({ results }) => results[1],
 })
 
 export const identificationTexteFrancais = alternatives(
@@ -145,7 +145,7 @@ export const identifiantTexteEuropeen = chain(
  */
 export const numeroTexteEuropeen = chain(
   [optional(numero, { default: "" }), identifiantTexteEuropeen],
-  { value: ({ results }) => results.at(-1) },
+  { value: ({ results }) => results[1] },
 )
 
 /**
@@ -244,7 +244,6 @@ export const texte = chain(
         ...(results[1] as TextAstLaw),
         ...(results[0] ? { ofTheSaid: true } : {}),
         position: context.position(),
-        text: context.text(),
       }
     },
   },

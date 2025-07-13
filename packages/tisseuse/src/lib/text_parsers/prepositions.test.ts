@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { TextParserContext } from "./core.js"
+import { optional, TextParserContext } from "./core.js"
 import {
   ditPluriel,
   ditSingulier,
@@ -35,6 +35,24 @@ describe("ditSingulier", () => {
     const context = new TextParserContext(task.name)
     expect(ditSingulier(context)).toBe(true)
     expect(context.input).toBe("")
+  })
+})
+
+describe("optional(ditSingulier, { default: false })", () => {
+  test("", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(optional(ditSingulier, { default: false })(context)).toBe(false)
+    expect(context.input).toBe("")
+  })
+  test("dite ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(optional(ditSingulier, { default: false })(context)).toBe(true)
+    expect(context.input).toBe("")
+  })
+  test("même ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(optional(ditSingulier, { default: false })(context)).toBe(false)
+    expect(context.input).toBe(task.name)
   })
 })
 

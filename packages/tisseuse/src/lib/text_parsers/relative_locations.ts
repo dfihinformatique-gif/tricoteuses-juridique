@@ -91,7 +91,7 @@ export const relatifPlurielPrepose = chain(
     ),
     adjectifRelatifPluriel,
   ],
-  { value: ({ results }) => results.at(-1) },
+  { value: ({ results }) => results[1] },
 )
 
 export const relatifSingulier = alternatives(
@@ -109,5 +109,5 @@ export const relatifSingulierPrepose = chain(
     ),
     adjectifRelatifSingulier,
   ],
-  { value: ({ results }) => results.at(-1) },
+  { value: ({ results }) => results[1] },
 )

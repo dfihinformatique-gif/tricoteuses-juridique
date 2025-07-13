@@ -5,17 +5,14 @@ export const citationLigne = regExp(String.raw`« ?([^»\n]+)`, {
   flags: "d",
   value: (context) => {
     let stop = context.offset + context.match!.indices![1][1]
-    let text = context.match![1]
-    if (text.endsWith(" ")) {
+    if (context.match![1].endsWith(" ")) {
       stop--
-      text = text.slice(0, -1)
     }
     return {
       position: {
         start: context.offset + context.match!.indices![1][0],
         stop,
       },
-      text,
     }
   },
 })
@@ -29,11 +26,9 @@ export const citationSimple = regExp(String.raw`« ?(.*?) ?»`, {
           start: context.offset + context.match!.indices![1][0],
           stop: context.offset + context.match!.indices![1][1],
         },
-        text: context.match![1],
       },
     ],
     position: context.position(),
-    text: context.text(),
     type: "citation",
   }),
 })
@@ -56,7 +51,6 @@ export const citation = alternatives(
       value: (context) => ({
         content: context.results[1],
         position: context.position(),
-        text: context.text(),
         type: "citation",
       }),
     },

@@ -1,6 +1,10 @@
 import { describe, expect, test } from "vitest"
 
-import { TextParserContext } from "./core.js"
+import {
+  TextParserContext,
+  type TextAstLaw,
+  type TextAstPosition,
+} from "./core.js"
 import {
   identificationTexteEuropeen,
   identificationTexteFrancais,
@@ -217,37 +221,40 @@ describe("Règle générale", () => {
   describe("texte", () => {
     test("directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         id: "2001/73/CEE",
         lawDate: "2003-09-05",
         lawType: "directive",
         legislation: "UE",
         position: { start: 0, stop: 46 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
 
     test("dite même directive", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         lawType: "directive",
         legislation: "UE",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 19 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
 
     test("dite même directive (UE) 2001/73/CEE du 5 septembre 2003", ({
       task,
     }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         id: "2001/73/CEE",
         lawDate: "2003-09-05",
         lawType: "directive",
@@ -255,82 +262,87 @@ describe("Règle générale", () => {
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 56 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
 
     test("dite même loi organique", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         lawType: "loi organique",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
 
     test("dite même loi organique", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         lawType: "loi organique",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
 
     test("dite même loi organique n° 2001-692 du 5 septembre 2003", ({
       task,
     }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         id: "2001-692",
         lawDate: "2003-09-05",
         lawType: "loi organique",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 55 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
 
     test("même loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         id: "2001-692",
         lawDate: "2003-09-05",
         lawType: "loi organique",
         localization: { relative: 0 },
         position: { start: 0, stop: 50 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
 
     test("même directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(texte(context)).toStrictEqual({
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
         id: "2001/73/CEE",
         lawDate: "2003-09-05",
         lawType: "directive",
         legislation: "UE",
         localization: { relative: 0 },
         position: { start: 0, stop: 51 },
-        text: task.name,
         type: "law",
       })
       expect(context.input).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
     })
   })
 })

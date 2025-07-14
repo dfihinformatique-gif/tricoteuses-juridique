@@ -1,5 +1,12 @@
 import type { TextAst } from "./ast.js"
-import { alternatives, chain, optional, regExp, variable } from "./parsers.js"
+import {
+  alternatives,
+  chain,
+  convert,
+  optional,
+  regExp,
+  variable,
+} from "./parsers.js"
 import { tiret } from "./typography.js"
 
 const romanNumeralConversionTable = [
@@ -197,78 +204,74 @@ export const adjectifOrdinal = alternatives(
 
 // Numérotation latine
 
-export const adverbeMultiplicatif = chain(
-  [
-    variable(
-      "order",
-      alternatives(
-        // Mustt be first:
-        regExp("quinquagies", { flags: "i", value: 50 }),
-        regExp("sexagies", { flags: "i", value: 60 }),
-        regExp("septuagies", { flags: "i", value: 70 }),
-        regExp("octogies", { flags: "i", value: 80 }),
+export const adverbeMultiplicatif = convert(
+  alternatives(
+    // Mustt be first:
+    regExp("quinquagies", { flags: "i", value: 50 }),
+    regExp("sexagies", { flags: "i", value: 60 }),
+    regExp("septuagies", { flags: "i", value: 70 }),
+    regExp("octogies", { flags: "i", value: 80 }),
 
-        chain(
-          [
-            variable(
-              "unites",
-              optional(
-                alternatives(
-                  regExp("unde?", { flags: "i", value: -1 }),
-                  regExp("duode?", { flags: "i", value: -2 }),
-                  regExp("un", { flags: "i", value: 1 }),
-                  regExp("duo", { flags: "i", value: 2 }),
-                  regExp("ter", { flags: "i", value: 3 }),
-                  regExp("quater", { flags: "i", value: 4 }),
-                  regExp("quin", { flags: "i", value: 5 }),
-                  regExp("sept", { flags: "i", value: 7 }),
-                  regExp("sex?", { flags: "i", value: 6 }),
-                  regExp("octo", { flags: "i", value: 8 }),
-                  regExp("novo", { flags: "i", value: 9 }),
-                ),
-                { default: 0 },
-              ),
+    chain(
+      [
+        variable(
+          "unites",
+          optional(
+            alternatives(
+              regExp("unde?", { flags: "i", value: -1 }),
+              regExp("duode?", { flags: "i", value: -2 }),
+              regExp("un", { flags: "i", value: 1 }),
+              regExp("duo", { flags: "i", value: 2 }),
+              regExp("ter", { flags: "i", value: 3 }),
+              regExp("quater", { flags: "i", value: 4 }),
+              regExp("quin", { flags: "i", value: 5 }),
+              regExp("sept", { flags: "i", value: 7 }),
+              regExp("sex?", { flags: "i", value: 6 }),
+              regExp("octo", { flags: "i", value: 8 }),
+              regExp("novo", { flags: "i", value: 9 }),
             ),
-            variable(
-              "dizaines",
-              alternatives(
-                regExp("decies", { flags: "i", value: 10 }),
-                regExp("v[ei]cies", { flags: "i", value: 20 }),
-                regExp("tr[ei]cies", { flags: "i", value: 30 }),
-                regExp("quadragies", { flags: "i", value: 40 }),
-                regExp("quinquagies", { flags: "i", value: 50 }),
-                regExp("sexagies", { flags: "i", value: 60 }),
-                regExp("septuagies", { flags: "i", value: 70 }),
-                regExp("o?ctogies", { flags: "i", value: 80 }),
-                regExp("nonagies", { flags: "i", value: 90 }),
-              ),
-            ),
-          ],
-          {
-            value: (_, { variables }) =>
-              (variables.dizaines as number) + (variables.unites as number),
-          },
+            { default: 0 },
+          ),
         ),
-
-        // Must be last:
-        regExp("semel", { flags: "i", value: 1 }),
-        regExp("bis", { flags: "i", value: 2 }),
-        regExp("ter", { flags: "i", value: 3 }),
-        regExp("quater", { flags: "i", value: 4 }),
-        regExp("quinquies", { flags: "i", value: 5 }),
-        regExp("sexies", { flags: "i", value: 6 }),
-        regExp("septies", { flags: "i", value: 7 }),
-        regExp("octies", { flags: "i", value: 8 }),
-        regExp("no[nv]ies", { flags: "i", value: 9 }),
-        regExp("undecies", { flags: "i", value: 11 }),
-        regExp("duodecies", { flags: "i", value: 12 }),
-      ),
+        variable(
+          "dizaines",
+          alternatives(
+            regExp("decies", { flags: "i", value: 10 }),
+            regExp("v[ei]cies", { flags: "i", value: 20 }),
+            regExp("tr[ei]cies", { flags: "i", value: 30 }),
+            regExp("quadragies", { flags: "i", value: 40 }),
+            regExp("quinquagies", { flags: "i", value: 50 }),
+            regExp("sexagies", { flags: "i", value: 60 }),
+            regExp("septuagies", { flags: "i", value: 70 }),
+            regExp("o?ctogies", { flags: "i", value: 80 }),
+            regExp("nonagies", { flags: "i", value: 90 }),
+          ),
+        ),
+      ],
+      {
+        value: (_, { variables }) =>
+          (variables.dizaines as number) + (variables.unites as number),
+      },
     ),
-  ],
+
+    // Must be last:
+    regExp("semel", { flags: "i", value: 1 }),
+    regExp("bis", { flags: "i", value: 2 }),
+    regExp("ter", { flags: "i", value: 3 }),
+    regExp("quater", { flags: "i", value: 4 }),
+    regExp("quinquies", { flags: "i", value: 5 }),
+    regExp("sexies", { flags: "i", value: 6 }),
+    regExp("septies", { flags: "i", value: 7 }),
+    regExp("octies", { flags: "i", value: 8 }),
+    regExp("no[nv]ies", { flags: "i", value: 9 }),
+    regExp("undecies", { flags: "i", value: 11 }),
+    regExp("duodecies", { flags: "i", value: 12 }),
+  ),
   {
-    value: (_, context) => ({
+    value: (result, context) => ({
       id: context.text().toLowerCase(),
-      order: context.variables.order as number,
+      position: context.position(),
+      value: result as number,
     }),
   },
 )

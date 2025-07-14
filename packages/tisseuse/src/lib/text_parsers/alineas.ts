@@ -1,5 +1,6 @@
 import { type TextAstNombre } from "./ast.js"
 import {
+  adjectifNumeralOrdinal,
   adverbeMultiplicatif,
   nombreCardinal,
   nombreRomainCardinal,
@@ -20,32 +21,35 @@ export const numeroPortion = chain(
       convert(nombreRomainCardinal, {
         value: (result, context) => ({
           id: context.text(),
-          order: result as number,
+          position: context.position(),
+          value: result as number,
         }),
       }),
       convert(lettreAsciiMinuscule, {
-        value: (result) => ({
+        value: (result, context) => ({
           id: result as string,
-          order: (result as string).charCodeAt(0) - "a".charCodeAt(0) + 1,
+          position: context.position(),
+          value: (result as string).charCodeAt(0) - "a".charCodeAt(0) + 1,
         }),
       }),
       chain([nombreCardinal, regExp("[°o]?", { flags: "i" })], {
         value: (results, context) => ({
           id: context.text(),
-          order: results[0] as number,
+          position: context.position(),
+          value: results[0] as number,
         }),
       }),
     ),
-    optional([espace, adverbeMultiplicatif], { default: "" }),
+    optional([espace, adverbeMultiplicatif], { default: null }),
     nonLettre,
   ],
   {
     value: (results, context) => {
       const nombre0 = results[0] as TextAstNombre
-      const nombre1 = results[1] as "" | TextAstNombre
+      const nombre1 = results[1] as TextAstNombre | null
       return {
         id: `${nombre0.id}${nombre1 ? ` ${nombre1.id}` : ""}`,
-        order: nombre0.order + (nombre1 ? nombre1.order / 1000 : 0),
+        index: nombre0.value + (nombre1 === null ? 0 : nombre1.value / 1000),
         position: context.position(),
         type: "portion",
       }
@@ -58,12 +62,12 @@ export const numeroPortion = chain(
  * par exemple « même alinéa » ou « troisième phrase »
  */
 
-// export const unePortion = chain([
-//    alternatives(
-//      convert(adjectifNumeralOrdinal, { value: (result) => ({ id: result } })
-//    ),
-//  ])
-// TODO
+export const unePortion = chain([
+  alternatives(
+    convert(adjectifNumeralOrdinal, { value: (result) => ({ id: result }) }),
+  ),
+])
+TODO
 
 // // [objet] Alinéa désigné soit par un adjectif relatif soit par un ordinal écrit en lettres, par exemple « même alinéa » ou « troisième alinéa »
 // unePortion

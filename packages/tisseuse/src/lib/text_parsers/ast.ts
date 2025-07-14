@@ -65,9 +65,9 @@ export type TextAstCountedInterval = {
 } & TextAstPosition
 
 export type TextAstDivision = {
+  index?: number
   localization?: TextAstLocalisation
   ofTheSaid?: boolean
-  order?: number
   type: DivisionType
 } & TextAstPosition
 
@@ -112,15 +112,15 @@ export type TextAstLocalisation =
   | { absolute: number }
   | { relative: number | "+∞" }
 
-export interface TextAstNombre {
+export type TextAstNombre = {
   id: string
-  order: number
-}
+  value: number
+} & TextAstPosition
 
 export type TextAstPortion = {
+  index?: number
   localization?: TextAstLocalisation
   ofTheSaid?: boolean
-  order?: number
   type: PortionType
 } & TextAstPosition
 

@@ -95,7 +95,7 @@ describe("adverbeMultiplicatif", () => {
   for (const [latinNumber, number] of generateLatinNumbers()) {
     test(`${latinNumber} == ${number}`, () => {
       const context = new TextParserContext(latinNumber)
-      expect((adverbeMultiplicatif(context) as TextAstNombre).order).toBe(
+      expect((adverbeMultiplicatif(context) as TextAstNombre).value).toBe(
         number,
       )
       expect(context.input).toBe("")

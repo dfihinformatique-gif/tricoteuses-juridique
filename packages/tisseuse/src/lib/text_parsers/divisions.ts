@@ -142,7 +142,7 @@ export const division1Internal = alternatives(
   ),
   chain([adjectifOrdinal, espace, natureDivisionSingulier], {
     value: (results, context) => ({
-      order: results[0],
+      index: results[0],
       position: context.position(),
       type: results[2] as DivisionType,
     }),

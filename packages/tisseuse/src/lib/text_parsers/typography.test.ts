@@ -31,8 +31,8 @@ describe("lettreAsciiMinuscule", () => {
 describe("nonLettre", () => {
   test("1", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(nonLettre(context)).toBe("1")
-    expect(context.input).toBe("")
+    expect(nonLettre(context)).toBe("")
+    expect(context.input).toBe(task.name)
   })
 
   test("A", ({ task }) => {
@@ -44,6 +44,12 @@ describe("nonLettre", () => {
   test("œ", ({ task }) => {
     const context = new TextParserContext(task.name)
     expect(nonLettre(context)).toBe(undefined)
+    expect(context.input).toBe(task.name)
+  })
+
+  test("", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(nonLettre(context)).toBe("")
     expect(context.input).toBe(task.name)
   })
 })

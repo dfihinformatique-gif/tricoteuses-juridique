@@ -1,4 +1,17 @@
-import { type TextAstNombre, type TextAstLocalisation } from "./ast.js"
+import {
+  type TextAstNombre,
+  type TextAstLocalisation,
+  type TextAstReference,
+  type LocalizationAdverb,
+  type CompoundReferencesSeparator,
+  type TextAstAtomicReference,
+  type TextAstParentChild,
+  type TextAstArticle,
+} from "./ast.js"
+import {
+  createEnumerationOrBoundedInterval,
+  iterAtomicReferences,
+} from "./helpers.js"
 import { adverbeMultiplicatif } from "./numbers.js"
 import {
   alternatives,
@@ -8,10 +21,17 @@ import {
   regExp,
   repeat,
 } from "./parsers.js"
+import { portionsEntreParentheses } from "./portions.js"
+import { ditPluriel, ditSingulier } from "./prepositions.js"
 import {
+  adjectifRelatifPluriel,
   adjectifRelatifSingulier,
   espaceAdverbeRelatif,
+  relatifPluriel,
+  relatifPlurielPrepose,
+  relatifSingulierPrepose,
 } from "./relative_locations.js"
+import { separateurEnumeration, separateurPlage } from "./separators.js"
 import { espace } from "./typography.js"
 
 /**
@@ -38,11 +58,18 @@ export const nomSpecialArticle = alternatives(
  */
 export const typeArticle = chain(
   [
-    alternatives(
-      [regExp(String.raw`L\.O`, { value: "LO" }), regExp(String.raw`\*?`)],
-      regExp(String.raw`([ARDL]|LO)\*?`),
+    regExp(String.raw`\*?\*?`),
+    optional(
+      [
+        alternatives(
+          [regExp(String.raw`L\.?O`, { value: "LO" }), regExp(String.raw`\*?`)],
+          regExp(String.raw`([ARDL]|LO)\*?`),
+        ),
+        regExp(String.raw`\*?\*?`),
+        regExp(String.raw`\.?\ ?`, { value: "" }),
+      ],
+      { default: "" },
     ),
-    regExp(String.raw`\.?\ `, { value: "" }),
   ],
   { value: (results, context) => context.textFromResults(results) },
 )
@@ -80,18 +107,31 @@ export const nomArticle = alternatives(
 export const designationArticle = alternatives(
   chain(
     [
-      nomArticle,
-      optional(espaceAdverbeRelatif, { default: "" }),
-      optional(alineasEntreParentheses, { default: "" }),
+      chain([nomArticle, optional(espaceAdverbeRelatif, { default: null })], {
+        value: (results, context) => ({
+          ...(results[1]
+            ? { localizationAdverb: results[1] as LocalizationAdverb }
+            : {}),
+          id: results[0] as string,
+          position: context.position(),
+          type: "article",
+        }),
+      }),
+      optional(portionsEntreParentheses, { default: null }),
     ],
     {
-      value: (results, context) => ({
-        ...(results[1] ? { adverb: results[1] } : {}),
-        ...(results[2] ? { child: results[2] } : {}),
-        id: results[0] as string,
-        position: context.position(),
-        type: "article",
-      }),
+      value: (results, context) => {
+        const article = results[0] as TextAstArticle
+        const portion = results[1] as TextAstReference | null
+        return portion === null
+          ? article
+          : {
+              child: portion,
+              parent: article,
+              position: context.position(),
+              type: "parent-enfant",
+            }
+      },
     },
   ),
   convert(adjectifRelatifSingulier, {
@@ -103,72 +143,159 @@ export const designationArticle = alternatives(
   }),
 )
 
-// // [objet] Règle principale pour la reconnaissance d’un seul article
-// article
-//  = dit:dit_singulier?
-//    a:article1_priv
-//    { if( dit ) {
-//        for (const ref of iterAtomicReferences(a)) {
-//          ref.dit = dit;
-//        }
-//      }
-//      return a;
-//    }
+export const listeArticles1Internal = convert(adjectifRelatifPluriel, {
+  value: (result, context) => ({
+    localization: result as TextAstLocalisation,
+    position: context.position(),
+    type: "article",
+  }),
+})
 
-// // [objet] Règle annexe à article
-// article1_priv
-//  = r:relatif_singulier_prepose _ "article" a:( _ designation_article )?
-//    { const base = a ? a[1] : { type: "article-reference", position: position() };
-//      // Que faire d’une éventuelle expression « aux mêmes articles suivants » ?
-//      // Tel que codé ci-dessous, le « mêmes » est ignoré au profit du « suivants »
-//      for (const ref of iterAtomicReferences(base)) {
-//        if (!ref.indirect) ref.indirect = r;
-//      }
-//      return base;
-//    }
-//  / "article" _ a:designation_article
-//    { return a; }
+/**
+ * Liste d’articles, comprenant au minimum deux articles
+ */
+export const listeArticles = chain(
+  [
+    designationArticle,
+    repeat(
+      [
+        alternatives(separateurEnumeration, separateurPlage),
+        alternatives(listeArticles1Internal, designationArticle),
+      ],
+      { min: 1 },
+    ),
+  ],
+  {
+    value: (results, context) =>
+      createEnumerationOrBoundedInterval(
+        results[0] as TextAstReference,
+        results[1] as Array<
+          [
+            CompoundReferencesSeparator,
+            TextAstAtomicReference | TextAstParentChild,
+          ]
+        >,
+        context.position(),
+      ),
+  },
+)
 
-// // [liste d’objets] Règle principale pour la reconnaissance d’une liste d’articles
-// articles
-//  = dit:dit_pluriel?
-//    a:articles1_priv
-//    { if( dit ) {
-//        for (const ref of iterAtomicReferences(a)) {
-//          ref.dit = dit;
-//        }
-//      }
-//      return a;
-//    }
+export const articles2Internal = alternatives(
+  listeArticles,
+  convert(relatifPluriel, {
+    value: (result, context) => ({
+      localization: result as TextAstLocalisation,
+      position: context.position(),
+      type: "article",
+    }),
+  }),
+)
 
-// // [liste d’objets] Règle annexe à articles
-// articles1_priv
-//  = r:relatif_pluriel_prepose _ "articles" a:( _ articles2_priv )?
-//    { const base = a ? a[1] : { type: "article-reference", position: position() };
-//      // Que faire d’une éventuelle expression « aux mêmes articles suivants » ?
-//      // Tel que codé ci-dessous, le « mêmes » est ignoré au profit du « suivants »
-//      for (const ref of iterAtomicReferences(base)) {
-//        if (!ref.indirect) ref.indirect = r;
-//      }
-//      return base;
-//    }
-//  / "articles" _ a:articles2_priv
-//    { return a; }
+export const articles1Internal = alternatives(
+  chain(
+    [
+      relatifPlurielPrepose,
+      espace,
+      regExp("articles", { flags: "i" }),
+      optional([espace, articles2Internal], { default: [] }),
+    ],
+    {
+      value: (results, context) => {
+        const base = (results[3] as [string, TextAstArticle])[1] ?? {
+          position: context.position(),
+          type: "article",
+        }
+        for (const reference of iterAtomicReferences(base)) {
+          reference.type = "article"
+          if (reference.localization === undefined) {
+            reference.localization = results[0] as TextAstLocalisation
+          }
+        }
+        return { ...base, position: context.position() }
+      },
+    },
+  ),
+  chain([regExp("articles", { flags: "i" }), espace, articles2Internal], {
+    value: (results, context) => ({
+      ...(results[2] as TextAstReference),
+      position: context.position(),
+    }),
+  }),
+)
 
-// // [liste d’objets] Règle annexe à articles1_priv
-// articles2_priv
-//  = a:liste_articles
-//    { return a; }
-//  / r:relatif_pluriel
-//    { return { type: "article-reference", indirect: r, position: position() }; }
+/**
+ * Règle principale pour la reconnaissance d’une liste d’articles
+ */
+export const articles = chain(
+  [optional(ditPluriel, { default: false }), articles1Internal],
+  {
+    value: (results, context) => {
+      if (results[0]) {
+        for (const reference of iterAtomicReferences(
+          results[1] as TextAstReference,
+        )) {
+          reference.ofTheSaid = true
+        }
+      }
+      return {
+        ...(results[1] as TextAstReference),
+        position: context.position(),
+      }
+    },
+  },
+)
 
-// // [liste d’objets] Liste d’articles, comprenant au minimum deux articles
-// liste_articles
-//  = a:designation_article
-//    b:( ( separateurEnumeration / separateurPlage ) ( liste_articles1_priv / designation_article ) )+
-//    { return createEnumerationOrBoundedInterval( a, b, text(), position() ); }
+export const article1Internal = alternatives(
+  chain(
+    [
+      relatifSingulierPrepose,
+      espace,
+      regExp("article", { flags: "i" }),
+      optional([espace, designationArticle], { default: [] }),
+    ],
+    {
+      value: (results, context) => {
+        const base = (results[3] as [string, TextAstArticle])[1] ?? {
+          position: context.position(),
+          type: "article",
+        }
+        // Que faire d’une éventuelle expression « aux mêmes articles suivants » ?
+        // Tel que codé ci-dessous, le « mêmes » est ignoré au profit du « suivants »
+        for (const reference of iterAtomicReferences(base)) {
+          if (reference.localization === undefined) {
+            reference.localization = results[0] as TextAstLocalisation
+          }
+        }
+        return { ...base, position: context.position() }
+      },
+    },
+  ),
+  chain([regExp("article", { flags: "i" }), espace, designationArticle], {
+    value: (results, context) => ({
+      ...(results[2] as TextAstReference),
+      position: context.position(),
+    }),
+  }),
+)
 
-// // [objet] Règle annexe à liste_articles
-// liste_articles1_priv
-//  = a:adjectif_relatif_pluriel
-//    { return { type: "article-reference", indirect: a, position: position() }; }
+/**
+ * Règle principale pour la reconnaissance d’un seul article
+ */
+export const article = chain(
+  [optional(ditSingulier, { default: null }), article1Internal],
+  {
+    value: (results, context) => {
+      if (results[0]) {
+        for (const reference of iterAtomicReferences(
+          results[1] as TextAstReference,
+        )) {
+          reference.ofTheSaid = true
+        }
+      }
+      return {
+        ...(results[1] as TextAstReference),
+        position: context.position(),
+      }
+    },
+  },
+)

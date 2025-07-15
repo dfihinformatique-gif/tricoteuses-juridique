@@ -54,13 +54,4 @@ export const separateurExclusion = chain([
   regExp("à l'exception ", { value: "sauf" }),
 ])
 
-export function separateurPlage(
-  context: TextParserContext,
-): TextAst | undefined {
-  const match = /^ à /i.exec(context.input)
-  if (match === null) {
-    return undefined
-  }
-  context.input = context.input.slice(match[0].length)
-  return "à"
-}
+export const separateurPlage = regExp(" à ", { flags: "i", value: "à" })

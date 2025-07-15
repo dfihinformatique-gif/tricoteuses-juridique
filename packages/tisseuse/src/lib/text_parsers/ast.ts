@@ -1,3 +1,6 @@
+export type CompoundReferencesSeparator =
+  (typeof compoundReferencesSeparators)[number]
+
 export type DivisionType = (typeof divisionTypes)[number]
 
 export type EuropeanLawType = (typeof europeanLawTypes)[number]
@@ -8,6 +11,8 @@ export type InternationalLawType = (typeof internationalLawTypes)[number]
 
 export type LawType = (typeof lawTypes)[number]
 
+export type LocalizationAdverb = (typeof localizationAdverbs)[number]
+
 export type PortionType = (typeof portionTypes)[number]
 
 export type TextAst =
@@ -15,7 +20,8 @@ export type TextAst =
   | null
   | number
   | string
-  | TestAstAction
+  | TextAstAction
+  | TextAstArticle
   | TextAstBoundedInterval
   | TextAstCitation
   | TextAstLaw
@@ -26,7 +32,7 @@ export type TextAst =
   | TextAstReference
   | Array<TextAst>
 
-export interface TestAstAction {
+export interface TextAstAction {
   action:
     | "CREATION"
     | "CREATION_OU_MODIFICATION"
@@ -35,7 +41,16 @@ export interface TestAstAction {
   actionInContent?: boolean
 }
 
+export type TextAstArticle = {
+  id?: string
+  localization?: TextAstLocalisation
+  localizationAdverb?: LocalizationAdverb
+  ofTheSaid?: boolean
+  type: "article"
+} & TextAstPosition
+
 export type TextAstAtomicReference =
+  | TextAstArticle
   | TextAstDivision
   | TextAstIncompleteHeader
   | (TextAstLaw & TextAstPosition)
@@ -85,15 +100,14 @@ export type TextAstExclusion = {
 } & TextAstPosition
 
 export type TextAstIncompleteHeader = {
-  adverb?: "après" | "avant" | "dessous" | "dessus"
   id?: string
   localization?: TextAstLocalisation
+  localizationAdverb?: LocalizationAdverb
   ofTheSaid?: boolean
   type: "incomplete-header"
 } & TextAstPosition
 
 export interface TextAstLaw {
-  child?: TextAstReference
   id?: string
   lawDate?: string
   lawType: LawType
@@ -117,6 +131,12 @@ export type TextAstNombre = {
   value: number
 } & TextAstPosition
 
+export type TextAstParentChild = {
+  child: TextAstReference
+  parent: TextAstReference
+  type: "parent-enfant"
+} & TextAstPosition
+
 export type TextAstPortion = {
   index?: number
   localization?: TextAstLocalisation
@@ -128,12 +148,23 @@ export interface TextAstPosition {
   position: TextPosition
 }
 
-export type TextAstReference = TextAstAtomicReference | TextAstCompoundReference
+export type TextAstReference =
+  | TextAstAtomicReference
+  | TextAstCompoundReference
+  | TextAstParentChild
 
 export interface TextPosition {
   start: number
   stop: number
 }
+
+export const compoundReferencesSeparators = [
+  ",",
+  "à",
+  "et",
+  "ou",
+  "sauf",
+] as const
 
 export const europeanLawTypes = ["directive", "règlement"] as const
 
@@ -169,3 +200,10 @@ export const divisionTypes = [
 ] as const
 
 export const portionTypes = ["partie", "alinéa", "phrase"] as const
+
+export const localizationAdverbs = [
+  "après",
+  "avant",
+  "dessous",
+  "dessus",
+] as const

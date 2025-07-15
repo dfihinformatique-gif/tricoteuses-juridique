@@ -170,8 +170,16 @@ export const convert =
 
         return undefined
       }
+
+      context.offset += context.length
+      context.length = 0
+
       return convertedAst
     }
+
+    context.offset += context.length
+    context.length = 0
+
     return value
   }
 
@@ -394,9 +402,17 @@ export const variable =
         delete context.variables[name]
         return undefined
       }
+
+      context.offset += context.length
+      context.length = 0
       context.variables[name] = convertedAst
+
       return convertedAst
     }
+
+    context.offset += context.length
+    context.length = 0
     context.variables[name] = value
+
     return value
   }

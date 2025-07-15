@@ -18,7 +18,7 @@ export const adjectifRelatifPluriel = alternatives(
     flags: "i",
     value: { relative: 0 },
   }),
-  regExp("suivant?es", {
+  regExp("suivante?s", {
     flags: "i",
     value: { relative: "+∞" },
   }),
@@ -45,7 +45,7 @@ export const adjectifRelatifSingulier = alternatives(
     flags: "i",
     value: { absolute: -2 },
   }),
-  regExp("précédent?e", {
+  regExp("précédente?", {
     flags: "i",
     value: { relative: -1 },
   }),
@@ -53,11 +53,11 @@ export const adjectifRelatifSingulier = alternatives(
     flags: "i",
     value: { absolute: 1 },
   }),
-  regExp("présent?e", {
+  regExp("présente?", {
     flags: "i",
     value: { relative: 0 },
   }),
-  regExp("suivant?e", {
+  regExp("suivante?", {
     flags: "i",
     value: { relative: 1 },
   }),

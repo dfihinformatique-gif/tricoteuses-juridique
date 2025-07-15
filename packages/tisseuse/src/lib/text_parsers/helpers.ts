@@ -1,14 +1,27 @@
 import type {
+  CompoundReferencesSeparator,
   TextAstAtomicReference,
   TextAstCompoundReference,
   TextAstEnumeration,
+  TextAstParentChild,
   TextAstReference,
   TextPosition,
 } from "./ast.js"
 
+const priorityByCoordinatorRecord: Record<CompoundReferencesSeparator, number> =
+  {
+    ",": 2,
+    à: 3,
+    et: 2,
+    ou: 2,
+    sauf: 1,
+  }
+
 export const createEnumerationOrBoundedInterval = (
   reference: TextAstReference,
-  remaining: Array<["," | "à" | "et" | "ou" | "sauf", TextAstAtomicReference]>,
+  remaining: Array<
+    [CompoundReferencesSeparator, TextAstAtomicReference | TextAstParentChild]
+  >,
   position: TextPosition,
 ): TextAstReference => {
   // Parameter `remaining` is an array of the form
@@ -21,7 +34,20 @@ export const createEnumerationOrBoundedInterval = (
       position,
     }
   }
-  const [coordinator, otherReference] = remaining[0]
+  const [coordinator, nextReference] = remaining[0]
+  const coordinatorPriority = priorityByCoordinatorRecord[coordinator]
+  const nextCoordinator = remaining[1]?.[0]
+  const nextCoordinatorPriority =
+    nextCoordinator === undefined
+      ? 0
+      : priorityByCoordinatorRecord[nextCoordinator]
+  const otherReference =
+    coordinatorPriority < nextCoordinatorPriority
+      ? createEnumerationOrBoundedInterval(nextReference, remaining.slice(1), {
+          start: nextReference.position.start,
+          stop: position.stop,
+        })
+      : nextReference
   let mergedReference: TextAstReference
   if (coordinator === "sauf") {
     // Append exclusion to the deepest non-enumeration rigth of reference.
@@ -62,10 +88,10 @@ export const createEnumerationOrBoundedInterval = (
     }
   } else if (
     reference.type !== "law" &&
-    otherReference.type === "law" &&
-    otherReference.child !== undefined
+    otherReference.type === "parent-enfant" &&
+    otherReference.parent.type === "law"
   ) {
-    // Create a Merged reference of type law-reference based on otherReference.
+    // Create a Merged reference of type law based on otherReference.
     mergedReference = {
       ...otherReference,
       child:
@@ -89,6 +115,44 @@ export const createEnumerationOrBoundedInterval = (
               },
               type: "enumeration",
             },
+      position: {
+        start: reference.position.start,
+        stop: otherReference.position.stop,
+      },
+    }
+  } else if (
+    reference.type === "parent-enfant" &&
+    reference.parent.type === "law" &&
+    otherReference.type !== "law"
+  ) {
+    // Create a Merged reference of type law based on reference.
+    mergedReference = {
+      ...reference,
+      child:
+        coordinator === "à"
+          ? {
+              first: reference.child,
+              last: otherReference,
+              position: {
+                start: reference.position.start,
+                stop: otherReference.position.stop,
+              },
+              type: "bounded-interval",
+            }
+          : {
+              coordinator,
+              left: reference.child,
+              right: otherReference,
+              position: {
+                start: reference.position.start,
+                stop: otherReference.position.stop,
+              },
+              type: "enumeration",
+            },
+      position: {
+        start: reference.position.start,
+        stop: otherReference.position.stop,
+      },
     }
   } else {
     // TODO: Handle other combinations of reference.type & otherReference.type.
@@ -114,11 +178,34 @@ export const createEnumerationOrBoundedInterval = (
             type: "enumeration",
           }
   }
+  if (coordinatorPriority < nextCoordinatorPriority) {
+    return mergedReference
+  }
   return createEnumerationOrBoundedInterval(
     mergedReference,
     remaining.slice(1),
     position,
   )
+}
+
+export const createParentChildTreeFromReferences = (
+  child: TextAstReference,
+  ancestors: TextAstReference[],
+  position: TextPosition,
+): TextAstReference => {
+  for (const parent of ancestors) {
+    child = {
+      child,
+      parent,
+      position: {
+        start: child.position.start,
+        stop: parent.position.stop,
+      },
+      type: "parent-enfant",
+    }
+  }
+  child.position = position
+  return child
 }
 
 export function* iterAtomicReferences(
@@ -140,6 +227,12 @@ export function* iterAtomicReferences(
     case "exclusion": {
       yield* iterAtomicReferences(reference.left)
       yield* iterAtomicReferences(reference.right)
+      break
+    }
+
+    case "parent-enfant": {
+      yield* iterAtomicReferences(reference.parent)
+      yield* iterAtomicReferences(reference.child)
       break
     }
 

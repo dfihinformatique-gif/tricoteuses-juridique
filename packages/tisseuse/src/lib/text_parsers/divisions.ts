@@ -3,6 +3,7 @@
  */
 
 import {
+  type CompoundReferencesSeparator,
   type DivisionType,
   type TextAstIncompleteHeader,
   type TextAstLocalisation,
@@ -82,7 +83,7 @@ export const numeroDivision = chain([alternatives(nombreRomainOu0i, nombre)], {
 export const designationDivision = alternatives(
   chain([numeroDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({
-      ...(results[1] ? { adverb: results[1] } : {}),
+      ...(results[1] ? { localizationAdverb: results[1] } : {}),
       id: results[0] as string,
       position: context.position(),
       type: "incomplete-header",
@@ -90,7 +91,7 @@ export const designationDivision = alternatives(
   }),
   chain([nomDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({
-      ...(results[1] ? { adverb: results[1] } : {}),
+      ...(results[1] ? { localizationAdverb: results[1] } : {}),
       id: results[0] as string,
       position: context.position(),
       type: "incomplete-header",
@@ -209,7 +210,7 @@ export const listeDivisions = chain(
       createEnumerationOrBoundedInterval(
         results[0] as TextAstIncompleteHeader,
         results[1] as Array<
-          ["," | "à" | "et" | "ou" | "sauf", TextAstIncompleteHeader]
+          [CompoundReferencesSeparator, TextAstIncompleteHeader]
         >,
         context.position(),
       ),

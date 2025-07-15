@@ -73,6 +73,11 @@ export type TextAstCompoundReference =
   | TextAstEnumeration
   | TextAstExclusion
 
+export type TextAstConseilConstitutionnelDecision = {
+  id: string
+  type: "décision du Conseil constitutionnel"
+} & TextAstPosition
+
 export type TextAstCountedInterval = {
   count: number
   first: TextAstReference
@@ -151,7 +156,15 @@ export interface TextAstPosition {
 export type TextAstReference =
   | TextAstAtomicReference
   | TextAstCompoundReference
+  // | TextAstConseilConstitutionnelDecision TODO
   | TextAstParentChild
+  | TextAstReferenceAndAction
+
+export type TextAstReferenceAndAction = {
+  action: TextAstAction
+  reference: TextAstReference
+  type: "reference_et_action"
+} & TextAstPosition
 
 export interface TextPosition {
   start: number

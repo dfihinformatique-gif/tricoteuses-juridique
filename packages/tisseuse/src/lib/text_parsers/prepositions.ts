@@ -1,4 +1,4 @@
-import { alternatives, chain, regExp } from "./parsers.js"
+import { alternatives, chain, convert, regExp } from "./parsers.js"
 
 // Les introductions introduisent les expressions de liens.
 // Elles correspondent aux séparateurs des pré-candidats
@@ -26,15 +26,13 @@ export const liaisonPluriel = chain(
   { value: "des" },
 )
 
-export const liaisonSingulier = chain(
-  [
-    alternatives(
-      regExp(" de (?=ce(tte|t)? )", { flags: "i" }),
-      regExp(" de l'", { flags: "i" }),
-      regExp(" de la( |(?=dite ))", { flags: "i" }),
-      regExp(" du( |(?=dit ))", { flags: "i" }),
-    ),
-  ],
+export const liaisonSingulier = convert(
+  alternatives(
+    regExp(" de (?=ce(tte|t)? )", { flags: "i" }),
+    regExp(" de l'", { flags: "i" }),
+    regExp(" de la( |(?=dite ))", { flags: "i" }),
+    regExp(" du( |(?=dit ))", { flags: "i" }),
+  ),
   { value: "de" },
 )
 

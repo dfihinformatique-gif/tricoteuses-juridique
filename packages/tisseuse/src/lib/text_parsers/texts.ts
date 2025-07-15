@@ -77,6 +77,18 @@ export const natureTexteFrancais = chain(
   },
 )
 
+export const decisionConseilConstitutionnel = regExp(
+  "décision( du Conseil constitutionnel)? (?<numero>[-/0-9A-Z]+ (QPC|DC|AN|D|ELEC|FNR|I|LOM|LP|L|ORGA|PDR|REF|SEN|AUTR|AR16))",
+  {
+    flags: "i",
+    value: (match, context) => ({
+      id: match.groups!.numero,
+      position: context.position(),
+      type: "décision du Conseil constitutionnel",
+    }),
+  },
+)
+
 /**
  * Règle principale pour la reconnaissance d’un texte français
  *

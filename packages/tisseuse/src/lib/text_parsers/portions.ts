@@ -328,7 +328,7 @@ export const auxPortions = chain([introPluriel, portions], {
   }),
 })
 
-export const portionPreciseSPluriel = chain(
+export const portionPrecisePluriel = chain(
   [
     portions,
     repeat([separateurEnumeration, alternatives(auxPortions, auPortion)]),

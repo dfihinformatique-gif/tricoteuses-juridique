@@ -17,6 +17,29 @@ const priorityByCoordinatorRecord: Record<CompoundReferencesSeparator, number> =
     sauf: 1,
   }
 
+export const addChildLeftToLastChild = (
+  reference: TextAstReference,
+  child: TextAstReference,
+): TextAstParentChild =>
+  reference.type === "parent-enfant"
+    ? {
+        ...reference,
+        child: addChildLeftToLastChild(reference.child, child),
+        position: {
+          start: child.position.start,
+          stop: reference.position.stop,
+        },
+      }
+    : {
+        child,
+        parent: reference,
+        position: {
+          start: child.position.start,
+          stop: reference.position.stop,
+        },
+        type: "parent-enfant",
+      }
+
 export const createEnumerationOrBoundedInterval = (
   reference: TextAstReference,
   remaining: Array<

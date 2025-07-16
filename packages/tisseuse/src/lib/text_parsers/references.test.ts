@@ -1,10 +1,16 @@
 import { describe, expect, test } from "vitest"
 
-import type { TextAstParentChild, TextAstReference } from "./ast.js"
+import type {
+  TextAstBoundedInterval,
+  TextAstCountedInterval,
+  TextAstParentChild,
+  TextAstReference,
+} from "./ast.js"
 import { TextParserContext } from "./parsers.js"
 import {
   reference,
   referenceSingulier1Internal,
+  referenceSingulier2Internal,
   uniteBasePreciseeSingulier,
   uniteBaseSingulier,
 } from "./references.js"
@@ -48,6 +54,43 @@ describe("reference", () => {
     expect(context.textSlice(result.child.position)).toBe("article 7 vicies A")
   })
 
+  test("à l'article précédent du même code", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        localization: {
+          relative: -1,
+        },
+        position: {
+          start: 4,
+          stop: 21,
+        },
+        type: "article",
+      },
+      parent: {
+        lawType: "code",
+        localization: {
+          relative: 0,
+        },
+        position: {
+          start: 25,
+          stop: 34,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 34,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe("même code")
+    expect(context.textSlice(result.child.position)).toBe("article précédent")
+  })
+
   test("à la loi n° 98-293 du 31 décembre 1998", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
@@ -65,6 +108,128 @@ describe("reference", () => {
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
+  test("au 3°", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      id: "3°",
+      index: 3,
+      position: {
+        start: 0,
+        stop: 5,
+      },
+      type: "portion",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+  })
+
+  test("au 3° du présent article", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        id: "3°",
+        index: 3,
+        position: {
+          start: 3,
+          stop: 5,
+        },
+        type: "portion",
+      },
+      parent: {
+        localization: {
+          relative: 0,
+        },
+        position: {
+          start: 9,
+          stop: 24,
+        },
+        type: "article",
+      },
+      position: {
+        start: 0,
+        stop: 24,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe("présent article")
+    expect(context.textSlice(result.child.position)).toBe("3°")
+  })
+
+  test("audit article 8-1 bis du présent code", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        id: "8-1 bis",
+        ofTheSaid: true,
+        position: {
+          start: 2,
+          stop: 21,
+        },
+        type: "article",
+      },
+      parent: {
+        lawType: "code",
+        localization: {
+          relative: 0,
+        },
+        position: {
+          start: 25,
+          stop: 37,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 37,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe("présent code")
+    expect(context.textSlice(result.child.position)).toBe("dit article 8-1 bis")
+  })
+
+  test("audit article annexe du présent code", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        id: "annexe",
+        ofTheSaid: true,
+        position: {
+          start: 2,
+          stop: 20,
+        },
+        type: "article",
+      },
+      parent: {
+        lawType: "code",
+        localization: {
+          relative: 0,
+        },
+        position: {
+          start: 24,
+          stop: 36,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 36,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe("présent code")
+    expect(context.textSlice(result.child.position)).toBe("dit article annexe")
+  })
   // test("au code pénal", ({ task }) => {
   //   const context = new TextParserContext(task.name)
   //   const result = reference(context) as TextAstReference
@@ -76,6 +241,317 @@ describe("reference", () => {
   // testSingleLink("à l'article 7 du code pénal");
   // testSingleLink("à l'article 7 bis du code pénal");
   // testSingleLink("à l'article 7 vicies A du code pénal");
+
+  test("aux articles 7 tersexagies A à 9 quaterdecies de la loi n° 98-293 du 31 décembre 1998", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        first: {
+          id: "7 tersexagies A",
+          position: {
+            start: 13,
+            stop: 28,
+          },
+          type: "article",
+        },
+        last: {
+          id: "9 quaterdecies",
+          position: {
+            start: 31,
+            stop: 45,
+          },
+          type: "article",
+        },
+        position: {
+          start: 4,
+          stop: 45,
+        },
+        type: "bounded-interval",
+      },
+      parent: {
+        id: "98-293",
+        lawDate: "1998-12-31",
+        lawType: "loi",
+        position: {
+          start: 52,
+          stop: 85,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 85,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe(
+      "loi n° 98-293 du 31 décembre 1998",
+    )
+    expect(context.textSlice(result.child.position)).toBe(
+      "articles 7 tersexagies A à 9 quaterdecies",
+    )
+    expect(
+      context.textSlice(
+        (result.child as TextAstBoundedInterval).first.position,
+      ),
+    ).toBe("7 tersexagies A")
+    expect(
+      context.textSlice((result.child as TextAstBoundedInterval).last.position),
+    ).toBe("9 quaterdecies")
+  })
+
+  test("aux dix derniers alinéas de l'article 123", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        count: 10,
+        first: {
+          localization: {
+            absolute: -1,
+          },
+          type: "alinéa",
+        },
+        position: {
+          start: 4,
+          stop: 24,
+        },
+        type: "counted-interval",
+      },
+      parent: {
+        id: "123",
+        position: {
+          start: 30,
+          stop: 41,
+        },
+        type: "article",
+      },
+      position: {
+        start: 0,
+        stop: 41,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe("article 123")
+    expect(context.textSlice(result.child.position)).toBe(
+      "dix derniers alinéas",
+    )
+  })
+
+  test("au I", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      id: "I",
+      index: 1,
+      position: {
+        start: 0,
+        stop: 4,
+      },
+      type: "portion",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+  })
+
+  test("au i", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      id: "i",
+      index: 9,
+      position: {
+        start: 0,
+        stop: 4,
+      },
+      type: "portion",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+  })
+
+  // TODO; Not sure of the result of this one.
+  test("au I (troisième alinéa) de l'article 7", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          id: "I",
+          index: 1,
+          position: {
+            start: 3,
+            stop: 4,
+          },
+          type: "portion",
+        },
+        parent: {
+          index: 3,
+          position: {
+            start: 6,
+            stop: 22,
+          },
+          type: "alinéa",
+        },
+        position: {
+          start: 3,
+          stop: 23,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        id: "7",
+        position: {
+          start: 29,
+          stop: 38,
+        },
+        type: "article",
+      },
+      position: {
+        start: 0,
+        stop: 38,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe("article 7")
+    expect(context.textSlice(result.child.position)).toBe(
+      "I (troisième alinéa)",
+    )
+    // TODO; Not sure of the result of this one.
+    expect(
+      context.textSlice((result.child as TextAstParentChild).parent.position),
+    ).toBe("troisième alinéa")
+    expect(
+      context.textSlice((result.child as TextAstParentChild).child.position),
+    ).toBe("I")
+  })
+
+  // TODO; Not sure of the result of this one.
+  test("au III (56°) de l'article 7", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          id: "III",
+          index: 3,
+          position: {
+            start: 3,
+            stop: 6,
+          },
+          type: "portion",
+        },
+        parent: {
+          id: "56°",
+          index: 56,
+          position: {
+            start: 8,
+            stop: 11,
+          },
+          type: "portion",
+        },
+        position: {
+          start: 3,
+          stop: 12,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        id: "7",
+        position: {
+          start: 18,
+          stop: 27,
+        },
+        type: "article",
+      },
+      position: {
+        start: 0,
+        stop: 27,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe("article 7")
+    expect(context.textSlice(result.child.position)).toBe("III (56°)")
+    // TODO; Not sure of the result of this one.
+    expect(
+      context.textSlice((result.child as TextAstParentChild).parent.position),
+    ).toBe("56°")
+    expect(
+      context.textSlice((result.child as TextAstParentChild).child.position),
+    ).toBe("III")
+  })
+
+  test("au paragraphe 7 de l'article D** 7 du décret n° 98-74 du 28 février 1998", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          id: "7",
+          position: {
+            start: 3,
+            stop: 15,
+          },
+          type: "paragraphe",
+        },
+        parent: {
+          id: "D**7",
+          position: {
+            start: 21,
+            stop: 34,
+          },
+          type: "article",
+        },
+        position: {
+          start: 3,
+          stop: 34,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        id: "98-74",
+        lawDate: "1998-02-28",
+        lawType: "décret",
+        position: {
+          start: 38,
+          stop: 72,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 72,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.textSlice(result.parent.position)).toBe(
+      "décret n° 98-74 du 28 février 1998",
+    )
+    expect(context.textSlice(result.child.position)).toBe(
+      "paragraphe 7 de l'article D** 7",
+    )
+    expect(
+      context.textSlice((result.child as TextAstParentChild).parent.position),
+    ).toBe("article D** 7")
+    expect(
+      context.textSlice((result.child as TextAstParentChild).child.position),
+    ).toBe("paragraphe 7")
+  })
 
   test("au sous-paragraphe 3 de l'article L.O. 7-1 de la loi du 31 décembre 1998", ({
     task,

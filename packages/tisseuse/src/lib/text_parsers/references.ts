@@ -161,7 +161,10 @@ export const referenceSingulier1Internal = chain(
             regExp(" susvisée?", { flags: "i" }),
           ],
           { default: "" },
-        ), // optional(regExp(String.raw` \([^)]+\)`, {flags: "i"}), { default: "" }),
+        ),
+        // optional(regExp(String.raw` \([^)]+\)`, { flags: "i" }), {
+        //   default: "",
+        // }),
         optional(regExp(String.raw`, ?qui devient [^,]+ ","`, { flags: "i" }), {
           default: "",
         }),

@@ -276,6 +276,22 @@ export const localisationPortion = alternatives(
   portionsEntreParentheses,
 )
 
+export const portion = chain(
+  [
+    optional(ditSingulier, { default: null }),
+    listePortion,
+    repeat(localisationPortion),
+  ],
+  {
+    value: (results, context) =>
+      createParentChildTreeFromReferences(
+        results[1] as TextAstReference,
+        results[2] as TextAstAtomicReference[],
+        context.position(),
+      ),
+  },
+)
+
 export const portions = chain(
   [
     optional(ditPluriel, { default: null }),
@@ -291,24 +307,8 @@ export const portions = chain(
   {
     value: (results, context) =>
       createParentChildTreeFromReferences(
-        results[1] as TextAstReference,
-        results[2] as TextAstAtomicReference[],
-        context.position(),
-      ),
-  },
-)
-
-export const portion = chain(
-  [
-    optional(ditSingulier, { default: null }),
-    listePortion,
-    repeat(localisationPortion),
-  ],
-  {
-    value: (results, context) =>
-      createParentChildTreeFromReferences(
-        results[1] as TextAstReference,
-        results[2] as TextAstAtomicReference[],
+        results[2] as TextAstReference,
+        results[3] as TextAstAtomicReference[],
         context.position(),
       ),
   },

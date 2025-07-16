@@ -1,8 +1,14 @@
 import { describe, expect, test } from "vitest"
 
-import { type TextAstPortion } from "./ast.js"
+import { type TextAstCountedInterval, type TextAstPortion } from "./ast.js"
 import { TextParserContext } from "./parsers.js"
-import { auPortion, numeroPortion, unePortion } from "./portions.js"
+import {
+  auPortion,
+  auxPortions,
+  numeroPortion,
+  portions,
+  unePortion,
+} from "./portions.js"
 
 describe("auPortion", () => {
   test("au 2° du III", ({ task }) => {
@@ -49,6 +55,29 @@ describe("auPortion", () => {
         stop: 17,
       },
       type: "alinéa",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+  })
+})
+
+describe("auxPortions", () => {
+  test("aux dix derniers alinéas", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = auxPortions(context) as TextAstPortion
+    expect(result).toStrictEqual({
+      count: 10,
+      first: {
+        localization: {
+          absolute: -1,
+        },
+        type: "alinéa",
+      },
+      position: {
+        start: 0,
+        stop: 24,
+      },
+      type: "counted-interval",
     })
     expect(context.input).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -163,6 +192,29 @@ describe("numeroPortion", () => {
         stop: 1,
       },
       type: "portion",
+    })
+    expect(context.input).toBe("")
+    expect(context.textSlice(result.position)).toBe(task.name)
+  })
+})
+
+describe("portions", () => {
+  test("dix derniers alinéas", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = portions(context) as TextAstCountedInterval
+    expect(result).toStrictEqual({
+      count: 10,
+      first: {
+        localization: {
+          absolute: -1,
+        },
+        type: "alinéa",
+      },
+      position: {
+        start: 0,
+        stop: 20,
+      },
+      type: "counted-interval",
     })
     expect(context.input).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)

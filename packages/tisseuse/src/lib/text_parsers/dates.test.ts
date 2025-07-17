@@ -45,7 +45,7 @@ describe("date", () => {
     test(frenchDate, ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(date(context)).toBe(isoDate)
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
   }
 })
@@ -56,7 +56,7 @@ describe("duDate", () => {
     test(duFrenchDate, ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(duDate(context)).toBe(isoDate)
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
   }
 })

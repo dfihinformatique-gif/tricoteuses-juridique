@@ -13,15 +13,14 @@ export type TextAstConverter<T extends TextAst> = (
 export type TextParser = (context: TextParserContext) => TextAst | undefined
 
 export class TextParserContext {
-  input: string
   length = 0
-  offset = 0
   usedInputs: TextTree | undefined = undefined
   variables: Record<string, TextAst> = {}
 
-  constructor(public fullInput: string) {
-    this.input = fullInput
-  }
+  constructor(
+    public input: string,
+    public offset = 0,
+  ) {}
 
   position(): TextPosition {
     return {
@@ -30,12 +29,16 @@ export class TextParserContext {
     }
   }
 
+  remaining(): string {
+    return this.input.slice(this.offset)
+  }
+
   text(): string {
-    return this.fullInput.slice(this.offset, this.offset + this.length)
+    return this.input.slice(this.offset, this.offset + this.length)
   }
 
   textSlice(position: TextPosition): string {
-    return this.fullInput.slice(position.start, position.stop)
+    return this.input.slice(position.start, position.stop)
   }
 
   textFromResults(results: TextAst[] | undefined): string {
@@ -74,7 +77,6 @@ export const chain =
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
     // Push context.
-    const savedInput = context.input
     const savedOffset = context.offset
     const savedVariables = context.variables
     context.variables = { ...savedVariables }
@@ -87,7 +89,6 @@ export const chain =
       )(context)
       if (partialResult === undefined) {
         // Abort ⇒ Pull context.
-        context.input = savedInput
         context.length = 0
         context.offset = savedOffset
         context.usedInputs = undefined
@@ -114,7 +115,6 @@ export const chain =
       const convertedAst = value(results, context)
       if (convertedAst === undefined) {
         // Abort ⇒ Pull context.
-        context.input = savedInput
         context.length = 0
         context.offset = savedOffset
         context.usedInputs = undefined
@@ -143,7 +143,6 @@ export const convert =
     { value }: { value: TextAst | TextAstConverter<TextAst> },
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
-    const savedInput = context.input
     const savedOffset = context.offset
     const savedVariables = context.variables
     context.variables = { ...savedVariables }
@@ -162,7 +161,6 @@ export const convert =
       const convertedAst = value(ast, context)
       if (convertedAst === undefined) {
         // Abort ⇒ Pull context.
-        context.input = savedInput
         context.length = 0
         context.offset = savedOffset
         context.usedInputs = undefined
@@ -227,7 +225,7 @@ export const parseText = (
 
 export const regExp =
   (
-    regExp: string,
+    regExpContent: string,
     {
       flags,
       value,
@@ -237,9 +235,9 @@ export const regExp =
     } = {},
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
-    const match = new RegExp(`^${regExp}`, flags ?? undefined).exec(
-      context.input,
-    )
+    const regExp = new RegExp(regExpContent, "gy" + (flags ?? ""))
+    regExp.lastIndex = context.offset
+    const match = regExp.exec(context.input)
     if (match === null) {
       return undefined
     }
@@ -264,7 +262,6 @@ export const regExp =
       ast = value
     }
 
-    context.input = context.input.slice(match[0].length)
     context.offset += context.length
     context.length = 0
 
@@ -288,7 +285,6 @@ export const repeat =
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
     // Push context.
-    const savedInput = context.input
     const savedOffset = context.offset
     const savedVariables = context.variables
     context.variables = { ...savedVariables }
@@ -314,7 +310,6 @@ export const repeat =
     }
     if (min !== undefined && i < min) {
       // Abort ⇒ Pull context.
-      context.input = savedInput
       context.length = 0
       context.offset = savedOffset
       context.usedInputs = undefined
@@ -336,7 +331,6 @@ export const repeat =
       const convertedAst = value(results, context)
       if (convertedAst === undefined) {
         // Abort ⇒ Pull context.
-        context.input = savedInput
         context.length = 0
         context.offset = savedOffset
         context.usedInputs = undefined
@@ -368,7 +362,6 @@ export const variable =
     { value }: { value?: TextAst | TextAstConverter<TextAst> } = {},
   ): TextParser =>
   (context: TextParserContext): TextAst | undefined => {
-    const savedInput = context.input
     const savedOffset = context.offset
     const savedVariables = context.variables
     context.variables = { ...savedVariables }
@@ -393,7 +386,6 @@ export const variable =
       const convertedAst = value(ast, context)
       if (convertedAst === undefined) {
         // Abort ⇒ Pull context.
-        context.input = savedInput
         context.length = 0
         context.offset = savedOffset
         context.usedInputs = undefined

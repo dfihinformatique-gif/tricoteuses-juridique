@@ -113,18 +113,37 @@ export type TextAstIncompleteHeader = {
 } & TextAstPosition
 
 export interface TextAstLaw {
-  id?: string
+  /**
+   * For the texts found in the Légifrance datasets, this is
+   * Légifrance CID of the text.
+   */
+  cid?: string
   lawDate?: string
   lawType: LawType
   legislation?: "international" | "UE"
   localization?: TextAstLocalisation
+  /**
+   * For the texts found in the Légifrance datasets, this is
+   * Légifrance NUM of the text (for example the number of the law).
+   */
+  num?: string
   ofTheSaid?: boolean
+  /**
+   * For the texts found in the Légifrance datasets, the title
+   * is the Légifrance one ⇒ it may differ from the title given in
+   * input.
+   */
+  title?: string
   type: "law"
 }
 
 export interface TextAstLawIdentification {
-  id?: string
   lawDate?: string
+  /**
+   * For the texts found in the Légifrance datasets, this is
+   * Légifrance NUM of the text (for example the number of the law).
+   */
+  num?: string
 }
 
 export type TextAstLocalisation =

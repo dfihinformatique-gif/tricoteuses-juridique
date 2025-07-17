@@ -2,15 +2,12 @@ import { describe, expect, test } from "vitest"
 
 import type {
   TextAstBoundedInterval,
-  TextAstCountedInterval,
   TextAstParentChild,
   TextAstReference,
 } from "./ast.js"
 import { TextParserContext } from "./parsers.js"
 import {
   reference,
-  referenceSingulier1Internal,
-  referenceSingulier2Internal,
   uniteBasePreciseeSingulier,
   uniteBaseSingulier,
 } from "./references.js"
@@ -31,9 +28,9 @@ describe("reference", () => {
         type: "article",
       },
       parent: {
-        id: "98-293",
         lawDate: "1998-12-31",
         lawType: "loi",
+        num: "98-293",
         position: {
           start: 29,
           stop: 62,
@@ -46,7 +43,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe(
       "loi n° 98-293 du 31 décembre 1998",
@@ -85,7 +82,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe("même code")
     expect(context.textSlice(result.child.position)).toBe("article précédent")
@@ -95,16 +92,16 @@ describe("reference", () => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
     expect(result).toStrictEqual({
-      id: "98-293",
       lawDate: "1998-12-31",
       lawType: "loi",
+      num: "98-293",
       position: {
         start: 0,
         stop: 38,
       },
       type: "law",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -120,7 +117,7 @@ describe("reference", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -153,7 +150,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe("présent article")
     expect(context.textSlice(result.child.position)).toBe("3°")
@@ -189,7 +186,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe("présent code")
     expect(context.textSlice(result.child.position)).toBe("dit article 8-1 bis")
@@ -225,7 +222,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe("présent code")
     expect(context.textSlice(result.child.position)).toBe("dit article annexe")
@@ -234,7 +231,7 @@ describe("reference", () => {
   //   const context = new TextParserContext(task.name)
   //   const result = reference(context) as TextAstReference
   //   expect(result).toStrictEqual({})
-  //   expect(context.input).toBe("")
+  //   expect(context.remaining()).toBe("")
   //   expect(context.textSlice(result.position)).toBe(task.name)
   // })
   // testSingleLink("l'article 7 du code pénal");
@@ -272,9 +269,9 @@ describe("reference", () => {
         type: "bounded-interval",
       },
       parent: {
-        id: "98-293",
         lawDate: "1998-12-31",
         lawType: "loi",
+        num: "98-293",
         position: {
           start: 52,
           stop: 85,
@@ -287,7 +284,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe(
       "loi n° 98-293 du 31 décembre 1998",
@@ -337,7 +334,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe("article 123")
     expect(context.textSlice(result.child.position)).toBe(
@@ -357,7 +354,7 @@ describe("reference", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -373,7 +370,7 @@ describe("reference", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -420,7 +417,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe("article 7")
     expect(context.textSlice(result.child.position)).toBe(
@@ -479,7 +476,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe("article 7")
     expect(context.textSlice(result.child.position)).toBe("III (56°)")
@@ -522,9 +519,9 @@ describe("reference", () => {
         type: "parent-enfant",
       },
       parent: {
-        id: "98-74",
         lawDate: "1998-02-28",
         lawType: "décret",
+        num: "98-74",
         position: {
           start: 38,
           stop: 72,
@@ -537,7 +534,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe(
       "décret n° 98-74 du 28 février 1998",
@@ -597,7 +594,7 @@ describe("reference", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe(
       "loi du 31 décembre 1998",
@@ -630,9 +627,9 @@ describe("uniteBasePreciseeSingulier", () => {
         type: "article",
       },
       parent: {
-        id: "98-293",
         lawDate: "1998-12-31",
         lawType: "loi",
+        num: "98-293",
         position: {
           start: 25,
           stop: 58,
@@ -645,7 +642,7 @@ describe("uniteBasePreciseeSingulier", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -662,7 +659,7 @@ describe("uniteBaseSingulier", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -670,16 +667,16 @@ describe("uniteBaseSingulier", () => {
     const context = new TextParserContext(task.name)
     const result = uniteBaseSingulier(context) as TextAstReference
     expect(result).toStrictEqual({
-      id: "98-293",
       lawDate: "1998-12-31",
       lawType: "loi",
+      num: "98-293",
       position: {
         start: 0,
         stop: 33,
       },
       type: "law",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })

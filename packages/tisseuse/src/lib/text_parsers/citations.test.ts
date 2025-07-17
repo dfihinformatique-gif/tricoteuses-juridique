@@ -23,7 +23,7 @@ describe("citation", () => {
       },
       type: "citation",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.content[0].position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
@@ -48,7 +48,7 @@ describe("citation", () => {
       },
       type: "citation",
     })
-    expect(context.input).toBe("\n")
+    expect(context.remaining()).toBe("\n")
     expect(context.textSlice(result.position)).toBe(
       "« l'article 1er du décret du 2 octobre 2009 »",
     )
@@ -75,7 +75,7 @@ describe("citation", () => {
       },
       type: "citation",
     })
-    expect(context.input).toBe("\n")
+    expect(context.remaining()).toBe("\n")
     expect(context.textSlice(result.position)).toBe(
       "« l'article 1er du décret du 2 octobre 2009 »",
     )
@@ -114,7 +114,7 @@ describe("citation", () => {
       },
       type: "citation",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.content[0].position)).toBe("ligne 1")
     expect(context.textSlice(result.content[1].position)).toBe("ligne 2")
@@ -151,7 +151,7 @@ describe("citation", () => {
       },
       type: "citation",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.content[0].position)).toBe("ligne 1")
     expect(context.textSlice(result.content[1].position)).toBe("ligne 2")
@@ -169,7 +169,7 @@ describe("citationLigne", () => {
         stop: 43,
       },
     })
-    expect(context.input).toBe("»\n")
+    expect(context.remaining()).toBe("»\n")
     expect(context.textSlice(result.position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
     )
@@ -184,7 +184,7 @@ describe("citationLigne", () => {
         stop: 10,
       },
     })
-    expect(context.input).toBe("\n« sur 2 lignes »")
+    expect(context.remaining()).toBe("\n« sur 2 lignes »")
     expect(context.textSlice(result.position)).toBe("citation")
   })
 
@@ -197,7 +197,7 @@ describe("citationLigne", () => {
         stop: 10,
       },
     })
-    expect(context.input).toBe("»\n« sur 2 lignes »")
+    expect(context.remaining()).toBe("»\n« sur 2 lignes »")
     expect(context.textSlice(result.position)).toBe("citation")
   })
 })
@@ -221,7 +221,7 @@ describe("citationSimple", () => {
       },
       type: "citation",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.content[0].position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
@@ -232,6 +232,6 @@ describe("citationSimple", () => {
     const context = new TextParserContext(task.name)
     const result = citationSimple(context) as TextAstCitation
     expect(result).toBe(undefined)
-    expect(context.input).toBe(task.name)
+    expect(context.remaining()).toBe(task.name)
   })
 })

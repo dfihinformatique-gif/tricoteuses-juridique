@@ -39,7 +39,7 @@ describe("auPortion", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -56,7 +56,7 @@ describe("auPortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -79,7 +79,7 @@ describe("auxPortions", () => {
       },
       type: "counted-interval",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -97,7 +97,7 @@ describe("numeroPortion", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -113,7 +113,7 @@ describe("numeroPortion", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -129,7 +129,7 @@ describe("numeroPortion", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -145,7 +145,7 @@ describe("numeroPortion", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -161,7 +161,7 @@ describe("numeroPortion", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -177,7 +177,7 @@ describe("numeroPortion", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -193,7 +193,7 @@ describe("numeroPortion", () => {
       },
       type: "portion",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -216,7 +216,7 @@ describe("portions", () => {
       },
       type: "counted-interval",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -235,7 +235,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -252,7 +252,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -267,7 +267,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -282,7 +282,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -297,7 +297,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -312,7 +312,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -327,7 +327,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -342,7 +342,7 @@ describe("unePortion", () => {
       },
       type: "alinéa",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })

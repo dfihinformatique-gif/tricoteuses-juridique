@@ -13,7 +13,7 @@ describe("variable", () => {
         },
       })(context),
     ).toBe("ok")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("variable inside & outside chain", () => {
@@ -38,6 +38,6 @@ describe("variable", () => {
         },
       )(context),
     ).toBe("variable ok is no more defined")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })

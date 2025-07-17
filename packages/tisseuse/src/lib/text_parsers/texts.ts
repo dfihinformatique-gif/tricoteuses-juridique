@@ -29,8 +29,8 @@ export const identificationTexteFrancais = alternatives(
   chain([numeroTexteFrancais, optional(espaceDuDate, { default: "" })], {
     value: (results) =>
       results[1]
-        ? { id: results[0] as string, lawDate: results[1] as string }
-        : { id: results[0] as string },
+        ? { lawDate: results[1] as string, num: results[0] as string }
+        : { num: results[0] as string },
   }),
   convert(duDate, {
     value: (result) => ({ lawDate: result as string }),
@@ -105,9 +105,10 @@ export const texteFrancais = alternatives(
     ],
     {
       value: (results) => ({
-        id: "Constitution",
+        cid: "JORFTEXT000000571356",
         ...(results[1] ? { lawDate: results[1] as string } : {}),
         lawType: "constitution",
+        title: "Constitution",
         type: "law",
       }),
     },
@@ -164,8 +165,8 @@ export const identificationTexteEuropeen = alternatives(
   chain([numeroTexteEuropeen, optional(espaceDuDate, { default: "" })], {
     value: (results) =>
       results[1]
-        ? { id: results[0] as string, lawDate: results[1] as string }
-        : { id: results[0] as string },
+        ? { lawDate: results[1] as string, num: results[0] as string }
+        : { num: results[0] as string },
   }),
   convert(duDate, {
     value: (result) => ({ lawDate: result as string }),

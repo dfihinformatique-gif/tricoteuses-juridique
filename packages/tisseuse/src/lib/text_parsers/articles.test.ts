@@ -29,7 +29,7 @@ describe("article", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -45,7 +45,7 @@ describe("article", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -63,7 +63,7 @@ describe("article", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -82,7 +82,7 @@ describe("article", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -99,7 +99,7 @@ describe("article", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -117,7 +117,7 @@ describe("article", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -150,7 +150,7 @@ describe("articles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 325-3")
     expect(context.textSlice(result.right.position)).toBe("L. 325-4")
@@ -185,7 +185,7 @@ describe("articles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 325-3")
     expect(context.textSlice(result.right.position)).toBe("L. 325-4")
@@ -205,7 +205,7 @@ describe("articles", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -244,7 +244,7 @@ describe("articles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 325-3")
     expect(context.textSlice(result.right.position)).toBe("L. 325-4")
@@ -263,7 +263,7 @@ describe("articles", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -300,7 +300,7 @@ describe("articles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 325-3")
     expect(context.textSlice(result.right.position)).toBe("L. 325-4")
@@ -319,7 +319,7 @@ describe("designationArticle", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -334,7 +334,7 @@ describe("designationArticle", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -350,7 +350,7 @@ describe("designationArticle", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -398,7 +398,7 @@ describe("designationArticle", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe(
       "L.O. 325-3 ci-après",
@@ -441,7 +441,7 @@ describe("designationArticle", () => {
       },
       type: "parent-enfant",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.parent.position)).toBe(
       "L.O. 325-3 ci-après",
@@ -462,7 +462,7 @@ describe("designationArticle", () => {
       },
       type: "article",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -494,7 +494,7 @@ describe("listeArticles", () => {
       },
       type: "bounded-interval",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.first.position)).toBe("L. 325-3")
     expect(context.textSlice(result.last.position)).toBe("L. 325-5-1")
@@ -527,7 +527,7 @@ describe("listeArticles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 325-3")
     expect(context.textSlice(result.right.position)).toBe("L. 325-5-1")
@@ -562,7 +562,7 @@ describe("listeArticles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 325-3")
     expect(context.textSlice(result.right.position)).toBe("suivants")
@@ -611,7 +611,7 @@ describe("listeArticles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 400 bis, L. 425-3")
     expect(
@@ -681,7 +681,7 @@ describe("listeArticles", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("L. 400 bis")
     expect(context.textSlice(result.right.position)).toBe(
@@ -713,119 +713,119 @@ describe("nomArticle", () => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("1")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("3.1", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("3.1")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("3.A", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("3.A")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("3-1", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("3-1")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("3e", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("3")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("3ème", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("3")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("1er", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("1")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("A 3 A bis-3 A 7-3", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("A3 A bis-3 A 7-3")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("A 3e A bis-3e A 7-3", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("A3 A bis-3 A 7-3")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("annexe", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("annexe")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("D. 3 A bis-0", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("D3 A bis-0")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("L 321-3", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("L321-3")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("L 325-5-1", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("L325-5-1")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("L. 3 bis", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("L3 bis")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("L.O. 321-3", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("LO321-3")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("Liminaire", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("liminaire")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("R. 3 bis-0", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("R3 bis-0")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })
 
@@ -834,14 +834,14 @@ describe("nomSpecialArticle", () => {
     const context = new TextParserContext(task.name)
     const result = nomSpecialArticle(context) as TextAstArticle
     expect(result).toBe(task.name)
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("Liminaire", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomSpecialArticle(context) as TextAstArticle
     expect(result).toBe("liminaire")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })
 
@@ -850,83 +850,83 @@ describe("typeArticle", () => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("A.", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("A")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("D.", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("D")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("D**", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("D**")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("L.", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("L")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("L.O.", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("LO")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("LO", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("LO")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("R ", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("R")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("R.", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("R")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("R. ", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("R")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("**D", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("**D")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 
   test("**D**", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = typeArticle(context) as TextAstArticle
     expect(result).toBe("**D**")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })

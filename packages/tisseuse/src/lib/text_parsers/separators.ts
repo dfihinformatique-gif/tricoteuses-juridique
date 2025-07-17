@@ -1,12 +1,4 @@
-import { type TextAst } from "./ast.js"
-import {
-  alternatives,
-  chain,
-  optional,
-  regExp,
-  TextParserContext,
-  variable,
-} from "./parsers.js"
+import { alternatives, chain, optional, regExp, variable } from "./parsers.js"
 import { espace, virgule, virguleOuEspace } from "./typography.js"
 
 export const separateurEnumeration = alternatives(

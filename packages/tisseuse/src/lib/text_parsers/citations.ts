@@ -4,14 +4,14 @@ import { espaceOuRien } from "./typography.js"
 
 export const citationLigne = regExp(String.raw`« ?([^»\n]+)`, {
   flags: "d",
-  value: (match, context) => {
-    let stop = context.offset + match.indices![1][1]
+  value: (match) => {
+    let stop = match.indices![1][1]
     if (match[1].endsWith(" ")) {
       stop--
     }
     return {
       position: {
-        start: context.offset + match.indices![1][0],
+        start: match.indices![1][0],
         stop,
       },
     }
@@ -24,8 +24,8 @@ export const citationSimple = regExp(String.raw`« ?(.*?) ?»`, {
     content: [
       {
         position: {
-          start: context.offset + match.indices![1][0],
-          stop: context.offset + match.indices![1][1],
+          start: match.indices![1][0],
+          stop: match.indices![1][1],
         },
       },
     ],

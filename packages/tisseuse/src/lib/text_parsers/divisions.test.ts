@@ -23,7 +23,7 @@ describe("designationDivision", () => {
       position: { start: 0, stop: 2 },
       type: "incomplete-header",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })
 
@@ -39,7 +39,7 @@ describe("division", () => {
       position: { start: 0, stop: 17 },
       type: "section",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -55,7 +55,7 @@ describe("division", () => {
       position: { start: 0, stop: 19 },
       type: "section",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -68,7 +68,7 @@ describe("division", () => {
       position: { start: 0, stop: 14 },
       type: "section",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -80,7 +80,7 @@ describe("division", () => {
       localization: { relative: 0 },
       position: { start: 0, stop: 12 },
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -93,7 +93,7 @@ describe("division", () => {
       localization: { relative: 0 },
       position: { start: 0, stop: 14 },
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -107,7 +107,7 @@ describe("division", () => {
       id: "0I",
       position: { start: 0, stop: 10 },
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -119,7 +119,7 @@ describe("division", () => {
       id: "3",
       position: { start: 0, stop: 9 },
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -135,7 +135,7 @@ describe("division1Internal", () => {
       id: "0I",
       position: { start: 0, stop: 10 },
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 })
@@ -149,7 +149,7 @@ describe("division2Internal", () => {
       position: { start: 0, stop: 2 },
       type: "incomplete-header",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })
 
@@ -168,7 +168,7 @@ describe("divisions", () => {
       },
       type: "section",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -207,7 +207,7 @@ describe("divisions", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("3")
     expect(context.textSlice(result.right.position)).toBe("4")
@@ -242,7 +242,7 @@ describe("divisions", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("3")
     expect(context.textSlice(result.right.position)).toBe("4")
@@ -261,7 +261,7 @@ describe("divisions", () => {
       },
       type: "section",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
   })
 
@@ -294,7 +294,7 @@ describe("divisions", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("3")
     expect(context.textSlice(result.right.position)).toBe("4")
@@ -327,7 +327,7 @@ describe("divisions", () => {
       },
       type: "enumeration",
     })
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
     expect(context.textSlice(result.left.position)).toBe("3")
     expect(context.textSlice(result.right.position)).toBe("4")
@@ -338,7 +338,7 @@ describe("natureDivisionSingulier", () => {
   test("section", ({ task }) => {
     const context = new TextParserContext(task.name)
     expect(natureDivisionSingulier(context)).toBe("section")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })
 
@@ -346,6 +346,6 @@ describe("numeroDivision", () => {
   test("0I", ({ task }) => {
     const context = new TextParserContext(task.name)
     expect(numeroDivision(context)).toBe("0I")
-    expect(context.input).toBe("")
+    expect(context.remaining()).toBe("")
   })
 })

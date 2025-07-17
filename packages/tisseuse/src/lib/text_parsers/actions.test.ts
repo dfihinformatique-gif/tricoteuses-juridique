@@ -10,7 +10,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "CREATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(", est insérée", ({ task }) => {
@@ -18,7 +18,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "CREATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(", il est inséré", ({ task }) => {
@@ -26,7 +26,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "CREATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(", sont insérés", ({ task }) => {
@@ -34,7 +34,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "CREATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
   })
 
@@ -44,7 +44,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "CREATION_OU_MODIFICATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
   })
 
@@ -54,7 +54,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "MODIFICATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(", est ainsi modifié", ({ task }) => {
@@ -62,7 +62,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "MODIFICATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(" est modifié comme suit", ({ task }) => {
@@ -70,7 +70,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "MODIFICATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(" est remplacé", ({ task }) => {
@@ -78,7 +78,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "MODIFICATION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(" les mots : « la marine marchande » sont remplacés", ({ task }) => {
@@ -87,7 +87,7 @@ describe("actions", () => {
         action: "MODIFICATION",
         actionInContent: true,
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(", les nombres : « vingt-quatre » et « vingt-sept » sont respectivement remplacés", ({
@@ -98,7 +98,7 @@ describe("actions", () => {
         action: "MODIFICATION",
         actionInContent: true,
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
   })
 
@@ -108,7 +108,7 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "SUPPRESSION",
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(", les mots : « Chambertin-Clos de Bèze » sont supprimés", ({
@@ -119,7 +119,7 @@ describe("actions", () => {
         action: "SUPPRESSION",
         actionInContent: true,
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
 
     test(", est supprimée la mention", ({ task }) => {
@@ -128,7 +128,7 @@ describe("actions", () => {
         action: "SUPPRESSION",
         actionInContent: true,
       })
-      expect(context.input).toBe("")
+      expect(context.remaining()).toBe("")
     })
   })
   // describe("actions après objet", () => {
@@ -137,7 +137,7 @@ describe("actions", () => {
   //     expect(action(context)).toStrictEqual({
   //       action: "CREATION",
   //     })
-  //     expect(context.input).toBe("")
+  //     expect(context.remaining()).toBe("")
   //   })
   // })
 })

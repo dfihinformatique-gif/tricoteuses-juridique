@@ -200,7 +200,7 @@ export const reference = chain(
   [
     reference1Internal,
     repeat([
-      alternatives(separateurEnumeration, separateurExclusion),
+      alternatives(separateurExclusion, separateurEnumeration),
       reference1Internal,
     ]),
   ],

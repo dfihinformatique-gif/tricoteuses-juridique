@@ -1,5 +1,7 @@
 import { describe, expect, test } from "vitest"
 
+import { romanNumeralFromNumber } from "$lib/numbers.js"
+
 import { type TextAstNombre } from "./ast.js"
 import {
   adverbeMultiplicatif,
@@ -9,7 +11,6 @@ import {
   nombreRomainCardinal,
   nombreRomainOrdinal,
   nombreRomainOu0i,
-  romanNumeralFromNumber,
 } from "./numbers.js"
 import { TextParserContext } from "./parsers.js"
 

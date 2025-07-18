@@ -3,12 +3,22 @@ import {
   type FrenchLawType,
   type TextAstLaw,
   type TextAstLawIdentification,
+  type TextAstTextInfos,
+  type TextInfosByWordsTree,
 } from "./ast.js"
 import { duDate, espaceDuDate } from "./dates.js"
 import { nombreCardinal } from "./numbers.js"
-import { alternatives, chain, convert, optional, regExp } from "./parsers.js"
+import {
+  alternatives,
+  chain,
+  convert,
+  optional,
+  regExp,
+  wordsTree,
+} from "./parsers.js"
 import { ditSingulier } from "./prepositions.js"
 import { espacePrecite, relatifSingulierPrepose } from "./relative_locations.js"
+import textInfosByTitleWordsTree from "./texts_titles.json" with { type: "json" }
 import { espace, numero } from "./typography.js"
 
 // Textes français
@@ -96,7 +106,19 @@ export const decisionConseilConstitutionnel = regExp(
  * comme "Les quantités qui contribuent à la constitution d’une capacité d’effacement".
  */
 export const texteFrancais = alternatives(
-  // chain([regExp("code", { flags: "i" }), nomCode, optional(espacePrecite, { default: "" })], { value: { TODO }}),
+  chain(
+    [
+      wordsTree(textInfosByTitleWordsTree as TextInfosByWordsTree),
+      optional(espacePrecite, { default: "" }),
+    ],
+    {
+      value: (results) => ({
+        ...(results[0] as TextAstTextInfos),
+        ...(results[1] ? { lawDate: results[1] as string } : {}),
+        type: "law",
+      }),
+    },
+  ),
   chain(
     [
       regExp("Constitution"),

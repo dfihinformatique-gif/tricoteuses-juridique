@@ -2,132 +2,406 @@ import { describe, expect, test } from "vitest"
 
 import { getReferences } from "./index.js"
 import { TextParserContext } from "./parsers.js"
+import type { TextAstEnumeration, TextAstParentChild } from "./ast.js"
 
 describe("getReferences", () => {
+  test("à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe(
+      "loi n° 2020-1721 du 29 décembre 2020",
+    )
+    expect(context.textSlice(reference.child.position)).toBe(
+      "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151",
+    )
+  })
+
+  test("À l'avant-dernier alinéa de l'article 193", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("article 193")
+    expect(context.textSlice(reference.child.position)).toBe(
+      "avant-dernier alinéa",
+    )
+  })
+
+  test("à la première phrase du deuxième alinéa du a du I de l'article 219", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("article 219")
+    expect(context.textSlice(reference.child.position)).toBe(
+      "première phrase du deuxième alinéa du a du I",
+    )
+    expect(
+      context.textSlice(
+        (reference.child as TextAstParentChild).parent.position,
+      ),
+    ).toBe("I")
+    expect(
+      context.textSlice((reference.child as TextAstParentChild).child.position),
+    ).toBe("première phrase du deuxième alinéa du a")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstParentChild)
+          .parent.position,
+      ),
+    ).toBe("a")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstParentChild)
+          .child.position,
+      ),
+    ).toBe("première phrase du deuxième alinéa")
+    expect(
+      context.textSlice(
+        (
+          ((reference.child as TextAstParentChild).child as TextAstParentChild)
+            .child as TextAstParentChild
+        ).parent.position,
+      ),
+    ).toBe("deuxième alinéa")
+    expect(
+      context.textSlice(
+        (
+          ((reference.child as TextAstParentChild).child as TextAstParentChild)
+            .child as TextAstParentChild
+        ).child.position,
+      ),
+    ).toBe("première phrase")
+  })
+
+  test("à la première phrase du second alinéa du 4 de l'article 199 sexdecies", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe(
+      "article 199 sexdecies",
+    )
+    expect(context.textSlice(reference.child.position)).toBe(
+      "première phrase du second alinéa du 4",
+    )
+    expect(
+      context.textSlice(
+        (reference.child as TextAstParentChild).parent.position,
+      ),
+    ).toBe("4")
+    expect(
+      context.textSlice((reference.child as TextAstParentChild).child.position),
+    ).toBe("première phrase du second alinéa")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstParentChild)
+          .parent.position,
+      ),
+    ).toBe("second alinéa")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstParentChild)
+          .child.position,
+      ),
+    ).toBe("première phrase")
+  })
+
+  test("au I de l'article 7 du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
+    expect(context.textSlice(reference.child.position)).toBe("I de l'article 7")
+    expect(
+      context.textSlice(
+        (reference.child as TextAstParentChild).parent.position,
+      ),
+    ).toBe("article 7")
+    expect(
+      context.textSlice((reference.child as TextAstParentChild).child.position),
+    ).toBe("I")
+  })
+
+  test("au I et au dernier alinéa du II bis de l'article L. 862-4 du code de la sécurité sociale", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe(
+      "code de la sécurité sociale",
+    )
+    expect(context.textSlice(reference.child.position)).toBe(
+      "I et au dernier alinéa du II bis de l'article L. 862-4",
+    )
+    expect(
+      context.textSlice(
+        (reference.child as TextAstParentChild).parent.position,
+      ),
+    ).toBe("article L. 862-4")
+    expect(
+      context.textSlice((reference.child as TextAstParentChild).child.position),
+    ).toBe("I et au dernier alinéa du II bis")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+          .left.position,
+      ),
+    ).toBe("I")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+          .right.position,
+      ),
+    ).toBe("au dernier alinéa du II bis")
+    expect(
+      context.textSlice(
+        (
+          ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+            .right as TextAstParentChild
+        ).parent.position,
+      ),
+    ).toBe("II bis")
+    expect(
+      context.textSlice(
+        (
+          ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+            .right as TextAstParentChild
+        ).child.position,
+      ),
+    ).toBe("dernier alinéa")
+  })
+
+  test("au premier alinéa du I et au II du présent article", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("présent article")
+    expect(context.textSlice(reference.child.position)).toBe(
+      "premier alinéa du I et au II",
+    )
+    expect(
+      context.textSlice((reference.child as TextAstEnumeration).left.position),
+    ).toBe("premier alinéa du I")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstEnumeration).left as TextAstParentChild)
+          .parent.position,
+      ),
+    ).toBe("I")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstEnumeration).left as TextAstParentChild)
+          .child.position,
+      ),
+    ).toBe("premier alinéa")
+    expect(
+      context.textSlice((reference.child as TextAstEnumeration).right.position),
+    ).toBe("au II")
+  })
+
+  test("au second alinéa du 4", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("4")
+    expect(context.textSlice(reference.child.position)).toBe("second alinéa")
+  })
+
+  test("du 4° et aux 12°, 14° et 14° bis de l'article 81 du code général des impôts", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe(
+      "code général des impôts",
+    )
+    expect(context.textSlice(reference.child.position)).toBe(
+      "4° et aux 12°, 14° et 14° bis de l'article 81",
+    )
+    expect(
+      context.textSlice(
+        (reference.child as TextAstParentChild).parent.position,
+      ),
+    ).toBe("article 81")
+    expect(
+      context.textSlice((reference.child as TextAstParentChild).child.position),
+    ).toBe("4° et aux 12°, 14° et 14° bis")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+          .left.position,
+      ),
+    ).toBe("4°")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+          .right.position,
+      ),
+    ).toBe("aux 12°, 14° et 14° bis")
+    expect(
+      context.textSlice(
+        (
+          ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+            .right as TextAstEnumeration
+        ).left.position,
+      ),
+    ).toBe("12°, 14°")
+    expect(
+      context.textSlice(
+        (
+          (
+            (
+              (reference.child as TextAstParentChild)
+                .child as TextAstEnumeration
+            ).right as TextAstEnumeration
+          ).left as TextAstEnumeration
+        ).left.position,
+      ),
+    ).toBe("12°")
+    expect(
+      context.textSlice(
+        (
+          (
+            (
+              (reference.child as TextAstParentChild)
+                .child as TextAstEnumeration
+            ).right as TextAstEnumeration
+          ).left as TextAstEnumeration
+        ).right.position,
+      ),
+    ).toBe("14°")
+    expect(
+      context.textSlice(
+        (
+          ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+            .right as TextAstEnumeration
+        ).right.position,
+      ),
+    ).toBe("14° bis")
+  })
+
+  test("l'article 3 de la convention", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("convention")
+    expect(context.textSlice(reference.child.position)).toBe("article 3")
+  })
+
+  test("l'article 7 du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
+    expect(context.textSlice(reference.child.position)).toBe("article 7")
+  })
+
+  test("les articles 111-1 et 111-2 du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
+    expect(context.textSlice(reference.child.position)).toBe(
+      "articles 111-1 et 111-2",
+    )
+    expect(
+      context.textSlice((reference.child as TextAstEnumeration).left.position),
+    ).toBe("111-1")
+    expect(
+      context.textSlice((reference.child as TextAstEnumeration).right.position),
+    ).toBe("111-2")
+  })
+
   test("les articles 135-7 et 135-9 bis de la loi n°94-839 du 9 janvier 1994 ; à la première phrase du deuxième alinéa du a du I de l'article 219", ({
     task,
   }) => {
     const context = new TextParserContext(task.name)
     const references = getReferences(context)
     expect(references.length).toBe(2)
-    expect(references).toStrictEqual([
-      {
-        child: {
-          coordinator: "et",
-          left: {
-            id: "135-7",
-            position: {
-              start: 13,
-              stop: 18,
-            },
-            type: "article",
-          },
-          position: {
-            start: 4,
-            stop: 31,
-          },
-          right: {
-            id: "135-9 bis",
-            position: {
-              start: 22,
-              stop: 31,
-            },
-            type: "article",
-          },
-          type: "enumeration",
-        },
-        parent: {
-          lawDate: "1994-01-09",
-          lawType: "loi",
-          num: "94-839",
-          position: {
-            start: 38,
-            stop: 68,
-          },
-          type: "law",
-        },
-        position: {
-          start: 0,
-          stop: 68,
-        },
-        type: "parent-enfant",
-      },
-      {
-        child: {
-          child: {
-            child: {
-              child: {
-                index: 1,
-                position: {
-                  start: 76,
-                  stop: 91,
-                },
-                type: "phrase",
-              },
-              parent: {
-                index: 2,
-                position: {
-                  start: 95,
-                  stop: 110,
-                },
-                type: "alinéa",
-              },
-              position: {
-                start: 76,
-                stop: 110,
-              },
-              type: "parent-enfant",
-            },
-            parent: {
-              id: "a",
-              index: 1,
-              position: {
-                start: 114,
-                stop: 115,
-              },
-              type: "portion",
-            },
-            position: {
-              start: 76,
-              stop: 115,
-            },
-            type: "parent-enfant",
-          },
-          parent: {
-            id: "I",
-            index: 1,
-            position: {
-              start: 119,
-              stop: 120,
-            },
-            type: "portion",
-          },
-          position: {
-            start: 76,
-            stop: 120,
-          },
-          type: "parent-enfant",
-        },
-        parent: {
-          id: "219",
-          position: {
-            start: 126,
-            stop: 137,
-          },
-          type: "article",
-        },
-        position: {
-          start: 71,
-          stop: 137,
-        },
-        type: "parent-enfant",
-      },
-    ])
     expect(context.textSlice(references[0].position)).toBe(
       "les articles 135-7 et 135-9 bis de la loi n°94-839 du 9 janvier 1994",
     )
     expect(context.textSlice(references[1].position)).toBe(
       "à la première phrase du deuxième alinéa du a du I de l'article 219",
     )
+  })
+
+  test("les articles 7 et 9 du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
+    expect(context.textSlice(reference.child.position)).toBe("articles 7 et 9")
+    expect(
+      context.textSlice((reference.child as TextAstEnumeration).left.position),
+    ).toBe("7")
+    expect(
+      context.textSlice((reference.child as TextAstEnumeration).right.position),
+    ).toBe("9")
+  })
+
+  test("les I et II de l'article 111-1 du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.textSlice(reference.position)).toBe(task.name)
+    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
+    expect(context.textSlice(reference.child.position)).toBe(
+      "I et II de l'article 111-1",
+    )
+    expect(
+      context.textSlice(
+        (reference.child as TextAstParentChild).parent.position,
+      ),
+    ).toBe("article 111-1")
+    expect(
+      context.textSlice((reference.child as TextAstParentChild).child.position),
+    ).toBe("I et II")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+          .left.position,
+      ),
+    ).toBe("I")
+    expect(
+      context.textSlice(
+        ((reference.child as TextAstParentChild).child as TextAstEnumeration)
+          .right.position,
+      ),
+    ).toBe("II")
   })
 })

@@ -1,4 +1,16 @@
-import type { TextAst, TextPosition } from "./ast.js"
+import { numberFromRomanNumeral } from "$lib/numbers.js"
+
+import type {
+  TextAst,
+  TextAstTextInfos,
+  TextInfosByWordsTree,
+  TextPosition,
+} from "./ast.js"
+
+export type TextInfosConverter = (
+  infos: TextAstTextInfos,
+  context: TextParserContext,
+) => TextAst | undefined
 
 export type RegExpConverter = (
   match: RegExpExecArray,
@@ -407,4 +419,73 @@ export const variable =
     context.variables[name] = value
 
     return value
+  }
+
+export const wordsTree =
+  (
+    tree: TextInfosByWordsTree,
+    {
+      value,
+    }: {
+      value?: TextAst | TextInfosConverter
+    } = {},
+  ): TextParser =>
+  (context: TextParserContext): TextAst | undefined => {
+    let node = tree
+    let offset = context.offset
+    const regExp = /([\-\/\d\p{Alphabetic}°]+)($|[^\-\/\d\p{Alphabetic}°]+)/gvy
+    regExp.lastIndex = context.offset
+    const usedInputs = []
+    while (true) {
+      const match = regExp.exec(context.input)
+      if (match === null) {
+        break
+      }
+      let word = match[1].toLowerCase()
+      word = /^[IVX]+$/gi.test(word)
+        ? numberFromRomanNumeral(word).toString()
+        : word
+      const child = node[word]
+      if (child === undefined) {
+        break
+      }
+      node = child
+      offset = regExp.lastIndex
+      usedInputs.push(match[0])
+    }
+    if (node.cid === undefined) {
+      // Abort ⇒ Pull context.
+      context.length = 0
+      context.usedInputs = undefined
+
+      return undefined
+    }
+
+    // Success
+
+    context.length = offset - context.offset
+    context.usedInputs = usedInputs.length === 0 ? undefined : usedInputs
+
+    const infos = { cid: node.cid, nature: node.nature, title: node.title }
+    let ast: TextAst
+    if (value === undefined) {
+      ast = infos
+    } else if (typeof value === "function") {
+      const convertedAst = value(infos, context)
+      if (convertedAst === undefined) {
+        // Abort ⇒ Pull context.
+        context.length = 0
+        context.usedInputs = undefined
+
+        return undefined
+      }
+      ast = convertedAst
+    } else {
+      ast = value
+    }
+
+    context.offset = offset
+    context.length = 0
+
+    return ast
   }

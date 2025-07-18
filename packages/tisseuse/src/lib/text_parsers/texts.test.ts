@@ -60,6 +60,50 @@ describe("Textes français", () => {
       expect(context.remaining()).toBe("")
     })
 
+    test("code forestier de Mayotte", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        cid: "LEGITEXT000006071556",
+        nature: "CODE",
+        title: "Code forestier de Mayotte",
+        type: "law",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test("code général des impôts", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        cid: "LEGITEXT000006069577",
+        nature: "CODE",
+        title: "Code général des impôts",
+        type: "law",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test("code général des impôts, annexe 2", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        cid: "LEGITEXT000006069569",
+        nature: "CODE",
+        title: "Code général des impôts, annexe II",
+        type: "law",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test("code général des impôts, annexe III", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        cid: "LEGITEXT000006069574",
+        nature: "CODE",
+        title: "Code général des impôts, annexe III",
+        type: "law",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
     test("Constitution", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
@@ -83,6 +127,24 @@ describe("Textes français", () => {
       expect(context.remaining()).toBe("")
     })
 
+    test("LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027", ({
+      task,
+    }) => {
+      const context = new TextParserContext(task.name)
+      const result = texte(context) as TextAstLaw & TextAstPosition
+      expect(result).toStrictEqual({
+        lawType: "loi",
+        num: "2023-1195",
+        position: {
+          start: 0,
+          stop: 16,
+        },
+        type: "law",
+      })
+      expect(context.remaining()).toBe("")
+      expect(context.textSlice(result.position)).toBe(task.name)
+    })
+
     test("loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
@@ -94,28 +156,6 @@ describe("Textes français", () => {
       expect(context.remaining()).toBe("")
     })
   })
-
-  // matches(
-  //   "nom_code",
-  //   "code général des impôts, annexe 2",
-  //   "Code général des impôts, annexe II",
-  // );
-  // matches(
-  //   "nom_code",
-  //   "code général des impôts annexe III",
-  //   "Code général des impôts, annexe III",
-  // );
-  // matches("nom_code", "code général des  impôts", "Code général des impôts");
-  // matches(
-  //   "nom_code",
-  //   "Livre  Des Procédures  Fiscales",
-  //   "Livre des procédures fiscales",
-  // );
-  // matches("texte_francais", "code forestier de Mayotte", {
-  //   type: "law",
-  //   lawType: "code",
-  //   title: "Code forestier de Mayotte",
-  // })
 })
 
 describe("Textes européens et internationaux", () => {

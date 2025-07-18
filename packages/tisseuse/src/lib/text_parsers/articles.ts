@@ -4,8 +4,6 @@ import {
   type TextAstReference,
   type LocalizationAdverb,
   type CompoundReferencesSeparator,
-  type TextAstAtomicReference,
-  type TextAstParentChild,
   type TextAstArticle,
 } from "./ast.js"
 import {
@@ -169,12 +167,7 @@ export const listeArticles = chain(
     value: (results, context) =>
       createEnumerationOrBoundedInterval(
         results[0] as TextAstReference,
-        results[1] as Array<
-          [
-            CompoundReferencesSeparator,
-            TextAstAtomicReference | TextAstParentChild,
-          ]
-        >,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
         context.position(),
       ),
   },

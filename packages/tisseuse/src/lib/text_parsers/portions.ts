@@ -3,7 +3,6 @@ import {
   type PortionType,
   type TextAstAtomicReference,
   type TextAstNombre,
-  type TextAstParentChild,
   type TextAstPortion,
   type TextAstReference,
 } from "./ast.js"
@@ -174,12 +173,7 @@ export const listePlusieursPortions = chain(
     value: (results, context) =>
       createEnumerationOrBoundedInterval(
         results[0] as TextAstReference,
-        results[1] as Array<
-          [
-            CompoundReferencesSeparator,
-            TextAstAtomicReference | TextAstParentChild,
-          ]
-        >,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
         context.position(),
       ),
   },
@@ -206,12 +200,7 @@ export const listePortion = chain(
     value: (results, context) =>
       createEnumerationOrBoundedInterval(
         results[0] as TextAstReference,
-        results[1] as Array<
-          [
-            CompoundReferencesSeparator,
-            TextAstAtomicReference | TextAstParentChild,
-          ]
-        >,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
         context.position(),
       ),
   },
@@ -237,12 +226,7 @@ export const listeQuelquesPortions = chain(
     value: (results, context) =>
       createEnumerationOrBoundedInterval(
         results[0] as TextAstReference,
-        results[1] as Array<
-          [
-            CompoundReferencesSeparator,
-            TextAstAtomicReference | TextAstParentChild,
-          ]
-        >,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
         context.position(),
       ),
   },
@@ -337,12 +321,7 @@ export const portionPrecisePluriel = chain(
     value: (results, context) =>
       createEnumerationOrBoundedInterval(
         results[0] as TextAstReference,
-        results[1] as Array<
-          [
-            CompoundReferencesSeparator,
-            TextAstAtomicReference | TextAstParentChild,
-          ]
-        >,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
         context.position(),
       ),
   },
@@ -357,12 +336,7 @@ export const portionPreciseSingulier = chain(
     value: (results, context) =>
       createEnumerationOrBoundedInterval(
         results[0] as TextAstReference,
-        results[1] as Array<
-          [
-            CompoundReferencesSeparator,
-            TextAstAtomicReference | TextAstParentChild,
-          ]
-        >,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
         context.position(),
       ),
   },

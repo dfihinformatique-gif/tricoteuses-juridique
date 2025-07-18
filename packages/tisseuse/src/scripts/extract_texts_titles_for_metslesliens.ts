@@ -1,13 +1,13 @@
 import sade from "sade"
 
 import type { LegiTexteVersion } from "$lib/legal/legi.js"
+import { numberFromRomanNumeral } from "$lib/numbers.js"
 import { db } from "$lib/server/databases/index.js"
 import {
   chainSimplifiers,
   replacePatterns,
   simplifyText,
 } from "$lib/text_simplifiers.js"
-import { numberFromRomanNumeral } from "$lib/text_parsers/numbers.js"
 
 type TextsTitlesWordsTree = {
   cid?: string

@@ -8,14 +8,13 @@ import type {
   TextPosition,
 } from "./ast.js"
 
-const priorityByCoordinatorRecord: Record<CompoundReferencesSeparator, number> =
-  {
-    ",": 2,
-    à: 3,
-    et: 2,
-    ou: 2,
-    sauf: 1,
-  }
+const priorityByCoordinator: Record<CompoundReferencesSeparator, number> = {
+  ",": 1,
+  à: 3,
+  et: 1,
+  ou: 1,
+  sauf: 2,
+}
 
 export const addChildLeftToLastChild = (
   reference: TextAstReference,
@@ -42,173 +41,188 @@ export const addChildLeftToLastChild = (
 
 export const createEnumerationOrBoundedInterval = (
   reference: TextAstReference,
-  remaining: Array<
-    [CompoundReferencesSeparator, TextAstAtomicReference | TextAstParentChild]
-  >,
+  remaining: Array<[CompoundReferencesSeparator, TextAstReference]>,
   position: TextPosition,
 ): TextAstReference => {
   // Parameter `remaining` is an array of the form
   // [[coordinator1, ref1], ...., [coordinatorN, refN]]
   // where `coordinators` are either "à", "et", "ou" & ",".
-  if (remaining.length === 0) {
-    // When there is no remaining, reference is always a compound reference.
-    return {
-      ...(reference as TextAstCompoundReference),
+  while (remaining.length > 0) {
+    reference = createEnumerationOrBoundedInterval1(
+      reference,
+      remaining,
       position,
-    }
+      0,
+    )
   }
-  const [coordinator, nextReference] = remaining[0]
-  const coordinatorPriority = priorityByCoordinatorRecord[coordinator]
-  const nextCoordinator = remaining[1]?.[0]
-  const nextCoordinatorPriority =
-    nextCoordinator === undefined
-      ? 0
-      : priorityByCoordinatorRecord[nextCoordinator]
-  const otherReference =
-    coordinatorPriority < nextCoordinatorPriority
-      ? createEnumerationOrBoundedInterval(nextReference, remaining.slice(1), {
-          start: nextReference.position.start,
+  return {
+    ...(reference as TextAstCompoundReference),
+    position,
+  }
+}
+
+export const createEnumerationOrBoundedInterval1 = (
+  reference: TextAstReference,
+  remaining: Array<[CompoundReferencesSeparator, TextAstReference]>,
+  position: TextPosition,
+  remainingIndex: number,
+): TextAstReference => {
+  // Parameter `remaining` is an array of the form
+  // [[coordinator1, ref1], ...., [coordinatorN, refN]]
+  // where `coordinators` are either "à", "et", "ou" & ",".
+  if (remaining.length > remainingIndex) {
+    // When there is no remaining, reference is always a compound reference.
+    const [coordinator, otherReference] = remaining[remainingIndex]
+    const coordinatorPriority = priorityByCoordinator[coordinator]
+    const otherCoordinator = remaining[remainingIndex + 1]?.[0]
+    const otherCoordinatorPriority =
+      otherCoordinator === undefined
+        ? 0
+        : priorityByCoordinator[otherCoordinator]
+    if (coordinatorPriority < otherCoordinatorPriority) {
+      remaining[remainingIndex][1] = createEnumerationOrBoundedInterval1(
+        otherReference,
+        remaining,
+        {
+          start: otherReference.position.start,
           stop: position.stop,
-        })
-      : nextReference
-  let mergedReference: TextAstReference
-  if (coordinator === "sauf") {
-    // Append exclusion to the deepest non-enumeration rigth of reference.
-    let lastEnumerationReference:
-      | TextAstEnumeration
-      | TextAstAtomicReference
-      | undefined = undefined
-    for (
-      let lastReference = reference;
-      lastReference.type === "enumeration";
-      lastReference = lastReference.right
-    ) {
-      lastEnumerationReference = lastReference
-    }
-    if (lastEnumerationReference === undefined) {
-      // Add exclusion to reference.
-      mergedReference = {
-        left: reference,
-        position: {
-          start: reference.position.start,
-          stop: otherReference.position.stop,
         },
-        right: otherReference,
-        type: "exclusion",
-      }
+        remainingIndex + 1,
+      )
     } else {
-      // Add exclusion to the deepest non-enumeration rigth of reference.
-      lastEnumerationReference.right = {
-        left: lastEnumerationReference.right,
-        position: {
-          start: lastEnumerationReference.right.position.start,
-          stop: otherReference.position.stop,
-        },
-        right: otherReference,
-        type: "exclusion",
-      }
-      mergedReference = reference
-    }
-  } else if (
-    reference.type !== "law" &&
-    otherReference.type === "parent-enfant" &&
-    otherReference.parent.type === "law"
-  ) {
-    // Create a Merged reference of type law based on otherReference.
-    mergedReference = {
-      ...otherReference,
-      child:
-        coordinator === "à"
-          ? {
-              first: reference,
-              last: otherReference.child,
-              position: {
-                start: reference.position.start,
-                stop: otherReference.position.stop,
-              },
-              type: "bounded-interval",
-            }
-          : {
-              coordinator,
-              left: reference,
-              right: otherReference.child,
-              position: {
-                start: reference.position.start,
-                stop: otherReference.position.stop,
-              },
-              type: "enumeration",
-            },
-      position: {
-        start: reference.position.start,
-        stop: otherReference.position.stop,
-      },
-    }
-  } else if (
-    reference.type === "parent-enfant" &&
-    reference.parent.type === "law" &&
-    otherReference.type !== "law"
-  ) {
-    // Create a Merged reference of type law based on reference.
-    mergedReference = {
-      ...reference,
-      child:
-        coordinator === "à"
-          ? {
-              first: reference.child,
-              last: otherReference,
-              position: {
-                start: reference.position.start,
-                stop: otherReference.position.stop,
-              },
-              type: "bounded-interval",
-            }
-          : {
-              coordinator,
-              left: reference.child,
-              right: otherReference,
-              position: {
-                start: reference.position.start,
-                stop: otherReference.position.stop,
-              },
-              type: "enumeration",
-            },
-      position: {
-        start: reference.position.start,
-        stop: otherReference.position.stop,
-      },
-    }
-  } else {
-    // TODO: Handle other combinations of reference.type & otherReference.type.
-    mergedReference =
-      coordinator === "à"
-        ? {
-            first: reference,
-            last: otherReference,
-            position: {
-              start: reference.position.start,
-              stop: otherReference.position.stop,
-            },
-            type: "bounded-interval",
-          }
-        : {
-            coordinator,
+      if (coordinator === "sauf") {
+        // Append exclusion to the deepest non-enumeration rigth of reference.
+        let lastEnumerationReference:
+          | TextAstEnumeration
+          | TextAstAtomicReference
+          | undefined = undefined
+        for (
+          let lastReference = reference;
+          lastReference.type === "enumeration";
+          lastReference = lastReference.right
+        ) {
+          lastEnumerationReference = lastReference
+        }
+        if (lastEnumerationReference === undefined) {
+          // Add exclusion to reference.
+          reference = {
             left: reference,
             position: {
               start: reference.position.start,
               stop: otherReference.position.stop,
             },
             right: otherReference,
-            type: "enumeration",
+            type: "exclusion",
           }
+        } else {
+          // Add exclusion to the deepest non-enumeration rigth of reference.
+          lastEnumerationReference.right = {
+            left: lastEnumerationReference.right,
+            position: {
+              start: lastEnumerationReference.right.position.start,
+              stop: otherReference.position.stop,
+            },
+            right: otherReference,
+            type: "exclusion",
+          }
+          // `reference` is not modified.
+        }
+      } else if (
+        reference.type !== "law" &&
+        otherReference.type === "parent-enfant" &&
+        otherReference.parent.type === "law"
+      ) {
+        // Create a Merged reference of type law based on otherReference.
+        reference = {
+          ...otherReference,
+          child:
+            coordinator === "à"
+              ? {
+                  first: reference,
+                  last: otherReference.child,
+                  position: {
+                    start: reference.position.start,
+                    stop: otherReference.child.position.stop,
+                  },
+                  type: "bounded-interval",
+                }
+              : {
+                  coordinator,
+                  left: reference,
+                  right: otherReference.child,
+                  position: {
+                    start: reference.position.start,
+                    stop: otherReference.child.position.stop,
+                  },
+                  type: "enumeration",
+                },
+          position: {
+            start: reference.position.start,
+            stop: otherReference.position.stop,
+          },
+        }
+      } else if (
+        reference.type === "parent-enfant" &&
+        reference.parent.type === "law" &&
+        otherReference.type !== "law"
+      ) {
+        // Create a Merged reference of type law based on reference.
+        reference = {
+          ...reference,
+          child:
+            coordinator === "à"
+              ? {
+                  first: reference.child,
+                  last: otherReference,
+                  position: {
+                    start: reference.child.position.start,
+                    stop: otherReference.position.stop,
+                  },
+                  type: "bounded-interval",
+                }
+              : {
+                  coordinator,
+                  left: reference.child,
+                  right: otherReference,
+                  position: {
+                    start: reference.child.position.start,
+                    stop: otherReference.position.stop,
+                  },
+                  type: "enumeration",
+                },
+          position: {
+            start: reference.position.start,
+            stop: otherReference.position.stop,
+          },
+        }
+      } else {
+        // TODO: Handle other combinations of reference.type & otherReference.type.
+        reference =
+          coordinator === "à"
+            ? {
+                first: reference,
+                last: otherReference,
+                position: {
+                  start: reference.position.start,
+                  stop: otherReference.position.stop,
+                },
+                type: "bounded-interval",
+              }
+            : {
+                coordinator,
+                left: reference,
+                position: {
+                  start: reference.position.start,
+                  stop: otherReference.position.stop,
+                },
+                right: otherReference,
+                type: "enumeration",
+              }
+      }
+      remaining.splice(remainingIndex, 1)
+    }
   }
-  if (coordinatorPriority < nextCoordinatorPriority) {
-    return mergedReference
-  }
-  return createEnumerationOrBoundedInterval(
-    mergedReference,
-    remaining.slice(1),
-    position,
-  )
+  return reference
 }
 
 export const createParentChildTreeFromReferences = (

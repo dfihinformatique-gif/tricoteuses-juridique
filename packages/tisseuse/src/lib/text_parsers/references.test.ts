@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import type {
   TextAstBoundedInterval,
+  TextAstEnumeration,
   TextAstParentChild,
   TextAstReference,
 } from "./ast.js"
@@ -13,6 +14,371 @@ import {
 } from "./references.js"
 
 describe("reference", () => {
+  test("à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I, à l'article 238 bis et à l'article 107 de la loi n° 2021-1104 du 22 août 2021", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        coordinator: "et",
+        left: {
+          coordinator: ",",
+          left: {
+            coordinator: ",",
+            left: {
+              id: "199 quater B",
+              position: {
+                start: 0,
+                stop: 24,
+              },
+              type: "article",
+            },
+            position: {
+              start: 0,
+              stop: 97,
+            },
+            right: {
+              left: {
+                id: "199 undecies B",
+                position: {
+                  start: 26,
+                  stop: 52,
+                },
+                type: "article",
+              },
+              position: {
+                start: 26,
+                stop: 97,
+              },
+              right: {
+                child: {
+                  count: 10,
+                  first: {
+                    localization: {
+                      absolute: -1,
+                    },
+                    type: "alinéa",
+                  },
+                  position: {
+                    start: 72,
+                    stop: 92,
+                  },
+                  type: "counted-interval",
+                },
+                parent: {
+                  id: "I",
+                  index: 1,
+                  position: {
+                    start: 96,
+                    stop: 97,
+                  },
+                  type: "portion",
+                },
+                position: {
+                  start: 68,
+                  stop: 97,
+                },
+                type: "parent-enfant",
+              },
+              type: "exclusion",
+            },
+            type: "enumeration",
+          },
+          position: {
+            start: 0,
+            stop: 118,
+          },
+          right: {
+            id: "238 bis",
+            position: {
+              start: 99,
+              stop: 118,
+            },
+            type: "article",
+          },
+          type: "enumeration",
+        },
+        position: {
+          start: 0,
+          stop: 137,
+        },
+        right: {
+          id: "107",
+          position: {
+            start: 126,
+            stop: 137,
+          },
+          type: "article",
+        },
+        type: "enumeration",
+      },
+      parent: {
+        lawDate: "2021-08-22",
+        lawType: "loi",
+        num: "2021-1104",
+        position: {
+          start: 144,
+          stop: 176,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 176,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.textSlice(result.parent.position)).toBe(
+      "loi n° 2021-1104 du 22 août 2021",
+    )
+    expect(context.textSlice(result.child.position)).toBe(
+      "à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I, à l'article 238 bis et à l'article 107",
+    )
+    expect(
+      context.textSlice((result.child as TextAstEnumeration).left.position),
+    ).toBe(
+      "à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I, à l'article 238 bis",
+    )
+    expect(
+      context.textSlice(
+        ((result.child as TextAstEnumeration).left as TextAstEnumeration).left
+          .position,
+      ),
+    ).toBe(
+      "à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I",
+    )
+    expect(
+      context.textSlice(
+        (
+          ((result.child as TextAstEnumeration).left as TextAstEnumeration)
+            .left as TextAstEnumeration
+        ).left.position,
+      ),
+    ).toBe("à l'article 199 quater B")
+    expect(
+      context.textSlice(
+        (
+          ((result.child as TextAstEnumeration).left as TextAstEnumeration)
+            .left as TextAstEnumeration
+        ).right.position,
+      ),
+    ).toBe(
+      "à l'article 199 undecies B, à l'exception des dix derniers alinéas du I",
+    )
+    expect(
+      context.textSlice(
+        (
+          (
+            ((result.child as TextAstEnumeration).left as TextAstEnumeration)
+              .left as TextAstEnumeration
+          ).right as TextAstEnumeration
+        ).left.position,
+      ),
+    ).toBe("à l'article 199 undecies B")
+    expect(
+      context.textSlice(
+        (
+          (
+            ((result.child as TextAstEnumeration).left as TextAstEnumeration)
+              .left as TextAstEnumeration
+          ).right as TextAstEnumeration
+        ).right.position,
+      ),
+    ).toBe("des dix derniers alinéas du I")
+    expect(
+      context.textSlice(
+        (
+          (
+            (
+              ((result.child as TextAstEnumeration).left as TextAstEnumeration)
+                .left as TextAstEnumeration
+            ).right as TextAstEnumeration
+          ).right as TextAstParentChild
+        ).parent.position,
+      ),
+    ).toBe("I")
+    expect(
+      context.textSlice(
+        (
+          (
+            (
+              ((result.child as TextAstEnumeration).left as TextAstEnumeration)
+                .left as TextAstEnumeration
+            ).right as TextAstEnumeration
+          ).right as TextAstParentChild
+        ).child.position,
+      ),
+    ).toBe("dix derniers alinéas")
+    expect(
+      context.textSlice(
+        ((result.child as TextAstEnumeration).left as TextAstEnumeration).right
+          .position,
+      ),
+    ).toBe("à l'article 238 bis")
+    expect(
+      context.textSlice((result.child as TextAstEnumeration).right.position),
+    ).toBe("article 107")
+  })
+
+  test("à l'article 200 undecies et à l'article 151 de la loi n° 2020-1721 du 29 décembre 2020", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        coordinator: "et",
+        left: {
+          id: "200 undecies",
+          position: {
+            start: 0,
+            stop: 24,
+          },
+          type: "article",
+        },
+        position: {
+          start: 0,
+          stop: 43,
+        },
+        right: {
+          id: "151",
+          position: {
+            start: 32,
+            stop: 43,
+          },
+          type: "article",
+        },
+        type: "enumeration",
+      },
+      parent: {
+        lawDate: "2020-12-29",
+        lawType: "loi",
+        num: "2020-1721",
+        position: {
+          start: 50,
+          stop: 86,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 86,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.textSlice(result.parent.position)).toBe(
+      "loi n° 2020-1721 du 29 décembre 2020",
+    )
+    expect(context.textSlice(result.child.position)).toBe(
+      "à l'article 200 undecies et à l'article 151",
+    )
+  })
+
+  test("à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        coordinator: "et",
+        left: {
+          coordinator: ",",
+          left: {
+            id: "200 undecies",
+            position: {
+              start: 0,
+              stop: 24,
+            },
+            type: "article",
+          },
+          position: {
+            start: 0,
+            stop: 66,
+          },
+          right: {
+            first: {
+              id: "244 quater B",
+              position: {
+                start: 39,
+                stop: 51,
+              },
+              type: "article",
+            },
+            last: {
+              id: "244 quater W",
+              position: {
+                start: 54,
+                stop: 66,
+              },
+              type: "article",
+            },
+            position: {
+              start: 26,
+              stop: 66,
+            },
+            type: "bounded-interval",
+          },
+          type: "enumeration",
+        },
+        position: {
+          start: 0,
+          stop: 92,
+        },
+        right: {
+          coordinator: "et",
+          left: {
+            id: "27",
+            position: {
+              start: 83,
+              stop: 85,
+            },
+            type: "article",
+          },
+          position: {
+            start: 74,
+            stop: 92,
+          },
+          right: {
+            id: "151",
+            position: {
+              start: 89,
+              stop: 92,
+            },
+            type: "article",
+          },
+          type: "enumeration",
+        },
+        type: "enumeration",
+      },
+      parent: {
+        lawDate: "2020-12-29",
+        lawType: "loi",
+        num: "2020-1721",
+        position: {
+          start: 99,
+          stop: 135,
+        },
+        type: "law",
+      },
+      position: {
+        start: 0,
+        stop: 135,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.textSlice(result.parent.position)).toBe(
+      "loi n° 2020-1721 du 29 décembre 2020",
+    )
+    expect(context.textSlice(result.child.position)).toBe(
+      "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151",
+    )
+  })
+
   test("à l'article 7 vicies A de la loi n° 98-293 du 31 décembre 1998", ({
     task,
   }) => {

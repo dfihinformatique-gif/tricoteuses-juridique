@@ -30,6 +30,7 @@ export type TextAst =
   | TextAstNombre
   | TextAstPosition
   | TextAstReference
+  | TextAstTextInfos
   | Array<TextAst>
 
 export interface TextAstAction {
@@ -184,6 +185,16 @@ export type TextAstReferenceAndAction = {
   reference: TextAstReference
   type: "reference_et_action"
 } & TextAstPosition
+
+export interface TextAstTextInfos {
+  cid: string
+  nature: string
+  title: string
+}
+
+export type TextInfosByWordsTree = TextAstTextInfos & {
+  [word: string]: TextInfosByWordsTree
+}
 
 export interface TextPosition {
   start: number

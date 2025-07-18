@@ -627,22 +627,22 @@ describe("listeArticles", () => {
     const context = new TextParserContext(task.name)
     const result = listeArticles(context) as TextAstEnumeration
     expect(result).toStrictEqual({
-      coordinator: ",",
+      coordinator: "et",
       left: {
-        id: "L400 bis",
+        coordinator: ",",
+        left: {
+          id: "L400 bis",
+          position: {
+            start: 0,
+            stop: 10,
+          },
+          type: "article",
+        },
         position: {
           start: 0,
-          stop: 10,
+          stop: 33,
         },
-        type: "article",
-      },
-      position: {
-        start: 0,
-        stop: 43,
-      },
-      right: {
-        coordinator: "et",
-        left: {
+        right: {
           first: {
             id: "L425-3",
             position: {
@@ -665,46 +665,46 @@ describe("listeArticles", () => {
           },
           type: "bounded-interval",
         },
+        type: "enumeration",
+      },
+      position: {
+        start: 0,
+        stop: 43,
+      },
+      right: {
+        id: "L456",
         position: {
-          start: 12,
+          start: 37,
           stop: 43,
         },
-        right: {
-          id: "L456",
-          position: {
-            start: 37,
-            stop: 43,
-          },
-          type: "article",
-        },
-        type: "enumeration",
+        type: "article",
       },
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 400 bis")
-    expect(context.textSlice(result.right.position)).toBe(
-      "L. 425-3 à L. 425-5-1 et L. 456",
+    expect(context.textSlice(result.left.position)).toBe(
+      "L. 400 bis, L. 425-3 à L. 425-5-1",
     )
     expect(
-      context.textSlice((result.right as TextAstEnumeration).left.position),
+      context.textSlice((result.left as TextAstEnumeration).left.position),
+    ).toBe("L. 400 bis")
+    expect(
+      context.textSlice((result.left as TextAstEnumeration).right.position),
     ).toBe("L. 425-3 à L. 425-5-1")
     expect(
       context.textSlice(
-        ((result.right as TextAstEnumeration).left as TextAstBoundedInterval)
+        ((result.left as TextAstEnumeration).right as TextAstBoundedInterval)
           .first.position,
       ),
     ).toBe("L. 425-3")
     expect(
       context.textSlice(
-        ((result.right as TextAstEnumeration).left as TextAstBoundedInterval)
+        ((result.left as TextAstEnumeration).right as TextAstBoundedInterval)
           .last.position,
       ),
     ).toBe("L. 425-5-1")
-    expect(
-      context.textSlice((result.right as TextAstEnumeration).right.position),
-    ).toBe("L. 456")
+    expect(context.textSlice(result.right.position)).toBe("L. 456")
   })
 })
 

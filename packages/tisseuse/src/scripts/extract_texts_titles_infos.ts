@@ -72,11 +72,11 @@ async function extractTextsNames(): Promise<number> {
     "CODE",
     "CONSTITUTION",
     // "DECLARATION",
-    // "LOI",
-    // "LOI_CONSTIT",
-    // "LOI_ORGANIQUE",
-    // "LOI_PROGRAMME",
-    // "ORDONNANCE",
+    "LOI",
+    "LOI_CONSTIT",
+    "LOI_ORGANIQUE",
+    "LOI_PROGRAMME",
+    "ORDONNANCE",
   ]) {
     for (const { data: texteVersion, id } of await db<
       { data: LegiTexteVersion; id: string }[]

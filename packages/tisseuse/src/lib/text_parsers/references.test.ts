@@ -114,13 +114,16 @@ describe("reference", () => {
         type: "enumeration",
       },
       parent: {
-        lawDate: "2021-08-22",
+        cid: "JORFTEXT000043956924",
+        date: "2021-08-22",
         nature: "LOI",
         num: "2021-1104",
         position: {
           start: 144,
           stop: 176,
         },
+        title:
+          "LOI n° 2021-1104 du 22 août 2021 portant lutte contre le dérèglement climatique et renforcement de la résilience face à ses effets",
         type: "law",
       },
       position: {
@@ -253,13 +256,15 @@ describe("reference", () => {
         type: "enumeration",
       },
       parent: {
-        lawDate: "2020-12-29",
+        cid: "JORFTEXT000042753580",
+        date: "2020-12-29",
         nature: "LOI",
         num: "2020-1721",
         position: {
           start: 50,
           stop: 86,
         },
+        title: "LOI n° 2020-1721 du 29 décembre 2020 de finances pour 2021",
         type: "law",
       },
       position: {
@@ -355,13 +360,15 @@ describe("reference", () => {
         type: "enumeration",
       },
       parent: {
-        lawDate: "2020-12-29",
+        cid: "JORFTEXT000042753580",
+        date: "2020-12-29",
         nature: "LOI",
         num: "2020-1721",
         position: {
           start: 99,
           stop: 135,
         },
+        title: "LOI n° 2020-1721 du 29 décembre 2020 de finances pour 2021",
         type: "law",
       },
       position: {
@@ -394,13 +401,16 @@ describe("reference", () => {
         type: "article",
       },
       parent: {
-        lawDate: "1998-12-31",
+        cid: "JORFTEXT000000743512",
+        date: "1998-12-31",
         nature: "LOI",
         num: "98-293",
         position: {
           start: 29,
           stop: 62,
         },
+        title:
+          "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
         type: "law",
       },
       position: {
@@ -458,13 +468,16 @@ describe("reference", () => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
     expect(result).toStrictEqual({
-      lawDate: "1998-12-31",
+      cid: "JORFTEXT000000743512",
+      date: "1998-12-31",
       nature: "LOI",
       num: "98-293",
       position: {
         start: 0,
         stop: 38,
       },
+      title:
+        "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
       type: "law",
     })
     expect(context.remaining()).toBe("")
@@ -635,13 +648,16 @@ describe("reference", () => {
         type: "bounded-interval",
       },
       parent: {
-        lawDate: "1998-12-31",
+        cid: "JORFTEXT000000743512",
+        date: "1998-12-31",
         nature: "LOI",
         num: "98-293",
         position: {
           start: 52,
           stop: 85,
         },
+        title:
+          "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
         type: "law",
       },
       position: {
@@ -885,7 +901,7 @@ describe("reference", () => {
         type: "parent-enfant",
       },
       parent: {
-        lawDate: "1998-02-28",
+        date: "1998-02-28",
         nature: "DECRET",
         num: "98-74",
         position: {
@@ -946,12 +962,15 @@ describe("reference", () => {
         type: "parent-enfant",
       },
       parent: {
-        lawDate: "1998-12-31",
+        cid: "JORFTEXT000000743512",
+        date: "1998-12-31",
         nature: "LOI",
         position: {
           start: 49,
           stop: 72,
         },
+        title:
+          "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
         type: "law",
       },
       position: {
@@ -993,13 +1012,16 @@ describe("uniteBasePreciseeSingulier", () => {
         type: "article",
       },
       parent: {
-        lawDate: "1998-12-31",
+        cid: "JORFTEXT000000743512",
+        date: "1998-12-31",
         nature: "LOI",
         num: "98-293",
         position: {
           start: 25,
           stop: 58,
         },
+        title:
+          "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
         type: "law",
       },
       position: {
@@ -1033,13 +1055,16 @@ describe("uniteBaseSingulier", () => {
     const context = new TextParserContext(task.name)
     const result = uniteBaseSingulier(context) as TextAstReference
     expect(result).toStrictEqual({
-      lawDate: "1998-12-31",
+      cid: "JORFTEXT000000743512",
+      date: "1998-12-31",
       nature: "LOI",
       num: "98-293",
       position: {
         start: 0,
         stop: 33,
       },
+      title:
+        "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
       type: "law",
     })
     expect(context.remaining()).toBe("")

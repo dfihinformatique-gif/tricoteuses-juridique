@@ -441,10 +441,15 @@ export const wordsTree =
       if (match === null) {
         break
       }
-      let word = match[1].toLowerCase()
-      word = /^[IVX]+$/gi.test(word)
+      let word = match[1]
+      word = /^[IVX]+$/g.test(word)
         ? numberFromRomanNumeral(word).toString()
-        : word
+        : word.toLowerCase()
+      if (word === "constitution" && match[1][0] !== "C") {
+        // Accept only "Constituion" with an uppercase "C", to avoid
+        // false positives.
+        break
+      }
       const child = node[word]
       if (child === undefined) {
         break
@@ -466,7 +471,7 @@ export const wordsTree =
     context.length = offset - context.offset
     context.usedInputs = usedInputs.length === 0 ? undefined : usedInputs
 
-    const infos = { cid: node.cid, nature: node.nature, title: node.title }
+    const infos = { cid: node.cid }
     let ast: TextAst
     if (value === undefined) {
       ast = infos

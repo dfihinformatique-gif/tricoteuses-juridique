@@ -4,7 +4,7 @@ import { type TextAstLaw, type TextAstPosition } from "./ast.js"
 import { TextParserContext } from "./parsers.js"
 import {
   identificationTexteEuropeen,
-  identificationTexteFrancais,
+  numeroEtOuDateTexteFrancais,
   numeroTexteEuropeen,
   numeroTexteFrancais,
   texte,
@@ -14,10 +14,10 @@ import {
 } from "./texts.js"
 
 describe("Textes français", () => {
-  describe("identificationTexteFrancais", () => {
+  describe("numeroEtOuDateTexteFrancais", () => {
     test("n° 2001-692", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(identificationTexteFrancais(context)).toStrictEqual({
+      expect(numeroEtOuDateTexteFrancais(context)).toStrictEqual({
         num: "2001-692",
       })
       expect(context.remaining()).toBe("")
@@ -25,8 +25,8 @@ describe("Textes français", () => {
 
     test("no 2001-692 du 1er août 2001", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(identificationTexteFrancais(context)).toStrictEqual({
-        lawDate: "2001-08-01",
+      expect(numeroEtOuDateTexteFrancais(context)).toStrictEqual({
+        date: "2001-08-01",
         num: "2001-692",
       })
       expect(context.remaining()).toBe("")
@@ -34,8 +34,8 @@ describe("Textes français", () => {
 
     test("du 30 février 1712", ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(identificationTexteFrancais(context)).toStrictEqual({
-        lawDate: "1712-02-30",
+      expect(numeroEtOuDateTexteFrancais(context)).toStrictEqual({
+        date: "1712-02-30",
       })
       expect(context.remaining()).toBe("")
     })
@@ -53,7 +53,7 @@ describe("Textes français", () => {
     test("arrêté du 31 décembre 1856", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
-        lawDate: "1856-12-31",
+        date: "1856-12-31",
         nature: "ARRETE",
         type: "law",
       })
@@ -109,19 +109,25 @@ describe("Textes français", () => {
       expect(texteFrancais(context)).toStrictEqual({
         cid: "JORFTEXT000000571356",
         nature: "CONSTITUTION",
-        title: "Constitution",
+        title: "Constitution du 4 octobre 1958",
         type: "law",
       })
       expect(context.remaining()).toBe("")
+    })
+
+    test("constitution", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toBe(undefined)
+      expect(context.remaining()).toBe(task.name)
     })
 
     test("Constitution du 4 octobre 1958", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
         cid: "JORFTEXT000000571356",
-        lawDate: "1958-10-04",
+        date: "1958-10-04",
         nature: "CONSTITUTION",
-        title: "Constitution",
+        title: "Constitution du 4 octobre 1958",
         type: "law",
       })
       expect(context.remaining()).toBe("")
@@ -133,12 +139,16 @@ describe("Textes français", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
+        cid: "JORFTEXT000048581885",
+        date: "2023-12-18",
         nature: "LOI",
         num: "2023-1195",
         position: {
           start: 0,
-          stop: 16,
+          stop: 104,
         },
+        title:
+          "LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027",
         type: "law",
       })
       expect(context.remaining()).toBe("")
@@ -148,9 +158,12 @@ describe("Textes français", () => {
     test("loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
-        lawDate: "2003-09-05",
+        cid: "JORFTEXT000000394028",
+        date: "2003-09-05",
         nature: "LOI_ORGANIQUE",
         num: "2001-692",
+        title:
+          "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
         type: "law",
       })
       expect(context.remaining()).toBe("")
@@ -171,7 +184,7 @@ describe("Textes européens et internationaux", () => {
     test("no 2001/73/CE du 1er décembre 2001", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(identificationTexteEuropeen(context)).toStrictEqual({
-        lawDate: "2001-12-01",
+        date: "2001-12-01",
         num: "2001/73/CE",
       })
       expect(context.remaining()).toBe("")
@@ -180,7 +193,7 @@ describe("Textes européens et internationaux", () => {
     test("du 30 février 1712", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(identificationTexteEuropeen(context)).toStrictEqual({
-        lawDate: "1712-02-30",
+        date: "1712-02-30",
       })
       expect(context.remaining()).toBe("")
     })
@@ -210,7 +223,7 @@ describe("Textes européens et internationaux", () => {
     test("directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteEuropeen(context)).toStrictEqual({
-        lawDate: "2003-09-05",
+        date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         num: "2001/73/CEE",
@@ -222,7 +235,7 @@ describe("Textes européens et internationaux", () => {
     test("règlement n° 2001/73 du 10 mars 2007", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteEuropeen(context)).toStrictEqual({
-        lawDate: "2007-03-10",
+        date: "2007-03-10",
         nature: "REGLEMENTEUROPEEN",
         legislation: "UE",
         num: "2001/73",
@@ -234,7 +247,7 @@ describe("Textes européens et internationaux", () => {
     test("règlement du 10 mars 2007", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteEuropeen(context)).toStrictEqual({
-        lawDate: "2007-03-10",
+        date: "2007-03-10",
         nature: "REGLEMENTEUROPEEN",
         legislation: "UE",
         type: "law",
@@ -262,7 +275,7 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawDate: "2003-09-05",
+        date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         num: "2001/73/CEE",
@@ -294,7 +307,7 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawDate: "2003-09-05",
+        date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         localization: { relative: 0 },
@@ -341,12 +354,15 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawDate: "2003-09-05",
+        cid: "JORFTEXT000000394028",
+        date: "2003-09-05",
         nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         num: "2001-692",
         ofTheSaid: true,
         position: { start: 0, stop: 55 },
+        title:
+          "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
         type: "law",
       })
       expect(context.remaining()).toBe("")
@@ -357,11 +373,14 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawDate: "2003-09-05",
+        cid: "JORFTEXT000000394028",
+        date: "2003-09-05",
         nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         num: "2001-692",
         position: { start: 0, stop: 50 },
+        title:
+          "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
         type: "law",
       })
       expect(context.remaining()).toBe("")
@@ -372,7 +391,7 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawDate: "2003-09-05",
+        date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         localization: { relative: 0 },

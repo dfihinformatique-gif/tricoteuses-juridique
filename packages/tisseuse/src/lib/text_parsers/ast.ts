@@ -119,7 +119,7 @@ export interface TextAstLaw {
    * Légifrance CID of the text.
    */
   cid?: string
-  lawDate?: string
+  date?: string
   nature: LawNature
   legislation?: "international" | "UE"
   localization?: TextAstLocalisation
@@ -139,7 +139,7 @@ export interface TextAstLaw {
 }
 
 export interface TextAstLawIdentification {
-  lawDate?: string
+  date?: string
   /**
    * For the texts found in the Légifrance datasets, this is
    * Légifrance NUM of the text (for example the number of the law).
@@ -187,9 +187,7 @@ export type TextAstReferenceAndAction = {
 } & TextAstPosition
 
 export interface TextAstTextInfos {
-  cid: string
-  nature: string
-  title: string
+  cid: string | string[]
 }
 
 export type TextInfosByWordsTree = TextAstTextInfos & {

@@ -65,6 +65,9 @@ async function extractTextsNames(): Promise<number> {
         texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.CID
       textsTitlesWordsNode.nature = nature
       textsTitlesWordsNode.title = title
+        .replace(/\n/g, " ")
+        .replace(/ {2,}/g, " ")
+        .replace(/ \(\d+\)$/, "")
     }
   }
   console.log(JSON.stringify(textsTitlesWordsTree, null, 2))

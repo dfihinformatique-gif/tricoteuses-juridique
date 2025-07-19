@@ -54,7 +54,7 @@ describe("Textes français", () => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
         lawDate: "1856-12-31",
-        lawType: "arrêté",
+        nature: "ARRETE",
         type: "law",
       })
       expect(context.remaining()).toBe("")
@@ -108,7 +108,7 @@ describe("Textes français", () => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
         cid: "JORFTEXT000000571356",
-        lawType: "constitution",
+        nature: "CONSTITUTION",
         title: "Constitution",
         type: "law",
       })
@@ -120,7 +120,7 @@ describe("Textes français", () => {
       expect(texteFrancais(context)).toStrictEqual({
         cid: "JORFTEXT000000571356",
         lawDate: "1958-10-04",
-        lawType: "constitution",
+        nature: "CONSTITUTION",
         title: "Constitution",
         type: "law",
       })
@@ -133,7 +133,7 @@ describe("Textes français", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawType: "loi",
+        nature: "LOI",
         num: "2023-1195",
         position: {
           start: 0,
@@ -149,7 +149,7 @@ describe("Textes français", () => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
         lawDate: "2003-09-05",
-        lawType: "loi organique",
+        nature: "LOI_ORGANIQUE",
         num: "2001-692",
         type: "law",
       })
@@ -211,7 +211,7 @@ describe("Textes européens et internationaux", () => {
       const context = new TextParserContext(task.name)
       expect(texteEuropeen(context)).toStrictEqual({
         lawDate: "2003-09-05",
-        lawType: "directive",
+        nature: "DIRECTIVE_EURO",
         legislation: "UE",
         num: "2001/73/CEE",
         type: "law",
@@ -223,7 +223,7 @@ describe("Textes européens et internationaux", () => {
       const context = new TextParserContext(task.name)
       expect(texteEuropeen(context)).toStrictEqual({
         lawDate: "2007-03-10",
-        lawType: "règlement",
+        nature: "REGLEMENTEUROPEEN",
         legislation: "UE",
         num: "2001/73",
         type: "law",
@@ -235,7 +235,7 @@ describe("Textes européens et internationaux", () => {
       const context = new TextParserContext(task.name)
       expect(texteEuropeen(context)).toStrictEqual({
         lawDate: "2007-03-10",
-        lawType: "règlement",
+        nature: "REGLEMENTEUROPEEN",
         legislation: "UE",
         type: "law",
       })
@@ -247,7 +247,7 @@ describe("Textes européens et internationaux", () => {
     test("convention", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteInternational(context)).toStrictEqual({
-        lawType: "convention",
+        nature: "CONVENTION",
         legislation: "international",
         type: "law",
       })
@@ -263,7 +263,7 @@ describe("Règle générale", () => {
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
         lawDate: "2003-09-05",
-        lawType: "directive",
+        nature: "DIRECTIVE_EURO",
         legislation: "UE",
         num: "2001/73/CEE",
         position: { start: 0, stop: 46 },
@@ -277,7 +277,7 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawType: "directive",
+        nature: "DIRECTIVE_EURO",
         legislation: "UE",
         localization: { relative: 0 },
         ofTheSaid: true,
@@ -295,7 +295,7 @@ describe("Règle générale", () => {
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
         lawDate: "2003-09-05",
-        lawType: "directive",
+        nature: "DIRECTIVE_EURO",
         legislation: "UE",
         localization: { relative: 0 },
         num: "2001/73/CEE",
@@ -311,7 +311,7 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawType: "loi organique",
+        nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
@@ -325,7 +325,7 @@ describe("Règle générale", () => {
       const context = new TextParserContext(task.name)
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
-        lawType: "loi organique",
+        nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
@@ -342,7 +342,7 @@ describe("Règle générale", () => {
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
         lawDate: "2003-09-05",
-        lawType: "loi organique",
+        nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         num: "2001-692",
         ofTheSaid: true,
@@ -358,7 +358,7 @@ describe("Règle générale", () => {
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
         lawDate: "2003-09-05",
-        lawType: "loi organique",
+        nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         num: "2001-692",
         position: { start: 0, stop: 50 },
@@ -373,7 +373,7 @@ describe("Règle générale", () => {
       const result = texte(context) as TextAstLaw & TextAstPosition
       expect(result).toStrictEqual({
         lawDate: "2003-09-05",
-        lawType: "directive",
+        nature: "DIRECTIVE_EURO",
         legislation: "UE",
         localization: { relative: 0 },
         num: "2001/73/CEE",

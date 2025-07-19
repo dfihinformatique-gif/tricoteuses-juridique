@@ -3,13 +3,13 @@ export type CompoundReferencesSeparator =
 
 export type DivisionType = (typeof divisionTypes)[number]
 
-export type EuropeanLawType = (typeof europeanLawTypes)[number]
+export type EuropeanLawNature = (typeof europeanLawNatures)[number]
 
-export type FrenchLawType = (typeof frenchLawTypes)[number]
+export type FrenchLawNature = (typeof frenchLawNatures)[number]
 
-export type InternationalLawType = (typeof internationalLawTypes)[number]
+export type InternationalLawNature = (typeof internationalLawNatures)[number]
 
-export type LawType = (typeof lawTypes)[number]
+export type LawNature = (typeof lawNatures)[number]
 
 export type LocalizationAdverb = (typeof localizationAdverbs)[number]
 
@@ -120,7 +120,7 @@ export interface TextAstLaw {
    */
   cid?: string
   lawDate?: string
-  lawType: LawType
+  nature: LawNature
   legislation?: "international" | "UE"
   localization?: TextAstLocalisation
   /**
@@ -209,28 +209,25 @@ export const compoundReferencesSeparators = [
   "sauf",
 ] as const
 
-export const europeanLawTypes = ["directive", "règlement"] as const
-
-export const frenchLawTypes = [
-  "arrêté",
-  "circulaire",
-  "code",
-  "constitution",
-  "décret",
-  "décret-loi",
-  "loi",
-  "loi constitutionnelle",
-  "loi organique",
-  "ordonnance",
+export const europeanLawNatures = [
+  "DIRECTIVE_EURO",
+  "REGLEMENTEUROPEEN",
 ] as const
 
-export const internationalLawTypes = ["convention"] as const
-
-export const lawTypes = [
-  ...europeanLawTypes,
-  ...frenchLawTypes,
-  ...internationalLawTypes,
+export const frenchLawNatures = [
+  "ARRETE",
+  "CIRCULAIRE",
+  "CODE",
+  "CONSTITUTION",
+  "DECRET",
+  "DECRET_LOI",
+  "LOI",
+  "LOI_CONSTIT",
+  "LOI_ORGANIQUE",
+  "ORDONNANCE",
 ] as const
+
+export const internationalLawNatures = ["CONVENTION"] as const
 
 export const divisionTypes = [
   "livre",
@@ -240,6 +237,12 @@ export const divisionTypes = [
   "sous-section",
   "paragraphe",
   "sous-paragraphe",
+] as const
+
+export const lawNatures = [
+  ...europeanLawNatures,
+  ...frenchLawNatures,
+  ...internationalLawNatures,
 ] as const
 
 export const portionTypes = ["partie", "alinéa", "phrase"] as const

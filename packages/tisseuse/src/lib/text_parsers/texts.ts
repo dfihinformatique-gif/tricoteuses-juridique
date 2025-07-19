@@ -1,6 +1,6 @@
 import {
-  type EuropeanLawType,
-  type FrenchLawType,
+  type EuropeanLawNature,
+  type FrenchLawNature,
   type TextAstLaw,
   type TextAstLawIdentification,
   type TextAstTextInfos,
@@ -48,24 +48,6 @@ export const identificationTexteFrancais = alternatives(
 )
 
 /**
- * Nature d’un texte français, hormis les textes désignés via un nom spécial
- * (codes et Constitution), par exemple « loi organique »
- */
-export const natureRestreinteTexteFrancais = alternatives(
-  regExp("arrêté", { flags: "i", value: "arrêté" }),
-  regExp("circulaire", { flags: "i", value: "circulaire" }),
-  regExp("décret-loi", { flags: "i", value: "décret-loi" }),
-  regExp("décret", { flags: "i", value: "décret" }),
-  regExp("loi constitutionnelle", {
-    flags: "i",
-    value: "loi constitutionnelle",
-  }),
-  regExp("loi organique", { flags: "i", value: "loi organique" }),
-  regExp("loi", { flags: "i", value: "loi" }),
-  regExp("ordonnance", { flags: "i", value: "ordonnance" }),
-)
-
-/**
  * Nature d’un texte français, par exemple « code » ou « loi organique »
  *
  * Note: Une majuscule est nécessaire à Constitution pour éviter des faux positifs
@@ -74,14 +56,24 @@ export const natureRestreinteTexteFrancais = alternatives(
 export const natureTexteFrancais = chain(
   [
     alternatives(
-      regExp("code", { flags: "i", value: "code" }),
-      regExp("Constitution", { value: "constitution" }),
-      natureRestreinteTexteFrancais,
+      regExp("arrêté", { flags: "i", value: "ARRETE" }),
+      regExp("circulaire", { flags: "i", value: "CIRCULAIRE" }),
+      regExp("code", { flags: "i", value: "CODE" }),
+      regExp("Constitution", { value: "CONSTITUTION" }),
+      regExp("décret-loi", { flags: "i", value: "DECRET_LOI" }),
+      regExp("décret", { flags: "i", value: "DECRET" }),
+      regExp("loi constitutionnelle", {
+        flags: "i",
+        value: "LOI_CONSTIT",
+      }),
+      regExp("loi organique", { flags: "i", value: "LOI_ORGANIQUE" }),
+      regExp("loi", { flags: "i", value: "LOI" }),
+      regExp("ordonnance", { flags: "i", value: "ORDONNANCE" }),
     ),
   ],
   {
     value: (results) => ({
-      lawType: results[0] as FrenchLawType,
+      nature: results[0] as FrenchLawNature,
       type: "law",
     }),
   },
@@ -129,7 +121,7 @@ export const texteFrancais = alternatives(
       value: (results) => ({
         cid: "JORFTEXT000000571356",
         ...(results[1] ? { lawDate: results[1] as string } : {}),
-        lawType: "constitution",
+        nature: "CONSTITUTION",
         title: "Constitution",
         type: "law",
       }),
@@ -137,16 +129,15 @@ export const texteFrancais = alternatives(
   ),
   chain(
     [
-      natureRestreinteTexteFrancais,
+      natureTexteFrancais,
       espace,
       identificationTexteFrancais,
       optional(espacePrecite, { default: "" }),
     ],
     {
       value: (results) => ({
+        ...(results[0] as TextAstLaw),
         ...(results[2] as TextAstLawIdentification),
-        lawType: results[0] as FrenchLawType,
-        type: "law",
       }),
     },
   ),
@@ -201,14 +192,14 @@ export const identificationTexteEuropeen = alternatives(
 export const natureTexteEuropeen = chain(
   [
     alternatives(
-      regExp("directive", { flags: "i", value: "directive" }),
-      regExp("règlement", { flags: "i", value: "règlement" }),
+      regExp("directive", { flags: "i", value: "DIRECTIVE_EURO" }),
+      regExp("règlement", { flags: "i", value: "REGLEMENTEUROPEEN" }),
     ),
     optional(regExp(String.raw` \(UE\)`, { flags: "i" }), { default: "" }),
   ],
   {
     value: (results) => ({
-      lawType: results[0] as EuropeanLawType,
+      nature: results[0] as EuropeanLawNature,
       legislation: "UE",
       type: "law",
     }),
@@ -233,7 +224,7 @@ export const texteEuropeen = chain(
 export const texteInternational = regExp("convention", {
   flags: "i",
   value: {
-    lawType: "convention",
+    nature: "CONVENTION",
     legislation: "international",
     type: "law",
   },

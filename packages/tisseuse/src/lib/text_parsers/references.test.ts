@@ -115,7 +115,7 @@ describe("reference", () => {
       },
       parent: {
         lawDate: "2021-08-22",
-        lawType: "loi",
+        nature: "LOI",
         num: "2021-1104",
         position: {
           start: 144,
@@ -254,7 +254,7 @@ describe("reference", () => {
       },
       parent: {
         lawDate: "2020-12-29",
-        lawType: "loi",
+        nature: "LOI",
         num: "2020-1721",
         position: {
           start: 50,
@@ -356,7 +356,7 @@ describe("reference", () => {
       },
       parent: {
         lawDate: "2020-12-29",
-        lawType: "loi",
+        nature: "LOI",
         num: "2020-1721",
         position: {
           start: 99,
@@ -395,7 +395,7 @@ describe("reference", () => {
       },
       parent: {
         lawDate: "1998-12-31",
-        lawType: "loi",
+        nature: "LOI",
         num: "98-293",
         position: {
           start: 29,
@@ -432,7 +432,7 @@ describe("reference", () => {
         type: "article",
       },
       parent: {
-        lawType: "code",
+        nature: "CODE",
         localization: {
           relative: 0,
         },
@@ -459,7 +459,7 @@ describe("reference", () => {
     const result = reference(context) as TextAstReference
     expect(result).toStrictEqual({
       lawDate: "1998-12-31",
-      lawType: "loi",
+      nature: "LOI",
       num: "98-293",
       position: {
         start: 0,
@@ -536,7 +536,7 @@ describe("reference", () => {
         type: "article",
       },
       parent: {
-        lawType: "code",
+        nature: "CODE",
         localization: {
           relative: 0,
         },
@@ -572,7 +572,7 @@ describe("reference", () => {
         type: "article",
       },
       parent: {
-        lawType: "code",
+        nature: "CODE",
         localization: {
           relative: 0,
         },
@@ -636,7 +636,7 @@ describe("reference", () => {
       },
       parent: {
         lawDate: "1998-12-31",
-        lawType: "loi",
+        nature: "LOI",
         num: "98-293",
         position: {
           start: 52,
@@ -886,7 +886,7 @@ describe("reference", () => {
       },
       parent: {
         lawDate: "1998-02-28",
-        lawType: "décret",
+        nature: "DECRET",
         num: "98-74",
         position: {
           start: 38,
@@ -947,7 +947,7 @@ describe("reference", () => {
       },
       parent: {
         lawDate: "1998-12-31",
-        lawType: "loi",
+        nature: "LOI",
         position: {
           start: 49,
           stop: 72,
@@ -994,7 +994,7 @@ describe("uniteBasePreciseeSingulier", () => {
       },
       parent: {
         lawDate: "1998-12-31",
-        lawType: "loi",
+        nature: "LOI",
         num: "98-293",
         position: {
           start: 25,
@@ -1034,7 +1034,7 @@ describe("uniteBaseSingulier", () => {
     const result = uniteBaseSingulier(context) as TextAstReference
     expect(result).toStrictEqual({
       lawDate: "1998-12-31",
-      lawType: "loi",
+      nature: "LOI",
       num: "98-293",
       position: {
         start: 0,

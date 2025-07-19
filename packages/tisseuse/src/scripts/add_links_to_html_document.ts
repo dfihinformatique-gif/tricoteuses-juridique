@@ -263,7 +263,7 @@ async function addLinksToHtmlDocument(
         }
 
         case "law-reference": {
-          switch (atomicReference.lawType) {
+          switch (atomicReference.nature) {
             case "arrêté":
             case "convention":
             case "décret":
@@ -289,7 +289,7 @@ async function addLinksToHtmlDocument(
               if (typeof atomicReference.id === "string") {
                 const slug = slugify(atomicReference.id, " ")
                 ids = idsBySlugByNature
-                  .get(atomicReference.lawType.toUpperCase())
+                  .get(atomicReference.nature.toUpperCase())
                   ?.get(slug)
                 assert.notStrictEqual(
                   ids,
@@ -327,7 +327,7 @@ async function addLinksToHtmlDocument(
                   slug = slugify("Constitution du 4 octobre 1958", " ")
                 }
                 ids = idsBySlugByNature
-                  .get(atomicReference.lawType.toUpperCase())
+                  .get(atomicReference.nature.toUpperCase())
                   ?.get(slug)
                 assert.notStrictEqual(
                   ids,
@@ -365,7 +365,7 @@ async function addLinksToHtmlDocument(
                   loi: "LOI",
                   "loi constitutionnelle": "LOI_CONSTIT",
                   "loi organique": "LOI_ORGANIQUE",
-                }[atomicReference.lawType]
+                }[atomicReference.nature]
                 const natureEtNum = `${nature}.${atomicReference.id}`
                 let lawsInfos = [
                   ...(await db<
@@ -437,7 +437,7 @@ async function addLinksToHtmlDocument(
             }
 
             default:
-              assertNever("lawType", atomicReference.lawType)
+              assertNever("nature", atomicReference.nature)
           }
 
           const atomicReferencesInLaw =

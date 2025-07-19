@@ -41,7 +41,7 @@ function addTextCidToWordsTree(
     .map((word) =>
       /^[IVX]+$/gi.test(word)
         ? numberFromRomanNumeral(word).toString()
-        : word.toLowerCase(),
+        : word.toLowerCase().replace(/^no$/, "n°"),
     )
   let textCidByWordsNode = textCidByWordsTree
   for (const word of words) {
@@ -69,9 +69,13 @@ async function extractTextsNames(): Promise<number> {
   const textsCidsByNatureAndDate: Record<string, Record<string, string[]>> = {}
   const textsCidsByNatureAndNum: Record<string, Record<string, string[]>> = {}
   for (const nature of [
+    // "ARRETE",
+    // "CIRCULAIRE",
     "CODE",
     "CONSTITUTION",
     // "DECLARATION",
+    // "DECRET",
+    // "DECRET_LOI",
     "LOI",
     "LOI_CONSTIT",
     "LOI_ORGANIQUE",

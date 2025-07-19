@@ -444,7 +444,7 @@ export const wordsTree =
       let word = match[1]
       word = /^[IVX]+$/g.test(word)
         ? numberFromRomanNumeral(word).toString()
-        : word.toLowerCase()
+        : word.toLowerCase().replace(/^no$/, "n°")
       if (word === "constitution" && match[1][0] !== "C") {
         // Accept only "Constituion" with an uppercase "C", to avoid
         // false positives.

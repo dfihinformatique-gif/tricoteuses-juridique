@@ -1,8 +1,14 @@
+import dedent from "dedent-js"
 import { describe, expect, test } from "vitest"
 
 import { getReferences } from "./index.js"
 import { TextParserContext } from "./parsers.js"
-import type { TextAstEnumeration, TextAstParentChild } from "./ast.js"
+import type {
+  TextAstEnumeration,
+  TextAstParentChild,
+  TextAstPosition,
+  TextAstText,
+} from "./ast.js"
 
 describe("getReferences", () => {
   test("à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020", ({
@@ -323,6 +329,95 @@ describe("getReferences", () => {
     expect(context.textSlice(reference.position)).toBe(task.name)
     expect(context.textSlice(reference.parent.position)).toBe("code pénal")
     expect(context.textSlice(reference.child.position)).toBe("article 7")
+  })
+
+  test("Début de l'article 2 du PLF", () => {
+    const input = dedent`
+      I. - Le code général des impôts est ainsi modifié :
+      A. - A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé par le montant : « 6 807 € » ;
+    `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references.length).toBe(2)
+    expect(references).toStrictEqual([
+      {
+        action: {
+          action: "MODIFICATION",
+        },
+        position: {
+          start: 5,
+          stop: 49,
+        },
+        reference: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 5,
+            stop: 31,
+          },
+          title: "Code général des impôts",
+          type: "texte",
+        },
+        type: "reference_et_action",
+      },
+      {
+        action: {
+          action: "MODIFICATION",
+          actionInContent: true,
+        },
+        position: {
+          start: 57,
+          stop: 152,
+        },
+        reference: {
+          child: {
+            child: {
+              index: 1,
+              position: {
+                start: 62,
+                stop: 77,
+              },
+              type: "phrase",
+            },
+            parent: {
+              index: 2,
+              position: {
+                start: 81,
+                stop: 94,
+              },
+              type: "alinéa",
+            },
+            position: {
+              start: 62,
+              stop: 94,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            num: "196 B",
+            position: {
+              start: 100,
+              stop: 113,
+            },
+            type: "article",
+          },
+          position: {
+            start: 57,
+            stop: 113,
+          },
+          type: "parent-enfant",
+        },
+        type: "reference_et_action",
+      },
+    ])
+    const reference0 = references[0] as TextAstText & TextAstPosition
+    expect(context.textSlice(reference0.position)).toBe(
+      "Le code général des impôts est ainsi modifié",
+    )
+    const reference1 = references[1] as TextAstParentChild
+    expect(context.textSlice(reference1.position)).toBe(
+      "A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé",
+    )
   })
 
   test("les articles 111-1 et 111-2 du code pénal", ({ task }) => {

@@ -84,15 +84,13 @@ describe("Textes français", () => {
 
     test("code général des impôts est", ({ task }) => {
       const context = new TextParserContext(task.name)
-      const result = texteFrancais(context) as TextAstText & TextAstPosition
-      expect(result).toStrictEqual({
+      expect(texteFrancais(context)).toStrictEqual({
         cid: "LEGITEXT000006069577",
         nature: "CODE",
         title: "Code général des impôts",
         type: "texte",
       })
       expect(context.remaining()).toBe(" est")
-      expect(context.textSlice(result.position)).toBe("code général des impôts")
     })
 
     test("code général des impôts, annexe 2", ({ task }) => {

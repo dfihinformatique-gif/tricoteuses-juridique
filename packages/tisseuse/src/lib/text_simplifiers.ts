@@ -17,11 +17,32 @@ export interface ConversionTaskNode {
   title: string
 }
 
+export type Converter = (text: string) => Conversion
+
 interface SourceMapSegment {
   inputIndex: number
   inputLength: number
   outputIndex: number
   outputLength: number
+}
+
+const characterByNamedHtmlEntity: Record<string, string> = {
+  amp: "&",
+  apos: "'",
+  asymp: "≈",
+  copy: "©",
+  deg: "°",
+  euro: "€",
+  gt: ">",
+  lt: "<",
+  mdash: "—",
+  nbsp: " ",
+  ndash: "–",
+  ne: "≠",
+  pound: "£",
+  quot: '"',
+  reg: "®",
+  trade: "™",
 }
 
 export function chainSimplifiers(
@@ -41,204 +62,113 @@ export function chainSimplifiers(
   }
 }
 
-export function convertHtmlElementsToText(inputText: string): Conversion {
-  let inputIndex = 0
-  let outputOffset = 0
-  const outputFragments: string[] = []
-  let sourceMap: SourceMapSegment[] = []
-  const tagsStack: Array<
-    | {
-        action?: undefined // Keep element as is.
-        name: string
-      }
-    | {
-        action: "ignore"
-        inputIndex: number
-        name: string
-        outputOffset: number
-        sourceMap: SourceMapSegment[]
-      }
-    | {
-        action: "keep_content"
-        closingTagReplacement: string
-        name: string
-      }
-  > = []
-  const title = "Conversion des éléments HTML en texte"
-  while (inputIndex < inputText.length) {
-    // Find the next tag
-    const tagStartIndex = inputText.indexOf("<", inputIndex)
-
-    if (tagStartIndex === -1) {
-      // No more tags, keep the remaining text unchanged.
-      outputFragments.push(inputText.substring(inputIndex))
-      return {
-        task: { sourceMap, title },
-        text: outputFragments.join(""),
-      }
-    }
-
-    // Find the end of the tag.
-    const tagEndIndex = inputText.indexOf(">", tagStartIndex)
-    if (tagEndIndex === -1) {
-      // Malformed HTML, just keep the remaining text unchanged.
-      outputFragments.push(inputText.substring(inputIndex))
-      return {
-        task: { sourceMap, title },
-        text: outputFragments.join(""),
-      }
-    }
-
-    const tagContent = inputText.substring(tagStartIndex, tagEndIndex + 1)
-    const isClosingTag = tagContent.startsWith("</")
-    const tagLength = tagContent.length
-    const tagMatch = tagContent.match(/^<\/?([A-Z][A-Z0-9]*)/i)
-
-    if (tagMatch === null) {
-      // Not a standard tag. Keep it as normal text.
-      const fragment = inputText.substring(inputIndex, tagEndIndex + 1)
-      outputFragments.push(fragment)
-      inputIndex = tagEndIndex + 1
-      continue
-    }
-
-    const tagName = tagMatch[1]
-    const tagNameUpperCase = tagName.toUpperCase()
-    const isSelfClosingTag =
-      tagContent.endsWith("/>") ||
-      [
-        "AREA",
-        "BASE",
-        "BR",
-        "COL",
-        "EMBED",
-        "HR",
-        "IMG",
-        "INPUT",
-        "LINK",
-        "META",
-        "PARAM",
-        "SOURCE",
-        "TRACK",
-        "WBR",
-      ].includes(tagNameUpperCase)
-
-    if (isSelfClosingTag) {
-      if (isClosingTag) {
-        // A self-closing tag should never be a closing tag.
-        // => Remove this invalid tag.
-
-        if (tagStartIndex > inputIndex) {
-          // Keep the text before tag as is.
-          outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
+export function convertHtmlElementsToText({
+  removeAWithHref,
+}: {
+  removeAWithHref?: boolean
+} = {}): Converter {
+  return (inputText: string): Conversion => {
+    let inputIndex = 0
+    let outputOffset = 0
+    let outputFragments: string[] = []
+    let sourceMap: SourceMapSegment[] = []
+    const tagsStack: Array<
+      | {
+          action?: undefined // Keep element as is.
+          name: string
         }
-        sourceMap.push({
-          inputIndex: tagStartIndex,
-          inputLength: tagLength,
-          outputIndex: tagStartIndex + outputOffset,
-          outputLength: 0,
-        })
-        outputOffset -= tagLength
-      } else if (["BR", "HR"].includes(tagNameUpperCase)) {
-        // Replace self-closing tag with a new line.
-
-        if (tagStartIndex > inputIndex) {
-          // Keep the text before tag as is.
-          outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
+      | {
+          action: "ignore"
+          inputIndex: number
+          name: string
+          outputFragments: string[]
+          outputOffset: number
+          sourceMap: SourceMapSegment[]
         }
-        // Replace opening tag with new line.
-        const tagLength = tagEndIndex + 1 - tagStartIndex
-        outputFragments.push("\n")
-        sourceMap.push({
-          inputIndex: tagStartIndex,
-          inputLength: tagLength,
-          outputIndex: tagStartIndex + outputOffset,
-          outputLength: 1,
-        })
-        outputOffset += 1 - tagLength
-      } else if (["IMG"].includes(tagNameUpperCase)) {
-        // Remove self-closing tag.
-
-        if (tagStartIndex > inputIndex) {
-          // Keep the text before tag as is.
-          outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
+      | {
+          action: "keep_content"
+          closingTagReplacement: string
+          name: string
         }
-        sourceMap.push({
-          inputIndex: tagStartIndex,
-          inputLength: tagLength,
-          outputIndex: tagStartIndex + outputOffset,
-          outputLength: 0,
-        })
-        outputOffset -= tagLength
-      } else {
-        // Keep self-closing tag (and the text before tag).
-        outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
+    > = []
+    const title = "Conversion des éléments HTML en texte"
+    while (inputIndex < inputText.length) {
+      // Find the next tag
+      const tagStartIndex = inputText.indexOf("<", inputIndex)
+
+      if (tagStartIndex === -1) {
+        // No more tags, keep the remaining text unchanged.
+        outputFragments.push(
+          inputText.substring(inputIndex).replace(/[\n\r]/g, " "),
+        )
+        return {
+          task: { sourceMap, title },
+          text: outputFragments.join(""),
+        }
       }
-    } else {
-      // Not a self-closing tag
 
-      if (isClosingTag) {
-        const tagInfos = tagsStack.at(-1)
-        if (tagNameUpperCase === tagInfos?.name) {
-          // Closing tag match last open tag.
+      // Find the end of the tag.
+      const tagEndIndex = inputText.indexOf(">", tagStartIndex)
+      if (tagEndIndex === -1) {
+        // Malformed HTML, just keep the remaining text unchanged.
+        outputFragments.push(
+          inputText.substring(inputIndex).replace(/[\n\r]/g, " "),
+        )
+        return {
+          task: { sourceMap, title },
+          text: outputFragments.join(""),
+        }
+      }
 
-          tagsStack.pop()
-          switch (tagInfos.action) {
-            case undefined: {
-              // Keep the text before closing tag and the closing tag as is.
-              outputFragments.push(
-                inputText.substring(inputIndex, tagEndIndex + 1),
-              )
-              break
-            }
+      const tagContent = inputText.substring(tagStartIndex, tagEndIndex + 1)
+      const isClosingTag = tagContent.startsWith("</")
+      const tagLength = tagContent.length
+      const tagMatch = tagContent.match(/^<\/?([A-Z][A-Z0-9]*)/i)
 
-            case "ignore": {
-              // Restore sourceMap backup, to ignore sourceMap segments
-              // added in ignored element.
-              sourceMap = tagInfos.sourceMap
-              // Remove element and its content.
-              const elementLength = tagEndIndex + 1 - tagInfos.inputIndex
-              sourceMap.push({
-                inputIndex: tagInfos.inputIndex,
-                inputLength: elementLength,
-                outputIndex: tagInfos.inputIndex + outputOffset,
-                outputLength: 0,
-              })
-              outputOffset = tagInfos.outputOffset - elementLength
-              break
-            }
+      if (tagMatch === null) {
+        // Not a standard tag. Keep it as normal text.
+        outputFragments.push(
+          inputText
+            .substring(inputIndex, tagEndIndex + 1)
+            .replace(/[\n\r]/g, " "),
+        )
+        inputIndex = tagEndIndex + 1
+        continue
+      }
 
-            case "keep_content": {
-              // Keep the text before closing tag as is, and replace closing tag.
+      const tagName = tagMatch[1]
+      const tagNameUpperCase = tagName.toUpperCase()
+      const isSelfClosingTag =
+        tagContent.endsWith("/>") ||
+        [
+          "AREA",
+          "BASE",
+          "BR",
+          "COL",
+          "EMBED",
+          "HR",
+          "IMG",
+          "INPUT",
+          "LINK",
+          "META",
+          "PARAM",
+          "SOURCE",
+          "TRACK",
+          "WBR",
+        ].includes(tagNameUpperCase)
 
-              outputFragments.push(
-                inputText.substring(inputIndex, tagStartIndex),
-              )
-              if (tagInfos.closingTagReplacement.length !== 0) {
-                outputFragments.push(tagInfos.closingTagReplacement)
-              }
-              const tagLength = tagEndIndex + 1 - tagStartIndex
-              sourceMap.push({
-                inputIndex: tagStartIndex,
-                inputLength: tagLength,
-                outputIndex: tagStartIndex + outputOffset,
-                outputLength: tagInfos.closingTagReplacement.length,
-              })
-              outputOffset += tagInfos.closingTagReplacement.length - tagLength
-              break
-            }
-
-            default: {
-              assertNever("TagInfos.action", tagInfos)
-            }
-          }
-        } else {
-          // Closing tag doesn't match last open tag.
-          // => Remove closing tag.
+      if (isSelfClosingTag) {
+        if (isClosingTag) {
+          // A self-closing tag should never be a closing tag.
+          // => Remove this invalid tag.
 
           if (tagStartIndex > inputIndex) {
-            // Keep the text before closing tag as is.
-            outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
+            // Keep the text before tag as is.
+            outputFragments.push(
+              inputText
+                .substring(inputIndex, tagStartIndex)
+                .replace(/[\n\r]/g, " "),
+            )
           }
           sourceMap.push({
             inputIndex: tagStartIndex,
@@ -247,100 +177,299 @@ export function convertHtmlElementsToText(inputText: string): Conversion {
             outputLength: 0,
           })
           outputOffset -= tagLength
+        } else if (["BR", "HR"].includes(tagNameUpperCase)) {
+          // Replace self-closing tag with a new line.
+
+          if (tagStartIndex > inputIndex) {
+            // Keep the text before tag as is.
+            outputFragments.push(
+              inputText
+                .substring(inputIndex, tagStartIndex)
+                .replace(/[\n\r]/g, " "),
+            )
+          }
+          // Replace opening tag with new line.
+          const tagLength = tagEndIndex + 1 - tagStartIndex
+          outputFragments.push("\n")
+          sourceMap.push({
+            inputIndex: tagStartIndex,
+            inputLength: tagLength,
+            outputIndex: tagStartIndex + outputOffset,
+            outputLength: 1,
+          })
+          outputOffset += 1 - tagLength
+        } else if (["IMG"].includes(tagNameUpperCase)) {
+          // Remove self-closing tag.
+
+          if (tagStartIndex > inputIndex) {
+            // Keep the text before tag as is.
+            outputFragments.push(
+              inputText
+                .substring(inputIndex, tagStartIndex)
+                .replace(/[\n\r]/g, " "),
+            )
+          }
+          sourceMap.push({
+            inputIndex: tagStartIndex,
+            inputLength: tagLength,
+            outputIndex: tagStartIndex + outputOffset,
+            outputLength: 0,
+          })
+          outputOffset -= tagLength
+        } else {
+          // Keep self-closing tag (and the text before tag).
+          outputFragments.push(
+            inputText
+              .substring(inputIndex, tagStartIndex)
+              .replace(/[\n\r]/g, " "),
+          )
         }
-      } else if (
-        [
-          "B",
-          "BODY",
-          "EM",
-          "HTML",
-          "I",
-          "OL",
-          "SPAN",
-          "STRONG",
-          "SUB",
-          "SUP",
-          "TABLE",
-          "TBODY",
-          "THEAD",
-          "TR",
-          "UL",
-        ].includes(tagNameUpperCase)
-      ) {
-        // Ignore opening tag & closing tag, but keep element content.
-
-        if (tagStartIndex > inputIndex) {
-          // Keep the text before tag as is.
-          outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
-        }
-        // Skip opening tag.
-        sourceMap.push({
-          inputIndex: tagStartIndex,
-          inputLength: tagLength,
-          outputIndex: tagStartIndex + outputOffset,
-          outputLength: 0,
-        })
-        outputOffset -= tagLength
-
-        tagsStack.push({
-          action: "keep_content",
-          closingTagReplacement: "",
-          name: tagNameUpperCase,
-        })
-      } else if (["HEAD", "SCRIPT", "STYLE"].includes(tagNameUpperCase)) {
-        // Ignore opening tag, its content and closing tag.
-
-        if (tagStartIndex > inputIndex) {
-          // Keep the text before tag as is.
-          outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
-        }
-        tagsStack.push({
-          action: "ignore",
-          inputIndex: tagStartIndex,
-          name: tagNameUpperCase,
-          // Backup outputOffset & sourceMap, because every changes made
-          // inside ignored element will be ignored.
-          outputOffset,
-          sourceMap,
-        })
-        sourceMap = []
-      } else if (["LI", "P", "TD", "TH"].includes(tagNameUpperCase)) {
-        // Replace both opening tag & closing tag with a new line and keep element content.
-
-        if (tagStartIndex > inputIndex) {
-          // Keep the text before tag as is.
-          outputFragments.push(inputText.substring(inputIndex, tagStartIndex))
-        }
-        // Replace opening tag with new line.
-        outputFragments.push("\n")
-        sourceMap.push({
-          inputIndex: tagStartIndex,
-          inputLength: tagLength,
-          outputIndex: tagStartIndex + outputOffset,
-          outputLength: 1,
-        })
-        outputOffset += 1 - tagLength
-
-        tagsStack.push({
-          action: "keep_content",
-          closingTagReplacement: "\n",
-          name: tagNameUpperCase,
-        })
       } else {
-        // Preserve opening tag.
+        // Not a self-closing tag
 
-        outputFragments.push(inputText.substring(inputIndex, tagEndIndex + 1))
-        tagsStack.push({
-          name: tagNameUpperCase,
-        })
+        if (isClosingTag) {
+          const tagInfos = tagsStack.at(-1)
+          if (tagNameUpperCase === tagInfos?.name) {
+            // Closing tag match last open tag.
+
+            tagsStack.pop()
+            switch (tagInfos.action) {
+              case undefined: {
+                // Keep the text before closing tag and the closing tag as is.
+                outputFragments.push(
+                  inputText
+                    .substring(inputIndex, tagEndIndex + 1)
+                    .replace(/[\n\r]/g, " "),
+                )
+                break
+              }
+
+              case "ignore": {
+                // Restore outputFragments, outputOffset & sourceMap, because
+                // every changes made inside ignored element must be ignored.
+                outputFragments = tagInfos.outputFragments
+                outputOffset = tagInfos.outputOffset
+                sourceMap = tagInfos.sourceMap
+                // Remove element and its content.
+                const elementLength = tagEndIndex + 1 - tagInfos.inputIndex
+                sourceMap.push({
+                  inputIndex: tagInfos.inputIndex,
+                  inputLength: elementLength,
+                  outputIndex: tagInfos.inputIndex + outputOffset,
+                  outputLength: 0,
+                })
+                outputOffset = outputOffset - elementLength
+                break
+              }
+
+              case "keep_content": {
+                // Keep the text before closing tag as is, and replace closing tag.
+
+                outputFragments.push(
+                  inputText
+                    .substring(inputIndex, tagStartIndex)
+                    .replace(/[\n\r]/g, " "),
+                )
+                if (tagInfos.closingTagReplacement.length !== 0) {
+                  outputFragments.push(tagInfos.closingTagReplacement)
+                }
+                const tagLength = tagEndIndex + 1 - tagStartIndex
+                sourceMap.push({
+                  inputIndex: tagStartIndex,
+                  inputLength: tagLength,
+                  outputIndex: tagStartIndex + outputOffset,
+                  outputLength: tagInfos.closingTagReplacement.length,
+                })
+                outputOffset +=
+                  tagInfos.closingTagReplacement.length - tagLength
+                break
+              }
+
+              default: {
+                assertNever("TagInfos.action", tagInfos)
+              }
+            }
+          } else {
+            // Closing tag doesn't match last open tag.
+            // => Remove closing tag.
+
+            if (tagStartIndex > inputIndex) {
+              // Keep the text before closing tag as is.
+              outputFragments.push(
+                inputText
+                  .substring(inputIndex, tagStartIndex)
+                  .replace(/[\n\r]/g, " "),
+              )
+            }
+            sourceMap.push({
+              inputIndex: tagStartIndex,
+              inputLength: tagLength,
+              outputIndex: tagStartIndex + outputOffset,
+              outputLength: 0,
+            })
+            outputOffset -= tagLength
+          }
+        } else if (
+          ["HEAD", "SCRIPT", "STYLE"].includes(tagNameUpperCase) ||
+          (removeAWithHref &&
+            tagNameUpperCase === "A" &&
+            / href=/i.test(tagContent))
+        ) {
+          // Ignore opening tag, its content and closing tag.
+
+          if (tagStartIndex > inputIndex) {
+            // Keep the text before tag as is.
+            outputFragments.push(
+              inputText
+                .substring(inputIndex, tagStartIndex)
+                .replace(/[\n\r]/g, " "),
+            )
+          }
+          tagsStack.push({
+            action: "ignore",
+            inputIndex: tagStartIndex,
+            name: tagNameUpperCase,
+            // Backup outputFragments, outputOffset & sourceMap, because
+            // every changes made inside ignored element will be ignored.
+            outputFragments,
+            outputOffset,
+            sourceMap,
+          })
+          outputFragments = []
+          sourceMap = []
+        } else if (
+          [
+            "A", // When removeAWithHref is false or no href
+            "B",
+            "BODY",
+            "EM",
+            "HTML",
+            "I",
+            "OL",
+            "SPAN",
+            "STRONG",
+            "SUB",
+            "SUP",
+            "TABLE",
+            "TBODY",
+            "THEAD",
+            "TR",
+            "UL",
+          ].includes(tagNameUpperCase)
+        ) {
+          // Ignore opening tag & closing tag, but keep element content.
+
+          if (tagStartIndex > inputIndex) {
+            // Keep the text before tag as is.
+            outputFragments.push(
+              inputText
+                .substring(inputIndex, tagStartIndex)
+                .replace(/[\n\r]/g, " "),
+            )
+          }
+          // Skip opening tag.
+          sourceMap.push({
+            inputIndex: tagStartIndex,
+            inputLength: tagLength,
+            outputIndex: tagStartIndex + outputOffset,
+            outputLength: 0,
+          })
+          outputOffset -= tagLength
+
+          tagsStack.push({
+            action: "keep_content",
+            closingTagReplacement: "",
+            name: tagNameUpperCase,
+          })
+        } else if (
+          [
+            "H1",
+            "H2",
+            "H3",
+            "H4",
+            "H5",
+            "H6",
+            "DIV",
+            "LI",
+            "P",
+            "TD",
+            "TH",
+          ].includes(tagNameUpperCase)
+        ) {
+          // Replace both opening tag & closing tag with a new line and keep element content.
+
+          if (tagStartIndex > inputIndex) {
+            // Keep the text before tag as is.
+            outputFragments.push(
+              inputText
+                .substring(inputIndex, tagStartIndex)
+                .replace(/[\n\r]/g, " "),
+            )
+          }
+          // Replace opening tag with new line.
+          outputFragments.push("\n")
+          sourceMap.push({
+            inputIndex: tagStartIndex,
+            inputLength: tagLength,
+            outputIndex: tagStartIndex + outputOffset,
+            outputLength: 1,
+          })
+          outputOffset += 1 - tagLength
+
+          tagsStack.push({
+            action: "keep_content",
+            closingTagReplacement: "\n",
+            name: tagNameUpperCase,
+          })
+        } else {
+          // Preserve opening tag.
+
+          outputFragments.push(
+            inputText
+              .substring(inputIndex, tagEndIndex + 1)
+              .replace(/[\n\r]/g, " "),
+          )
+          tagsStack.push({
+            name: tagNameUpperCase,
+          })
+        }
       }
+      inputIndex = tagEndIndex + 1
     }
-    inputIndex = tagEndIndex + 1
-  }
 
+    return {
+      task: { sourceMap, title },
+      text: outputFragments.join(""),
+    }
+  }
+}
+
+export function decodeNamedHtmlEntities(text: string): Conversion {
+  let outputOffset = 0
+  const sourceMap: SourceMapSegment[] = []
+  // Decode decimal (e.g., &#65;) or hexadecimal references (e.g., &#x4a;).
+  text = text.replace(
+    /&(amp|apos|asymp|copy|deg|euro|gt|lt|mdash|nbsp|ndash|ne|pound|quot|reg|trade);/gi,
+    (substring, name, inputIndex: number) => {
+      const replacement = characterByNamedHtmlEntity[
+        (name as string).toLowerCase()
+      ] as string
+      sourceMap.push({
+        inputIndex,
+        inputLength: substring.length,
+        outputIndex: inputIndex + outputOffset,
+        outputLength: replacement.length,
+      })
+      outputOffset += replacement.length - substring.length
+      return replacement
+    },
+  )
   return {
-    task: { sourceMap, title },
-    text: outputFragments.join(""),
+    task: {
+      sourceMap,
+      title: "Décodage des entités HTML nommées",
+    },
+    text,
   }
 }
 
@@ -384,9 +513,9 @@ export function replacePatterns(text: string): Conversion {
     [/<!--.*?-->/g, ""],
     // Replace U+00A0 (no-break space) and tab with a normal space.
     [/[ \t]/g, " "],
-    // Replace three non-ASCII dashes (U+2010, U+2011 et U+2013) with a minus sign.
     // Ensure that there is always a space after "n°".
     [/(\sn°)([^\s])/gi, "$1 $2"],
+    // Replace three non-ASCII dashes (U+2010, U+2011 et U+2013) with a minus sign.
     [/[‐‑–]/g, "-"],
     // Replace non-ASCII apostrophe.
     [/’/g, "'"],
@@ -437,17 +566,21 @@ export function replacePatterns(text: string): Conversion {
   }
 }
 
-export function simplifyHtml(text: string): Conversion {
-  return chainSimplifiers(
-    "Simplification du HTML",
-    [
-      decodeNumericHtmlEntities,
-      replacePatterns,
-      convertHtmlElementsToText,
-      simplifyText,
-    ],
-    text,
-  )
+export function simplifyHtml({
+  removeAWithHref,
+}: { removeAWithHref?: boolean } = {}): Converter {
+  return (text: string): Conversion =>
+    chainSimplifiers(
+      "Simplification du HTML",
+      [
+        decodeNamedHtmlEntities,
+        decodeNumericHtmlEntities,
+        replacePatterns,
+        convertHtmlElementsToText({ removeAWithHref }),
+        simplifyText,
+      ],
+      text,
+    )
 }
 
 export function simplifyText(text: string): Conversion {

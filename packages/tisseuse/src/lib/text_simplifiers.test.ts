@@ -77,8 +77,9 @@ describe("convertHtmlElementsToText", () => {
       ])
       expect(text).toStrictEqual("\n")
     })
+
     test("only br with closing /", () => {
-      const { task, text } = convertHtmlElementsToText("<br />")
+      const { task, text } = convertHtmlElementsToText()("<br />")
       expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
         {
           inputIndex: 0,
@@ -89,8 +90,9 @@ describe("convertHtmlElementsToText", () => {
       ])
       expect(text).toStrictEqual("\n")
     })
+
     test("text and br and text", () => {
-      const { task, text } = convertHtmlElementsToText("Hello<br>world!")
+      const { task, text } = convertHtmlElementsToText()("Hello<br>world!")
       expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
         {
           inputIndex: 5,
@@ -105,7 +107,7 @@ describe("convertHtmlElementsToText", () => {
 
   describe("convert p to text", () => {
     test("only p", () => {
-      const { task, text } = convertHtmlElementsToText("<p>Hello world!</p>")
+      const { task, text } = convertHtmlElementsToText()("<p>Hello world!</p>")
       expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
         {
           inputIndex: 0,
@@ -126,7 +128,7 @@ describe("convertHtmlElementsToText", () => {
 
   describe("convert script to text", () => {
     test("only script", () => {
-      const { task, text } = convertHtmlElementsToText(
+      const { task, text } = convertHtmlElementsToText()(
         dedent`
           <script lang="ts">
             const x = Hello world!
@@ -145,7 +147,7 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("html > script", () => {
-      const { task, text } = convertHtmlElementsToText(
+      const { task, text } = convertHtmlElementsToText()(
         dedent`
           <html>
             <script lang="ts">
@@ -175,13 +177,13 @@ describe("convertHtmlElementsToText", () => {
           outputLength: 0,
         },
       ])
-      expect(text).toStrictEqual("\n  \n  Hello world!\n")
+      expect(text).toStrictEqual("      Hello world! ")
     })
   })
 
   describe("convert span to text", () => {
     test("only span", () => {
-      const { task, text } = convertHtmlElementsToText(
+      const { task, text } = convertHtmlElementsToText()(
         "<span>Hello world!</span>",
       )
       expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
@@ -202,7 +204,7 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("span and text", () => {
-      const { task, text } = convertHtmlElementsToText(
+      const { task, text } = convertHtmlElementsToText()(
         "<span>Hello</span> world!",
       )
       expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
@@ -223,7 +225,7 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("span ending with space and text", () => {
-      const { task, text } = convertHtmlElementsToText(
+      const { task, text } = convertHtmlElementsToText()(
         "<span>Hello </span>world!",
       )
       expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
@@ -249,7 +251,7 @@ describe("chainSimplifiers", () => {
   test("multiple spaces and new lines", () => {
     const { text } = chainSimplifiers(
       "Simplification du HTML",
-      [replacePatterns, convertHtmlElementsToText, simplifyText],
+      [replacePatterns, convertHtmlElementsToText(), simplifyText],
       dedent`
         <br/>Le titre II du livre III du code des postes et des communications électroniques est ainsi modifié : <br/>1° L'article L. 130 est ainsi modifié : <br/>a) A la première phrase du premier alinéa, les mots : « et des postes » sont remplacés par les mots : «, des postes et de la distribution de la presse » et, après les mots : «, des postes », sont insérés les mots : «, de la distribution de la presse » ; <br/>b) Au quatrième alinéa, les mots : « et des postes » sont remplacés par les mots : «, des postes et de la distribution de la presse » ; <br/>c) La première phrase du cinquième alinéa est complétée par les mots : « du présent code et à l'article 24 de la loi n° 47-585 du 2 avril 1947 relative au statut des entreprises de groupage et de distribution des journaux et publications périodiques » ; <br/>d) Le sixième alinéa est ainsi modifié :</p>
         <p>
@@ -308,6 +310,119 @@ describe("replacePatterns", () => {
         "Suppression des commentaires HTML et remplacement des caractères unicodes",
     })
     expect(text).toBe("Loi organique N° 1234")
+  })
+})
+
+describe("simplifyHtml", () => {
+  test("PLF ToC link to article title with <a href=…> in <p>", () => {
+    const { text } = simplifyHtml({ removeAWithHref: true })(dedent`
+      <p class="assnatTOC6">
+        <a href="#_Toc179428446" style="text-decoration:none"><span class="assnatHyperlink" style="font-weight:bold; text-decoration:none; color:#000000">ARTICLE</span><span class="assnatHyperlink" style="text-decoration:none; color:#000000"> </span><span class="assnatHyperlink" style="font-weight:bold; text-decoration:none; color:#000000">35</span><span class="assnatHyperlink" style="text-decoration:none; color:#000000"> :</span><span class="assnatHyperlink" style="text-decoration:none; color:#000000">&nbsp; </span><span class="assnatHyperlink" style="text-decoration:none; color:#000000">Versement d’avances remboursables aux collectivités régies par les articles 73, 74 et 76 de la Constitution</span></a>
+      </p>
+    `)
+    expect(text).toBe("")
+  })
+
+  test("PLF article 2 title with <a> without href in <h5>", () => {
+    const { text } = simplifyHtml({ removeAWithHref: true })(dedent`
+      <h5 style="margin-top:18pt; margin-bottom:18pt; font-size:12pt">
+				<a id="_Toc179428408"><span style="color:#0070b9">B – Mesures fiscales</span></a><span style="font-size:7.5pt"> </span>
+			</h5>
+		`)
+    expect(text).toBe("B - Mesures fiscales")
+  })
+
+  test("PLF article 2 subtitle", () => {
+    const { text } = simplifyHtml({ removeAWithHref: true })(dedent`
+      <table style="width:100%; padding:0pt; border-collapse:collapse">
+				<tbody><tr>
+					<td style="width:497.5pt; border-left:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:0pt 0pt 1.4pt 1.02pt; vertical-align:middle">
+						<h6 style="margin:1pt 1pt 1pt 4pt; line-height:13pt">
+							<a id="_Toc179428409"><span style="font-size:10pt; font-weight:bold; color:#0070b9">ARTICLE</span> <span style="font-size:10pt; font-weight:bold; color:#0070b9">2</span> <span style="color:#ffffff">: </span><br><span style="font-size:10pt; color:#0070b9">Indexation
+    sur l’inflation du barème de l’impôt sur le revenu pour les revenus de
+    2024 et les grilles de taux par défaut du prélèvement à la source</span></a>
+						</h6>
+					</td>
+				</tr>
+			</tbody></table>
+		`)
+    expect(text).toBe(dedent`
+      ARTICLE 2 :
+      Indexation sur l'inflation du barème de l'impôt sur le revenu pour les revenus de 2024 et les grilles de taux par défaut du prélèvement à la source
+    `)
+  })
+
+  test("PLF article 2 first alineas", () => {
+    const { text } = simplifyHtml({ removeAWithHref: true })(dedent`
+      <p class="assnatFPFdebutartexte">
+				&nbsp;
+			</p>
+			<p class="assnatFPFdebutartexte">
+				&nbsp;
+			</p>
+			<ol class="assnatawlist4" style="margin:0pt; padding-left:0pt">
+				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="font-family:Marianne; font-size:9pt; color:#000000">I.</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">-</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">Le code général des impôts est ainsi modifié</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">:</span>
+				</li>
+			</ol>
+			<ol start="2" class="assnatawlist3" style="margin:0pt; padding-left:0pt">
+				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="font-family:Marianne; font-size:9pt; color:#000000">A.</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">– A la première phrase du second alinéa de l’article 196 B, le montant</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">: «</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">6</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">674</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">€</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">» est remplacé par le montant</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">: «</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">6</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">807</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">€</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">»</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">;</span>
+				</li>
+			</ol>
+		`)
+    expect(text).toBe(dedent`
+      I. - Le code général des impôts est ainsi modifié :
+      A. - A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé par le montant : « 6 807 € » ;
+    `)
+  })
+
+  test("PLF article 3 title, subtitle & first alineas", () => {
+    const { text } = simplifyHtml({ removeAWithHref: true })(dedent`
+      <div class="assnatSection27">
+			<table style="width:100%; padding:0pt; border-collapse:collapse">
+				<tbody><tr>
+					<td style="width:497.5pt; border-left:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:0pt 0pt 1.4pt 1.02pt; vertical-align:middle">
+						<h6 style="margin:1pt 1pt 1pt 4pt; line-height:13pt">
+							<a id="_Toc179428410"><span style="font-size:10pt; font-weight:bold; color:#0070b9">ARTICLE</span> <span style="font-size:10pt; font-weight:bold; color:#0070b9">3</span> <span style="color:#ffffff">: </span><br><span style="font-size:10pt; color:#0070b9">Instauration d'une contribution différentielle sur les hauts revenus</span></a>
+						</h6>
+					</td>
+				</tr>
+			</tbody></table>
+			<p class="assnatFPFdebutartexte">
+				&nbsp;
+			</p>
+			<p class="assnatFPFdebutartexte">
+				&nbsp;
+			</p>
+			<ol class="assnatawlist8" style="margin:0pt; padding-left:0pt">
+				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="font-family:Marianne; font-size:9pt; color:#000000">I.- Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts est complété par une section 0I </span><span class="assnatEmphasis" style="font-family:Marianne; font-size:9pt; color:#000000">bis</span><span style="font-family:Marianne; font-size:9pt; color:#000000"> ainsi rédigée</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">:</span>
+				</li>
+			</ol>
+			<ol start="2" class="assnatawlist3" style="margin:0pt; padding-left:0pt">
+				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="font-family:Marianne; font-size:9pt; color:#000000">«</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">Section 0I </span><span class="assnatEmphasis" style="font-family:Marianne; font-size:9pt; color:#000000">bis</span>
+				</li>
+				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="font-family:Marianne; font-size:9pt; color:#000000">«</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">Contribution différentielle applicable à certains contribuables titulaires de hauts revenus</span>
+				</li>
+				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="font-family:Marianne; font-size:9pt; color:#000000">«</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span class="assnatEmphasis" style="font-family:Marianne; font-size:9pt; color:#000000">Art. 224</span><span style="font-family:Marianne; font-size:9pt; color:#000000">.
+          - I. – Il est institué une contribution à la charge des contribuables
+          domiciliés fiscalement en France au sens de l’article 4 B dont le revenu
+          du foyer fiscal tel que défini au II est supérieur à 250</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">000</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">€ pour les contribuables célibataires, veufs, séparés ou divorcés et à 500</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">000</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">€ pour les contribuables soumis à imposition commune.</span>
+				</li>
+			</ol>
+		`)
+    expect(text).toBe(dedent`
+      ARTICLE 3 :
+      Instauration d'une contribution différentielle sur les hauts revenus
+      I.- Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts est complété par une section 0I bis ainsi rédigée :
+      « Section 0I bis
+      « Contribution différentielle applicable à certains contribuables titulaires de hauts revenus
+      « Art. 224. - I. - Il est institué une contribution à la charge des contribuables domiciliés fiscalement en France au sens de l'article 4 B dont le revenu du foyer fiscal tel que défini au II est supérieur à 250 000 € pour les contribuables célibataires, veufs, séparés ou divorcés et à 500 000 € pour les contribuables soumis à imposition commune.
+    `)
   })
 })
 

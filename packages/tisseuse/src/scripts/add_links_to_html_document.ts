@@ -28,11 +28,13 @@ async function addLinksToHtmlDocument(
     date,
     "default-text": defaultTextId,
     "log-ignored": logIgnoredReferencesTypes,
+    "log-partial": logPartialReferences,
     "log-references": logReferences,
   }: {
     date: string
     "default-text"?: string
     "log-ignored"?: boolean
+    "log-partial"?: boolean
     "log-references"?: boolean
   },
 ): Promise<number> {
@@ -274,10 +276,15 @@ async function addLinksToHtmlDocument(
               }
 
               if (atomicReference.cid === undefined) {
-                throw new Error(
-                  `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
-                )
+                if (logPartialReferences) {
+                  console.log(
+                    `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
+                  )
+                }
+                currentTextId = undefined
+                break
               }
+
               currentTextId = currentCodeId = atomicReference.cid
               break
             }
@@ -293,10 +300,15 @@ async function addLinksToHtmlDocument(
               }
 
               if (atomicReference.cid === undefined) {
-                throw new Error(
-                  `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
-                )
+                if (logPartialReferences) {
+                  console.log(
+                    `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
+                  )
+                }
+                currentTextId = undefined
+                break
               }
+
               currentTextId = currentConstitutionId = atomicReference.cid
               break
             }
@@ -315,10 +327,15 @@ async function addLinksToHtmlDocument(
               }
 
               if (atomicReference.cid === undefined) {
-                throw new Error(
-                  `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
-                )
+                if (logPartialReferences) {
+                  console.log(
+                    `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
+                  )
+                }
+                currentTextId = undefined
+                break
               }
+
               currentTextId = currentLawId = atomicReference.cid
               break
             }
@@ -406,14 +423,15 @@ async function addLinksToHtmlDocument(
 }
 
 sade("add_links_to_html_document <input_document> <output_document>", true)
-  .describe("Use metslesliens to add links to an HTML document")
+  .describe("Add links to an HTML document")
   .option("-d, --date", "Date of HTML document in YYYY-MM-DD format")
   .option("-I, --log-ignored", "Log ignored references types")
   .option(
     "-l, --default-text",
     "Optional Légifrance ID of the code or text to use when an article reference is ambiguous",
   )
-  .option("-R, --log-references", "Log Metslesliens references")
+  .option("-P, --log-partial", "Log incomplete references")
+  .option("-R, --log-references", "Log parsed references")
   .action(async (inputDocumentPath, outputDocumentPath, options) => {
     process.exit(
       await addLinksToHtmlDocument(

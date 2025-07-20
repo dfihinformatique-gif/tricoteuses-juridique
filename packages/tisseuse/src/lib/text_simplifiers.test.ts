@@ -11,6 +11,21 @@ import {
 } from "./text_simplifiers.js"
 
 describe("convertHtmlElementsToText", () => {
+  describe("convert doctype to text", () => {
+    test("Remove doctype", () => {
+      const { task, text } = convertHtmlElementsToText()(`<!DOCTYPE html>`)
+      expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
+        {
+          inputIndex: 0,
+          inputLength: 15,
+          outputIndex: 0,
+          outputLength: 0,
+        },
+      ])
+      expect(text).toStrictEqual("")
+    })
+  })
+
   describe("convert a to text", () => {
     test("Keep a content", () => {
       const { task, text } = convertHtmlElementsToText()(

@@ -123,7 +123,7 @@ export function convertHtmlElementsToText({
       const tagContent = inputText.substring(tagStartIndex, tagEndIndex + 1)
       const isClosingTag = tagContent.startsWith("</")
       const tagLength = tagContent.length
-      const tagMatch = tagContent.match(/^<\/?([A-Z][A-Z0-9]*)/i)
+      const tagMatch = tagContent.match(/^<\/?([!A-Z][A-Z0-9]*)/i)
 
       if (tagMatch === null) {
         // Not a standard tag. Keep it as normal text.
@@ -141,6 +141,7 @@ export function convertHtmlElementsToText({
       const isSelfClosingTag =
         tagContent.endsWith("/>") ||
         [
+          "!DOCTYPE",
           "AREA",
           "BASE",
           "BR",
@@ -198,7 +199,7 @@ export function convertHtmlElementsToText({
             outputLength: 1,
           })
           outputOffset += 1 - tagLength
-        } else if (["IMG"].includes(tagNameUpperCase)) {
+        } else if (["!DOCTYPE", "IMG"].includes(tagNameUpperCase)) {
           // Remove self-closing tag.
 
           if (tagStartIndex > inputIndex) {

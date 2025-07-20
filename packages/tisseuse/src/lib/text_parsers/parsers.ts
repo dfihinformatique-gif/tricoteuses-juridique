@@ -436,6 +436,7 @@ export const wordsTree =
     const regExp = /([\-\/\d\p{Alphabetic}°]+)($|[^\-\/\d\p{Alphabetic}°]+)/gvy
     regExp.lastIndex = context.offset
     const usedInputs = []
+    let lastSeparator: string | undefined = undefined
     while (true) {
       const match = regExp.exec(context.input)
       if (match === null) {
@@ -454,6 +455,7 @@ export const wordsTree =
       if (child === undefined) {
         break
       }
+      lastSeparator = match[2]
       node = child
       offset = regExp.lastIndex
       usedInputs.push(match[0])
@@ -467,6 +469,14 @@ export const wordsTree =
     }
 
     // Success
+
+    // Remove the last trailing separator from used inputs.
+    if (lastSeparator) {
+      offset -= lastSeparator.length
+      usedInputs[usedInputs.length - 1] = usedInputs[
+        usedInputs.length - 1
+      ].slice(0, -lastSeparator.length)
+    }
 
     context.length = offset - context.offset
     context.usedInputs = usedInputs.length === 0 ? undefined : usedInputs

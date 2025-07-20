@@ -163,7 +163,7 @@ describe("Textes français", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
@@ -294,7 +294,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("dite même directive", ({ task }) => {
@@ -309,7 +309,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("dite même directive (UE) 2001/73/CEE du 5 septembre 2003", ({
@@ -328,7 +328,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("dite même loi organique", ({ task }) => {
@@ -342,7 +342,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("dite même loi organique", ({ task }) => {
@@ -356,7 +356,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("dite même loi organique n° 2001-692 du 5 septembre 2003", ({
@@ -377,7 +377,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("même loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
@@ -395,7 +395,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
 
     test("même directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
@@ -411,7 +411,7 @@ describe("Règle générale", () => {
         type: "texte",
       })
       expect(context.remaining()).toBe("")
-      expect(context.textSlice(result.position)).toBe(task.name)
+      expect(context.text(result.position)).toBe(task.name)
     })
   })
 })

@@ -30,7 +30,7 @@ describe("article", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("dit article L. 325-3", ({ task }) => {
@@ -46,7 +46,7 @@ describe("article", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("dit même article", ({ task }) => {
@@ -64,7 +64,7 @@ describe("article", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("dit même article L. 325-3", ({ task }) => {
@@ -83,7 +83,7 @@ describe("article", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("même article", ({ task }) => {
@@ -100,7 +100,7 @@ describe("article", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("même article L. 325-3", ({ task }) => {
@@ -118,7 +118,7 @@ describe("article", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 })
 
@@ -151,9 +151,9 @@ describe("articles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 325-3")
-    expect(context.textSlice(result.right.position)).toBe("L. 325-4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("L. 325-3")
+    expect(context.text(result.right.position)).toBe("L. 325-4")
   })
 
   test("dits articles L. 325-3 et L. 325-4", ({ task }) => {
@@ -186,9 +186,9 @@ describe("articles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 325-3")
-    expect(context.textSlice(result.right.position)).toBe("L. 325-4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("L. 325-3")
+    expect(context.text(result.right.position)).toBe("L. 325-4")
   })
 
   test("dits mêmes articles", ({ task }) => {
@@ -206,7 +206,7 @@ describe("articles", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("dits mêmes articles L. 325-3 et L. 325-4", ({ task }) => {
@@ -245,9 +245,9 @@ describe("articles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 325-3")
-    expect(context.textSlice(result.right.position)).toBe("L. 325-4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("L. 325-3")
+    expect(context.text(result.right.position)).toBe("L. 325-4")
   })
 
   test("mêmes articles", ({ task }) => {
@@ -264,7 +264,7 @@ describe("articles", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("mêmes articles L. 325-3 et L. 325-4", ({ task }) => {
@@ -301,9 +301,9 @@ describe("articles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 325-3")
-    expect(context.textSlice(result.right.position)).toBe("L. 325-4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("L. 325-3")
+    expect(context.text(result.right.position)).toBe("L. 325-4")
   })
 })
 
@@ -320,7 +320,7 @@ describe("designationArticle", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("L. 3 bis-0", ({ task }) => {
@@ -335,7 +335,7 @@ describe("designationArticle", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("L.O. 325-3 ci-après", ({ task }) => {
@@ -351,7 +351,7 @@ describe("designationArticle", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("L.O. 325-3 ci-après (3° à 5°)", ({ task }) => {
@@ -399,18 +399,14 @@ describe("designationArticle", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe(
-      "L.O. 325-3 ci-après",
-    )
-    expect(context.textSlice(result.child.position)).toBe("3° à 5°")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("L.O. 325-3 ci-après")
+    expect(context.text(result.child.position)).toBe("3° à 5°")
     expect(
-      context.textSlice(
-        (result.child as TextAstBoundedInterval).first.position,
-      ),
+      context.text((result.child as TextAstBoundedInterval).first.position),
     ).toBe("3°")
     expect(
-      context.textSlice((result.child as TextAstBoundedInterval).last.position),
+      context.text((result.child as TextAstBoundedInterval).last.position),
     ).toBe("5°")
   })
 
@@ -442,11 +438,9 @@ describe("designationArticle", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe(
-      "L.O. 325-3 ci-après",
-    )
-    expect(context.textSlice(result.child.position)).toBe("troisième alinéa")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("L.O. 325-3 ci-après")
+    expect(context.text(result.child.position)).toBe("troisième alinéa")
   })
 
   test("même", ({ task }) => {
@@ -463,7 +457,7 @@ describe("designationArticle", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 })
 
@@ -495,9 +489,9 @@ describe("listeArticles", () => {
       type: "bounded-interval",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.first.position)).toBe("L. 325-3")
-    expect(context.textSlice(result.last.position)).toBe("L. 325-5-1")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.first.position)).toBe("L. 325-3")
+    expect(context.text(result.last.position)).toBe("L. 325-5-1")
   })
 
   test("L. 325-3 et L. 325-5-1", ({ task }) => {
@@ -528,9 +522,9 @@ describe("listeArticles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 325-3")
-    expect(context.textSlice(result.right.position)).toBe("L. 325-5-1")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("L. 325-3")
+    expect(context.text(result.right.position)).toBe("L. 325-5-1")
   })
 
   test("L. 325-3 et suivants", ({ task }) => {
@@ -563,9 +557,9 @@ describe("listeArticles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 325-3")
-    expect(context.textSlice(result.right.position)).toBe("suivants")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("L. 325-3")
+    expect(context.text(result.right.position)).toBe("suivants")
   })
 
   test("L. 400 bis, L. 425-3 et L. 456", ({ task }) => {
@@ -612,15 +606,15 @@ describe("listeArticles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("L. 400 bis, L. 425-3")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("L. 400 bis, L. 425-3")
     expect(
-      context.textSlice((result.left as TextAstEnumeration).left.position),
+      context.text((result.left as TextAstEnumeration).left.position),
     ).toBe("L. 400 bis")
     expect(
-      context.textSlice((result.left as TextAstEnumeration).right.position),
+      context.text((result.left as TextAstEnumeration).right.position),
     ).toBe("L. 425-3")
-    expect(context.textSlice(result.right.position)).toBe("L. 456")
+    expect(context.text(result.right.position)).toBe("L. 456")
   })
 
   test("L. 400 bis, L. 425-3 à L. 425-5-1 et L. 456", ({ task }) => {
@@ -682,29 +676,29 @@ describe("listeArticles", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe(
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe(
       "L. 400 bis, L. 425-3 à L. 425-5-1",
     )
     expect(
-      context.textSlice((result.left as TextAstEnumeration).left.position),
+      context.text((result.left as TextAstEnumeration).left.position),
     ).toBe("L. 400 bis")
     expect(
-      context.textSlice((result.left as TextAstEnumeration).right.position),
+      context.text((result.left as TextAstEnumeration).right.position),
     ).toBe("L. 425-3 à L. 425-5-1")
     expect(
-      context.textSlice(
+      context.text(
         ((result.left as TextAstEnumeration).right as TextAstBoundedInterval)
           .first.position,
       ),
     ).toBe("L. 425-3")
     expect(
-      context.textSlice(
+      context.text(
         ((result.left as TextAstEnumeration).right as TextAstBoundedInterval)
           .last.position,
       ),
     ).toBe("L. 425-5-1")
-    expect(context.textSlice(result.right.position)).toBe("L. 456")
+    expect(context.text(result.right.position)).toBe("L. 456")
   })
 })
 

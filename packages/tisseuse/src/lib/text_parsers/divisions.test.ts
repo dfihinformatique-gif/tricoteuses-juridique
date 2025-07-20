@@ -40,7 +40,7 @@ describe("division", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("dite même section 3", ({ task }) => {
@@ -56,7 +56,7 @@ describe("division", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("dite section 3", ({ task }) => {
@@ -69,7 +69,7 @@ describe("division", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("même section", ({ task }) => {
@@ -81,7 +81,7 @@ describe("division", () => {
       position: { start: 0, stop: 12 },
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("même section 3", ({ task }) => {
@@ -94,7 +94,7 @@ describe("division", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   // Exemple : section 0I du chapitre III du titre Ier de la première partie du livre Ier du code général des impôts
@@ -108,7 +108,7 @@ describe("division", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("section 3", ({ task }) => {
@@ -120,7 +120,7 @@ describe("division", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 })
 
@@ -136,7 +136,7 @@ describe("division1Internal", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 })
 
@@ -169,7 +169,7 @@ describe("divisions", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("dites mêmes sections 3 et 4", ({ task }) => {
@@ -208,9 +208,9 @@ describe("divisions", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("3")
-    expect(context.textSlice(result.right.position)).toBe("4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("3")
+    expect(context.text(result.right.position)).toBe("4")
   })
 
   test("dites sections 3 et 4", ({ task }) => {
@@ -243,9 +243,9 @@ describe("divisions", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("3")
-    expect(context.textSlice(result.right.position)).toBe("4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("3")
+    expect(context.text(result.right.position)).toBe("4")
   })
 
   test("mêmes sections", ({ task }) => {
@@ -262,7 +262,7 @@ describe("divisions", () => {
       type: "section",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("mêmes sections 3 et 4", ({ task }) => {
@@ -295,9 +295,9 @@ describe("divisions", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("3")
-    expect(context.textSlice(result.right.position)).toBe("4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("3")
+    expect(context.text(result.right.position)).toBe("4")
   })
 
   test("sections 3 et 4", ({ task }) => {
@@ -328,9 +328,9 @@ describe("divisions", () => {
       type: "enumeration",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.left.position)).toBe("3")
-    expect(context.textSlice(result.right.position)).toBe("4")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe("3")
+    expect(context.text(result.right.position)).toBe("4")
   })
 })
 

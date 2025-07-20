@@ -135,19 +135,19 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.parent.position)).toBe(
+    expect(context.text(result.parent.position)).toBe(
       "loi n° 2021-1104 du 22 août 2021",
     )
-    expect(context.textSlice(result.child.position)).toBe(
+    expect(context.text(result.child.position)).toBe(
       "à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I, à l'article 238 bis et à l'article 107",
     )
     expect(
-      context.textSlice((result.child as TextAstEnumeration).left.position),
+      context.text((result.child as TextAstEnumeration).left.position),
     ).toBe(
       "à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I, à l'article 238 bis",
     )
     expect(
-      context.textSlice(
+      context.text(
         ((result.child as TextAstEnumeration).left as TextAstEnumeration).left
           .position,
       ),
@@ -155,7 +155,7 @@ describe("reference", () => {
       "à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I",
     )
     expect(
-      context.textSlice(
+      context.text(
         (
           ((result.child as TextAstEnumeration).left as TextAstEnumeration)
             .left as TextAstEnumeration
@@ -163,7 +163,7 @@ describe("reference", () => {
       ),
     ).toBe("à l'article 199 quater B")
     expect(
-      context.textSlice(
+      context.text(
         (
           ((result.child as TextAstEnumeration).left as TextAstEnumeration)
             .left as TextAstEnumeration
@@ -173,7 +173,7 @@ describe("reference", () => {
       "à l'article 199 undecies B, à l'exception des dix derniers alinéas du I",
     )
     expect(
-      context.textSlice(
+      context.text(
         (
           (
             ((result.child as TextAstEnumeration).left as TextAstEnumeration)
@@ -183,7 +183,7 @@ describe("reference", () => {
       ),
     ).toBe("à l'article 199 undecies B")
     expect(
-      context.textSlice(
+      context.text(
         (
           (
             ((result.child as TextAstEnumeration).left as TextAstEnumeration)
@@ -193,7 +193,7 @@ describe("reference", () => {
       ),
     ).toBe("des dix derniers alinéas du I")
     expect(
-      context.textSlice(
+      context.text(
         (
           (
             (
@@ -205,7 +205,7 @@ describe("reference", () => {
       ),
     ).toBe("I")
     expect(
-      context.textSlice(
+      context.text(
         (
           (
             (
@@ -217,13 +217,13 @@ describe("reference", () => {
       ),
     ).toBe("dix derniers alinéas")
     expect(
-      context.textSlice(
+      context.text(
         ((result.child as TextAstEnumeration).left as TextAstEnumeration).right
           .position,
       ),
     ).toBe("à l'article 238 bis")
     expect(
-      context.textSlice((result.child as TextAstEnumeration).right.position),
+      context.text((result.child as TextAstEnumeration).right.position),
     ).toBe("article 107")
   })
 
@@ -276,10 +276,10 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.parent.position)).toBe(
+    expect(context.text(result.parent.position)).toBe(
       "loi n° 2020-1721 du 29 décembre 2020",
     )
-    expect(context.textSlice(result.child.position)).toBe(
+    expect(context.text(result.child.position)).toBe(
       "à l'article 200 undecies et à l'article 151",
     )
   })
@@ -380,10 +380,10 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.parent.position)).toBe(
+    expect(context.text(result.parent.position)).toBe(
       "loi n° 2020-1721 du 29 décembre 2020",
     )
-    expect(context.textSlice(result.child.position)).toBe(
+    expect(context.text(result.child.position)).toBe(
       "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151",
     )
   })
@@ -422,11 +422,11 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe(
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe(
       "loi n° 98-293 du 31 décembre 1998",
     )
-    expect(context.textSlice(result.child.position)).toBe("article 7 vicies A")
+    expect(context.text(result.child.position)).toBe("article 7 vicies A")
   })
 
   test("à l'article précédent du même code", ({ task }) => {
@@ -461,9 +461,9 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe("même code")
-    expect(context.textSlice(result.child.position)).toBe("article précédent")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("même code")
+    expect(context.text(result.child.position)).toBe("article précédent")
   })
 
   test("à la loi n° 98-293 du 31 décembre 1998", ({ task }) => {
@@ -483,7 +483,7 @@ describe("reference", () => {
       type: "texte",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("au 3°", ({ task }) => {
@@ -499,7 +499,7 @@ describe("reference", () => {
       type: "partie",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("au 3° du présent article", ({ task }) => {
@@ -532,9 +532,9 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe("présent article")
-    expect(context.textSlice(result.child.position)).toBe("3°")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("présent article")
+    expect(context.text(result.child.position)).toBe("3°")
   })
 
   test("audit article 8-1 bis du présent code", ({ task }) => {
@@ -568,9 +568,9 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe("présent code")
-    expect(context.textSlice(result.child.position)).toBe("dit article 8-1 bis")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("présent code")
+    expect(context.text(result.child.position)).toBe("dit article 8-1 bis")
   })
 
   test("audit article annexe du présent code", ({ task }) => {
@@ -604,16 +604,16 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe("présent code")
-    expect(context.textSlice(result.child.position)).toBe("dit article annexe")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("présent code")
+    expect(context.text(result.child.position)).toBe("dit article annexe")
   })
   // test("au code pénal", ({ task }) => {
   //   const context = new TextParserContext(task.name)
   //   const result = reference(context) as TextAstReference
   //   expect(result).toStrictEqual({})
   //   expect(context.remaining()).toBe("")
-  //   expect(context.textSlice(result.position)).toBe(task.name)
+  //   expect(context.text(result.position)).toBe(task.name)
   // })
   // testSingleLink("l'article 7 du code pénal");
   // testSingleLink("à l'article 7 du code pénal");
@@ -669,20 +669,18 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe(
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe(
       "loi n° 98-293 du 31 décembre 1998",
     )
-    expect(context.textSlice(result.child.position)).toBe(
+    expect(context.text(result.child.position)).toBe(
       "articles 7 tersexagies A à 9 quaterdecies",
     )
     expect(
-      context.textSlice(
-        (result.child as TextAstBoundedInterval).first.position,
-      ),
+      context.text((result.child as TextAstBoundedInterval).first.position),
     ).toBe("7 tersexagies A")
     expect(
-      context.textSlice((result.child as TextAstBoundedInterval).last.position),
+      context.text((result.child as TextAstBoundedInterval).last.position),
     ).toBe("9 quaterdecies")
   })
 
@@ -719,11 +717,9 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe("article 123")
-    expect(context.textSlice(result.child.position)).toBe(
-      "dix derniers alinéas",
-    )
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("article 123")
+    expect(context.text(result.child.position)).toBe("dix derniers alinéas")
   })
 
   test("au I", ({ task }) => {
@@ -739,7 +735,7 @@ describe("reference", () => {
       type: "partie",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("au i", ({ task }) => {
@@ -755,7 +751,7 @@ describe("reference", () => {
       type: "partie",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   // TODO; Not sure of the result of this one.
@@ -802,17 +798,15 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe("article 7")
-    expect(context.textSlice(result.child.position)).toBe(
-      "I (troisième alinéa)",
-    )
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("article 7")
+    expect(context.text(result.child.position)).toBe("I (troisième alinéa)")
     // TODO; Not sure of the result of this one.
     expect(
-      context.textSlice((result.child as TextAstParentChild).parent.position),
+      context.text((result.child as TextAstParentChild).parent.position),
     ).toBe("troisième alinéa")
     expect(
-      context.textSlice((result.child as TextAstParentChild).child.position),
+      context.text((result.child as TextAstParentChild).child.position),
     ).toBe("I")
   })
 
@@ -861,15 +855,15 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe("article 7")
-    expect(context.textSlice(result.child.position)).toBe("III (56°)")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("article 7")
+    expect(context.text(result.child.position)).toBe("III (56°)")
     // TODO; Not sure of the result of this one.
     expect(
-      context.textSlice((result.child as TextAstParentChild).parent.position),
+      context.text((result.child as TextAstParentChild).parent.position),
     ).toBe("56°")
     expect(
-      context.textSlice((result.child as TextAstParentChild).child.position),
+      context.text((result.child as TextAstParentChild).child.position),
     ).toBe("III")
   })
 
@@ -919,18 +913,18 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe(
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe(
       "décret n° 98-74 du 28 février 1998",
     )
-    expect(context.textSlice(result.child.position)).toBe(
+    expect(context.text(result.child.position)).toBe(
       "paragraphe 7 de l'article D** 7",
     )
     expect(
-      context.textSlice((result.child as TextAstParentChild).parent.position),
+      context.text((result.child as TextAstParentChild).parent.position),
     ).toBe("article D** 7")
     expect(
-      context.textSlice((result.child as TextAstParentChild).child.position),
+      context.text((result.child as TextAstParentChild).child.position),
     ).toBe("paragraphe 7")
   })
 
@@ -982,18 +976,16 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.parent.position)).toBe(
-      "loi du 31 décembre 1998",
-    )
-    expect(context.textSlice(result.child.position)).toBe(
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("loi du 31 décembre 1998")
+    expect(context.text(result.child.position)).toBe(
       "sous-paragraphe 3 de l'article L.O. 7-1",
     )
     expect(
-      context.textSlice((result.child as TextAstParentChild).parent.position),
+      context.text((result.child as TextAstParentChild).parent.position),
     ).toBe("article L.O. 7-1")
     expect(
-      context.textSlice((result.child as TextAstParentChild).child.position),
+      context.text((result.child as TextAstParentChild).child.position),
     ).toBe("sous-paragraphe 3")
   })
 })
@@ -1033,7 +1025,7 @@ describe("uniteBasePreciseeSingulier", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 })
 
@@ -1050,7 +1042,7 @@ describe("uniteBaseSingulier", () => {
       type: "article",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 
   test("loi n° 98-293 du 31 décembre 1998", ({ task }) => {
@@ -1070,6 +1062,6 @@ describe("uniteBaseSingulier", () => {
       type: "texte",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
+    expect(context.text(result.position)).toBe(task.name)
   })
 })

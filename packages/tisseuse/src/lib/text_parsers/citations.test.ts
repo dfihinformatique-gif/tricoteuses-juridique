@@ -24,8 +24,8 @@ describe("citation", () => {
       type: "citation",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.content[0].position)).toBe(
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.content[0].position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
     )
   })
@@ -49,10 +49,10 @@ describe("citation", () => {
       type: "citation",
     })
     expect(context.remaining()).toBe("\n")
-    expect(context.textSlice(result.position)).toBe(
+    expect(context.text(result.position)).toBe(
       "« l'article 1er du décret du 2 octobre 2009 »",
     )
-    expect(context.textSlice(result.content[0].position)).toBe(
+    expect(context.text(result.content[0].position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
     )
   })
@@ -76,10 +76,10 @@ describe("citation", () => {
       type: "citation",
     })
     expect(context.remaining()).toBe("\n")
-    expect(context.textSlice(result.position)).toBe(
+    expect(context.text(result.position)).toBe(
       "« l'article 1er du décret du 2 octobre 2009 »",
     )
-    expect(context.textSlice(result.content[0].position)).toBe(
+    expect(context.text(result.content[0].position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
     )
   })
@@ -115,10 +115,10 @@ describe("citation", () => {
       type: "citation",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.content[0].position)).toBe("ligne 1")
-    expect(context.textSlice(result.content[1].position)).toBe("ligne 2")
-    expect(context.textSlice(result.content[2].position)).toBe("ligne 3")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.content[0].position)).toBe("ligne 1")
+    expect(context.text(result.content[1].position)).toBe("ligne 2")
+    expect(context.text(result.content[2].position)).toBe("ligne 3")
   })
 
   test("\n« ligne 1 »\n« ligne 2 »\n« ligne 3 »", ({ task }) => {
@@ -152,10 +152,10 @@ describe("citation", () => {
       type: "citation",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.content[0].position)).toBe("ligne 1")
-    expect(context.textSlice(result.content[1].position)).toBe("ligne 2")
-    expect(context.textSlice(result.content[2].position)).toBe("ligne 3")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.content[0].position)).toBe("ligne 1")
+    expect(context.text(result.content[1].position)).toBe("ligne 2")
+    expect(context.text(result.content[2].position)).toBe("ligne 3")
   })
 })
 
@@ -170,7 +170,7 @@ describe("citationLigne", () => {
       },
     })
     expect(context.remaining()).toBe("»\n")
-    expect(context.textSlice(result.position)).toBe(
+    expect(context.text(result.position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
     )
   })
@@ -185,7 +185,7 @@ describe("citationLigne", () => {
       },
     })
     expect(context.remaining()).toBe("\n« sur 2 lignes »")
-    expect(context.textSlice(result.position)).toBe("citation")
+    expect(context.text(result.position)).toBe("citation")
   })
 
   test("« citation »\n« sur 2 lignes »", ({ task }) => {
@@ -198,7 +198,7 @@ describe("citationLigne", () => {
       },
     })
     expect(context.remaining()).toBe("»\n« sur 2 lignes »")
-    expect(context.textSlice(result.position)).toBe("citation")
+    expect(context.text(result.position)).toBe("citation")
   })
 })
 
@@ -222,8 +222,8 @@ describe("citationSimple", () => {
       type: "citation",
     })
     expect(context.remaining()).toBe("")
-    expect(context.textSlice(result.position)).toBe(task.name)
-    expect(context.textSlice(result.content[0].position)).toBe(
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.content[0].position)).toBe(
       "l'article 1er du décret du 2 octobre 2009",
     )
   })

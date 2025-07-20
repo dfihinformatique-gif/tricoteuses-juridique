@@ -18,11 +18,11 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe(
       "loi n° 2020-1721 du 29 décembre 2020",
     )
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.child.position)).toBe(
       "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151",
     )
   })
@@ -32,11 +32,9 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("article 193")
-    expect(context.textSlice(reference.child.position)).toBe(
-      "avant-dernier alinéa",
-    )
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("article 193")
+    expect(context.text(reference.child.position)).toBe("avant-dernier alinéa")
   })
 
   test("à la première phrase du deuxième alinéa du a du I de l'article 219", ({
@@ -46,33 +44,31 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("article 219")
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("article 219")
+    expect(context.text(reference.child.position)).toBe(
       "première phrase du deuxième alinéa du a du I",
     )
     expect(
-      context.textSlice(
-        (reference.child as TextAstParentChild).parent.position,
-      ),
+      context.text((reference.child as TextAstParentChild).parent.position),
     ).toBe("I")
     expect(
-      context.textSlice((reference.child as TextAstParentChild).child.position),
+      context.text((reference.child as TextAstParentChild).child.position),
     ).toBe("première phrase du deuxième alinéa du a")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstParentChild)
           .parent.position,
       ),
     ).toBe("a")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstParentChild)
           .child.position,
       ),
     ).toBe("première phrase du deuxième alinéa")
     expect(
-      context.textSlice(
+      context.text(
         (
           ((reference.child as TextAstParentChild).child as TextAstParentChild)
             .child as TextAstParentChild
@@ -80,7 +76,7 @@ describe("getReferences", () => {
       ),
     ).toBe("deuxième alinéa")
     expect(
-      context.textSlice(
+      context.text(
         (
           ((reference.child as TextAstParentChild).child as TextAstParentChild)
             .child as TextAstParentChild
@@ -96,29 +92,27 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe(
       "article 199 sexdecies",
     )
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.child.position)).toBe(
       "première phrase du second alinéa du 4",
     )
     expect(
-      context.textSlice(
-        (reference.child as TextAstParentChild).parent.position,
-      ),
+      context.text((reference.child as TextAstParentChild).parent.position),
     ).toBe("4")
     expect(
-      context.textSlice((reference.child as TextAstParentChild).child.position),
+      context.text((reference.child as TextAstParentChild).child.position),
     ).toBe("première phrase du second alinéa")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstParentChild)
           .parent.position,
       ),
     ).toBe("second alinéa")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstParentChild)
           .child.position,
       ),
@@ -130,16 +124,14 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
-    expect(context.textSlice(reference.child.position)).toBe("I de l'article 7")
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("code pénal")
+    expect(context.text(reference.child.position)).toBe("I de l'article 7")
     expect(
-      context.textSlice(
-        (reference.child as TextAstParentChild).parent.position,
-      ),
+      context.text((reference.child as TextAstParentChild).parent.position),
     ).toBe("article 7")
     expect(
-      context.textSlice((reference.child as TextAstParentChild).child.position),
+      context.text((reference.child as TextAstParentChild).child.position),
     ).toBe("I")
   })
 
@@ -150,35 +142,33 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe(
       "code de la sécurité sociale",
     )
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.child.position)).toBe(
       "I et au dernier alinéa du II bis de l'article L. 862-4",
     )
     expect(
-      context.textSlice(
-        (reference.child as TextAstParentChild).parent.position,
-      ),
+      context.text((reference.child as TextAstParentChild).parent.position),
     ).toBe("article L. 862-4")
     expect(
-      context.textSlice((reference.child as TextAstParentChild).child.position),
+      context.text((reference.child as TextAstParentChild).child.position),
     ).toBe("I et au dernier alinéa du II bis")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstEnumeration)
           .left.position,
       ),
     ).toBe("I")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstEnumeration)
           .right.position,
       ),
     ).toBe("au dernier alinéa du II bis")
     expect(
-      context.textSlice(
+      context.text(
         (
           ((reference.child as TextAstParentChild).child as TextAstEnumeration)
             .right as TextAstParentChild
@@ -186,7 +176,7 @@ describe("getReferences", () => {
       ),
     ).toBe("II bis")
     expect(
-      context.textSlice(
+      context.text(
         (
           ((reference.child as TextAstParentChild).child as TextAstEnumeration)
             .right as TextAstParentChild
@@ -200,28 +190,28 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("présent article")
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("présent article")
+    expect(context.text(reference.child.position)).toBe(
       "premier alinéa du I et au II",
     )
     expect(
-      context.textSlice((reference.child as TextAstEnumeration).left.position),
+      context.text((reference.child as TextAstEnumeration).left.position),
     ).toBe("premier alinéa du I")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstEnumeration).left as TextAstParentChild)
           .parent.position,
       ),
     ).toBe("I")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstEnumeration).left as TextAstParentChild)
           .child.position,
       ),
     ).toBe("premier alinéa")
     expect(
-      context.textSlice((reference.child as TextAstEnumeration).right.position),
+      context.text((reference.child as TextAstEnumeration).right.position),
     ).toBe("au II")
   })
 
@@ -230,9 +220,9 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("4")
-    expect(context.textSlice(reference.child.position)).toBe("second alinéa")
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("4")
+    expect(context.text(reference.child.position)).toBe("second alinéa")
   })
 
   test("du 4° et aux 12°, 14° et 14° bis de l'article 81 du code général des impôts", ({
@@ -242,35 +232,33 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe(
       "code général des impôts",
     )
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.child.position)).toBe(
       "4° et aux 12°, 14° et 14° bis de l'article 81",
     )
     expect(
-      context.textSlice(
-        (reference.child as TextAstParentChild).parent.position,
-      ),
+      context.text((reference.child as TextAstParentChild).parent.position),
     ).toBe("article 81")
     expect(
-      context.textSlice((reference.child as TextAstParentChild).child.position),
+      context.text((reference.child as TextAstParentChild).child.position),
     ).toBe("4° et aux 12°, 14° et 14° bis")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstEnumeration)
           .left.position,
       ),
     ).toBe("4°")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstEnumeration)
           .right.position,
       ),
     ).toBe("aux 12°, 14° et 14° bis")
     expect(
-      context.textSlice(
+      context.text(
         (
           ((reference.child as TextAstParentChild).child as TextAstEnumeration)
             .right as TextAstEnumeration
@@ -278,7 +266,7 @@ describe("getReferences", () => {
       ),
     ).toBe("12°, 14°")
     expect(
-      context.textSlice(
+      context.text(
         (
           (
             (
@@ -290,7 +278,7 @@ describe("getReferences", () => {
       ),
     ).toBe("12°")
     expect(
-      context.textSlice(
+      context.text(
         (
           (
             (
@@ -302,7 +290,7 @@ describe("getReferences", () => {
       ),
     ).toBe("14°")
     expect(
-      context.textSlice(
+      context.text(
         (
           ((reference.child as TextAstParentChild).child as TextAstEnumeration)
             .right as TextAstEnumeration
@@ -316,9 +304,9 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("convention")
-    expect(context.textSlice(reference.child.position)).toBe("article 3")
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("convention")
+    expect(context.text(reference.child.position)).toBe("article 3")
   })
 
   test("l'article 7 du code pénal", ({ task }) => {
@@ -326,9 +314,9 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
-    expect(context.textSlice(reference.child.position)).toBe("article 7")
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("code pénal")
+    expect(context.text(reference.child.position)).toBe("article 7")
   })
 
   test("Début de l'article 2 du PLF", () => {
@@ -411,11 +399,11 @@ describe("getReferences", () => {
       },
     ])
     const reference0 = references[0] as TextAstText & TextAstPosition
-    expect(context.textSlice(reference0.position)).toBe(
+    expect(context.text(reference0.position)).toBe(
       "Le code général des impôts est ainsi modifié",
     )
     const reference1 = references[1] as TextAstParentChild
-    expect(context.textSlice(reference1.position)).toBe(
+    expect(context.text(reference1.position)).toBe(
       "A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé",
     )
   })
@@ -425,16 +413,16 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("code pénal")
+    expect(context.text(reference.child.position)).toBe(
       "articles 111-1 et 111-2",
     )
     expect(
-      context.textSlice((reference.child as TextAstEnumeration).left.position),
+      context.text((reference.child as TextAstEnumeration).left.position),
     ).toBe("111-1")
     expect(
-      context.textSlice((reference.child as TextAstEnumeration).right.position),
+      context.text((reference.child as TextAstEnumeration).right.position),
     ).toBe("111-2")
   })
 
@@ -444,10 +432,10 @@ describe("getReferences", () => {
     const context = new TextParserContext(task.name)
     const references = getReferences(context)
     expect(references.length).toBe(2)
-    expect(context.textSlice(references[0].position)).toBe(
+    expect(context.text(references[0].position)).toBe(
       "les articles 135-7 et 135-9 bis de la loi n°94-839 du 9 janvier 1994",
     )
-    expect(context.textSlice(references[1].position)).toBe(
+    expect(context.text(references[1].position)).toBe(
       "à la première phrase du deuxième alinéa du a du I de l'article 219",
     )
   })
@@ -457,14 +445,14 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
-    expect(context.textSlice(reference.child.position)).toBe("articles 7 et 9")
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("code pénal")
+    expect(context.text(reference.child.position)).toBe("articles 7 et 9")
     expect(
-      context.textSlice((reference.child as TextAstEnumeration).left.position),
+      context.text((reference.child as TextAstEnumeration).left.position),
     ).toBe("7")
     expect(
-      context.textSlice((reference.child as TextAstEnumeration).right.position),
+      context.text((reference.child as TextAstEnumeration).right.position),
     ).toBe("9")
   })
 
@@ -473,27 +461,25 @@ describe("getReferences", () => {
     const references = getReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
-    expect(context.textSlice(reference.position)).toBe(task.name)
-    expect(context.textSlice(reference.parent.position)).toBe("code pénal")
-    expect(context.textSlice(reference.child.position)).toBe(
+    expect(context.text(reference.position)).toBe(task.name)
+    expect(context.text(reference.parent.position)).toBe("code pénal")
+    expect(context.text(reference.child.position)).toBe(
       "I et II de l'article 111-1",
     )
     expect(
-      context.textSlice(
-        (reference.child as TextAstParentChild).parent.position,
-      ),
+      context.text((reference.child as TextAstParentChild).parent.position),
     ).toBe("article 111-1")
     expect(
-      context.textSlice((reference.child as TextAstParentChild).child.position),
+      context.text((reference.child as TextAstParentChild).child.position),
     ).toBe("I et II")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstEnumeration)
           .left.position,
       ),
     ).toBe("I")
     expect(
-      context.textSlice(
+      context.text(
         ((reference.child as TextAstParentChild).child as TextAstEnumeration)
           .right.position,
       ),

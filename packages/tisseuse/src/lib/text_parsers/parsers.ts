@@ -45,12 +45,10 @@ export class TextParserContext {
     return this.input.slice(this.offset)
   }
 
-  text(): string {
-    return this.input.slice(this.offset, this.offset + this.length)
-  }
-
-  textSlice(position: TextPosition): string {
-    return this.input.slice(position.start, position.stop)
+  text(position?: TextPosition): string {
+    return position === undefined
+      ? this.input.slice(this.offset, this.offset + this.length)
+      : this.input.slice(position.start, position.stop)
   }
 
   textFromResults(results: TextAst[] | undefined): string {

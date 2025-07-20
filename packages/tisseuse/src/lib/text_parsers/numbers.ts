@@ -212,8 +212,8 @@ export const adverbeMultiplicatif = convert(
   ),
   {
     value: (result, context) => ({
-      id: context.text().toLowerCase(),
       position: context.position(),
+      text: context.text().toLowerCase(),
       value: result as number,
     }),
   },

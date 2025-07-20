@@ -1,8 +1,8 @@
 import {
   type EuropeanLawNature,
   type FrenchLawNature,
-  type TextAstLaw,
-  type TextAstLawIdentification,
+  type TextAstText,
+  type TextAstTextIdentification,
   type TextAstTextInfos,
   type TextInfosByWordsTree,
 } from "./ast.js"
@@ -85,7 +85,7 @@ export const natureTexteFrancais = convert(
   {
     value: (result) => ({
       nature: result as FrenchLawNature,
-      type: "law",
+      type: "texte",
     }),
   },
 )
@@ -136,7 +136,7 @@ export const texteFrancais = alternatives(
       natureTexteFrancais,
       optional([espace, numeroEtOuDateTexteFrancais], {
         default: null,
-        value: (results) => (results as [string, TextAstLawIdentification])[1],
+        value: (results) => (results as [string, TextAstTextIdentification])[1],
       }),
       optional(
         [
@@ -157,17 +157,17 @@ export const texteFrancais = alternatives(
         {
           default: null,
           value: (results) =>
-            (results as [string, TextAstLawIdentification, string])[1],
+            (results as [string, TextAstTextIdentification, string])[1],
         },
       ),
       optional(espacePrecite, { default: "" }),
     ],
     {
       value: (results) => {
-        const { nature, type } = results[0] as TextAstLaw
+        const { nature, type } = results[0] as TextAstText
         const { date, num } = (results[1] ??
           results[3] ??
-          {}) as TextAstLawIdentification
+          {}) as TextAstTextIdentification
         const { cid } = (results[2] ?? {}) as TextAstTextInfos
         if (cid === undefined && date === undefined && num === undefined) {
           return undefined
@@ -239,7 +239,7 @@ export const texteFrancais = alternatives(
           Object.entries({
             cid,
             ...(textInfos ?? {}),
-            type: "law",
+            type: "texte",
           }).filter(([, value]) => value !== undefined),
         )
       },
@@ -305,7 +305,7 @@ export const natureTexteEuropeen = chain(
     value: (results) => ({
       nature: results[0] as EuropeanLawNature,
       legislation: "UE",
-      type: "law",
+      type: "texte",
     }),
   },
 )
@@ -317,8 +317,8 @@ export const texteEuropeen = chain(
   [natureTexteEuropeen, espace, identificationTexteEuropeen],
   {
     value: (results) => ({
-      ...(results[2] as TextAstLawIdentification),
-      ...(results[0] as TextAstLaw),
+      ...(results[2] as TextAstTextIdentification),
+      ...(results[0] as TextAstText),
     }),
   },
 )
@@ -330,7 +330,7 @@ export const texteInternational = regExp("convention", {
   value: {
     nature: "CONVENTION",
     legislation: "international",
-    type: "law",
+    type: "texte",
   },
 })
 
@@ -354,7 +354,7 @@ export const texte = chain(
         ],
         {
           value: (results) => ({
-            ...(results[2] as TextAstLaw),
+            ...(results[2] as TextAstText),
             ...(results[0] === undefined ? {} : { localization: results[0] }),
           }),
         },
@@ -366,7 +366,7 @@ export const texte = chain(
   ],
   {
     value: (results, context) => ({
-      ...(results[1] as TextAstLaw),
+      ...(results[1] as TextAstText),
       ...(results[0] ? { ofTheSaid: true } : {}),
       position: context.position(),
     }),

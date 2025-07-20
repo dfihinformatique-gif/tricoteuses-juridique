@@ -41,7 +41,7 @@ export const uniteBasePreciseePluriel = chain(
     value: (results, context) =>
       createParentChildTreeFromReferences(
         results[0] as TextAstReference,
-        results[1] as TextAstReference[],
+        results[1] as TextAstAtomicReference[],
         context.position(),
       ),
   },
@@ -60,7 +60,7 @@ export const uniteBasePreciseeSingulier = chain(
     value: (results, context) =>
       createParentChildTreeFromReferences(
         results[0] as TextAstReference,
-        results[1] as TextAstReference[],
+        results[1] as TextAstAtomicReference[],
         context.position(),
       ),
   },

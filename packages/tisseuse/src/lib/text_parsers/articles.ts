@@ -1,6 +1,6 @@
 import {
-  type TextAstNombre,
-  type TextAstLocalisation,
+  type TextAstNumber,
+  type TextAstLocalization,
   type TextAstReference,
   type LocalizationAdverb,
   type CompoundReferencesSeparator,
@@ -89,7 +89,7 @@ export const nomArticle = alternatives(
             optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
           ],
           convert(adverbeMultiplicatif, {
-            value: (result) => (result as TextAstNombre).id,
+            value: (result) => (result as TextAstNumber).text,
           }),
         ),
       ]),
@@ -110,7 +110,7 @@ export const designationArticle = alternatives(
           ...(results[1]
             ? { localizationAdverb: results[1] as LocalizationAdverb }
             : {}),
-          id: results[0] as string,
+          num: results[0] as string,
           position: context.position(),
           type: "article",
         }),
@@ -134,7 +134,7 @@ export const designationArticle = alternatives(
   ),
   convert(adjectifRelatifSingulier, {
     value: (result, context) => ({
-      localization: result as TextAstLocalisation,
+      localization: result as TextAstLocalization,
       position: context.position(),
       type: "article",
     }),
@@ -143,7 +143,7 @@ export const designationArticle = alternatives(
 
 export const listeArticles1Internal = convert(adjectifRelatifPluriel, {
   value: (result, context) => ({
-    localization: result as TextAstLocalisation,
+    localization: result as TextAstLocalization,
     position: context.position(),
     type: "article",
   }),
@@ -177,7 +177,7 @@ export const articles2Internal = alternatives(
   listeArticles,
   convert(relatifPluriel, {
     value: (result, context) => ({
-      localization: result as TextAstLocalisation,
+      localization: result as TextAstLocalization,
       position: context.position(),
       type: "article",
     }),
@@ -201,7 +201,7 @@ export const articles1Internal = alternatives(
         for (const reference of iterAtomicReferences(base)) {
           reference.type = "article"
           if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalisation
+            reference.localization = results[0] as TextAstLocalization
           }
         }
         return { ...base, position: context.position() }
@@ -256,7 +256,7 @@ export const article1Internal = alternatives(
         // Tel que codé ci-dessous, le « mêmes » est ignoré au profit du « suivants »
         for (const reference of iterAtomicReferences(base)) {
           if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalisation
+            reference.localization = results[0] as TextAstLocalization
           }
         }
         return { ...base, position: context.position() }

@@ -6,7 +6,7 @@ import {
   type CompoundReferencesSeparator,
   type DivisionType,
   type TextAstIncompleteHeader,
-  type TextAstLocalisation,
+  type TextAstLocalization,
   type TextAstReference,
 } from "./ast.js"
 import {
@@ -84,7 +84,7 @@ export const designationDivision = alternatives(
   chain([numeroDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({
       ...(results[1] ? { localizationAdverb: results[1] } : {}),
-      id: results[0] as string,
+      num: results[0] as string,
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -92,14 +92,14 @@ export const designationDivision = alternatives(
   chain([nomDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({
       ...(results[1] ? { localizationAdverb: results[1] } : {}),
-      id: results[0] as string,
+      num: results[0] as string,
       position: context.position(),
       type: "incomplete-header",
     }),
   }),
   convert(adjectifRelatifSingulier, {
     value: (result, context) => ({
-      localization: result as TextAstLocalisation,
+      localization: result as TextAstLocalization,
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -110,7 +110,7 @@ export const division2Internal = alternatives(
   designationDivision,
   convert(relatifSingulier, {
     value: (result, context) => ({
-      localization: result as TextAstLocalisation,
+      localization: result as TextAstLocalization,
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -134,7 +134,7 @@ export const division1Internal = alternatives(
         for (const reference of iterAtomicReferences(base)) {
           reference.type = results[2] as DivisionType
           if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalisation
+            reference.localization = results[0] as TextAstLocalization
           }
         }
         return { ...base, position: context.position() }
@@ -196,7 +196,7 @@ export const listeDivisions = chain(
       alternatives(
         chain([adjectifRelatifPluriel], {
           value: (results, context) => ({
-            localization: results[0] as TextAstLocalisation,
+            localization: results[0] as TextAstLocalization,
             position: context.position(),
             type: "incomplete-header",
           }),
@@ -221,7 +221,7 @@ export const divisions2Internal = alternatives(
   listeDivisions,
   convert(relatifPluriel, {
     value: (result, context) => ({
-      localization: result as TextAstLocalisation,
+      localization: result as TextAstLocalization,
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -245,7 +245,7 @@ export const divisions1Internal = alternatives(
         for (const reference of iterAtomicReferences(base)) {
           reference.type = results[2] as DivisionType
           if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalisation
+            reference.localization = results[0] as TextAstLocalization
           }
         }
         return { ...base, position: context.position() }

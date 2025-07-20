@@ -2,7 +2,7 @@ import {
   type CompoundReferencesSeparator,
   type PortionType,
   type TextAstAtomicReference,
-  type TextAstNombre,
+  type TextAstNumber,
   type TextAstPortion,
   type TextAstReference,
 } from "./ast.js"
@@ -68,22 +68,22 @@ export const numeroPortion = chain(
     alternatives(
       convert(nombreRomainCardinal, {
         value: (result, context) => ({
-          id: context.text(),
           position: context.position(),
+          text: context.text(),
           value: result as number,
         }),
       }),
       convert(lettreAsciiMinuscule, {
         value: (result, context) => ({
-          id: result as string,
           position: context.position(),
+          text: result as string,
           value: (result as string).charCodeAt(0) - "a".charCodeAt(0) + 1,
         }),
       }),
       chain([nombreCardinal, regExp("[°o]?", { flags: "i" })], {
         value: (results, context) => ({
-          id: context.text(),
           position: context.position(),
+          text: context.text(),
           value: results[0] as number,
         }),
       }),
@@ -93,13 +93,13 @@ export const numeroPortion = chain(
   ],
   {
     value: (results, context) => {
-      const nombre0 = results[0] as TextAstNombre
-      const nombre1 = results[1] as TextAstNombre | null
+      const nombre0 = results[0] as TextAstNumber
+      const nombre1 = results[1] as TextAstNumber | null
       return {
-        id: `${nombre0.id}${nombre1 ? ` ${nombre1.id}` : ""}`,
         index: nombre0.value + (nombre1 === null ? 0 : nombre1.value / 1000),
+        num: `${nombre0.text}${nombre1 ? ` ${nombre0.text}` : ""}`,
         position: context.position(),
-        type: "portion",
+        type: "partie",
       }
     },
   },

@@ -22,7 +22,7 @@ describe("article", () => {
     const context = new TextParserContext(task.name)
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
-      id: "L325-3",
+      num: "L325-3",
       position: {
         start: 0,
         stop: 16,
@@ -37,7 +37,7 @@ describe("article", () => {
     const context = new TextParserContext(task.name)
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
-      id: "L325-3",
+      num: "L325-3",
       ofTheSaid: true,
       position: {
         start: 0,
@@ -71,7 +71,7 @@ describe("article", () => {
     const context = new TextParserContext(task.name)
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
-      id: "L325-3",
+      num: "L325-3",
       localization: {
         relative: 0,
       },
@@ -107,7 +107,7 @@ describe("article", () => {
     const context = new TextParserContext(task.name)
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
-      id: "L325-3",
+      num: "L325-3",
       localization: {
         relative: 0,
       },
@@ -129,7 +129,7 @@ describe("articles", () => {
     expect(result).toStrictEqual({
       coordinator: "et",
       left: {
-        id: "L325-3",
+        num: "L325-3",
         position: {
           start: 9,
           stop: 17,
@@ -141,7 +141,7 @@ describe("articles", () => {
         stop: 29,
       },
       right: {
-        id: "L325-4",
+        num: "L325-4",
         position: {
           start: 21,
           stop: 29,
@@ -162,7 +162,7 @@ describe("articles", () => {
     expect(result).toStrictEqual({
       coordinator: "et",
       left: {
-        id: "L325-3",
+        num: "L325-3",
         ofTheSaid: true,
         position: {
           start: 14,
@@ -175,7 +175,7 @@ describe("articles", () => {
         stop: 34,
       },
       right: {
-        id: "L325-4",
+        num: "L325-4",
         ofTheSaid: true,
         position: {
           start: 26,
@@ -215,7 +215,7 @@ describe("articles", () => {
     expect(result).toStrictEqual({
       coordinator: "et",
       left: {
-        id: "L325-3",
+        num: "L325-3",
         localization: {
           relative: 0,
         },
@@ -231,7 +231,7 @@ describe("articles", () => {
         stop: 40,
       },
       right: {
-        id: "L325-4",
+        num: "L325-4",
         localization: {
           relative: 0,
         },
@@ -273,7 +273,7 @@ describe("articles", () => {
     expect(result).toStrictEqual({
       coordinator: "et",
       left: {
-        id: "L325-3",
+        num: "L325-3",
         localization: {
           relative: 0,
         },
@@ -288,7 +288,7 @@ describe("articles", () => {
         stop: 35,
       },
       right: {
-        id: "L325-4",
+        num: "L325-4",
         localization: {
           relative: 0,
         },
@@ -312,7 +312,7 @@ describe("designationArticle", () => {
     const context = new TextParserContext(task.name)
     const result = designationArticle(context) as TextAstArticle
     expect(result).toStrictEqual({
-      id: "L325-5-1",
+      num: "L325-5-1",
       position: {
         start: 0,
         stop: 9,
@@ -327,7 +327,7 @@ describe("designationArticle", () => {
     const context = new TextParserContext(task.name)
     const result = designationArticle(context) as TextAstArticle
     expect(result).toStrictEqual({
-      id: "L3 bis-0",
+      num: "L3 bis-0",
       position: {
         start: 0,
         stop: 10,
@@ -342,7 +342,7 @@ describe("designationArticle", () => {
     const context = new TextParserContext(task.name)
     const result = designationArticle(context) as TextAstArticle
     expect(result).toStrictEqual({
-      id: "LO325-3",
+      num: "LO325-3",
       localizationAdverb: "ci-après",
       position: {
         start: 0,
@@ -360,22 +360,22 @@ describe("designationArticle", () => {
     expect(result).toStrictEqual({
       child: {
         first: {
-          id: "3°",
           index: 3,
+          num: "3°",
           position: {
             start: 21,
             stop: 23,
           },
-          type: "portion",
+          type: "partie",
         },
         last: {
-          id: "5°",
           index: 5,
+          num: "5°",
           position: {
             start: 26,
             stop: 28,
           },
-          type: "portion",
+          type: "partie",
         },
         position: {
           start: 21,
@@ -384,7 +384,7 @@ describe("designationArticle", () => {
         type: "bounded-interval",
       },
       parent: {
-        id: "LO325-3",
+        num: "LO325-3",
         localizationAdverb: "ci-après",
         position: {
           start: 0,
@@ -427,7 +427,7 @@ describe("designationArticle", () => {
         type: "alinéa",
       },
       parent: {
-        id: "LO325-3",
+        num: "LO325-3",
         localizationAdverb: "ci-après",
         position: {
           start: 0,
@@ -473,7 +473,7 @@ describe("listeArticles", () => {
     const result = listeArticles(context) as TextAstBoundedInterval
     expect(result).toStrictEqual({
       first: {
-        id: "L325-3",
+        num: "L325-3",
         position: {
           start: 0,
           stop: 8,
@@ -481,7 +481,7 @@ describe("listeArticles", () => {
         type: "article",
       },
       last: {
-        id: "L325-5-1",
+        num: "L325-5-1",
         position: {
           start: 11,
           stop: 21,
@@ -506,7 +506,7 @@ describe("listeArticles", () => {
     expect(result).toStrictEqual({
       coordinator: "et",
       left: {
-        id: "L325-3",
+        num: "L325-3",
         position: {
           start: 0,
           stop: 8,
@@ -518,7 +518,7 @@ describe("listeArticles", () => {
         stop: 22,
       },
       right: {
-        id: "L325-5-1",
+        num: "L325-5-1",
         position: {
           start: 12,
           stop: 22,
@@ -539,7 +539,7 @@ describe("listeArticles", () => {
     expect(result).toStrictEqual({
       coordinator: "et",
       left: {
-        id: "L325-3",
+        num: "L325-3",
         position: {
           start: 0,
           stop: 8,
@@ -576,7 +576,7 @@ describe("listeArticles", () => {
       left: {
         coordinator: ",",
         left: {
-          id: "L400 bis",
+          num: "L400 bis",
           position: {
             start: 0,
             stop: 10,
@@ -588,7 +588,7 @@ describe("listeArticles", () => {
           stop: 20,
         },
         right: {
-          id: "L425-3",
+          num: "L425-3",
           position: {
             start: 12,
             stop: 20,
@@ -602,7 +602,7 @@ describe("listeArticles", () => {
         stop: 30,
       },
       right: {
-        id: "L456",
+        num: "L456",
         position: {
           start: 24,
           stop: 30,
@@ -631,7 +631,7 @@ describe("listeArticles", () => {
       left: {
         coordinator: ",",
         left: {
-          id: "L400 bis",
+          num: "L400 bis",
           position: {
             start: 0,
             stop: 10,
@@ -644,7 +644,7 @@ describe("listeArticles", () => {
         },
         right: {
           first: {
-            id: "L425-3",
+            num: "L425-3",
             position: {
               start: 12,
               stop: 20,
@@ -652,7 +652,7 @@ describe("listeArticles", () => {
             type: "article",
           },
           last: {
-            id: "L425-5-1",
+            num: "L425-5-1",
             position: {
               start: 23,
               stop: 33,
@@ -672,7 +672,7 @@ describe("listeArticles", () => {
         stop: 43,
       },
       right: {
-        id: "L456",
+        num: "L456",
         position: {
           start: 37,
           stop: 43,

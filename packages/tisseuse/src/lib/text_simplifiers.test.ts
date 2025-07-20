@@ -5,14 +5,68 @@ import {
   chainSimplifiers,
   convertHtmlElementsToText,
   replacePatterns,
+  simplifyHtml,
   simplifyText,
   type ConversionTaskLeaf,
 } from "./text_simplifiers.js"
 
 describe("convertHtmlElementsToText", () => {
+  describe("convert a to text", () => {
+    test("Keep a content", () => {
+      const { task, text } = convertHtmlElementsToText()(
+        `<a href=".">Hello world!</a>`,
+      )
+      expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
+        {
+          inputIndex: 0,
+          inputLength: 12,
+          outputIndex: 0,
+          outputLength: 0,
+        },
+        {
+          inputIndex: 24,
+          inputLength: 4,
+          outputIndex: 12,
+          outputLength: 0,
+        },
+      ])
+      expect(text).toStrictEqual("Hello world!")
+    })
+
+    test("Remove a", () => {
+      const { task, text } = convertHtmlElementsToText({
+        removeAWithHref: true,
+      })(`<a href=".">Hello world!</a>`)
+      expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
+        {
+          inputIndex: 0,
+          inputLength: 28,
+          outputIndex: 0,
+          outputLength: 0,
+        },
+      ])
+      expect(text).toStrictEqual("")
+    })
+
+    test("Remove a containing span", () => {
+      const { task, text } = convertHtmlElementsToText({
+        removeAWithHref: true,
+      })(`<a href="."><span>Hello world!</span></a>`)
+      expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
+        {
+          inputIndex: 0,
+          inputLength: 41,
+          outputIndex: 0,
+          outputLength: 0,
+        },
+      ])
+      expect(text).toStrictEqual("")
+    })
+  })
+
   describe("convert br to text", () => {
     test("only br without closing /", () => {
-      const { task, text } = convertHtmlElementsToText("<br>")
+      const { task, text } = convertHtmlElementsToText()("<br>")
       expect((task as ConversionTaskLeaf).sourceMap).toStrictEqual([
         {
           inputIndex: 0,

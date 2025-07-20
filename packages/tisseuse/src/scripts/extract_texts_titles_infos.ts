@@ -5,8 +5,8 @@ import type { LegiTexteVersion } from "$lib/legal/legi.js"
 import { numberFromRomanNumeral } from "$lib/numbers.js"
 import { db } from "$lib/server/databases/index.js"
 import type {
-  TextAstLaw,
-  TextAstLawIdentification,
+  TextAstText,
+  TextAstTextIdentification,
 } from "$lib/text_parsers/ast.js"
 import { chain, TextParserContext } from "$lib/text_parsers/parsers.js"
 import {
@@ -194,11 +194,11 @@ async function extractTextsNames(): Promise<number> {
           [natureTexteFrancais, espace, numeroEtOuDateTexteFrancais],
           {
             value: (results) => ({
-              ...(results[0] as TextAstLaw),
-              ...(results[2] as TextAstLawIdentification),
+              ...(results[0] as TextAstText),
+              ...(results[2] as TextAstTextIdentification),
             }),
           },
-        )(context) as TextAstLaw | undefined
+        )(context) as TextAstText | undefined
         if (titleParsing == null) {
           throw new Error(
             `Unparsable title of ${nature} n° ${num} du ${dateSignature} (${cid}): ${titleToParse}`,

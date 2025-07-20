@@ -27,7 +27,7 @@ describe("reference", () => {
           left: {
             coordinator: ",",
             left: {
-              id: "199 quater B",
+              num: "199 quater B",
               position: {
                 start: 0,
                 stop: 24,
@@ -40,7 +40,7 @@ describe("reference", () => {
             },
             right: {
               left: {
-                id: "199 undecies B",
+                num: "199 undecies B",
                 position: {
                   start: 26,
                   stop: 52,
@@ -67,13 +67,13 @@ describe("reference", () => {
                   type: "counted-interval",
                 },
                 parent: {
-                  id: "I",
+                  num: "I",
                   index: 1,
                   position: {
                     start: 96,
                     stop: 97,
                   },
-                  type: "portion",
+                  type: "partie",
                 },
                 position: {
                   start: 68,
@@ -90,7 +90,7 @@ describe("reference", () => {
             stop: 118,
           },
           right: {
-            id: "238 bis",
+            num: "238 bis",
             position: {
               start: 99,
               stop: 118,
@@ -104,7 +104,7 @@ describe("reference", () => {
           stop: 137,
         },
         right: {
-          id: "107",
+          num: "107",
           position: {
             start: 126,
             stop: 137,
@@ -124,7 +124,7 @@ describe("reference", () => {
         },
         title:
           "LOI n° 2021-1104 du 22 août 2021 portant lutte contre le dérèglement climatique et renforcement de la résilience face à ses effets",
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -234,7 +234,7 @@ describe("reference", () => {
       child: {
         coordinator: "et",
         left: {
-          id: "200 undecies",
+          num: "200 undecies",
           position: {
             start: 0,
             stop: 24,
@@ -246,7 +246,7 @@ describe("reference", () => {
           stop: 43,
         },
         right: {
-          id: "151",
+          num: "151",
           position: {
             start: 32,
             stop: 43,
@@ -265,7 +265,7 @@ describe("reference", () => {
           stop: 86,
         },
         title: "LOI n° 2020-1721 du 29 décembre 2020 de finances pour 2021",
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -293,7 +293,7 @@ describe("reference", () => {
         left: {
           coordinator: ",",
           left: {
-            id: "200 undecies",
+            num: "200 undecies",
             position: {
               start: 0,
               stop: 24,
@@ -306,7 +306,7 @@ describe("reference", () => {
           },
           right: {
             first: {
-              id: "244 quater B",
+              num: "244 quater B",
               position: {
                 start: 39,
                 stop: 51,
@@ -314,7 +314,7 @@ describe("reference", () => {
               type: "article",
             },
             last: {
-              id: "244 quater W",
+              num: "244 quater W",
               position: {
                 start: 54,
                 stop: 66,
@@ -336,7 +336,7 @@ describe("reference", () => {
         right: {
           coordinator: "et",
           left: {
-            id: "27",
+            num: "27",
             position: {
               start: 83,
               stop: 85,
@@ -348,7 +348,7 @@ describe("reference", () => {
             stop: 92,
           },
           right: {
-            id: "151",
+            num: "151",
             position: {
               start: 89,
               stop: 92,
@@ -369,7 +369,7 @@ describe("reference", () => {
           stop: 135,
         },
         title: "LOI n° 2020-1721 du 29 décembre 2020 de finances pour 2021",
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -393,7 +393,7 @@ describe("reference", () => {
     const result = reference(context) as TextAstParentChild
     expect(result).toStrictEqual({
       child: {
-        id: "7 vicies A",
+        num: "7 vicies A",
         position: {
           start: 4,
           stop: 22,
@@ -411,7 +411,7 @@ describe("reference", () => {
         },
         title:
           "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -450,7 +450,7 @@ describe("reference", () => {
           start: 25,
           stop: 34,
         },
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -478,7 +478,7 @@ describe("reference", () => {
       },
       title:
         "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
-      type: "law",
+      type: "texte",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -488,13 +488,13 @@ describe("reference", () => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
     expect(result).toStrictEqual({
-      id: "3°",
       index: 3,
+      num: "3°",
       position: {
         start: 0,
         stop: 5,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -505,13 +505,13 @@ describe("reference", () => {
     const result = reference(context) as TextAstParentChild
     expect(result).toStrictEqual({
       child: {
-        id: "3°",
         index: 3,
+        num: "3°",
         position: {
           start: 3,
           stop: 5,
         },
-        type: "portion",
+        type: "partie",
       },
       parent: {
         localization: {
@@ -540,7 +540,7 @@ describe("reference", () => {
     const result = reference(context) as TextAstParentChild
     expect(result).toStrictEqual({
       child: {
-        id: "8-1 bis",
+        num: "8-1 bis",
         ofTheSaid: true,
         position: {
           start: 2,
@@ -557,7 +557,7 @@ describe("reference", () => {
           start: 25,
           stop: 37,
         },
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -576,7 +576,7 @@ describe("reference", () => {
     const result = reference(context) as TextAstParentChild
     expect(result).toStrictEqual({
       child: {
-        id: "annexe",
+        num: "annexe",
         ofTheSaid: true,
         position: {
           start: 2,
@@ -593,7 +593,7 @@ describe("reference", () => {
           start: 24,
           stop: 36,
         },
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -626,7 +626,7 @@ describe("reference", () => {
     expect(result).toStrictEqual({
       child: {
         first: {
-          id: "7 tersexagies A",
+          num: "7 tersexagies A",
           position: {
             start: 13,
             stop: 28,
@@ -634,7 +634,7 @@ describe("reference", () => {
           type: "article",
         },
         last: {
-          id: "9 quaterdecies",
+          num: "9 quaterdecies",
           position: {
             start: 31,
             stop: 45,
@@ -658,7 +658,7 @@ describe("reference", () => {
         },
         title:
           "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -703,7 +703,7 @@ describe("reference", () => {
         type: "counted-interval",
       },
       parent: {
-        id: "123",
+        num: "123",
         position: {
           start: 30,
           stop: 41,
@@ -728,13 +728,13 @@ describe("reference", () => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
     expect(result).toStrictEqual({
-      id: "I",
       index: 1,
+      num: "I",
       position: {
         start: 0,
         stop: 4,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -744,13 +744,13 @@ describe("reference", () => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
     expect(result).toStrictEqual({
-      id: "i",
       index: 9,
+      num: "i",
       position: {
         start: 0,
         stop: 4,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -763,13 +763,13 @@ describe("reference", () => {
     expect(result).toStrictEqual({
       child: {
         child: {
-          id: "I",
           index: 1,
+          num: "I",
           position: {
             start: 3,
             stop: 4,
           },
-          type: "portion",
+          type: "partie",
         },
         parent: {
           index: 3,
@@ -786,7 +786,7 @@ describe("reference", () => {
         type: "parent-enfant",
       },
       parent: {
-        id: "7",
+        num: "7",
         position: {
           start: 29,
           stop: 38,
@@ -821,22 +821,22 @@ describe("reference", () => {
     expect(result).toStrictEqual({
       child: {
         child: {
-          id: "III",
           index: 3,
+          num: "III",
           position: {
             start: 3,
             stop: 6,
           },
-          type: "portion",
+          type: "partie",
         },
         parent: {
-          id: "56°",
           index: 56,
+          num: "56°",
           position: {
             start: 8,
             stop: 11,
           },
-          type: "portion",
+          type: "partie",
         },
         position: {
           start: 3,
@@ -845,7 +845,7 @@ describe("reference", () => {
         type: "parent-enfant",
       },
       parent: {
-        id: "7",
+        num: "7",
         position: {
           start: 18,
           stop: 27,
@@ -879,7 +879,7 @@ describe("reference", () => {
     expect(result).toStrictEqual({
       child: {
         child: {
-          id: "7",
+          num: "7",
           position: {
             start: 3,
             stop: 15,
@@ -887,7 +887,7 @@ describe("reference", () => {
           type: "paragraphe",
         },
         parent: {
-          id: "D**7",
+          num: "D**7",
           position: {
             start: 21,
             stop: 34,
@@ -908,7 +908,7 @@ describe("reference", () => {
           start: 38,
           stop: 72,
         },
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -940,7 +940,7 @@ describe("reference", () => {
     expect(result).toStrictEqual({
       child: {
         child: {
-          id: "3",
+          num: "3",
           position: {
             start: 3,
             stop: 20,
@@ -948,7 +948,7 @@ describe("reference", () => {
           type: "paragraphe",
         },
         parent: {
-          id: "LO7-1",
+          num: "LO7-1",
           position: {
             start: 26,
             stop: 42,
@@ -971,7 +971,7 @@ describe("reference", () => {
         },
         title:
           "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -1004,7 +1004,7 @@ describe("uniteBasePreciseeSingulier", () => {
     const result = uniteBasePreciseeSingulier(context) as TextAstParentChild
     expect(result).toStrictEqual({
       child: {
-        id: "7 vicies A",
+        num: "7 vicies A",
         position: {
           start: 0,
           stop: 18,
@@ -1022,7 +1022,7 @@ describe("uniteBasePreciseeSingulier", () => {
         },
         title:
           "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
-        type: "law",
+        type: "texte",
       },
       position: {
         start: 0,
@@ -1040,7 +1040,7 @@ describe("uniteBaseSingulier", () => {
     const context = new TextParserContext(task.name)
     const result = uniteBaseSingulier(context) as TextAstReference
     expect(result).toStrictEqual({
-      id: "7 vicies A",
+      num: "7 vicies A",
       position: {
         start: 0,
         stop: 18,
@@ -1065,7 +1065,7 @@ describe("uniteBaseSingulier", () => {
       },
       title:
         "Loi n° 98-1313 du 31 décembre 1998 relative à la validation législative d'actes pris après avis du comité technique paritaire du ministère des affaires étrangères",
-      type: "law",
+      type: "texte",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)

@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import { romanNumeralFromNumber } from "$lib/numbers.js"
 
-import { type TextAstNombre } from "./ast.js"
+import { type TextAstNumber } from "./ast.js"
 import {
   adverbeMultiplicatif,
   nombre,
@@ -96,7 +96,7 @@ describe("adverbeMultiplicatif", () => {
   for (const [latinNumber, number] of generateLatinNumbers()) {
     test(`${latinNumber} == ${number}`, () => {
       const context = new TextParserContext(latinNumber)
-      expect((adverbeMultiplicatif(context) as TextAstNombre).value).toBe(
+      expect((adverbeMultiplicatif(context) as TextAstNumber).value).toBe(
         number,
       )
       expect(context.remaining()).toBe("")
@@ -143,7 +143,7 @@ describe("nombreRomainCardinal", () => {
   for (const [romanNumber, number] of generateRomanNumbers()) {
     test(`${romanNumber} == ${number}`, () => {
       const context = new TextParserContext(romanNumber)
-      expect(nombreRomainCardinal(context) as TextAstNombre).toBe(number)
+      expect(nombreRomainCardinal(context) as TextAstNumber).toBe(number)
       expect(context.remaining()).toBe("")
     })
   }
@@ -155,7 +155,7 @@ describe("nombreRomainOrdinal", () => {
       romanNumber + (number === 1 ? "er" : Math.random() >= 0.5 ? "ème" : "e")
     test(`${ordinalRomanNumber} == ${number}`, () => {
       const context = new TextParserContext(ordinalRomanNumber)
-      expect(nombreRomainOrdinal(context) as TextAstNombre).toBe(number)
+      expect(nombreRomainOrdinal(context) as TextAstNumber).toBe(number)
       expect(context.remaining()).toBe("")
     })
   }
@@ -170,14 +170,14 @@ describe("nombreRomainOu0i", () => {
   for (const [romanNumber, number] of generateRomanNumbers()) {
     test(`${romanNumber} == ${number}`, () => {
       const context = new TextParserContext(romanNumber)
-      expect(nombreRomainOu0i(context) as TextAstNombre).toBe(number)
+      expect(nombreRomainOu0i(context) as TextAstNumber).toBe(number)
       expect(context.remaining()).toBe("")
     })
     const ordinalRomanNumber =
       romanNumber + (number === 1 ? "er" : Math.random() >= 0.5 ? "ème" : "e")
     test(`${ordinalRomanNumber} == ${number}`, () => {
       const context = new TextParserContext(ordinalRomanNumber)
-      expect(nombreRomainOu0i(context) as TextAstNombre).toBe(number)
+      expect(nombreRomainOu0i(context) as TextAstNumber).toBe(number)
       expect(context.remaining()).toBe("")
     })
   }

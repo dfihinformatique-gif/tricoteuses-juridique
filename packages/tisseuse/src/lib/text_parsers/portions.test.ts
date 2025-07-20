@@ -16,22 +16,22 @@ describe("auPortion", () => {
     const result = auPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
       child: {
-        id: "2°",
         index: 2,
+        num: "2°",
         position: {
           start: 3,
           stop: 5,
         },
-        type: "portion",
+        type: "partie",
       },
       parent: {
-        id: "III",
         index: 3,
+        num: "III",
         position: {
           start: 9,
           stop: 12,
         },
-        type: "portion",
+        type: "partie",
       },
       position: {
         start: 0,
@@ -89,13 +89,13 @@ describe("numeroPortion", () => {
     const context = new TextParserContext(task.name)
     const result = numeroPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      id: "1°", // TODO: Should it be "1"?
       index: 1,
+      num: "1°", // TODO: Should it be "1"?
       position: {
         start: 0,
         stop: 2,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -105,13 +105,13 @@ describe("numeroPortion", () => {
     const context = new TextParserContext(task.name)
     const result = numeroPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      id: "30o", // TODO: Should it be "30"?
       index: 30,
+      num: "30o", // TODO: Should it be "30"?
       position: {
         start: 0,
         stop: 3,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -121,13 +121,13 @@ describe("numeroPortion", () => {
     const context = new TextParserContext(task.name)
     const result = numeroPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      id: "a",
       index: 1,
+      num: "a",
       position: {
         start: 0,
         stop: 1,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -137,13 +137,13 @@ describe("numeroPortion", () => {
     const context = new TextParserContext(task.name)
     const result = numeroPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      id: "DC",
       index: 600,
+      num: "DC",
       position: {
         start: 0,
         stop: 2,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -153,13 +153,13 @@ describe("numeroPortion", () => {
     const context = new TextParserContext(task.name)
     const result = numeroPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      id: "I",
       index: 1,
+      num: "I",
       position: {
         start: 0,
         stop: 1,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -169,13 +169,13 @@ describe("numeroPortion", () => {
     const context = new TextParserContext(task.name)
     const result = numeroPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      id: "III",
       index: 3,
+      num: "III",
       position: {
         start: 0,
         stop: 3,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)
@@ -185,13 +185,13 @@ describe("numeroPortion", () => {
     const context = new TextParserContext(task.name)
     const result = numeroPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      id: "g",
       index: 7,
+      num: "g",
       position: {
         start: 0,
         stop: 1,
       },
-      type: "portion",
+      type: "partie",
     })
     expect(context.remaining()).toBe("")
     expect(context.textSlice(result.position)).toBe(task.name)

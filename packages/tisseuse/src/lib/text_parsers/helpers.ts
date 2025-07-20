@@ -1,11 +1,12 @@
-import type {
-  CompoundReferencesSeparator,
-  TextAstAtomicReference,
-  TextAstCompoundReference,
-  TextAstEnumeration,
-  TextAstParentChild,
-  TextAstReference,
-  TextPosition,
+import {
+  isTextAstAtomicReference,
+  type CompoundReferencesSeparator,
+  type TextAstAtomicReference,
+  type TextAstCompoundReference,
+  type TextAstEnumeration,
+  type TextAstParentChild,
+  type TextAstReference,
+  type TextPosition,
 } from "./ast.js"
 
 const priorityByCoordinator: Record<CompoundReferencesSeparator, number> = {
@@ -19,11 +20,21 @@ const priorityByCoordinator: Record<CompoundReferencesSeparator, number> = {
 export const addChildLeftToLastChild = (
   reference: TextAstReference,
   child: TextAstReference,
-): TextAstParentChild =>
-  reference.type === "parent-enfant"
+): TextAstParentChild => {
+  if (
+    !isTextAstAtomicReference(reference) &&
+    reference.type !== "parent-enfant"
+  ) {
+    throw new Error(`Can't add child to non-atomic parent: ${reference}`)
+  }
+
+  return reference.type === "parent-enfant"
     ? {
         ...reference,
-        child: addChildLeftToLastChild(reference.child, child),
+        child: addChildLeftToLastChild(
+          reference.child as TextAstAtomicReference | TextAstParentChild,
+          child,
+        ),
         position: {
           start: child.position.start,
           stop: reference.position.stop,
@@ -38,6 +49,7 @@ export const addChildLeftToLastChild = (
         },
         type: "parent-enfant",
       }
+}
 
 export const createEnumerationOrBoundedInterval = (
   reference: TextAstReference,
@@ -128,9 +140,9 @@ export const createEnumerationOrBoundedInterval1 = (
           // `reference` is not modified.
         }
       } else if (
-        reference.type !== "law" &&
+        reference.type !== "texte" &&
         otherReference.type === "parent-enfant" &&
-        otherReference.parent.type === "law"
+        otherReference.parent.type === "texte"
       ) {
         // Create a Merged reference of type law based on otherReference.
         reference = {
@@ -163,8 +175,8 @@ export const createEnumerationOrBoundedInterval1 = (
         }
       } else if (
         reference.type === "parent-enfant" &&
-        reference.parent.type === "law" &&
-        otherReference.type !== "law"
+        reference.parent.type === "texte" &&
+        otherReference.type !== "texte"
       ) {
         // Create a Merged reference of type law based on reference.
         reference = {
@@ -227,7 +239,7 @@ export const createEnumerationOrBoundedInterval1 = (
 
 export const createParentChildTreeFromReferences = (
   child: TextAstReference,
-  ancestors: TextAstReference[],
+  ancestors: TextAstAtomicReference[],
   position: TextPosition,
 ): TextAstReference => {
   for (const parent of ancestors) {
@@ -243,6 +255,39 @@ export const createParentChildTreeFromReferences = (
   }
   child.position = position
   return child
+}
+
+export function* iterAtomicOrParentChildReferences(
+  reference: TextAstReference,
+): Generator<TextAstAtomicReference | TextAstParentChild, void> {
+  switch (reference.type) {
+    case "bounded-interval": {
+      yield* iterAtomicReferences(reference.first)
+      yield* iterAtomicReferences(reference.last)
+      break
+    }
+
+    case "counted-interval": {
+      yield* iterAtomicReferences(reference.first)
+      break
+    }
+
+    case "enumeration":
+    case "exclusion": {
+      yield* iterAtomicReferences(reference.left)
+      yield* iterAtomicReferences(reference.right)
+      break
+    }
+
+    case "reference_et_action": {
+      yield* iterAtomicReferences(reference.reference)
+      break
+    }
+
+    default: {
+      yield reference
+    }
+  }
 }
 
 export function* iterAtomicReferences(
@@ -270,6 +315,11 @@ export function* iterAtomicReferences(
     case "parent-enfant": {
       yield* iterAtomicReferences(reference.parent)
       yield* iterAtomicReferences(reference.child)
+      break
+    }
+
+    case "reference_et_action": {
+      yield* iterAtomicReferences(reference.reference)
       break
     }
 

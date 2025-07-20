@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { type TextAstLaw, type TextAstPosition } from "./ast.js"
+import { type TextAstPosition, type TextAstText } from "./ast.js"
 import { TextParserContext } from "./parsers.js"
 import {
   identificationTexteEuropeen,
@@ -55,7 +55,7 @@ describe("Textes français", () => {
       expect(texteFrancais(context)).toStrictEqual({
         date: "1856-12-31",
         nature: "ARRETE",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -66,7 +66,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006071556",
         nature: "CODE",
         title: "Code forestier de Mayotte",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -77,7 +77,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006069577",
         nature: "CODE",
         title: "Code général des impôts",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -88,7 +88,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006069569",
         nature: "CODE",
         title: "Code général des impôts, annexe II",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -99,7 +99,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006069574",
         nature: "CODE",
         title: "Code général des impôts, annexe III",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -110,7 +110,7 @@ describe("Textes français", () => {
         cid: "JORFTEXT000000571356",
         nature: "CONSTITUTION",
         title: "Constitution du 4 octobre 1958",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -128,7 +128,7 @@ describe("Textes français", () => {
         date: "1958-10-04",
         nature: "CONSTITUTION",
         title: "Constitution du 4 octobre 1958",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -137,7 +137,7 @@ describe("Textes français", () => {
       task,
     }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         cid: "JORFTEXT000048581885",
         date: "2023-12-18",
@@ -149,7 +149,7 @@ describe("Textes français", () => {
         },
         title:
           "LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -164,7 +164,7 @@ describe("Textes français", () => {
         num: "2001-692",
         title:
           "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -227,7 +227,7 @@ describe("Textes européens et internationaux", () => {
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         num: "2001/73/CEE",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -239,7 +239,7 @@ describe("Textes européens et internationaux", () => {
         nature: "REGLEMENTEUROPEEN",
         legislation: "UE",
         num: "2001/73",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -250,7 +250,7 @@ describe("Textes européens et internationaux", () => {
         date: "2007-03-10",
         nature: "REGLEMENTEUROPEEN",
         legislation: "UE",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -262,7 +262,7 @@ describe("Textes européens et internationaux", () => {
       expect(texteInternational(context)).toStrictEqual({
         nature: "CONVENTION",
         legislation: "international",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })
@@ -273,14 +273,14 @@ describe("Règle générale", () => {
   describe("texte", () => {
     test("directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         num: "2001/73/CEE",
         position: { start: 0, stop: 46 },
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -288,14 +288,14 @@ describe("Règle générale", () => {
 
     test("dite même directive", ({ task }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 19 },
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -305,7 +305,7 @@ describe("Règle générale", () => {
       task,
     }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
@@ -314,7 +314,7 @@ describe("Règle générale", () => {
         num: "2001/73/CEE",
         ofTheSaid: true,
         position: { start: 0, stop: 56 },
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -322,13 +322,13 @@ describe("Règle générale", () => {
 
     test("dite même loi organique", ({ task }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -336,13 +336,13 @@ describe("Règle générale", () => {
 
     test("dite même loi organique", ({ task }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         nature: "LOI_ORGANIQUE",
         localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -352,7 +352,7 @@ describe("Règle générale", () => {
       task,
     }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         cid: "JORFTEXT000000394028",
         date: "2003-09-05",
@@ -363,7 +363,7 @@ describe("Règle générale", () => {
         position: { start: 0, stop: 55 },
         title:
           "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -371,7 +371,7 @@ describe("Règle générale", () => {
 
     test("même loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         cid: "JORFTEXT000000394028",
         date: "2003-09-05",
@@ -381,7 +381,7 @@ describe("Règle générale", () => {
         position: { start: 0, stop: 50 },
         title:
           "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)
@@ -389,7 +389,7 @@ describe("Règle générale", () => {
 
     test("même directive (UE) 2001/73/CEE du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstLaw & TextAstPosition
+      const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
@@ -397,7 +397,7 @@ describe("Règle générale", () => {
         localization: { relative: 0 },
         num: "2001/73/CEE",
         position: { start: 0, stop: 51 },
-        type: "law",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
       expect(context.textSlice(result.position)).toBe(task.name)

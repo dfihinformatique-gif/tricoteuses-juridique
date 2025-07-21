@@ -365,10 +365,14 @@ export const texte = chain(
     ),
   ],
   {
-    value: (results, context) => ({
-      ...(results[1] as TextAstText),
-      ...(results[0] ? { ofTheSaid: true } : {}),
-      position: context.position(),
-    }),
+    value: (results, context) => {
+      const text = {
+        ...(results[1] as TextAstText),
+        ...(results[0] ? { ofTheSaid: true } : {}),
+        position: context.position(),
+      }
+      context.currentText = text
+      return text
+    },
   },
 )

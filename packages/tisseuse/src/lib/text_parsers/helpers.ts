@@ -28,27 +28,38 @@ export const addChildLeftToLastChild = (
     throw new Error(`Can't add child to non-atomic parent: ${reference}`)
   }
 
-  return reference.type === "parent-enfant"
-    ? {
-        ...reference,
-        child: addChildLeftToLastChild(
-          reference.child as TextAstAtomicReference | TextAstParentChild,
-          child,
-        ),
-        position: {
-          start: child.position.start,
-          stop: reference.position.stop,
-        },
-      }
-    : {
+  if (reference.type === "parent-enfant") {
+    return {
+      ...reference,
+      child: addChildLeftToLastChild(
+        reference.child as TextAstAtomicReference | TextAstParentChild,
         child,
-        parent: reference,
-        position: {
-          start: child.position.start,
-          stop: reference.position.stop,
-        },
-        type: "parent-enfant",
+      ),
+      position: {
+        start: child.position.start,
+        stop: reference.position.stop,
+      },
+    }
+  }
+
+  if (reference.type === "texte") {
+    // Since the new parent is a text, remove every implicitText
+    // in its descendants.
+    for (const descendant of iterAtomicReferences(child)) {
+      if (descendant.type === "article") {
+        delete descendant.implicitText
       }
+    }
+  }
+  return {
+    child,
+    parent: reference,
+    position: {
+      start: child.position.start,
+      stop: reference.position.stop,
+    },
+    type: "parent-enfant",
+  }
 }
 
 export const createEnumerationOrBoundedInterval = (
@@ -144,7 +155,16 @@ export const createEnumerationOrBoundedInterval1 = (
         otherReference.type === "parent-enfant" &&
         otherReference.parent.type === "texte"
       ) {
-        // Create a Merged reference of type law based on otherReference.
+        // Create a Merged reference of type texte based on otherReference.
+
+        // Since the new parent of reference is a text, remove every implicitText
+        // in reference and its descendants.
+        for (const descendant of iterAtomicReferences(reference)) {
+          if (descendant.type === "article") {
+            delete descendant.implicitText
+          }
+        }
+
         reference = {
           ...otherReference,
           child:
@@ -178,7 +198,16 @@ export const createEnumerationOrBoundedInterval1 = (
         reference.parent.type === "texte" &&
         otherReference.type !== "texte"
       ) {
-        // Create a Merged reference of type law based on reference.
+        // Create a Merged reference of type texte based on reference.
+
+        // Since the new parent of otherReference is a text, remove every implicitText
+        // in otherReference and its descendants.
+        for (const descendant of iterAtomicReferences(otherReference)) {
+          if (descendant.type === "article") {
+            delete descendant.implicitText
+          }
+        }
+
         reference = {
           ...reference,
           child:
@@ -257,30 +286,68 @@ export const createParentChildTreeFromReferences = (
   return child
 }
 
-export function* iterAtomicOrParentChildReferences(
-  reference: TextAstReference,
-): Generator<TextAstAtomicReference | TextAstParentChild, void> {
+export function* iterAtomicFirstParentReferences<
+  T extends TextAstAtomicReference | TextAstParentChild,
+>(reference: TextAstReference): Generator<T, void> {
   switch (reference.type) {
     case "bounded-interval": {
-      yield* iterAtomicReferences(reference.first)
-      yield* iterAtomicReferences(reference.last)
+      yield* iterAtomicFirstParentReferences(reference.first)
+      yield* iterAtomicFirstParentReferences(reference.last)
       break
     }
 
     case "counted-interval": {
-      yield* iterAtomicReferences(reference.first)
+      yield* iterAtomicFirstParentReferences(reference.first)
       break
     }
 
     case "enumeration":
     case "exclusion": {
-      yield* iterAtomicReferences(reference.left)
-      yield* iterAtomicReferences(reference.right)
+      yield* iterAtomicFirstParentReferences(reference.left)
+      yield* iterAtomicFirstParentReferences(reference.right)
+      break
+    }
+
+    case "parent-enfant": {
+      yield reference.parent as T
       break
     }
 
     case "reference_et_action": {
-      yield* iterAtomicReferences(reference.reference)
+      yield* iterAtomicFirstParentReferences(reference.reference)
+      break
+    }
+
+    default: {
+      yield reference as T
+    }
+  }
+}
+
+export function* iterAtomicOrParentChildReferences(
+  reference: TextAstReference,
+): Generator<TextAstAtomicReference | TextAstParentChild, void> {
+  switch (reference.type) {
+    case "bounded-interval": {
+      yield* iterAtomicOrParentChildReferences(reference.first)
+      yield* iterAtomicOrParentChildReferences(reference.last)
+      break
+    }
+
+    case "counted-interval": {
+      yield* iterAtomicOrParentChildReferences(reference.first)
+      break
+    }
+
+    case "enumeration":
+    case "exclusion": {
+      yield* iterAtomicOrParentChildReferences(reference.left)
+      yield* iterAtomicOrParentChildReferences(reference.right)
+      break
+    }
+
+    case "reference_et_action": {
+      yield* iterAtomicOrParentChildReferences(reference.reference)
       break
     }
 

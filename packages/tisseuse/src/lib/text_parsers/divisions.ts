@@ -5,13 +5,15 @@
 import {
   type CompoundReferencesSeparator,
   type DivisionType,
+  type TextAstDivision,
   type TextAstIncompleteHeader,
   type TextAstLocalization,
+  type TextAstParentChild,
   type TextAstReference,
 } from "./ast.js"
 import {
   createEnumerationOrBoundedInterval,
-  iterAtomicReferences,
+  iterAtomicFirstParentReferences,
 } from "./helpers.js"
 import { adjectifOrdinal, nombre, nombreRomainOu0i } from "./numbers.js"
 import {
@@ -131,8 +133,11 @@ export const division1Internal = alternatives(
           position: context.position(),
           type: results[2] as DivisionType,
         }
-        for (const reference of iterAtomicReferences(base)) {
-          reference.type = results[2] as DivisionType
+        for (const reference of iterAtomicFirstParentReferences<TextAstIncompleteHeader>(
+          base,
+        )) {
+          ;(reference as unknown as TextAstDivision).type =
+            results[2] as DivisionType
           if (reference.localization === undefined) {
             reference.localization = results[0] as TextAstLocalization
           }
@@ -150,13 +155,15 @@ export const division1Internal = alternatives(
   }),
   chain([natureDivisionSingulier, espace, division2Internal], {
     value: (results, context) => {
-      for (const reference of iterAtomicReferences(
-        results[2] as TextAstReference,
+      const base = results[2] as TextAstReference
+      for (const reference of iterAtomicFirstParentReferences<TextAstIncompleteHeader>(
+        base,
       )) {
-        reference.type = results[0] as DivisionType
+        ;(reference as unknown as TextAstDivision).type =
+          results[0] as DivisionType
       }
       return {
-        ...(results[2] as TextAstReference),
+        ...base,
         position: context.position(),
       }
     },
@@ -170,15 +177,16 @@ export const division = chain(
   [optional(ditSingulier, { default: false }), division1Internal],
   {
     value: (results, context) => {
+      const base = results[1] as TextAstDivision | TextAstParentChild
       if (results[0]) {
-        for (const reference of iterAtomicReferences(
-          results[1] as TextAstReference,
+        for (const division of iterAtomicFirstParentReferences<TextAstDivision>(
+          base,
         )) {
-          reference.ofTheSaid = true
+          division.ofTheSaid = true
         }
       }
       return {
-        ...(results[1] as TextAstReference),
+        ...base,
         position: context.position(),
       }
     },
@@ -242,8 +250,11 @@ export const divisions1Internal = alternatives(
           position: context.position(),
           type: results[2] as DivisionType,
         }
-        for (const reference of iterAtomicReferences(base)) {
-          reference.type = results[2] as DivisionType
+        for (const reference of iterAtomicFirstParentReferences<TextAstIncompleteHeader>(
+          base,
+        )) {
+          ;(reference as unknown as TextAstDivision).type =
+            results[2] as DivisionType
           if (reference.localization === undefined) {
             reference.localization = results[0] as TextAstLocalization
           }
@@ -254,13 +265,15 @@ export const divisions1Internal = alternatives(
   ),
   chain([natureDivisionPluriel, espace, divisions2Internal], {
     value: (results, context) => {
-      for (const reference of iterAtomicReferences(
-        results[2] as TextAstReference,
+      const base = results[2] as TextAstReference
+      for (const reference of iterAtomicFirstParentReferences<TextAstIncompleteHeader>(
+        base,
       )) {
-        reference.type = results[0] as DivisionType
+        ;(reference as unknown as TextAstDivision).type =
+          results[0] as DivisionType
       }
       return {
-        ...(results[2] as TextAstReference),
+        ...base,
         position: context.position(),
       }
     },
@@ -274,15 +287,16 @@ export const divisions = chain(
   [optional(ditPluriel, { default: false }), divisions1Internal],
   {
     value: (results, context) => {
+      const base = results[1] as TextAstDivision | TextAstParentChild
       if (results[0]) {
-        for (const reference of iterAtomicReferences(
-          results[1] as TextAstReference,
+        for (const division of iterAtomicFirstParentReferences<TextAstDivision>(
+          base,
         )) {
-          reference.ofTheSaid = true
+          division.ofTheSaid = true
         }
       }
       return {
-        ...(results[1] as TextAstReference),
+        ...base,
         position: context.position(),
       }
     },

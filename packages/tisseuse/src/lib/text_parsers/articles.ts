@@ -5,10 +5,12 @@ import {
   type LocalizationAdverb,
   type CompoundReferencesSeparator,
   type TextAstArticle,
+  type TextAstParentChild,
+  TextAstIncompleteHeader,
 } from "./ast.js"
 import {
   createEnumerationOrBoundedInterval,
-  iterAtomicReferences,
+  iterAtomicFirstParentReferences,
 } from "./helpers.js"
 import { adverbeMultiplicatif } from "./numbers.js"
 import {
@@ -194,14 +196,18 @@ export const articles1Internal = alternatives(
     ],
     {
       value: (results, context) => {
-        const base = (results[3] as [string, TextAstArticle])[1] ?? {
+        const base = (results[3] as [string, TextAstReference])[1] ?? {
           position: context.position(),
           type: "article",
         }
-        for (const reference of iterAtomicReferences(base)) {
-          reference.type = "article"
-          if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalization
+        for (const article of iterAtomicFirstParentReferences<
+          TextAstArticle | TextAstIncompleteHeader
+        >(base)) {
+          if (article.type === "incomplete-header") {
+            ;(article as unknown as TextAstArticle).type = "article"
+          }
+          if (article.localization === undefined) {
+            article.localization = results[0] as TextAstLocalization
           }
         }
         return { ...base, position: context.position() }
@@ -223,15 +229,25 @@ export const articles = chain(
   [optional(ditPluriel, { default: false }), articles1Internal],
   {
     value: (results, context) => {
+      const base = results[1] as TextAstReference
       if (results[0]) {
-        for (const reference of iterAtomicReferences(
-          results[1] as TextAstReference,
+        for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
+          base,
         )) {
-          reference.ofTheSaid = true
+          article.ofTheSaid = true
         }
       }
+      for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
+        base,
+      )) {
+        if (context.currentText !== undefined) {
+          article.implicitText = context.currentText
+        }
+      }
+      // When there are several articles, there is no currentArticle.
+      delete context.currentArticle
       return {
-        ...(results[1] as TextAstReference),
+        ...base,
         position: context.position(),
       }
     },
@@ -248,15 +264,20 @@ export const article1Internal = alternatives(
     ],
     {
       value: (results, context) => {
-        const base = (results[3] as [string, TextAstArticle])[1] ?? {
+        const base = (results[3] as [string, TextAstReference])[1] ?? {
           position: context.position(),
           type: "article",
         }
         // Que faire d’une éventuelle expression « aux mêmes articles suivants » ?
         // Tel que codé ci-dessous, le « mêmes » est ignoré au profit du « suivants »
-        for (const reference of iterAtomicReferences(base)) {
-          if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalization
+        for (const article of iterAtomicFirstParentReferences<
+          TextAstArticle | TextAstIncompleteHeader
+        >(base)) {
+          if (article.type === "incomplete-header") {
+            ;(article as unknown as TextAstArticle).type = "article"
+          }
+          if (article.localization === undefined) {
+            article.localization = results[0] as TextAstLocalization
           }
         }
         return { ...base, position: context.position() }
@@ -278,17 +299,30 @@ export const article = chain(
   [optional(ditSingulier, { default: null }), article1Internal],
   {
     value: (results, context) => {
+      const base = results[1] as TextAstArticle | TextAstParentChild
       if (results[0]) {
-        for (const reference of iterAtomicReferences(
-          results[1] as TextAstReference,
+        for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
+          base,
         )) {
-          reference.ofTheSaid = true
+          article.ofTheSaid = true
         }
       }
-      return {
-        ...(results[1] as TextAstReference),
+      for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
+        base,
+      )) {
+        if (context.currentText !== undefined) {
+          article.implicitText = context.currentText
+        }
+      }
+      const articleOrParentChild = {
+        ...base,
         position: context.position(),
       }
+      context.currentArticle =
+        articleOrParentChild.type === "parent-enfant"
+          ? (articleOrParentChild.parent as TextAstArticle)
+          : articleOrParentChild
+      return articleOrParentChild
     },
   },
 )

@@ -45,6 +45,7 @@ export interface TextAstAction {
 }
 
 export type TextAstArticle = {
+  implicitText?: TextAstText | undefined
   localization?: TextAstLocalization
   localizationAdverb?: LocalizationAdverb
   num?: string

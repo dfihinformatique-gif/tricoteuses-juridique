@@ -2,6 +2,8 @@ import { numberFromRomanNumeral } from "$lib/numbers.js"
 
 import type {
   TextAst,
+  TextAstArticle,
+  TextAstText,
   TextAstTextInfos,
   TextInfosByWordsTree,
   TextPosition,
@@ -25,6 +27,8 @@ export type TextAstConverter<T extends TextAst> = (
 export type TextParser = (context: TextParserContext) => TextAst | undefined
 
 export class TextParserContext {
+  currentArticle: TextAstArticle | undefined = undefined
+  currentText: TextAstText | undefined = undefined
   length = 0
   usedInputs: TextTree | undefined = undefined
   variables: Record<string, TextAst> = {}

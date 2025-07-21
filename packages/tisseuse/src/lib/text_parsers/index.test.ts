@@ -382,6 +382,16 @@ describe("getReferences", () => {
             type: "parent-enfant",
           },
           parent: {
+            implicitText: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 8,
+                stop: 31,
+              },
+              title: "Code général des impôts",
+              type: "texte",
+            },
             num: "196 B",
             position: {
               start: 100,

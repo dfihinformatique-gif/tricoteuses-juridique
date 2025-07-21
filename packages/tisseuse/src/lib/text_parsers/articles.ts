@@ -1,12 +1,12 @@
 import {
-  type TextAstNumber,
-  type TextAstLocalization,
-  type TextAstReference,
-  type LocalizationAdverb,
   type CompoundReferencesSeparator,
+  type LocalizationAdverb,
   type TextAstArticle,
+  type TextAstIncompleteHeader,
+  type TextAstLocalization,
+  type TextAstNumber,
   type TextAstParentChild,
-  TextAstIncompleteHeader,
+  type TextAstReference,
 } from "./ast.js"
 import {
   createEnumerationOrBoundedInterval,

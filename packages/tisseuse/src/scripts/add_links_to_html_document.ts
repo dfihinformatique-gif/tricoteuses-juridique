@@ -6,6 +6,7 @@ import { gitPathFromId } from "$lib/legal/ids.js"
 import { iterTextLinks } from "$lib/server/text_links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_simplifiers.js"
+import type { TextAstLocalizationRelative } from "$lib/text_parsers/ast.js"
 
 async function addLinksToHtmlDocument(
   inputDocumentPath: string,
@@ -57,6 +58,17 @@ async function addLinksToHtmlDocument(
 
       case "texte": {
         const { text, position } = link
+        if (text.cid === undefined) {
+          if (
+            (text.localization as TextAstLocalizationRelative)?.relative !== 0
+          ) {
+            // It is not "la présente loi".
+            throw new Error(
+              `Link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
+            )
+          }
+          continue
+        }
         const original = output.substring(
           position.start + outputOffset,
           position.stop + outputOffset,

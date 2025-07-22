@@ -496,3 +496,65 @@ describe("getReferences", () => {
     ).toBe("II")
   })
 })
+
+describe("getReferences, test spécifiques", () => {
+  test("Gestion des offsets dans iterReferences", () => {
+    const input = dedent`
+      xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      l'article 47 de la Constitution.
+      l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012 et par la loi de finances de l'année ;
+    `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references.length).toBe(2)
+    expect(context.text(references[0].position)).toBe(
+      "l'article 47 de la Constitution",
+    )
+    expect(context.text(references[1].position)).toBe(
+      "l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012",
+    )
+  })
+
+  test("Suppression d'implicitText lorsqu'un article a un texte parent", () => {
+    const input = dedent`
+      l'article 47 de la Constitution.
+      l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012 et par la loi de finances de l'année ;
+    `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references.length).toBe(2)
+    expect(context.text(references[0].position)).toBe(
+      "l'article 47 de la Constitution",
+    )
+    expect(context.text(references[1].position)).toBe(
+      "l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012",
+    )
+    expect(references[1]).toStrictEqual({
+      child: {
+        num: "46",
+        position: {
+          start: 35,
+          stop: 45,
+        },
+        type: "article",
+      },
+      parent: {
+        cid: "JORFTEXT000025044460",
+        date: "2011-12-28",
+        nature: "LOI",
+        num: "2011-1977",
+        position: {
+          start: 52,
+          stop: 110,
+        },
+        title: "LOI n° 2011-1977 du 28 décembre 2011 de finances pour 2012",
+        type: "texte",
+      },
+      position: {
+        start: 33,
+        stop: 110,
+      },
+      type: "parent-enfant",
+    })
+  })
+})

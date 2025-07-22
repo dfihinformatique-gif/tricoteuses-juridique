@@ -20,11 +20,11 @@ export function* iterReferences(
 
     if (candidate[0] === "«") {
       // Skip quoted text.
-      const rightQuoteIndex = context.input.slice(index + 1).indexOf("»")
+      const rightQuoteIndex = context.input.indexOf("»", index + 1)
       if (rightQuoteIndex === -1) {
         return
       }
-      candidateRegExp.lastIndex = index + rightQuoteIndex
+      candidateRegExp.lastIndex = rightQuoteIndex
       continue
     }
 
@@ -34,7 +34,7 @@ export function* iterReferences(
       continue
     }
     yield reference
-    candidateRegExp.lastIndex = index + reference.position.stop
+    candidateRegExp.lastIndex = reference.position.stop
   }
 }
 

@@ -237,11 +237,13 @@ export const articles = chain(
           article.ofTheSaid = true
         }
       }
-      for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
-        base,
-      )) {
-        if (context.currentText !== undefined) {
-          article.implicitText = context.currentText
+      if (context.currentText !== undefined) {
+        for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
+          base,
+        )) {
+          if (article.implicitText === undefined) {
+            article.implicitText = context.currentText
+          }
         }
       }
       // When there are several articles, there is no currentArticle.
@@ -307,11 +309,13 @@ export const article = chain(
           article.ofTheSaid = true
         }
       }
-      for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
-        base,
-      )) {
-        if (context.currentText !== undefined) {
-          article.implicitText = context.currentText
+      if (context.currentText !== undefined) {
+        for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
+          base,
+        )) {
+          if (article.implicitText === undefined) {
+            article.implicitText = context.currentText
+          }
         }
       }
       const articleOrParentChild = {

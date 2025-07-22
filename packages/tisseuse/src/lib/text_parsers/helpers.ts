@@ -44,7 +44,7 @@ export const addChildLeftToLastChild = (
 
   if (reference.type === "texte") {
     // Since the new parent is a text, remove every implicitText
-    // in its descendants.
+    // from its descendants.
     for (const descendant of iterAtomicReferences(child)) {
       if (descendant.type === "article") {
         delete descendant.implicitText
@@ -158,7 +158,7 @@ export const createEnumerationOrBoundedInterval1 = (
         // Create a Merged reference of type texte based on otherReference.
 
         // Since the new parent of reference is a text, remove every implicitText
-        // in reference and its descendants.
+        // from reference and its descendants.
         for (const descendant of iterAtomicReferences(reference)) {
           if (descendant.type === "article") {
             delete descendant.implicitText
@@ -201,7 +201,7 @@ export const createEnumerationOrBoundedInterval1 = (
         // Create a Merged reference of type texte based on reference.
 
         // Since the new parent of otherReference is a text, remove every implicitText
-        // in otherReference and its descendants.
+        // from otherReference and its descendants.
         for (const descendant of iterAtomicReferences(otherReference)) {
           if (descendant.type === "article") {
             delete descendant.implicitText
@@ -272,6 +272,16 @@ export const createParentChildTreeFromReferences = (
   position: TextPosition,
 ): TextAstReference => {
   for (const parent of ancestors) {
+    if (parent.type === "texte") {
+      // Since the new parent is a text, remove every implicitText
+      // from its descendants.
+      for (const descendant of iterAtomicReferences(child)) {
+        if (descendant.type === "article") {
+          delete descendant.implicitText
+        }
+      }
+    }
+
     child = {
       child,
       parent,

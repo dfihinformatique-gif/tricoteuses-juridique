@@ -486,6 +486,99 @@ describe("reference", () => {
     expect(context.text(result.position)).toBe(task.name)
   })
 
+  test("A la première phrase du quatrième alinéa des articles L. 162-4 et L. 162-5", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      coordinator: "et",
+      left: {
+        child: {
+          child: {
+            index: 1,
+            position: {
+              start: 5,
+              stop: 20,
+            },
+            type: "phrase",
+          },
+          parent: {
+            index: 4,
+            position: {
+              start: 24,
+              stop: 40,
+            },
+            type: "alinéa",
+          },
+          position: {
+            start: 5,
+            stop: 40,
+          },
+          type: "parent-enfant",
+        },
+        parent: {
+          num: "L162-4",
+          position: {
+            start: 54,
+            stop: 62,
+          },
+          type: "article",
+        },
+        position: {
+          start: 5,
+          stop: 62,
+        },
+        type: "parent-enfant",
+      },
+      position: {
+        start: 0,
+        stop: 74,
+      },
+      right: {
+        child: {
+          child: {
+            index: 1,
+            position: {
+              start: 5,
+              stop: 20,
+            },
+            type: "phrase",
+          },
+          parent: {
+            index: 4,
+            position: {
+              start: 24,
+              stop: 40,
+            },
+            type: "alinéa",
+          },
+          position: {
+            start: 5,
+            stop: 40,
+          },
+          type: "parent-enfant",
+        },
+        parent: {
+          num: "L162-5",
+          position: {
+            start: 66,
+            stop: 74,
+          },
+          type: "article",
+        },
+        position: {
+          start: 5,
+          stop: 74,
+        },
+        type: "parent-enfant",
+      },
+      type: "enumeration",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("au 3°", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference

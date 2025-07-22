@@ -1,3 +1,4 @@
+import { assertNever } from "$lib/asserts.js"
 import {
   isTextAstAtomicReference,
   type CompoundReferencesSeparator,
@@ -20,21 +21,74 @@ const priorityByCoordinator: Record<CompoundReferencesSeparator, number> = {
 export const addChildLeftToLastChild = (
   reference: TextAstReference,
   child: TextAstReference,
-): TextAstParentChild => {
+): TextAstReference => {
   if (
     !isTextAstAtomicReference(reference) &&
     reference.type !== "parent-enfant"
   ) {
-    throw new Error(`Can't add child to non-atomic parent: ${reference}`)
+    switch (reference.type) {
+      case "bounded-interval": {
+        return {
+          ...reference,
+          first: addChildLeftToLastChild(reference.first, child),
+          last: addChildLeftToLastChild(reference.last, child),
+          // Don't update position,
+        }
+      }
+
+      case "counted-interval": {
+        return {
+          ...reference,
+          first: addChildLeftToLastChild(reference.first, child),
+          // Don't update position,
+        }
+      }
+
+      case "enumeration": {
+        return {
+          ...reference,
+          left: addChildLeftToLastChild(reference.left, child),
+          right: addChildLeftToLastChild(reference.right, child),
+          // Don't update position,
+        }
+      }
+
+      case "exclusion": {
+        return {
+          ...reference,
+          left: addChildLeftToLastChild(reference.left, child),
+          // Don't add child to right, because it is excluded.
+          // Don't update position,
+        }
+      }
+
+      case "reference_et_action": {
+        return {
+          ...reference,
+          reference: addChildLeftToLastChild(reference.reference, child),
+          // Don't update position,
+        }
+      }
+
+      default: {
+        assertNever("Neither AtomicReference nor ParentChild", reference)
+      }
+    }
   }
 
   if (reference.type === "parent-enfant") {
+    if (reference.parent.type === "texte") {
+      // Since the new parent is a text, remove every implicitText
+      // from its descendants.
+      for (const descendant of iterAtomicReferences(child)) {
+        if (descendant.type === "article") {
+          delete descendant.implicitText
+        }
+      }
+    }
     return {
       ...reference,
-      child: addChildLeftToLastChild(
-        reference.child as TextAstAtomicReference | TextAstParentChild,
-        child,
-      ),
+      child: addChildLeftToLastChild(reference.child, child),
       position: {
         start: child.position.start,
         stop: reference.position.stop,

@@ -152,7 +152,7 @@ export const texteFrancais = alternatives(
         [
           regExp(String.raw` ?\( ?`),
           numeroEtOuDateTexteFrancais,
-          regExp(String.raw` ?)`),
+          regExp(String.raw` ?\)`),
         ],
         {
           default: null,

@@ -22,13 +22,13 @@ export interface ArticleLink {
   article: TextAstArticle
   articleId: string
   position: TextPosition
-  text?: TextAstText
+  text?: TextAstText & TextAstPosition
   type: "article"
 }
 
 export interface TextLink {
   position: TextPosition
-  text: TextAstText
+  text: TextAstText & TextAstPosition
   type: "texte"
 }
 
@@ -198,7 +198,9 @@ export async function* iterTextLinks(
 
   for (const reference of iterReferences(context)) {
     if (logReferences) {
-      console.log(JSON.stringify(reference, null, 2))
+      console.log(
+        `\nReference "${context.text(reference.position)}": ${JSON.stringify(reference, null, 2)}`,
+      )
     }
     for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
       reference,

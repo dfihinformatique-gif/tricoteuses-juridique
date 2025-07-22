@@ -4,9 +4,7 @@ import type {
   TextAstBoundedInterval,
   TextAstEnumeration,
   TextAstParentChild,
-  TextAstPosition,
   TextAstReference,
-  TextAstText,
 } from "./ast.js"
 import { TextParserContext } from "./parsers.js"
 import {

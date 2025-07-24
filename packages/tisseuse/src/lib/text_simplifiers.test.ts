@@ -4,6 +4,7 @@ import { describe, expect, test } from "vitest"
 import {
   chainSimplifiers,
   convertHtmlElementsToText,
+  iterOriginalPositionsFromSimplified,
   replacePatterns,
   simplifyHtml,
   simplifyText,
@@ -35,12 +36,14 @@ describe("convertHtmlElementsToText", () => {
         {
           inputIndex: 0,
           inputLength: 12,
+          matchingSegmentIndex: 1,
           outputIndex: 0,
           outputLength: 0,
         },
         {
           inputIndex: 24,
           inputLength: 4,
+          matchingSegmentIndex: 0,
           outputIndex: 12,
           outputLength: 0,
         },
@@ -127,12 +130,14 @@ describe("convertHtmlElementsToText", () => {
         {
           inputIndex: 0,
           inputLength: 3,
+          matchingSegmentIndex: 1,
           outputIndex: 0,
           outputLength: 1,
         },
         {
           inputIndex: 15,
           inputLength: 4,
+          matchingSegmentIndex: 0,
           outputIndex: 13,
           outputLength: 1,
         },
@@ -176,6 +181,7 @@ describe("convertHtmlElementsToText", () => {
         {
           inputIndex: 0,
           inputLength: 6,
+          matchingSegmentIndex: 2,
           outputIndex: 0,
           outputLength: 0,
         },
@@ -188,6 +194,7 @@ describe("convertHtmlElementsToText", () => {
         {
           inputIndex: 82,
           inputLength: 7,
+          matchingSegmentIndex: 0,
           outputIndex: 19,
           outputLength: 0,
         },
@@ -205,12 +212,14 @@ describe("convertHtmlElementsToText", () => {
         {
           inputIndex: 0,
           inputLength: 6,
+          matchingSegmentIndex: 1,
           outputIndex: 0,
           outputLength: 0,
         },
         {
           inputIndex: 18,
           inputLength: 7,
+          matchingSegmentIndex: 0,
           outputIndex: 12,
           outputLength: 0,
         },
@@ -226,12 +235,14 @@ describe("convertHtmlElementsToText", () => {
         {
           inputIndex: 0,
           inputLength: 6,
+          matchingSegmentIndex: 1,
           outputIndex: 0,
           outputLength: 0,
         },
         {
           inputIndex: 11,
           inputLength: 7,
+          matchingSegmentIndex: 0,
           outputIndex: 5,
           outputLength: 0,
         },
@@ -247,12 +258,14 @@ describe("convertHtmlElementsToText", () => {
         {
           inputIndex: 0,
           inputLength: 6,
+          matchingSegmentIndex: 1,
           outputIndex: 0,
           outputLength: 0,
         },
         {
           inputIndex: 12,
           inputLength: 7,
+          matchingSegmentIndex: 0,
           outputIndex: 6,
           outputLength: 0,
         },
@@ -306,6 +319,105 @@ describe("chainSimplifiers", () => {
       -à la fin de la première phrase, les mots : « le secteur des communications électroniques et sur celui des postes » sont remplacés par les mots : « les secteurs des communications électroniques, des postes et de la distribution de la presse » ;
       -à la deuxième phrase, après la référence : « L. 33-1 », sont insérés les mots : « du présent code et les sociétés agréées mentionnées à l'article 3 de la loi n° 47-585 du 2 avril 1947 précitée ».
     `)
+  })
+})
+
+describe("iterOriginalPositionsFromSimplified", () => {
+  test("<span>Hello world!</span>", ({ task }) => {
+    const inputHtml = task.name
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("Hello world!")
+    expect(inputText[11]).toBe("!")
+    const originalPositionsFromSimplifiedIterator =
+      iterOriginalPositionsFromSimplified(conversion.task)
+    // Initialize iterator by sending a dummy value.
+    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+    const textPosition = { start: 11, stop: 12 }
+    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
+    const htmlPosition = result.value
+    expect(htmlPosition).toStrictEqual({
+      start: 17,
+      stop: 18,
+    })
+  })
+
+  test("<p>Hello <span>world</span>!</p>, detect world", ({ task }) => {
+    const inputHtml = "<p>Hello <span>world</span>!</p>"
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("Hello world!")
+    const textPosition = { start: 6, stop: 11 }
+    expect(inputText.slice(textPosition.start, textPosition.stop)).toBe("world")
+    const originalPositionsFromSimplifiedIterator =
+      iterOriginalPositionsFromSimplified(conversion.task)
+    // Initialize iterator by sending a dummy value.
+    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
+    const htmlPosition = result.value!
+    expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe("world")
+  })
+
+  test("<p>Hello <span>world</span>!</p>, detect Hello world!", ({ task }) => {
+    const inputHtml = "<p>Hello <span>world</span>!</p>"
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("Hello world!")
+    const textPosition = { start: 0, stop: 12 }
+    expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
+      "Hello world!",
+    )
+    const originalPositionsFromSimplifiedIterator =
+      iterOriginalPositionsFromSimplified(conversion.task)
+    // Initialize iterator by sending a dummy value.
+    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
+    const htmlPosition = result.value!
+    expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+      "Hello <span>world</span>!",
+    )
+  })
+
+  test("<p>Hello <span>world!</span></p>, detect Hello world!", ({ task }) => {
+    const inputHtml = "<p>Hello <span>world!</span></p>"
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("Hello world!")
+    const textPosition = { start: 0, stop: 12 }
+    expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
+      "Hello world!",
+    )
+    const originalPositionsFromSimplifiedIterator =
+      iterOriginalPositionsFromSimplified(conversion.task)
+    // Initialize iterator by sending a dummy value.
+    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
+    const htmlPosition = result.value!
+    expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+      "Hello <span>world!</span>",
+    )
+  })
+
+  test("<span>Au I de l’article</span> 197", ({ task }) => {
+    const inputHtml = task.name
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("Au I de l'article 197")
+    const textPosition = { start: 10, stop: 21 }
+    expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
+      "article 197",
+    )
+    const originalPositionsFromSimplifiedIterator =
+      iterOriginalPositionsFromSimplified(conversion.task)
+    // Initialize iterator by sending a dummy value.
+    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+    let output = inputHtml
+    let outputOffset = 0
+    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
+    const htmlPosition = result.value!
+    expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+      "<span>Au I de l’article</span> 197",
+    )
   })
 })
 

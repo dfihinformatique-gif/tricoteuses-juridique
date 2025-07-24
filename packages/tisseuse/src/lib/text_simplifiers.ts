@@ -1,4 +1,5 @@
 import { assertNever } from "./asserts.js"
+import type { TextPosition } from "./text_parsers/ast.js"
 
 interface Conversion {
   task: ConversionTask
@@ -22,6 +23,7 @@ export type Converter = (text: string) => Conversion
 interface SourceMapSegment {
   inputIndex: number
   inputLength: number
+  matchingSegmentIndex?: number
   outputIndex: number
   outputLength: number
 }
@@ -89,6 +91,7 @@ export function convertHtmlElementsToText({
           action: "keep_content"
           closingTagReplacement: string
           name: string
+          openingSegmentIndex: number
         }
     > = []
     const title = "Conversion des éléments HTML en texte"
@@ -99,7 +102,7 @@ export function convertHtmlElementsToText({
       if (tagStartIndex === -1) {
         // No more tags, keep the remaining text unchanged.
         outputFragments.push(
-          inputText.substring(inputIndex).replace(/[\n\r]/g, " "),
+          inputText.slice(inputIndex).replace(/[\n\r]/g, " "),
         )
         return {
           task: { sourceMap, title },
@@ -112,7 +115,7 @@ export function convertHtmlElementsToText({
       if (tagEndIndex === -1) {
         // Malformed HTML, just keep the remaining text unchanged.
         outputFragments.push(
-          inputText.substring(inputIndex).replace(/[\n\r]/g, " "),
+          inputText.slice(inputIndex).replace(/[\n\r]/g, " "),
         )
         return {
           task: { sourceMap, title },
@@ -120,7 +123,7 @@ export function convertHtmlElementsToText({
         }
       }
 
-      const tagContent = inputText.substring(tagStartIndex, tagEndIndex + 1)
+      const tagContent = inputText.slice(tagStartIndex, tagEndIndex + 1)
       const isClosingTag = tagContent.startsWith("</")
       const tagLength = tagContent.length
       const tagMatch = tagContent.match(/^<\/?([!A-Z][A-Z0-9]*)/i)
@@ -128,9 +131,7 @@ export function convertHtmlElementsToText({
       if (tagMatch === null) {
         // Not a standard tag. Keep it as normal text.
         outputFragments.push(
-          inputText
-            .substring(inputIndex, tagEndIndex + 1)
-            .replace(/[\n\r]/g, " "),
+          inputText.slice(inputIndex, tagEndIndex + 1).replace(/[\n\r]/g, " "),
         )
         inputIndex = tagEndIndex + 1
         continue
@@ -167,7 +168,7 @@ export function convertHtmlElementsToText({
             // Keep the text before tag as is.
             outputFragments.push(
               inputText
-                .substring(inputIndex, tagStartIndex)
+                .slice(inputIndex, tagStartIndex)
                 .replace(/[\n\r]/g, " "),
             )
           }
@@ -185,11 +186,11 @@ export function convertHtmlElementsToText({
             // Keep the text before tag as is.
             outputFragments.push(
               inputText
-                .substring(inputIndex, tagStartIndex)
+                .slice(inputIndex, tagStartIndex)
                 .replace(/[\n\r]/g, " "),
             )
           }
-          // Replace opening tag with new line.
+          // Replace self-closing tag with new line.
           const tagLength = tagEndIndex + 1 - tagStartIndex
           outputFragments.push("\n")
           sourceMap.push({
@@ -206,7 +207,7 @@ export function convertHtmlElementsToText({
             // Keep the text before tag as is.
             outputFragments.push(
               inputText
-                .substring(inputIndex, tagStartIndex)
+                .slice(inputIndex, tagStartIndex)
                 .replace(/[\n\r]/g, " "),
             )
           }
@@ -220,9 +221,7 @@ export function convertHtmlElementsToText({
         } else {
           // Keep self-closing tag (and the text before tag).
           outputFragments.push(
-            inputText
-              .substring(inputIndex, tagStartIndex)
-              .replace(/[\n\r]/g, " "),
+            inputText.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
           )
         }
       } else {
@@ -239,7 +238,7 @@ export function convertHtmlElementsToText({
                 // Keep the text before closing tag and the closing tag as is.
                 outputFragments.push(
                   inputText
-                    .substring(inputIndex, tagEndIndex + 1)
+                    .slice(inputIndex, tagEndIndex + 1)
                     .replace(/[\n\r]/g, " "),
                 )
                 break
@@ -268,16 +267,19 @@ export function convertHtmlElementsToText({
 
                 outputFragments.push(
                   inputText
-                    .substring(inputIndex, tagStartIndex)
+                    .slice(inputIndex, tagStartIndex)
                     .replace(/[\n\r]/g, " "),
                 )
                 if (tagInfos.closingTagReplacement.length !== 0) {
                   outputFragments.push(tagInfos.closingTagReplacement)
                 }
                 const tagLength = tagEndIndex + 1 - tagStartIndex
+                sourceMap[tagInfos.openingSegmentIndex!].matchingSegmentIndex =
+                  sourceMap.length
                 sourceMap.push({
                   inputIndex: tagStartIndex,
                   inputLength: tagLength,
+                  matchingSegmentIndex: tagInfos.openingSegmentIndex,
                   outputIndex: tagStartIndex + outputOffset,
                   outputLength: tagInfos.closingTagReplacement.length,
                 })
@@ -298,7 +300,7 @@ export function convertHtmlElementsToText({
               // Keep the text before closing tag as is.
               outputFragments.push(
                 inputText
-                  .substring(inputIndex, tagStartIndex)
+                  .slice(inputIndex, tagStartIndex)
                   .replace(/[\n\r]/g, " "),
               )
             }
@@ -322,7 +324,7 @@ export function convertHtmlElementsToText({
             // Keep the text before tag as is.
             outputFragments.push(
               inputText
-                .substring(inputIndex, tagStartIndex)
+                .slice(inputIndex, tagStartIndex)
                 .replace(/[\n\r]/g, " "),
             )
           }
@@ -364,11 +366,12 @@ export function convertHtmlElementsToText({
             // Keep the text before tag as is.
             outputFragments.push(
               inputText
-                .substring(inputIndex, tagStartIndex)
+                .slice(inputIndex, tagStartIndex)
                 .replace(/[\n\r]/g, " "),
             )
           }
           // Skip opening tag.
+          const openingSegmentIndex = sourceMap.length
           sourceMap.push({
             inputIndex: tagStartIndex,
             inputLength: tagLength,
@@ -381,6 +384,7 @@ export function convertHtmlElementsToText({
             action: "keep_content",
             closingTagReplacement: "",
             name: tagNameUpperCase,
+            openingSegmentIndex,
           })
         } else if (
           [
@@ -403,12 +407,13 @@ export function convertHtmlElementsToText({
             // Keep the text before tag as is.
             outputFragments.push(
               inputText
-                .substring(inputIndex, tagStartIndex)
+                .slice(inputIndex, tagStartIndex)
                 .replace(/[\n\r]/g, " "),
             )
           }
           // Replace opening tag with new line.
           outputFragments.push("\n")
+          const openingSegmentIndex = sourceMap.length
           sourceMap.push({
             inputIndex: tagStartIndex,
             inputLength: tagLength,
@@ -421,13 +426,14 @@ export function convertHtmlElementsToText({
             action: "keep_content",
             closingTagReplacement: "\n",
             name: tagNameUpperCase,
+            openingSegmentIndex,
           })
         } else {
           // Preserve opening tag.
 
           outputFragments.push(
             inputText
-              .substring(inputIndex, tagEndIndex + 1)
+              .slice(inputIndex, tagEndIndex + 1)
               .replace(/[\n\r]/g, " "),
           )
           tagsStack.push({
@@ -451,17 +457,17 @@ export function decodeNamedHtmlEntities(text: string): Conversion {
   // Decode decimal (e.g., &#65;) or hexadecimal references (e.g., &#x4a;).
   text = text.replace(
     /&(amp|apos|asymp|copy|deg|euro|gt|lt|mdash|nbsp|ndash|ne|pound|quot|reg|trade);/gi,
-    (substring, name, inputIndex: number) => {
+    (slice, name, inputIndex: number) => {
       const replacement = characterByNamedHtmlEntity[
         (name as string).toLowerCase()
       ] as string
       sourceMap.push({
         inputIndex,
-        inputLength: substring.length,
+        inputLength: slice.length,
         outputIndex: inputIndex + outputOffset,
         outputLength: replacement.length,
       })
-      outputOffset += replacement.length - substring.length
+      outputOffset += replacement.length - slice.length
       return replacement
     },
   )
@@ -480,7 +486,7 @@ export function decodeNumericHtmlEntities(text: string): Conversion {
   // Decode decimal (e.g., &#65;) or hexadecimal references (e.g., &#x4a;).
   text = text.replace(
     /&#(?:(\d+)|x([0-9A-F]+));/gi,
-    (substring, decimalString, hexdecimalString, inputIndex: number) => {
+    (slice, decimalString, hexdecimalString, inputIndex: number) => {
       const charCode = parseInt(
         decimalString ?? hexdecimalString,
         decimalString === undefined ? 16 : 10,
@@ -488,11 +494,11 @@ export function decodeNumericHtmlEntities(text: string): Conversion {
       const replacement = String.fromCharCode(charCode)
       sourceMap.push({
         inputIndex,
-        inputLength: substring.length,
+        inputLength: slice.length,
         outputIndex: inputIndex + outputOffset,
         outputLength: replacement.length,
       })
-      outputOffset += replacement.length - substring.length
+      outputOffset += replacement.length - slice.length
       return replacement
     },
   )
@@ -502,6 +508,184 @@ export function decodeNumericHtmlEntities(text: string): Conversion {
       title: "Décodage des entités HTML numériques",
     },
     text,
+  }
+}
+
+export function* iterConversionTaskSourceMaps(
+  task: ConversionTask,
+): Generator<SourceMapSegment[], void> {
+  if ((task as ConversionTaskNode).tasks === undefined) {
+    yield (task as ConversionTaskLeaf).sourceMap
+  } else {
+    for (const subTask of (task as ConversionTaskNode).tasks) {
+      yield* iterConversionTaskSourceMaps(subTask)
+    }
+  }
+}
+
+export function* iterOriginalPositionsFromSimplified(
+  task: ConversionTask,
+): Generator<TextPosition, void, TextPosition | undefined> {
+  const sourceMaps = [...iterConversionTaskSourceMaps(task)].reverse()
+  let position: TextPosition | undefined = { start: 0, stop: 0 }
+  const sourceMapsIterators = sourceMaps.map((sourceMap) => {
+    const sourceMapIterator =
+      iterOriginalPositionsFromSimplifiedUsingSourceMap(sourceMap)
+    // Launch iterator using a dummy position and ignore the result.
+    sourceMapIterator.next(position)
+    return sourceMapIterator
+  })
+  // Send a dummy value and ask for the first position.
+  position = yield position
+  while (position !== undefined) {
+    for (const sourceMapIterator of sourceMapsIterators) {
+      const result = sourceMapIterator.next(position)
+      if (result.done) {
+        return
+      }
+      position = result.value
+    }
+    position = yield position
+  }
+  // Stop the sourceMapsIterators.
+  for (const sourceMapIterator of sourceMapsIterators) {
+    sourceMapIterator.next(undefined)
+  }
+}
+
+export function* iterOriginalPositionsFromSimplifiedUsingSourceMap(
+  sourceMap: SourceMapSegment[],
+): Generator<TextPosition, void, TextPosition | undefined> {
+  let startSegmentIndex: number | undefined = undefined
+  let state: "looking_for_start_segment" | "looking_for_stop_segment" =
+    "looking_for_start_segment"
+  let simplifiedPosition: TextPosition | undefined = yield {
+    start: 0,
+    stop: 0,
+  }
+
+  // Insert empty segment at start & end.
+  sourceMap = [
+    { inputIndex: 0, inputLength: 0, outputIndex: 0, outputLength: 0 },
+    ...sourceMap,
+    {
+      inputIndex: Number.MAX_SAFE_INTEGER,
+      inputLength: 0,
+      outputIndex: Number.MAX_SAFE_INTEGER,
+      outputLength: 0,
+    },
+  ]
+  for (const [segmentIndex, segment] of sourceMap.entries()) {
+    for (let changeSegment = false; !changeSegment; ) {
+      if (simplifiedPosition === undefined) {
+        return
+      }
+      switch (state) {
+        case "looking_for_start_segment": {
+          const nextSegment = sourceMap[segmentIndex + 1]
+          if (
+            nextSegment !== undefined &&
+            nextSegment.outputIndex + nextSegment.outputLength <=
+              simplifiedPosition.start
+          ) {
+            changeSegment = true
+          } else {
+            startSegmentIndex = segmentIndex
+            state = "looking_for_stop_segment"
+          }
+          break
+        }
+
+        case "looking_for_stop_segment": {
+          if (segment.outputIndex < simplifiedPosition.stop) {
+            changeSegment = true
+          } else {
+            const startSegment = sourceMap[startSegmentIndex!]
+            const stopSegmentIndex = segmentIndex
+            const stopSegment = segment
+
+            // If opening or closing segments are missing, include them.
+            let firstIncludedSegmentIndex =
+              simplifiedPosition.start <
+              startSegment.outputIndex + startSegment.outputLength
+                ? startSegmentIndex!
+                : startSegmentIndex! + 1
+            let lastIncludedSegmentIndex =
+              simplifiedPosition.stop > stopSegment.outputIndex
+                ? stopSegmentIndex
+                : stopSegmentIndex - 1
+            for (let areaExtended = true; areaExtended; ) {
+              areaExtended = false
+              for (
+                let includedSegmentIndex = firstIncludedSegmentIndex;
+                includedSegmentIndex <= lastIncludedSegmentIndex;
+                includedSegmentIndex++
+              ) {
+                const matchingSegmentIndex =
+                  sourceMap[includedSegmentIndex].matchingSegmentIndex
+                if (matchingSegmentIndex !== undefined) {
+                  // Note: Add 1 to matchingSegmentIndex, because of empty segment
+                  // inserted at start of source map.
+                  if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
+                    firstIncludedSegmentIndex = matchingSegmentIndex + 1
+                    // Extend simplifiedPosition to include added segment.
+                    simplifiedPosition = {
+                      start: sourceMap[firstIncludedSegmentIndex].outputIndex,
+                      stop: simplifiedPosition.stop,
+                    }
+                    areaExtended = true
+                    break
+                  }
+                  if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
+                    lastIncludedSegmentIndex = matchingSegmentIndex + 1
+                    // Extend simplifiedPosition to include added segment.
+                    const lastIncludedSegment =
+                      sourceMap[lastIncludedSegmentIndex]
+                    simplifiedPosition = {
+                      start: simplifiedPosition.start,
+                      stop:
+                        lastIncludedSegment.outputIndex +
+                        lastIncludedSegment.outputLength,
+                    }
+                    areaExtended = true
+                    break
+                  }
+                }
+              }
+            }
+
+            const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
+            const originalStart =
+              segmentBefore.inputIndex +
+              segmentBefore.inputLength +
+              simplifiedPosition.start -
+              (segmentBefore.outputIndex + segmentBefore.outputLength)
+
+            const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
+            const originalStop =
+              lastIncludedSegment.inputIndex +
+              lastIncludedSegment.inputLength +
+              simplifiedPosition.stop -
+              (lastIncludedSegment.outputIndex +
+                lastIncludedSegment.outputLength)
+
+            simplifiedPosition = yield {
+              start: originalStart,
+              stop: originalStop,
+            }
+            state = "looking_for_start_segment"
+          }
+          break
+        }
+
+        default: {
+          assertNever(
+            "iterOriginalPositionsFromSimplifiedUsingSourceMap.state",
+            state,
+          )
+        }
+      }
+    }
   }
 }
 
@@ -526,7 +710,7 @@ export function replacePatterns(text: string): Conversion {
     // But Légifrance uses a classic I…
     ["İ", "I"],
   ] as Array<[RegExp | string, string]>) {
-    text = text.replaceAll(pattern, (substring, ...rest) => {
+    text = text.replaceAll(pattern, (slice, ...rest) => {
       const inputIndex: number = rest.at(-2)
       let expandedReplacement = replacement
       for (const [index, p] of rest.slice(0, -2).entries()) {
@@ -534,7 +718,7 @@ export function replacePatterns(text: string): Conversion {
       }
       const sourceMapSegment: SourceMapSegment = {
         inputIndex,
-        inputLength: substring.length,
+        inputLength: slice.length,
         // Note: `outputIndex` is added below.
         outputLength: expandedReplacement.length,
       } as SourceMapSegment
@@ -601,7 +785,7 @@ export function simplifyText(text: string): Conversion {
   ] as Array<[string, RegExp | string, string]>) {
     let outputOffset = 0
     const sourceMap: SourceMapSegment[] = []
-    text = text.replaceAll(pattern, (substring, ...rest) => {
+    text = text.replaceAll(pattern, (slice, ...rest) => {
       const inputIndex: number = rest.at(-2)
       let expandedReplacement = replacement
       for (const [index, p] of rest.slice(0, -2).entries()) {
@@ -609,11 +793,11 @@ export function simplifyText(text: string): Conversion {
       }
       sourceMap.push({
         inputIndex,
-        inputLength: substring.length,
+        inputLength: slice.length,
         outputIndex: inputIndex + outputOffset,
         outputLength: expandedReplacement.length,
       })
-      outputOffset += expandedReplacement.length - substring.length
+      outputOffset += expandedReplacement.length - slice.length
       return expandedReplacement
     })
     if (sourceMap.length !== 0) {

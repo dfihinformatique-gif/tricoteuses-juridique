@@ -5,7 +5,10 @@ import { assertNever } from "$lib/asserts.js"
 import { gitPathFromId } from "$lib/legal/ids.js"
 import { iterTextLinks } from "$lib/server/text_links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { simplifyHtml } from "$lib/text_simplifiers.js"
+import {
+  iterOriginalPositionsFromSimplified,
+  simplifyHtml,
+} from "$lib/text_simplifiers.js"
 import type { TextAstLocalizationRelative } from "$lib/text_parsers/ast.js"
 
 async function addLinksToHtmlDocument(
@@ -25,12 +28,15 @@ async function addLinksToHtmlDocument(
     "log-references"?: boolean
   },
 ): Promise<number> {
-  const conversion = simplifyHtml({ removeAWithHref: true })(
-    await fs.readFile(inputDocumentPath, { encoding: "utf-8" }),
-  )
-  const input = conversion.text
-  const context = new TextParserContext(input)
-  let output = input
+  const inputHtml = await fs.readFile(inputDocumentPath, { encoding: "utf-8" })
+  const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+  const inputText = conversion.text
+  const context = new TextParserContext(inputText)
+  const originalPositionsFromSimplifiedIterator =
+    iterOriginalPositionsFromSimplified(conversion.task)
+  // Initialize iterator by sending a dummy value and ignoring the result.
+  originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+  let output = inputHtml
   let outputOffset = 0
 
   for await (const link of iterTextLinks(context, {
@@ -42,22 +48,32 @@ async function addLinksToHtmlDocument(
   })) {
     switch (link.type) {
       case "article": {
-        const { articleId, position } = link
-        const original = output.substring(
-          position.start + outputOffset,
-          position.stop + outputOffset,
+        const { articleId, position: articlePosition } = link
+        const result =
+          originalPositionsFromSimplifiedIterator.next(articlePosition)
+        if (result.done) {
+          console.error(
+            "Conversion of article position to HTML failed:",
+            articlePosition,
+          )
+          process.exit(1)
+        }
+        const htmlPosition = result.value
+        const original = output.slice(
+          htmlPosition.start + outputOffset,
+          htmlPosition.stop + outputOffset,
         )
         const replacement = `<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>`
         output =
-          output.substring(0, position.start + outputOffset) +
+          output.slice(0, htmlPosition.start + outputOffset) +
           replacement +
-          output.substring(position.stop + outputOffset)
+          output.slice(htmlPosition.stop + outputOffset)
         outputOffset += replacement.length - original.length
         break
       }
 
       case "texte": {
-        const { text, position } = link
+        const { text, position: textPosition } = link
         if (text.cid === undefined) {
           if (
             (text.localization as TextAstLocalizationRelative)?.relative !== 0
@@ -69,15 +85,26 @@ async function addLinksToHtmlDocument(
           }
           continue
         }
-        const original = output.substring(
-          position.start + outputOffset,
-          position.stop + outputOffset,
+
+        const result =
+          originalPositionsFromSimplifiedIterator.next(textPosition)
+        if (result.done) {
+          console.error(
+            "Conversion of text position to HTML failed:",
+            textPosition,
+          )
+          process.exit(1)
+        }
+        const htmlPosition = result.value
+        const original = output.slice(
+          htmlPosition.start + outputOffset,
+          htmlPosition.stop + outputOffset,
         )
         const replacement = `<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>`
         output =
-          output.substring(0, position.start + outputOffset) +
+          output.slice(0, htmlPosition.start + outputOffset) +
           replacement +
-          output.substring(position.stop + outputOffset)
+          output.slice(htmlPosition.stop + outputOffset)
         outputOffset += replacement.length - original.length
         break
       }

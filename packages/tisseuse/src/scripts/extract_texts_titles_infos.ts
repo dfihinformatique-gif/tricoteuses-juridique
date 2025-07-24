@@ -252,9 +252,9 @@ function simplifyTextTitle(title: string): string {
   ).text
 }
 
-sade("extract_texts_names_for_metslesliens", true)
+sade("extract_texts_titles_infos", true)
   .describe(
-    "Extract names of codes, laws, etc and convert them to metslesliens syntax (ake Peggy)",
+    "Extract names of codes, laws, etc and convert them to JSON structures used by text parser",
   )
   .action(async () => {
     process.exit(await extractTextsNames())

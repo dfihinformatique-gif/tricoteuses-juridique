@@ -386,6 +386,70 @@ describe("reference", () => {
     )
   })
 
+  test("à l'article 7 du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        num: "7",
+        position: {
+          start: 4,
+          stop: 13,
+        },
+        type: "article",
+      },
+      parent: {
+        cid: "LEGITEXT000006070719",
+        nature: "CODE",
+        position: {
+          start: 17,
+          stop: 27,
+        },
+        title: "Code pénal",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 27,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("à l'article 7 bis du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        num: "7 bis",
+        position: {
+          start: 4,
+          stop: 17,
+        },
+        type: "article",
+      },
+      parent: {
+        cid: "LEGITEXT000006070719",
+        nature: "CODE",
+        position: {
+          start: 21,
+          stop: 31,
+        },
+        title: "Code pénal",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 31,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("à l'article 7 vicies A de la loi n° 98-293 du 31 décembre 1998", ({
     task,
   }) => {
@@ -628,6 +692,23 @@ describe("reference", () => {
     expect(context.text(result.child.position)).toBe("3°")
   })
 
+  test("au code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      cid: "LEGITEXT000006070719",
+      nature: "CODE",
+      position: {
+        start: 0,
+        stop: 13,
+      },
+      title: "Code pénal",
+      type: "texte",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("audit article 8-1 bis du présent code", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstParentChild
@@ -699,18 +780,6 @@ describe("reference", () => {
     expect(context.text(result.parent.position)).toBe("présent code")
     expect(context.text(result.child.position)).toBe("dit article annexe")
   })
-
-  // test("au code pénal", ({ task }) => {
-  //   const context = new TextParserContext(task.name)
-  //   const result = reference(context) as TextAstReference
-  //   expect(result).toStrictEqual({})
-  //   expect(context.remaining()).toBe("")
-  //   expect(context.text(result.position)).toBe(task.name)
-  // })
-  // testSingleLink("l'article 7 du code pénal");
-  // testSingleLink("à l'article 7 du code pénal");
-  // testSingleLink("à l'article 7 bis du code pénal");
-  // testSingleLink("à l'article 7 vicies A du code pénal");
 
   test("aux articles 7 tersexagies A à 9 quaterdecies de la loi n° 98-293 du 31 décembre 1998", ({
     task,
@@ -1080,6 +1149,41 @@ describe("reference", () => {
       context.text((result.child as TextAstParentChild).child.position),
     ).toBe("sous-paragraphe 3")
   })
+
+  test("l'article 7 du code pénal", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        num: "7",
+        position: {
+          start: 2,
+          stop: 11,
+        },
+        type: "article",
+      },
+      parent: {
+        cid: "LEGITEXT000006070719",
+        nature: "CODE",
+        position: {
+          start: 15,
+          stop: 25,
+        },
+        title: "Code pénal",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 25,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+  // testSingleLink("à l'article 7 du code pénal");
+  // testSingleLink("à l'article 7 bis du code pénal");
+  // testSingleLink("à l'article 7 vicies A du code pénal");
 
   test("Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts", ({
     task,

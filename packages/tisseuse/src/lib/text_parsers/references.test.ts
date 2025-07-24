@@ -699,6 +699,7 @@ describe("reference", () => {
     expect(context.text(result.parent.position)).toBe("présent code")
     expect(context.text(result.child.position)).toBe("dit article annexe")
   })
+
   // test("au code pénal", ({ task }) => {
   //   const context = new TextParserContext(task.name)
   //   const result = reference(context) as TextAstReference
@@ -1078,6 +1079,125 @@ describe("reference", () => {
     expect(
       context.text((result.child as TextAstParentChild).child.position),
     ).toBe("sous-paragraphe 3")
+  })
+
+  test("Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          child: {
+            child: {
+              num: "III",
+              position: {
+                start: 3,
+                stop: 15,
+              },
+              type: "chapitre",
+            },
+            parent: {
+              num: "Ier",
+              position: {
+                start: 19,
+                stop: 28,
+              },
+              type: "titre",
+            },
+            position: {
+              start: 3,
+              stop: 28,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            localization: {
+              absolute: 1,
+            },
+            position: {
+              start: 35,
+              stop: 50,
+            },
+            type: "partie",
+          },
+          position: {
+            start: 3,
+            stop: 50,
+          },
+          type: "parent-enfant",
+        },
+        parent: {
+          num: "Ier",
+          position: {
+            start: 54,
+            stop: 63,
+          },
+          type: "livre",
+        },
+        position: {
+          start: 3,
+          stop: 63,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "LEGITEXT000006069577",
+        nature: "CODE",
+        position: {
+          start: 67,
+          stop: 90,
+        },
+        title: "Code général des impôts",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 90,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("code général des impôts")
+    expect(context.text(result.child.position)).toBe(
+      "chapitre III du titre Ier de la première partie du livre Ier",
+    )
+    expect(
+      context.text((result.child as TextAstParentChild).parent.position),
+    ).toBe("livre Ier")
+    expect(
+      context.text((result.child as TextAstParentChild).child.position),
+    ).toBe("chapitre III du titre Ier de la première partie")
+    expect(
+      context.text(
+        ((result.child as TextAstParentChild).child as TextAstParentChild)
+          .parent.position,
+      ),
+    ).toBe("première partie")
+    expect(
+      context.text(
+        ((result.child as TextAstParentChild).child as TextAstParentChild).child
+          .position,
+      ),
+    ).toBe("chapitre III du titre Ier")
+    expect(
+      context.text(
+        (
+          ((result.child as TextAstParentChild).child as TextAstParentChild)
+            .child as TextAstParentChild
+        ).parent.position,
+      ),
+    ).toBe("titre Ier")
+    expect(
+      context.text(
+        (
+          ((result.child as TextAstParentChild).child as TextAstParentChild)
+            .child as TextAstParentChild
+        ).child.position,
+      ),
+    ).toBe("chapitre III")
   })
 })
 

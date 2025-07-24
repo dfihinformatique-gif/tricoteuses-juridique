@@ -39,7 +39,7 @@ import { espace } from "./typography.js"
 
 export const natureDivisionSingulier = alternatives(
   regExp("chapitre", { flags: "i", value: "chapitre" }),
-  regExp("livre (?! des procédures fiscales)", { flags: "i", value: "livre" }),
+  regExp("livre(?! des procédures fiscales)", { flags: "i", value: "livre" }),
   regExp("(sous-)?paragraphe", { flags: "i", value: "paragraphe" }),
   regExp("partie", { flags: "i", value: "partie" }),
   regExp("(sous-)?section", { flags: "i", value: "section" }),

@@ -720,6 +720,12 @@ export function replacePatterns(text: string): Conversion {
     // For example: Article 199 decies İ of the General Tax Code.
     // But Légifrance uses a classic I…
     ["İ", "I"],
+    // Remove Sénat "pastillage":
+    // - \uF04B-\uF054 are circled numbers 0-9.
+    // - \uF031-\uF039 are left-half circled numbers 1-9.
+    // - \uF041-\uF04A are numbers 0-9 with a circle fragment on their top & bottom only.
+    // - \uF061-\uF06A are right-half circled numbers 0-9.
+    [/[\uF031-\uF039\uF041-\uF054\uF061-\uF06A]/g, ""],
   ] as Array<[RegExp | string, string]>) {
     text = text.replaceAll(pattern, (slice, ...rest) => {
       const inputIndex: number = rest.at(-2)

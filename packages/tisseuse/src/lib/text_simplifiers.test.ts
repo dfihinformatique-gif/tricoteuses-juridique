@@ -277,9 +277,11 @@ describe("convertHtmlElementsToText", () => {
 
 describe("chainSimplifiers", () => {
   test("multiple spaces and new lines", () => {
-    const { text } = chainSimplifiers(
-      "Simplification du HTML",
-      [replacePatterns, convertHtmlElementsToText(), simplifyText],
+    const { text } = chainSimplifiers("Simplification du HTML", [
+      replacePatterns,
+      convertHtmlElementsToText(),
+      simplifyText,
+    ])(
       dedent`
         <br/>Le titre II du livre III du code des postes et des communications électroniques est ainsi modifié : <br/>1° L'article L. 130 est ainsi modifié : <br/>a) A la première phrase du premier alinéa, les mots : « et des postes » sont remplacés par les mots : «, des postes et de la distribution de la presse » et, après les mots : «, des postes », sont insérés les mots : «, de la distribution de la presse » ; <br/>b) Au quatrième alinéa, les mots : « et des postes » sont remplacés par les mots : «, des postes et de la distribution de la presse » ; <br/>c) La première phrase du cinquième alinéa est complétée par les mots : « du présent code et à l'article 24 de la loi n° 47-585 du 2 avril 1947 relative au statut des entreprises de groupage et de distribution des journaux et publications périodiques » ; <br/>d) Le sixième alinéa est ainsi modifié :</p>
         <p>

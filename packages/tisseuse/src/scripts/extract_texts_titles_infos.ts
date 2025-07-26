@@ -245,11 +245,10 @@ async function extractTextsNames(): Promise<number> {
 }
 
 function simplifyTextTitle(title: string): string {
-  return chainSimplifiers(
-    "Simplification d'un titre de texte",
-    [replacePatterns, simplifyText],
-    title,
-  ).text
+  return chainSimplifiers("Simplification d'un titre de texte", [
+    replacePatterns,
+    simplifyText,
+  ])(title).text
 }
 
 sade("extract_texts_titles_infos", true)

@@ -1,7 +1,7 @@
 import { assertNever } from "./asserts.js"
 import type { TextPosition } from "./text_parsers/ast.js"
 
-interface Conversion {
+export interface Conversion {
   task: ConversionTask
   text: string
 }
@@ -50,17 +50,18 @@ const characterByNamedHtmlEntity: Record<string, string> = {
 export function chainSimplifiers(
   title: string,
   simplifiers: Array<(text: string) => Conversion>,
-  text: string,
-): Conversion {
-  const tasks: ConversionTask[] = []
-  for (const simplifier of simplifiers) {
-    const conversion = simplifier(text)
-    tasks.push(conversion.task)
-    text = conversion.text
-  }
-  return {
-    task: { tasks, title },
-    text,
+): Converter {
+  return (text: string): Conversion => {
+    const tasks: ConversionTask[] = []
+    for (const simplifier of simplifiers) {
+      const conversion = simplifier(text)
+      tasks.push(conversion.task)
+      text = conversion.text
+    }
+    return {
+      task: { tasks, title },
+      text,
+    }
   }
 }
 
@@ -755,17 +756,13 @@ export function simplifyHtml({
   removeAWithHref,
 }: { removeAWithHref?: boolean } = {}): Converter {
   return (text: string): Conversion =>
-    chainSimplifiers(
-      "Simplification du HTML",
-      [
-        decodeNamedHtmlEntities,
-        decodeNumericHtmlEntities,
-        replacePatterns,
-        convertHtmlElementsToText({ removeAWithHref }),
-        simplifyText,
-      ],
-      text,
-    )
+    chainSimplifiers("Simplification du HTML", [
+      decodeNamedHtmlEntities,
+      decodeNumericHtmlEntities,
+      replacePatterns,
+      convertHtmlElementsToText({ removeAWithHref }),
+      simplifyText,
+    ])(text)
 }
 
 export function simplifyText(text: string): Conversion {

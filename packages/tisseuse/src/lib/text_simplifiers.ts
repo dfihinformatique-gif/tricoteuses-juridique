@@ -701,8 +701,12 @@ export function replacePatterns(text: string): Conversion {
   for (const [pattern, replacement] of [
     // Note: The most englobing patterns must be first.
 
-    // Remove HTML comment
-    [/<!--.*?-->/g, ""],
+    // Remove HTML comment.
+    [/<!--.*?-->/gs, ""],
+    // Remove <script> element.
+    [/<script.*?>.*?<\/script>/gis, ""],
+    // Remove <script> element.
+    [/<style.*?>.*?<\/style>/gis, ""],
     // Replace U+00A0 (no-break space) and tab with a normal space.
     [/[ \t]/g, " "],
     // Ensure that there is always a space after "n°".

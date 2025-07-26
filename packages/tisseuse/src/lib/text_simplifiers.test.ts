@@ -325,26 +325,29 @@ describe("chainSimplifiers", () => {
 })
 
 describe("iterOriginalPositionsFromSimplified", () => {
-  test("<span>Hello world!</span>", ({ task }) => {
+  test(`<form><input name="dummy" /><span>Hello</span> <b><span>very</span> <span>complex</span></b> <i>world!</i></form>`, ({
+    task,
+  }) => {
     const inputHtml = task.name
     const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
     const inputText = conversion.text
-    expect(inputText).toBe("Hello world!")
-    expect(inputText[11]).toBe("!")
+    expect(inputText).toBe("Hello very complex world!")
+    const textPosition = { start: 11, stop: 24 }
+    expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
+      "complex world",
+    )
     const originalPositionsFromSimplifiedIterator =
       iterOriginalPositionsFromSimplified(conversion.task)
     // Initialize iterator by sending a dummy value.
     originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
-    const textPosition = { start: 11, stop: 12 }
     const result = originalPositionsFromSimplifiedIterator.next(textPosition)
-    const htmlPosition = result.value
-    expect(htmlPosition).toStrictEqual({
-      start: 17,
-      stop: 18,
-    })
+    const htmlPosition = result.value!
+    expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+      "<b><span>very</span> <span>complex</span></b> <i>world!</i>",
+    )
   })
 
-  test("<p>Hello <span>world</span>!</p>, detect world", ({ task }) => {
+  test("<p>Hello <span>world</span>!</p>, detect world", () => {
     const inputHtml = "<p>Hello <span>world</span>!</p>"
     const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
     const inputText = conversion.text
@@ -360,7 +363,7 @@ describe("iterOriginalPositionsFromSimplified", () => {
     expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe("world")
   })
 
-  test("<p>Hello <span>world</span>!</p>, detect Hello world!", ({ task }) => {
+  test("<p>Hello <span>world</span>!</p>, detect Hello world!", () => {
     const inputHtml = "<p>Hello <span>world</span>!</p>"
     const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
     const inputText = conversion.text
@@ -380,7 +383,7 @@ describe("iterOriginalPositionsFromSimplified", () => {
     )
   })
 
-  test("<p>Hello <span>world!</span></p>, detect Hello world!", ({ task }) => {
+  test("<p>Hello <span>world!</span></p>, detect Hello world!", () => {
     const inputHtml = "<p>Hello <span>world!</span></p>"
     const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
     const inputText = conversion.text
@@ -413,13 +416,30 @@ describe("iterOriginalPositionsFromSimplified", () => {
       iterOriginalPositionsFromSimplified(conversion.task)
     // Initialize iterator by sending a dummy value.
     originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
-    let output = inputHtml
-    let outputOffset = 0
     const result = originalPositionsFromSimplifiedIterator.next(textPosition)
     const htmlPosition = result.value!
     expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
       "<span>Au I de l’article</span> 197",
     )
+  })
+
+  test("<span>Hello world!</span>", ({ task }) => {
+    const inputHtml = task.name
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("Hello world!")
+    expect(inputText[11]).toBe("!")
+    const originalPositionsFromSimplifiedIterator =
+      iterOriginalPositionsFromSimplified(conversion.task)
+    // Initialize iterator by sending a dummy value.
+    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+    const textPosition = { start: 11, stop: 12 }
+    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
+    const htmlPosition = result.value
+    expect(htmlPosition).toStrictEqual({
+      start: 17,
+      stop: 18,
+    })
   })
 })
 

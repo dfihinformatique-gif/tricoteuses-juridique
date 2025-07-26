@@ -225,7 +225,9 @@ export function convertHtmlElementsToText({
         } else {
           // Keep self-closing tag (and the text before tag).
           outputFragments.push(
-            inputText.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
+            inputText
+              .slice(inputIndex, tagEndIndex + 1)
+              .replace(/[\n\r]/g, " "),
           )
         }
       } else {

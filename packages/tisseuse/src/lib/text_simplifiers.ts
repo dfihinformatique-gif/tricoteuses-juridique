@@ -401,6 +401,7 @@ export function convertHtmlElementsToText({
             "H5",
             "H6",
             "DIV",
+            "FORM",
             "LI",
             "P",
             "TD",

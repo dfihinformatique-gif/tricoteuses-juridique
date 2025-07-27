@@ -4,7 +4,7 @@ import { describe, expect, test } from "vitest"
 import {
   chainSimplifiers,
   convertHtmlElementsToText,
-  iterOriginalPositionsFromSimplified,
+  originalPositionsFromSimplified,
   replacePatterns,
   simplifyHtml,
   simplifyText,
@@ -324,7 +324,97 @@ describe("chainSimplifiers", () => {
   })
 })
 
-describe("iterOriginalPositionsFromSimplified", () => {
+describe("originalPositionsFromSimplified", () => {
+  test("<div><p>first sentence</p><p>second sentence</p></div>", ({ task }) => {
+    const inputHtml = task.name
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("first sentence\nsecond sentence")
+    const textPosition0 = { start: 0, stop: 5 }
+    expect(inputText.slice(textPosition0.start, textPosition0.stop)).toBe(
+      "first",
+    )
+    const textPosition1 = { start: 6, stop: 30 }
+    expect(inputText.slice(textPosition1.start, textPosition1.stop)).toBe(
+      "sentence\nsecond sentence",
+    )
+    {
+      // Test first HTML position only
+      const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+        textPosition0,
+      ])[0]
+      expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+        "first",
+      )
+    }
+    {
+      // Test second HTML position only
+      const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+        textPosition1,
+      ])[0]
+      expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+        "<p>first sentence</p><p>second sentence</p>",
+      )
+    }
+    {
+      // Test the merging of 2 overlapping HTML positions.
+      const htmlPositions = originalPositionsFromSimplified(conversion.task, [
+        textPosition0,
+        textPosition1,
+      ])
+      expect(htmlPositions.length).toBe(1)
+      const htmlPosition0 = htmlPositions[0]
+      expect(inputHtml.slice(htmlPosition0.start, htmlPosition0.stop)).toBe(
+        "<p>first sentence</p><p>second sentence</p>",
+      )
+    }
+  })
+
+  test("<div>word1<p>word2 word3</p><p>word4</p></div>", ({ task }) => {
+    const inputHtml = task.name
+    const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = conversion.text
+    expect(inputText).toBe("word1\nword2 word3\nword4")
+    const textPosition0 = { start: 0, stop: 11 }
+    expect(inputText.slice(textPosition0.start, textPosition0.stop)).toBe(
+      "word1\nword2",
+    )
+    const textPosition1 = { start: 12, stop: 23 }
+    expect(inputText.slice(textPosition1.start, textPosition1.stop)).toBe(
+      "word3\nword4",
+    )
+    {
+      // Test first HTML position only
+      const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+        textPosition0,
+      ])[0]
+      expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+        "word1<p>word2 word3</p>",
+      )
+    }
+    {
+      // Test second HTML position only
+      const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+        textPosition1,
+      ])[0]
+      expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
+        "<p>word2 word3</p><p>word4</p>",
+      )
+    }
+    {
+      // Test the merging of 2 overlapping HTML positions.
+      const htmlPositions = originalPositionsFromSimplified(conversion.task, [
+        textPosition0,
+        textPosition1,
+      ])
+      expect(htmlPositions.length).toBe(1)
+      const htmlPosition0 = htmlPositions[0]
+      expect(inputHtml.slice(htmlPosition0.start, htmlPosition0.stop)).toBe(
+        "word1<p>word2 word3</p><p>word4</p>",
+      )
+    }
+  })
+
   test(`<form><input name="dummy" /><span>Hello</span> <b><span>very</span> <span>complex</span></b> <i>world!</i></form>`, ({
     task,
   }) => {
@@ -336,12 +426,9 @@ describe("iterOriginalPositionsFromSimplified", () => {
     expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
       "complex world",
     )
-    const originalPositionsFromSimplifiedIterator =
-      iterOriginalPositionsFromSimplified(conversion.task)
-    // Initialize iterator by sending a dummy value.
-    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
-    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
-    const htmlPosition = result.value!
+    const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+      textPosition,
+    ])[0]
     expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
       "<b><span>very</span> <span>complex</span></b> <i>world!</i>",
     )
@@ -354,12 +441,9 @@ describe("iterOriginalPositionsFromSimplified", () => {
     expect(inputText).toBe("Hello world!")
     const textPosition = { start: 6, stop: 11 }
     expect(inputText.slice(textPosition.start, textPosition.stop)).toBe("world")
-    const originalPositionsFromSimplifiedIterator =
-      iterOriginalPositionsFromSimplified(conversion.task)
-    // Initialize iterator by sending a dummy value.
-    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
-    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
-    const htmlPosition = result.value!
+    const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+      textPosition,
+    ])[0]
     expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe("world")
   })
 
@@ -372,12 +456,9 @@ describe("iterOriginalPositionsFromSimplified", () => {
     expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
       "Hello world!",
     )
-    const originalPositionsFromSimplifiedIterator =
-      iterOriginalPositionsFromSimplified(conversion.task)
-    // Initialize iterator by sending a dummy value.
-    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
-    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
-    const htmlPosition = result.value!
+    const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+      textPosition,
+    ])[0]
     expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
       "Hello <span>world</span>!",
     )
@@ -392,12 +473,9 @@ describe("iterOriginalPositionsFromSimplified", () => {
     expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
       "Hello world!",
     )
-    const originalPositionsFromSimplifiedIterator =
-      iterOriginalPositionsFromSimplified(conversion.task)
-    // Initialize iterator by sending a dummy value.
-    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
-    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
-    const htmlPosition = result.value!
+    const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+      textPosition,
+    ])[0]
     expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
       "Hello <span>world!</span>",
     )
@@ -412,12 +490,9 @@ describe("iterOriginalPositionsFromSimplified", () => {
     expect(inputText.slice(textPosition.start, textPosition.stop)).toBe(
       "article 197",
     )
-    const originalPositionsFromSimplifiedIterator =
-      iterOriginalPositionsFromSimplified(conversion.task)
-    // Initialize iterator by sending a dummy value.
-    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
-    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
-    const htmlPosition = result.value!
+    const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+      textPosition,
+    ])[0]
     expect(inputHtml.slice(htmlPosition.start, htmlPosition.stop)).toBe(
       "<span>Au I de l’article</span> 197",
     )
@@ -428,14 +503,11 @@ describe("iterOriginalPositionsFromSimplified", () => {
     const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
     const inputText = conversion.text
     expect(inputText).toBe("Hello world!")
-    expect(inputText[11]).toBe("!")
-    const originalPositionsFromSimplifiedIterator =
-      iterOriginalPositionsFromSimplified(conversion.task)
-    // Initialize iterator by sending a dummy value.
-    originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
     const textPosition = { start: 11, stop: 12 }
-    const result = originalPositionsFromSimplifiedIterator.next(textPosition)
-    const htmlPosition = result.value
+    expect(inputText.slice(textPosition.start, textPosition.stop)).toBe("!")
+    const htmlPosition = originalPositionsFromSimplified(conversion.task, [
+      textPosition,
+    ])[0]
     expect(htmlPosition).toStrictEqual({
       start: 17,
       stop: 18,

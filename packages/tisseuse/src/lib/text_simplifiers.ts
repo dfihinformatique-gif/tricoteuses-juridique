@@ -530,6 +530,9 @@ export function* iterConversionTaskSourceMaps(
   }
 }
 
+/**
+ * Caution: This iterator fails when successive original positions overalp.
+ */
 export function* iterOriginalPositionsFromSimplified(
   task: ConversionTask,
 ): Generator<TextPosition, void, TextPosition | undefined> {
@@ -560,6 +563,9 @@ export function* iterOriginalPositionsFromSimplified(
   }
 }
 
+/**
+ * Caution: This iterator fails when successive original positions overalp.
+ */
 export function* iterOriginalPositionsFromSimplifiedUsingSourceMap(
   sourceMap: SourceMapSegment[],
 ): Generator<TextPosition, void, TextPosition | undefined> {
@@ -694,6 +700,190 @@ export function* iterOriginalPositionsFromSimplifiedUsingSourceMap(
       }
     }
   }
+}
+
+/**
+ * Note: The original positions are merged when they overlap.
+ * So, there may be fewer original positions than simplified positions.
+ */
+export function originalPositionsFromSimplified(
+  task: ConversionTask,
+  positions: TextPosition[],
+): TextPosition[] {
+  for (const sourceMap of [...iterConversionTaskSourceMaps(task)].reverse()) {
+    positions = originalPositionsFromSimplifiedUsingSourceMap(
+      sourceMap,
+      positions,
+    )
+  }
+  return positions
+}
+
+/**
+ * Note: The original positions are merged when they overlap.
+ * So, there may be fewer original positions than simplified positions.
+ */
+export function originalPositionsFromSimplifiedUsingSourceMap(
+  sourceMap: SourceMapSegment[],
+  simplifiedPositions: TextPosition[],
+): TextPosition[] {
+  const originalPositions: TextPosition[] = []
+  const originalPositionsIncludedSegmentsIndexes: Array<{
+    first: number
+    last: number
+  }> = []
+  const simplifiedPositionsIterator = simplifiedPositions.values()
+  const simplifiedPositionResult = simplifiedPositionsIterator.next()
+  if (simplifiedPositionResult.done) {
+    return originalPositions
+  }
+  let { start: simplifiedStart, stop: simplifiedStop } =
+    simplifiedPositionResult.value
+  let startSegmentIndex: number | undefined = undefined
+  let state: "looking_for_start_segment" | "looking_for_stop_segment" =
+    "looking_for_start_segment"
+
+  // Insert empty segment at start & end.
+  sourceMap = [
+    { inputIndex: 0, inputLength: 0, outputIndex: 0, outputLength: 0 },
+    ...sourceMap,
+    {
+      inputIndex: Number.MAX_SAFE_INTEGER,
+      inputLength: 0,
+      outputIndex: Number.MAX_SAFE_INTEGER,
+      outputLength: 0,
+    },
+  ]
+  for (const [segmentIndex, segment] of sourceMap.entries()) {
+    for (let changeSegment = false; !changeSegment; ) {
+      switch (state) {
+        case "looking_for_start_segment": {
+          const nextSegment = sourceMap[segmentIndex + 1]
+          if (
+            nextSegment !== undefined &&
+            nextSegment.outputIndex + nextSegment.outputLength <=
+              simplifiedStart
+          ) {
+            changeSegment = true
+          } else {
+            startSegmentIndex = segmentIndex
+            state = "looking_for_stop_segment"
+          }
+          break
+        }
+
+        case "looking_for_stop_segment": {
+          if (segment.outputIndex < simplifiedStop) {
+            changeSegment = true
+          } else {
+            const startSegment = sourceMap[startSegmentIndex!]
+            const stopSegmentIndex = segmentIndex
+            const stopSegment = segment
+
+            // If opening or closing segments are missing, include them.
+            let firstIncludedSegmentIndex =
+              simplifiedStart <
+              startSegment.outputIndex + startSegment.outputLength
+                ? startSegmentIndex!
+                : startSegmentIndex! + 1
+            let lastIncludedSegmentIndex =
+              simplifiedStop > stopSegment.outputIndex
+                ? stopSegmentIndex
+                : stopSegmentIndex - 1
+            while (true) {
+              for (let areaExtended = true; areaExtended; ) {
+                areaExtended = false
+                for (
+                  let includedSegmentIndex = firstIncludedSegmentIndex;
+                  includedSegmentIndex <= lastIncludedSegmentIndex;
+                  includedSegmentIndex++
+                ) {
+                  const matchingSegmentIndex =
+                    sourceMap[includedSegmentIndex].matchingSegmentIndex
+                  if (matchingSegmentIndex !== undefined) {
+                    // Note: Add 1 to matchingSegmentIndex, because of empty segment
+                    // inserted at start of source map.
+                    if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
+                      firstIncludedSegmentIndex = matchingSegmentIndex + 1
+                      // Extend simplified position to include added segment.
+                      simplifiedStart =
+                        sourceMap[firstIncludedSegmentIndex].outputIndex
+                      areaExtended = true
+                      break
+                    }
+                    if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
+                      lastIncludedSegmentIndex = matchingSegmentIndex + 1
+                      // Extend simplified position to include added segment.
+                      const lastIncludedSegment =
+                        sourceMap[lastIncludedSegmentIndex]
+                      simplifiedStop =
+                        lastIncludedSegment.outputIndex +
+                        lastIncludedSegment.outputLength
+                      areaExtended = true
+                      break
+                    }
+                  }
+                }
+              }
+              if (
+                originalPositionsIncludedSegmentsIndexes.length === 0 ||
+                firstIncludedSegmentIndex >
+                  originalPositionsIncludedSegmentsIndexes.at(-1)!.last
+              ) {
+                break
+              }
+              firstIncludedSegmentIndex =
+                originalPositionsIncludedSegmentsIndexes.pop()!.first
+              originalPositions.pop()
+              simplifiedStart =
+                simplifiedPositions[
+                  originalPositionsIncludedSegmentsIndexes.length
+                ].start
+            }
+
+            const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
+            const originalStart =
+              segmentBefore.inputIndex +
+              segmentBefore.inputLength +
+              simplifiedStart -
+              (segmentBefore.outputIndex + segmentBefore.outputLength)
+
+            const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
+            const originalStop =
+              lastIncludedSegment.inputIndex +
+              lastIncludedSegment.inputLength +
+              simplifiedStop -
+              (lastIncludedSegment.outputIndex +
+                lastIncludedSegment.outputLength)
+
+            originalPositions.push({ start: originalStart, stop: originalStop })
+            originalPositionsIncludedSegmentsIndexes.push({
+              first: firstIncludedSegmentIndex,
+              last: lastIncludedSegmentIndex,
+            })
+            const simplifiedPositionResult = simplifiedPositionsIterator.next()
+            if (simplifiedPositionResult.done) {
+              return originalPositions
+            }
+            const simplifiedPosition = simplifiedPositionResult.value
+            simplifiedStart = simplifiedPosition.start
+            simplifiedStop = simplifiedPosition.stop
+            state = "looking_for_start_segment"
+          }
+          break
+        }
+
+        default: {
+          assertNever(
+            "iterOriginalPositionsFromSimplifiedUsingSourceMap.state",
+            state,
+          )
+        }
+      }
+    }
+  }
+  // Never reached
+  return originalPositions
 }
 
 export function replacePatterns(text: string): Conversion {

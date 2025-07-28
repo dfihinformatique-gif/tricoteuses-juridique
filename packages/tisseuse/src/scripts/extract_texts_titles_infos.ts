@@ -18,6 +18,7 @@ import {
   chainSimplifiers,
   replacePatterns,
   simplifyText,
+  simplifyUnicodeCharacters,
 } from "$lib/text_simplifiers.js"
 
 type TextCidByWordsTree = {
@@ -247,6 +248,7 @@ async function extractTextsNames(): Promise<number> {
 function simplifyTextTitle(title: string): string {
   return chainSimplifiers("Simplification d'un titre de texte", [
     replacePatterns,
+    simplifyUnicodeCharacters,
     simplifyText,
   ])(title).text
 }

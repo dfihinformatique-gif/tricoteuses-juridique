@@ -55,8 +55,13 @@ export function chainSimplifiers(
     const tasks: ConversionTask[] = []
     for (const simplifier of simplifiers) {
       const conversion = simplifier(text)
-      tasks.push(conversion.task)
-      text = conversion.text
+      if (
+        (conversion.task as ConversionTaskLeaf).sourceMap === undefined ||
+        (conversion.task as ConversionTaskLeaf).sourceMap.length !== 0
+      ) {
+        tasks.push(conversion.task)
+        text = conversion.text
+      }
     }
     return {
       task: { tasks, title },
@@ -203,7 +208,7 @@ export function convertHtmlElementsToText({
           })
           outputOffset += 1 - tagLength
         } else if (
-          ["!DOCTYPE", "?XML", "IMG", "INPUT"].includes(tagNameUpperCase)
+          ["!DOCTYPE", "?XML", "COL", "IMG", "INPUT"].includes(tagNameUpperCase)
         ) {
           // Remove self-closing tag.
 
@@ -319,7 +324,7 @@ export function convertHtmlElementsToText({
             outputOffset -= tagLength
           }
         } else if (
-          ["HEAD", "SCRIPT", "STYLE"].includes(tagNameUpperCase) ||
+          ["COLGROUP", "HEAD", "SCRIPT", "STYLE"].includes(tagNameUpperCase) ||
           (removeAWithHref &&
             tagNameUpperCase === "A" &&
             / href=/i.test(tagContent))
@@ -351,6 +356,7 @@ export function convertHtmlElementsToText({
             "A", // When removeAWithHref is false or no href
             "B",
             "BODY",
+            "DL",
             "EM",
             "HTML",
             "I",
@@ -394,6 +400,9 @@ export function convertHtmlElementsToText({
           })
         } else if (
           [
+            "CAPTION",
+            "DD",
+            "DT",
             "H1",
             "H2",
             "H3",
@@ -703,8 +712,8 @@ export function* iterOriginalPositionsFromSimplifiedUsingSourceMap(
 }
 
 /**
- * Note: The original positions are merged when they overlap.
- * So, there may be fewer original positions than simplified positions.
+ * Note: The original positions are split when they overlap.
+ * So, there may be more original positions than simplified positions.
  */
 export function originalPositionsFromSimplified(
   task: ConversionTask,
@@ -720,29 +729,14 @@ export function originalPositionsFromSimplified(
 }
 
 /**
- * Note: The original positions are merged when they overlap.
- * So, there may be fewer original positions than simplified positions.
+ * Note: The original positions are split when they overlap.
+ * So, there may be more original positions than simplified positions.
  */
 export function originalPositionsFromSimplifiedUsingSourceMap(
   sourceMap: SourceMapSegment[],
   simplifiedPositions: TextPosition[],
 ): TextPosition[] {
   const originalPositions: TextPosition[] = []
-  const originalPositionsIncludedSegmentsIndexes: Array<{
-    first: number
-    last: number
-  }> = []
-  const simplifiedPositionsIterator = simplifiedPositions.values()
-  const simplifiedPositionResult = simplifiedPositionsIterator.next()
-  if (simplifiedPositionResult.done) {
-    return originalPositions
-  }
-  let { start: simplifiedStart, stop: simplifiedStop } =
-    simplifiedPositionResult.value
-  let startSegmentIndex: number | undefined = undefined
-  let state: "looking_for_start_segment" | "looking_for_stop_segment" =
-    "looking_for_start_segment"
-
   // Insert empty segment at start & end.
   sourceMap = [
     { inputIndex: 0, inputLength: 0, outputIndex: 0, outputLength: 0 },
@@ -754,140 +748,165 @@ export function originalPositionsFromSimplifiedUsingSourceMap(
       outputLength: 0,
     },
   ]
-  for (const [segmentIndex, segment] of sourceMap.entries()) {
-    for (let changeSegment = false; !changeSegment; ) {
-      switch (state) {
-        case "looking_for_start_segment": {
-          const nextSegment = sourceMap[segmentIndex + 1]
-          if (
-            nextSegment !== undefined &&
-            nextSegment.outputIndex + nextSegment.outputLength <=
-              simplifiedStart
-          ) {
-            changeSegment = true
-          } else {
-            startSegmentIndex = segmentIndex
-            state = "looking_for_stop_segment"
-          }
-          break
-        }
+  let segmentIndex = 0
+  let segment = sourceMap[segmentIndex]
+  for (const simplifiedPosition of simplifiedPositions) {
+    let { start: simplifiedStart } = simplifiedPosition
+    const { stop: simplifiedStop } = simplifiedPosition
 
-        case "looking_for_stop_segment": {
-          if (segment.outputIndex < simplifiedStop) {
-            changeSegment = true
-          } else {
-            const startSegment = sourceMap[startSegmentIndex!]
-            const stopSegmentIndex = segmentIndex
-            const stopSegment = segment
+    convertPosition: for (
+      let simplifiedPositionConverted = false;
+      !simplifiedPositionConverted;
 
-            // If opening or closing segments are missing, include them.
-            let firstIncludedSegmentIndex =
-              simplifiedStart <
-              startSegment.outputIndex + startSegment.outputLength
-                ? startSegmentIndex!
-                : startSegmentIndex! + 1
-            let lastIncludedSegmentIndex =
-              simplifiedStop > stopSegment.outputIndex
-                ? stopSegmentIndex
-                : stopSegmentIndex - 1
-            while (true) {
-              for (let areaExtended = true; areaExtended; ) {
-                areaExtended = false
-                for (
-                  let includedSegmentIndex = firstIncludedSegmentIndex;
-                  includedSegmentIndex <= lastIncludedSegmentIndex;
-                  includedSegmentIndex++
-                ) {
-                  const matchingSegmentIndex =
-                    sourceMap[includedSegmentIndex].matchingSegmentIndex
-                  if (matchingSegmentIndex !== undefined) {
-                    // Note: Add 1 to matchingSegmentIndex, because of empty segment
-                    // inserted at start of source map.
-                    if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
-                      firstIncludedSegmentIndex = matchingSegmentIndex + 1
-                      // Extend simplified position to include added segment.
-                      simplifiedStart =
-                        sourceMap[firstIncludedSegmentIndex].outputIndex
-                      areaExtended = true
-                      break
-                    }
-                    if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
-                      lastIncludedSegmentIndex = matchingSegmentIndex + 1
-                      // Extend simplified position to include added segment.
-                      const lastIncludedSegment =
-                        sourceMap[lastIncludedSegmentIndex]
-                      simplifiedStop =
-                        lastIncludedSegment.outputIndex +
-                        lastIncludedSegment.outputLength
-                      areaExtended = true
-                      break
-                    }
-                  }
-                }
+    ) {
+      for (
+        ;
+        segment.outputIndex + segment.outputLength <= simplifiedStart;
+        segmentIndex++, segment = sourceMap[segmentIndex]
+      );
+      let firstIncludedSegmentIndex = segmentIndex
+      const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
+      let originalStart =
+        segmentBefore.inputIndex +
+        segmentBefore.inputLength +
+        simplifiedStart -
+        (segmentBefore.outputIndex + segmentBefore.outputLength)
+
+      let lastIncludedSegmentIndex: number
+      for (
+        lastIncludedSegmentIndex = firstIncludedSegmentIndex - 1;
+        sourceMap[lastIncludedSegmentIndex + 1].outputIndex < simplifiedStop;
+        lastIncludedSegmentIndex++
+      );
+      const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
+      let originalStop =
+        lastIncludedSegment.inputIndex +
+        lastIncludedSegment.inputLength +
+        simplifiedStop -
+        (lastIncludedSegment.outputIndex + lastIncludedSegment.outputLength)
+
+      for (
+        let includedSegmentIndex = firstIncludedSegmentIndex;
+        includedSegmentIndex <= lastIncludedSegmentIndex;
+        includedSegmentIndex++
+      ) {
+        const includedSegment = sourceMap[includedSegmentIndex]
+        const matchingSegmentIndex = includedSegment.matchingSegmentIndex
+        if (matchingSegmentIndex !== undefined) {
+          // Note: Add 1 to matchingSegmentIndex, because of empty segment
+          // inserted at start of source map.
+          if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
+            const matchingSegment = sourceMap[matchingSegmentIndex + 1]
+            if (matchingSegment.outputIndex < simplifiedStart) {
+              // Split simplified position.
+              if (includedSegment.inputIndex > originalStart) {
+                originalPositions.push({
+                  start: originalStart,
+                  stop: includedSegment.inputIndex,
+                })
               }
-              if (
-                originalPositionsIncludedSegmentsIndexes.length === 0 ||
-                firstIncludedSegmentIndex >
-                  originalPositionsIncludedSegmentsIndexes.at(-1)!.last
-              ) {
-                break
-              }
-              firstIncludedSegmentIndex =
-                originalPositionsIncludedSegmentsIndexes.pop()!.first
-              originalPositions.pop()
               simplifiedStart =
-                simplifiedPositions[
-                  originalPositionsIncludedSegmentsIndexes.length
-                ].start
+                includedSegment.outputIndex + includedSegment.outputLength
+              // Ignore following segments whose output are empty.
+              for (
+                let nextSegmentIndex = includedSegmentIndex,
+                  nextSegment = includedSegment;
+                nextSegment.outputIndex + nextSegment.outputLength ===
+                simplifiedStart;
+                nextSegmentIndex++, nextSegment = sourceMap[nextSegmentIndex]
+              ) {
+                segmentIndex = nextSegmentIndex
+              }
+              // Handle remaining split position.
+              continue convertPosition
             }
-
-            const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
-            const originalStart =
-              segmentBefore.inputIndex +
-              segmentBefore.inputLength +
-              simplifiedStart -
-              (segmentBefore.outputIndex + segmentBefore.outputLength)
-
-            const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
-            const originalStop =
-              lastIncludedSegment.inputIndex +
-              lastIncludedSegment.inputLength +
-              simplifiedStop -
-              (lastIncludedSegment.outputIndex +
-                lastIncludedSegment.outputLength)
-
-            originalPositions.push({ start: originalStart, stop: originalStop })
-            originalPositionsIncludedSegmentsIndexes.push({
-              first: firstIncludedSegmentIndex,
-              last: lastIncludedSegmentIndex,
-            })
-            const simplifiedPositionResult = simplifiedPositionsIterator.next()
-            if (simplifiedPositionResult.done) {
-              return originalPositions
+            firstIncludedSegmentIndex = matchingSegmentIndex + 1
+            originalStart = matchingSegment.inputIndex
+          } else if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
+            const matchingSegment = sourceMap[matchingSegmentIndex + 1]
+            if (
+              matchingSegment.outputIndex + matchingSegment.outputLength >
+              simplifiedStop
+            ) {
+              // Split simplified position.
+              if (includedSegment.inputIndex > originalStart) {
+                originalPositions.push({
+                  start: originalStart,
+                  stop: includedSegment.inputIndex,
+                })
+              }
+              simplifiedStart =
+                includedSegment.outputIndex + includedSegment.outputLength
+              // Ignore following segments whose output are empty.
+              for (
+                let nextSegmentIndex = includedSegmentIndex,
+                  nextSegment = includedSegment;
+                nextSegment.outputIndex + nextSegment.outputLength ===
+                simplifiedStart;
+                nextSegmentIndex++, nextSegment = sourceMap[nextSegmentIndex]
+              ) {
+                segmentIndex = nextSegmentIndex
+              }
+              // Handle remaining split position.
+              continue convertPosition
             }
-            const simplifiedPosition = simplifiedPositionResult.value
-            simplifiedStart = simplifiedPosition.start
-            simplifiedStop = simplifiedPosition.stop
-            state = "looking_for_start_segment"
+            lastIncludedSegmentIndex = matchingSegmentIndex + 1
+            originalStop =
+              matchingSegment.inputIndex + matchingSegment.inputLength
           }
-          break
-        }
-
-        default: {
-          assertNever(
-            "iterOriginalPositionsFromSimplifiedUsingSourceMap.state",
-            state,
-          )
         }
       }
+      originalPositions.push({
+        start: originalStart,
+        stop: originalStop,
+      })
+      simplifiedPositionConverted = true
     }
   }
-  // Never reached
   return originalPositions
 }
 
+export function replacePattern(
+  pattern: RegExp | string,
+  replacement: string,
+): Converter {
+  return (text: string): Conversion => {
+    const sourceMap: SourceMapSegment[] = []
+    text = text.replaceAll(pattern, (slice, ...rest) => {
+      const inputIndex: number = rest.at(-2)
+      let expandedReplacement = replacement
+      for (const [index, p] of rest.slice(0, -2).entries()) {
+        expandedReplacement = expandedReplacement.replaceAll(`$${index + 1}`, p)
+      }
+      sourceMap.push({
+        inputIndex,
+        inputLength: slice.length,
+        // Note: `outputIndex` is added below.
+        outputLength: expandedReplacement.length,
+      } as SourceMapSegment)
+      return expandedReplacement
+    })
+
+    // Add missing attribute `outputIndex` to each sourceMap segment.
+    let outputOffset = 0
+    for (const sourceMapSegment of sourceMap) {
+      sourceMapSegment.outputIndex = sourceMapSegment.inputIndex + outputOffset
+      outputOffset +=
+        sourceMapSegment.outputLength - sourceMapSegment.inputLength
+    }
+
+    return {
+      task: {
+        sourceMap,
+        title: `Remplacement de ${pattern} par ${JSON.stringify(replacement)}`,
+      },
+      text,
+    }
+  }
+}
+
 export function replacePatterns(text: string): Conversion {
-  const sourceMap: SourceMapSegment[] = []
+  const tasks: ConversionTask[] = []
   for (const [pattern, replacement] of [
     // Note: The most englobing patterns must be first.
 
@@ -897,19 +916,8 @@ export function replacePatterns(text: string): Conversion {
     [/<script.*?>.*?<\/script>/gis, ""],
     // Remove <script> element.
     [/<style.*?>.*?<\/style>/gis, ""],
-    // Replace U+00A0 (no-break space) and tab with a normal space.
-    [/[ \t]/g, " "],
     // Ensure that there is always a space after "n°".
     [/(\sn°)([^\s])/gi, "$1 $2"],
-    // Replace three non-ASCII dashes (U+2010, U+2011 et U+2013) with a minus sign.
-    [/[‐‑–]/g, "-"],
-    // Replace non-ASCII apostrophe.
-    [/’/g, "'"],
-    // Replace İ (I with a point) with normal I.
-    // The İ can be used, probably to differentiate the letter I from the Roman numeral I.
-    // For example: Article 199 decies İ of the General Tax Code.
-    // But Légifrance uses a classic I…
-    ["İ", "I"],
     // Remove Sénat "pastillage":
     // - \uF04B-\uF054 are circled numbers 0-9.
     // - \uF031-\uF039 are left-half circled numbers 1-9.
@@ -917,42 +925,20 @@ export function replacePatterns(text: string): Conversion {
     // - \uF061-\uF06A are right-half circled numbers 0-9.
     [/[\uF031-\uF039\uF041-\uF054\uF061-\uF06A]/g, ""],
   ] as Array<[RegExp | string, string]>) {
-    text = text.replaceAll(pattern, (slice, ...rest) => {
-      const inputIndex: number = rest.at(-2)
-      let expandedReplacement = replacement
-      for (const [index, p] of rest.slice(0, -2).entries()) {
-        expandedReplacement = expandedReplacement.replaceAll(`$${index + 1}`, p)
-      }
-      const sourceMapSegment: SourceMapSegment = {
-        inputIndex,
-        inputLength: slice.length,
-        // Note: `outputIndex` is added below.
-        outputLength: expandedReplacement.length,
-      } as SourceMapSegment
-      const nextSourceMapSegmentIndex = sourceMap.findIndex(
-        (segment) => segment.inputIndex > inputIndex,
-      )
-      if (nextSourceMapSegmentIndex === -1) {
-        sourceMap.push(sourceMapSegment)
-      } else {
-        sourceMap.splice(nextSourceMapSegmentIndex, 0, sourceMapSegment)
-      }
-      return expandedReplacement
-    })
+    const conversion = replacePattern(pattern, replacement)(text)
+    if (
+      (conversion.task as ConversionTaskLeaf).sourceMap === undefined ||
+      (conversion.task as ConversionTaskLeaf).sourceMap.length !== 0
+    ) {
+      tasks.push(conversion.task)
+      text = conversion.text
+    }
   }
-
-  // Add missing attribute `outputIndex` to each sourceMap segment.
-  let outputOffset = 0
-  for (const sourceMapSegment of sourceMap) {
-    sourceMapSegment.outputIndex = sourceMapSegment.inputIndex + outputOffset
-    outputOffset += sourceMapSegment.outputLength - sourceMapSegment.inputLength
-  }
-
   return {
     task: {
-      sourceMap,
+      tasks,
       title:
-        "Suppression des commentaires HTML et remplacement des caractères unicodes",
+        "Suppression des commentaires, scripts et styles HTML et nettoyage d'expressions",
     },
     text,
   }
@@ -966,6 +952,7 @@ export function simplifyHtml({
       decodeNamedHtmlEntities,
       decodeNumericHtmlEntities,
       replacePatterns,
+      simplifyUnicodeCharacters,
       convertHtmlElementsToText({ removeAWithHref }),
       simplifyText,
     ])(text)
@@ -1015,6 +1002,58 @@ export function simplifyText(text: string): Conversion {
     task: {
       tasks,
       title: "Simplification du texte",
+    },
+    text,
+  }
+}
+
+export function simplifyUnicodeCharacters(text: string): Conversion {
+  const sourceMap: SourceMapSegment[] = []
+  for (const [pattern, replacement] of [
+    // Replace U+00A0 (no-break space) and tab with a normal space.
+    [/[ \t]/g, " "],
+    // Replace three non-ASCII dashes (U+2010, U+2011 et U+2013) with a minus sign.
+    [/[‐‑–]/g, "-"],
+    // Replace non-ASCII apostrophe.
+    [/’/g, "'"],
+    // Replace İ (I with a point) with normal I.
+    // The İ can be used, probably to differentiate the letter I from the Roman numeral I.
+    // For example: Article 199 decies İ of the General Tax Code.
+    // But Légifrance uses a classic I…
+    ["İ", "I"],
+  ] as Array<[RegExp | string, string]>) {
+    text = text.replaceAll(pattern, (slice, ...rest) => {
+      const inputIndex: number = rest.at(-2)
+      const sourceMapSegment: SourceMapSegment = {
+        inputIndex,
+        inputLength: 1,
+        outputIndex: inputIndex,
+        // Note: `outputIndex` is added below.
+        outputLength: 1,
+      } as SourceMapSegment
+      const nextSourceMapSegmentIndex = sourceMap.findIndex(
+        (segment) => segment.inputIndex > inputIndex,
+      )
+      if (nextSourceMapSegmentIndex === -1) {
+        sourceMap.push(sourceMapSegment)
+      } else {
+        sourceMap.splice(nextSourceMapSegmentIndex, 0, sourceMapSegment)
+      }
+      return replacement
+    })
+  }
+
+  // Add missing attribute `outputIndex` to each sourceMap segment.
+  let outputOffset = 0
+  for (const sourceMapSegment of sourceMap) {
+    sourceMapSegment.outputIndex = sourceMapSegment.inputIndex + outputOffset
+    outputOffset += sourceMapSegment.outputLength - sourceMapSegment.inputLength
+  }
+
+  return {
+    task: {
+      sourceMap,
+      title: "Simplification des caractères unicodes",
     },
     text,
   }

@@ -34,7 +34,7 @@ const sdk = new NodeSDK({
     // Jaeger OTLP endpoint
     // Use http://jaeger:4318/v1/traces if using Docker Compose
     // Or use http://localhost:4318/v1/traces for local Jaeger instance
-    url: "https://jaeger-4318.tricoteuses.fr/v1/traces",
+    url: "http://tracing.tricoteuses.fr:4318/v1/traces",
     // headers: {}, // You can add custom headers if needed
   }),
 })

@@ -41,12 +41,12 @@ async function htmlDocumentToText(
   return 0
 }
 
-sade("html_document_to_text <html_document> <text_document>", true)
+sade("html_document_to_text <html_document> <output_dir>", true)
   .describe("Convert an HTML document to an extremely simplified text")
   .option("-i, --intermediate", "Generate files for intermediate conversions")
-  .action(async (inputDocumentPath, outputDocumentPath, options) => {
+  .action(async (inputDocumentPath, outputDir, options) => {
     process.exit(
-      await htmlDocumentToText(inputDocumentPath, outputDocumentPath, options),
+      await htmlDocumentToText(inputDocumentPath, outputDir, options),
     )
   })
   .parse(process.argv)

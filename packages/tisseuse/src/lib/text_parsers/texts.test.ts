@@ -60,6 +60,17 @@ describe("Textes français", () => {
       expect(context.remaining()).toBe("")
     })
 
+    test("code de l'éducation", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        cid: "LEGITEXT000006071191",
+        nature: "CODE",
+        title: "Code de l'éducation",
+        type: "texte",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
     test("code forestier de Mayotte", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({

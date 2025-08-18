@@ -287,6 +287,18 @@ export function isTextAstAtomicReference(
       return false
 
     default:
-      assertNever("TextAstReference", reference)
+      assertNever("isTextAstAtomicReference", reference)
   }
+}
+
+export function isTextAstDivision(
+  reference: TextAstReference,
+): reference is TextAstDivision {
+  return divisionTypes.includes(reference.type as DivisionType)
+}
+
+export function isTextAstPortion(
+  reference: TextAstReference,
+): reference is TextAstPortion {
+  return portionTypes.includes(reference.type as PortionType)
 }

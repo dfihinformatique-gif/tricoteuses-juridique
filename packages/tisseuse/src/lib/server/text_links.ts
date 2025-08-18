@@ -4,12 +4,16 @@ import { assertNever } from "$lib/asserts.js"
 import type { JorfArticle } from "$lib/legal/jorf.js"
 import type { LegiArticle } from "$lib/legal/legi.js"
 import { db } from "$lib/server/databases/index.js"
-import type {
-  TextAstArticle,
-  TextAstLocalizationRelative,
-  TextAstPosition,
-  TextAstText,
-  TextPosition,
+import {
+  isTextAstDivision,
+  isTextAstPortion,
+  type TextAstArticle,
+  type TextAstDivision,
+  type TextAstLocalizationRelative,
+  type TextAstPosition,
+  type TextAstReference,
+  type TextAstText,
+  type TextPosition,
 } from "$lib/text_parsers/ast.js"
 import {
   iterAtomicOrParentChildReferences,
@@ -30,6 +34,65 @@ export interface TextLink {
   position: TextPosition
   text: TextAstText & TextAstPosition
   type: "texte"
+}
+
+function* iterDeepestDivisionsOrArticles(
+  reference: TextAstReference,
+): Generator<TextAstArticle | TextAstDivision> {
+  if (reference.type === "texte") {
+    throw new Error(
+      `iterDeepestDivisionsOrArticles must not be called with a text:\n${JSON.stringify(reference, null, 2)}`,
+    )
+  } else if (isTextAstDivision(reference) || reference.type === "article") {
+    yield reference
+  } else if (
+    isTextAstPortion(reference) ||
+    reference.type === "incomplete-header"
+  ) {
+    // Ignore incomplete or infra-article (aka portion) references.
+  } else {
+    switch (reference.type) {
+      case "bounded-interval": {
+        // Caution: This is a approximation.
+        yield* iterDeepestDivisionsOrArticles(reference.first)
+        yield* iterDeepestDivisionsOrArticles(reference.last)
+        break
+      }
+
+      case "counted-interval": {
+        yield* iterDeepestDivisionsOrArticles(reference.first)
+        break
+      }
+
+      case "enumeration":
+      case "exclusion": {
+        yield* iterDeepestDivisionsOrArticles(reference.left)
+        yield* iterDeepestDivisionsOrArticles(reference.right)
+        break
+      }
+
+      case "parent-enfant": {
+        const childDeepestDivisionsOrArticles = [
+          ...iterDeepestDivisionsOrArticles(reference.child),
+        ]
+        if (childDeepestDivisionsOrArticles.length === 0) {
+          yield* iterDeepestDivisionsOrArticles(reference.parent)
+        } else {
+          yield* childDeepestDivisionsOrArticles
+        }
+        break
+      }
+
+      case "reference_et_action": {
+        yield* iterDeepestDivisionsOrArticles(reference.reference)
+        break
+      }
+
+      default: {
+        assertNever("iterDeepestDivisionsOrArticles reference.type", reference)
+      }
+    }
+  }
 }
 
 export async function* iterTextLinks(
@@ -56,10 +119,10 @@ export async function* iterTextLinks(
   let currentLawId: string | undefined = undefined
   let currentTextId: string | undefined = undefined
 
-  async function* iterArticleLink(
+  async function* iterArticleLinks(
     article: TextAstArticle,
     text?: (TextAstText & TextAstPosition) | undefined,
-    isSingleAtomicReferenceInText?: boolean | undefined,
+    isSingleDeepDivisionOrArticle?: boolean | undefined,
   ): AsyncGenerator<ArticleLink, void> {
     if (
       (article.localization as TextAstLocalizationRelative)?.relative === 0 &&
@@ -182,10 +245,11 @@ export async function* iterTextLinks(
 
     if (currentArticleId !== undefined) {
       const position =
-        text !== undefined && isSingleAtomicReferenceInText
-          ? text.position!
-          : article.position!
-      assert.notStrictEqual(position, undefined)
+        text === undefined || !isSingleDeepDivisionOrArticle
+          ? article.position!
+          : article.position!.start < text.position!.start
+            ? { start: article.position.start, stop: text.position.stop }
+            : { start: text.position.start, stop: article.position.stop }
       yield {
         article,
         articleId: currentArticleId,
@@ -225,7 +289,7 @@ export async function* iterTextLinks(
         }
 
         case "article": {
-          yield* iterArticleLink(atomicReference)
+          yield* iterArticleLinks(atomicReference)
           break
         }
 
@@ -337,6 +401,14 @@ export async function* iterTextLinks(
             parentChildReference === undefined
               ? []
               : [...iterAtomicReferences(parentChildReference.child)]
+          const textDeepestDivisionsOrArticles =
+            parentChildReference === undefined
+              ? []
+              : [...iterDeepestDivisionsOrArticles(parentChildReference.child)]
+          const textSingleDeepDivisionOrArticle =
+            textDeepestDivisionsOrArticles.length === 1
+              ? textDeepestDivisionsOrArticles[0]
+              : undefined
           let addedLinksCount = 0
           for (const atomicReferenceInText of atomicReferencesInText) {
             switch (atomicReferenceInText.type) {
@@ -349,10 +421,10 @@ export async function* iterTextLinks(
               }
 
               case "article": {
-                yield* iterArticleLink(
+                yield* iterArticleLinks(
                   atomicReferenceInText,
                   atomicReference,
-                  atomicReferencesInText.length === 1,
+                  atomicReferenceInText === textSingleDeepDivisionOrArticle,
                 )
                 addedLinksCount++
                 break

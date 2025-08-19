@@ -540,16 +540,16 @@ export function* iterConversionTaskSourceMaps(
 }
 
 /**
- * Caution: This iterator fails when successive original positions overalp.
+ * Caution: This iterator fails when successive original positions overlap.
  */
-export function* iterOriginalPositionsFromSimplified(
+export function* iterOriginalMergedPositionsFromSimplified(
   task: ConversionTask,
 ): Generator<TextPosition, void, TextPosition | undefined> {
   const sourceMaps = [...iterConversionTaskSourceMaps(task)].reverse()
   let position: TextPosition | undefined = { start: 0, stop: 0 }
   const sourceMapsIterators = sourceMaps.map((sourceMap) => {
     const sourceMapIterator =
-      iterOriginalPositionsFromSimplifiedUsingSourceMap(sourceMap)
+      iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(sourceMap)
     // Launch iterator using a dummy position and ignore the result.
     sourceMapIterator.next(position)
     return sourceMapIterator
@@ -573,9 +573,9 @@ export function* iterOriginalPositionsFromSimplified(
 }
 
 /**
- * Caution: This iterator fails when successive original positions overalp.
+ * Caution: This iterator fails when successive original positions overlap.
  */
-export function* iterOriginalPositionsFromSimplifiedUsingSourceMap(
+export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
   sourceMap: SourceMapSegment[],
 ): Generator<TextPosition, void, TextPosition | undefined> {
   let startSegmentIndex: number | undefined = undefined
@@ -702,7 +702,7 @@ export function* iterOriginalPositionsFromSimplifiedUsingSourceMap(
 
         default: {
           assertNever(
-            "iterOriginalPositionsFromSimplifiedUsingSourceMap.state",
+            "iterOriginalMergedPositionsFromSimplifiedUsingSourceMap.state",
             state,
           )
         }
@@ -712,15 +712,38 @@ export function* iterOriginalPositionsFromSimplifiedUsingSourceMap(
 }
 
 /**
+ * Caution: This iterator fails when successive original positions overlap.
+ */
+export function originalMergedPositionsFromSimplified(
+  task: ConversionTask,
+  simplifiedPositions: TextPosition[],
+): TextPosition[] {
+  const originalMergedPositionsFromSimplifiedIterator =
+    iterOriginalMergedPositionsFromSimplified(task)
+  // Initialize iterator by sending a dummy value and ignoring the result.
+  originalMergedPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+  return simplifiedPositions.map((simplifiedPosition) => {
+    const result =
+      originalMergedPositionsFromSimplifiedIterator.next(simplifiedPosition)
+    if (result.done) {
+      throw new Error(
+        `Conversion of article position to HTML failed: ${simplifiedPosition}`,
+      )
+    }
+    return result.value
+  })
+}
+
+/**
  * Note: The original positions are split when they overlap.
  * So, there may be more original positions than simplified positions.
  */
-export function originalPositionsFromSimplified(
+export function originalSplitPositionsFromSimplified(
   task: ConversionTask,
   positions: TextPosition[],
 ): TextPosition[] {
   for (const sourceMap of [...iterConversionTaskSourceMaps(task)].reverse()) {
-    positions = originalPositionsFromSimplifiedUsingSourceMap(
+    positions = originalSplitPositionsFromSimplifiedUsingSourceMap(
       sourceMap,
       positions,
     )
@@ -732,7 +755,7 @@ export function originalPositionsFromSimplified(
  * Note: The original positions are split when they overlap.
  * So, there may be more original positions than simplified positions.
  */
-export function originalPositionsFromSimplifiedUsingSourceMap(
+export function originalSplitPositionsFromSimplifiedUsingSourceMap(
   sourceMap: SourceMapSegment[],
   simplifiedPositions: TextPosition[],
 ): TextPosition[] {

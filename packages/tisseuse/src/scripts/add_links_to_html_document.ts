@@ -6,7 +6,7 @@ import { gitPathFromId } from "$lib/legal/ids.js"
 import { iterTextLinks } from "$lib/server/text_links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import {
-  iterOriginalPositionsFromSimplified,
+  iterOriginalMergedPositionsFromSimplified,
   simplifyHtml,
 } from "$lib/text_simplifiers.js"
 import type { TextAstLocalizationRelative } from "$lib/text_parsers/ast.js"
@@ -32,10 +32,10 @@ async function addLinksToHtmlDocument(
   const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
   const inputText = conversion.text
   const context = new TextParserContext(inputText)
-  const originalPositionsFromSimplifiedIterator =
-    iterOriginalPositionsFromSimplified(conversion.task)
+  const originalMergedPositionsFromSimplifiedIterator =
+    iterOriginalMergedPositionsFromSimplified(conversion.task)
   // Initialize iterator by sending a dummy value and ignoring the result.
-  originalPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
+  originalMergedPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
   let output = inputHtml
   let outputOffset = 0
 
@@ -50,7 +50,7 @@ async function addLinksToHtmlDocument(
       case "article": {
         const { articleId, position: articlePosition } = link
         const result =
-          originalPositionsFromSimplifiedIterator.next(articlePosition)
+          originalMergedPositionsFromSimplifiedIterator.next(articlePosition)
         if (result.done) {
           console.error(
             "Conversion of article position to HTML failed:",
@@ -87,7 +87,7 @@ async function addLinksToHtmlDocument(
         }
 
         const result =
-          originalPositionsFromSimplifiedIterator.next(textPosition)
+          originalMergedPositionsFromSimplifiedIterator.next(textPosition)
         if (result.done) {
           console.error(
             "Conversion of text position to HTML failed:",

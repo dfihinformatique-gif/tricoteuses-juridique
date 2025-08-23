@@ -535,6 +535,7 @@ export async function registerLegiArticleModifiersAndReferences(
       // Ignore link.
     } else if (
       (referringTextLien.typelien === "CREATION" && referringTextLien.cible) ||
+      (referringTextLien.typelien === "CREE" && !referringTextLien.cible) ||
       (referringTextLien.typelien === "MODIFICATION" &&
         referringTextLien.cible) ||
       (referringTextLien.typelien === "MODIFIE" && !referringTextLien.cible)

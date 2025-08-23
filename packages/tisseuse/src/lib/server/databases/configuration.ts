@@ -273,6 +273,14 @@ export async function configureDatabase() {
     )
   `
 
+  // Table: update
+  await db`
+    CREATE TABLE IF NOT EXISTS last_update (
+      commit_id text NOT NULL,
+      origin text PRIMARY KEY
+    )
+  `
+
   // Table: versions
   await db`
     CREATE TABLE IF NOT EXISTS versions (

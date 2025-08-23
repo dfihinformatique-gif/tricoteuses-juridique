@@ -46,13 +46,13 @@ import { walkTreesChanges } from "$lib/server/nodegit/trees.js"
 async function importLegi(
   dilaDir: string,
   {
-    base: baseCommitId,
+    incremental,
     category,
     "dry-run": dryRun,
     resume,
     verbose,
   }: {
-    base?: string
+    incremental?: boolean
     category?: string
     "dry-run"?: boolean
     resume?: string
@@ -79,6 +79,15 @@ async function importLegi(
   const headReference = await repository.head()
   const commit = await repository.getCommit(headReference.target())
   const tree = await commit.getTree()
+  const baseCommitId = incremental
+    ? (
+        await db<{ commit_id: string }[]>`
+          SELECT id
+          FROM last_update
+          WHERE origin = 'LEGI'
+        `
+      )[0]?.commit_id
+    : undefined
   const baseCommit =
     baseCommitId === undefined
       ? undefined
@@ -723,6 +732,23 @@ async function importLegi(
       `
     }
   }
+
+  if (!dryRun) {
+    await db`
+      INSERT INTO last_update (
+        commit_id,
+        origin
+      ) VALUES (
+        ${commit.id().tostrS()},
+        'LEGI'
+      )
+      ON CONFLICT (origin)
+      DO UPDATE SET
+        commit_id = EXCLUDED.commit_id,
+      WHERE last_update.commit_id IS DISTINCT FROM EXCLUDED.commit_id
+    `
+  }
+
   // console.log(
   //   "LEGI ARTICLE stats =",
   //   JSON.stringify(legiArticleStats, null, 2),
@@ -740,7 +766,7 @@ async function importLegi(
 
 sade("import_legi <dilaDir>", true)
   .describe("Import Dila's LEGI database")
-  .option("-b, --base", "ID of commit to use as base for incremental import")
+  .option("-i, --incremental", "Try to do an incremental import")
   .option("-d, --dry-run", "Validate only; don't update database")
   .option("-k, --category", "Import only given type of data")
   .option("-r, --resume", "Resume import at given relative file path")

@@ -115,7 +115,7 @@ async function importDole(
       if (!dryRun) {
         if (deleteEntry) {
           await db`
-            DELETE FROM article
+            DELETE FROM dossier_legislatif
             WHERE id = ${dossierLegislatif.META.META_COMMUN.ID}
           `
         } else {

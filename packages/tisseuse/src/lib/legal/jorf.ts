@@ -948,6 +948,7 @@ export const allJorfSectionTaTexteNatures = [
   "INSTRUCTION", // 39
   "LISTE", // 394
   "LOI", // 5161
+  "LOI_CONSTIT",
   "LOI_ORGANIQUE", // 71
   "MODIFICATION", // 6
   "ORDONNANCE", // 9566

@@ -571,6 +571,7 @@ export async function registerLegiArticleModifiersAndReferences(
     } else if (
       (referringTextLien.typelien === "CODIFICATION" &&
         referringTextLien.cible) ||
+      (referringTextLien.typelien === "CODIFIE" && !referringTextLien.cible) ||
       (referringTextLien.typelien === "CONCORDANCE" &&
         referringTextLien.cible) ||
       (referringTextLien.typelien === "CONCORDE" && !referringTextLien.cible) ||

@@ -96,7 +96,7 @@
     role="button"
     tabindex="-1"
   >
-    <Minus class="mr-1 mt-0.5 w-3 flex-none shrink-0" />
+    <Minus class="mt-0.5 mr-1 w-3 flex-none shrink-0" />
     <a
       class="text-blue-500 underline hover:decoration-2"
       href={pathnameFromLegalId(id)}
@@ -113,7 +113,7 @@
     tabindex="-1"
   >
     <Triangle
-      class="mr-1 mt-0.5 w-3 flex-none"
+      class="mt-0.5 mr-1 w-3 flex-none"
       fill="currentColor"
       transform="rotate({open ? 180 : 90})"
     />

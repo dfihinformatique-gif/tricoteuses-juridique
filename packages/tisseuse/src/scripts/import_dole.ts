@@ -231,7 +231,7 @@ async function importDole(
       )
       ON CONFLICT (origin)
       DO UPDATE SET
-        commit_id = EXCLUDED.commit_id,
+        commit_id = EXCLUDED.commit_id
       WHERE last_update.commit_id IS DISTINCT FROM EXCLUDED.commit_id
     `
   }

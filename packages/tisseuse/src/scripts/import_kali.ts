@@ -42,7 +42,7 @@ async function importKali(
   const baseCommitId = incremental
     ? (
         await db<{ commit_id: string }[]>`
-          SELECT id
+          SELECT commit_id
           FROM last_update
           WHERE origin = 'KALI'
         `

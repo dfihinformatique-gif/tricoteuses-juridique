@@ -205,7 +205,7 @@ export async function* iterTextLinks(
     }
     if (articlesInfos.length === 0) {
       console.warn(
-        `Unknown article ${article.num ?? null} of text ${currentTextId} for reference ${JSON.stringify(article, null, 2)}`,
+        `In "${context.input.slice(article.position.start, article.position.stop)}": Unknown article ${article.num ?? null} of text ${currentTextId} for reference ${JSON.stringify(article, null, 2)}`,
       )
       currentArticleId = undefined
     } else if (articlesInfos.length === 1) {
@@ -232,7 +232,7 @@ export async function* iterTextLinks(
             articlesInfos = filteredArticlesInfos
           }
           console.warn(
-            `Unable to filter the article ${article.num ?? null} of text ${currentTextId ?? null} among IDs ${JSON.stringify(
+            `In "${context.input.slice(article.position.start, article.position.stop)}": Unable to filter article ${article.num ?? null} of text ${currentTextId ?? null} among IDs ${JSON.stringify(
               articlesInfos.map(({ id }) => id),
               null,
               2,
@@ -263,7 +263,7 @@ export async function* iterTextLinks(
   for (const reference of iterReferences(context)) {
     if (logReferences) {
       console.log(
-        `\nReference "${context.text(reference.position)}": ${JSON.stringify(reference, null, 2)}`,
+        `In "${context.input.slice(reference.position.start, reference.position.stop)}": \nReference "${context.text(reference.position)}": ${JSON.stringify(reference, null, 2)}`,
       )
     }
     for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
@@ -331,7 +331,7 @@ export async function* iterTextLinks(
               if (atomicReference.cid === undefined) {
                 if (logPartialReferences) {
                   console.log(
-                    `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
+                    `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
                   )
                 }
                 currentTextId = undefined
@@ -355,7 +355,7 @@ export async function* iterTextLinks(
               if (atomicReference.cid === undefined) {
                 if (logPartialReferences) {
                   console.log(
-                    `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
+                    `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
                   )
                 }
                 currentTextId = undefined
@@ -382,7 +382,7 @@ export async function* iterTextLinks(
               if (atomicReference.cid === undefined) {
                 if (logPartialReferences) {
                   console.log(
-                    `Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
+                    `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
                   )
                 }
                 currentTextId = undefined
@@ -444,7 +444,7 @@ export async function* iterTextLinks(
               default:
                 if (logIgnoredReferencesTypes) {
                   console.log(
-                    `Reference of type ${atomicReferenceInText.type} ignored in text`,
+                    `In "${context.input.slice(reference.position.start, reference.position.stop)}": Reference of type ${atomicReferenceInText.type} ignored in text`,
                   )
                   console.log(JSON.stringify(reference, null, 2))
                 }
@@ -466,7 +466,7 @@ export async function* iterTextLinks(
           // assertNever("AtomicReference", atomicReference)
           if (logIgnoredReferencesTypes) {
             console.log(
-              `Reference ${JSON.stringify(atomicReference, null, 2)} ignored`,
+              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Reference ${JSON.stringify(atomicReference, null, 2)} ignored`,
             )
             console.log(JSON.stringify(reference, null, 2))
           }

@@ -1,29 +1,47 @@
 import { assertNever } from "./asserts.js"
 import type { TextPosition } from "./text_parsers/ast.js"
 
-export interface Conversion {
-  task: ConversionTask
-  text: string
-}
+export type Conversion = ConversionLeaf | ConversionNode
 
-export type ConversionTask = ConversionTaskLeaf | ConversionTaskNode
-
-export interface ConversionTaskLeaf {
+export interface ConversionLeaf {
+  input: string
+  output: string
   sourceMap: SourceMapSegment[]
   title: string
 }
 
-export interface ConversionTaskNode {
-  tasks: ConversionTask[]
+export interface ConversionNode {
+  conversions: Conversion[]
+  input: string
+  output: string
   title: string
 }
 
 export type Converter = (text: string) => Conversion
 
+export type ConverterLeaf = (text: string) => ConversionLeaf
+
+export type ConverterNode = (text: string) => ConversionNode
+
+export interface FragmentReverseConversion {
+  innerPrefix?: string
+  innerSuffix?: string
+  outerPrefix?: string
+  outerSuffix?: string
+  position: TextPosition
+}
+
 interface SourceMapSegment {
   inputIndex: number
   inputLength: number
   matchingSegmentIndex?: number
+  /**
+   * Added only by `convertHtmlElementsToText`
+   *
+   * It allows `iterOriginalMergedPositionsFromSimplified` function
+   * to reorganize HTML elements.
+   */
+  openingTag?: string
   outputIndex: number
   outputLength: number
 }
@@ -47,26 +65,26 @@ const characterByNamedHtmlEntity: Record<string, string> = {
   trade: "™",
 }
 
-export function chainSimplifiers(
+const tagRegExp = /^<\/?(!DOCTYPE|\?XML|[A-Z][A-Z0-9]*)/i
+
+export function chainConverters(
   title: string,
-  simplifiers: Array<(text: string) => Conversion>,
-): Converter {
-  return (text: string): Conversion => {
-    const tasks: ConversionTask[] = []
-    for (const simplifier of simplifiers) {
-      const conversion = simplifier(text)
+  converters: Array<Converter>,
+): ConverterNode {
+  return (input: string): ConversionNode => {
+    const conversions: Conversion[] = []
+    let text = input
+    for (const converter of converters) {
+      const conversion = converter(text)
       if (
-        (conversion.task as ConversionTaskLeaf).sourceMap === undefined ||
-        (conversion.task as ConversionTaskLeaf).sourceMap.length !== 0
+        (conversion as ConversionNode).conversions !== undefined ||
+        (conversion as ConversionLeaf).sourceMap.length !== 0
       ) {
-        tasks.push(conversion.task)
-        text = conversion.text
+        conversions.push(conversion)
+        text = conversion.output
       }
     }
-    return {
-      task: { tasks, title },
-      text,
-    }
+    return { conversions, input, output: text, title }
   }
 }
 
@@ -74,8 +92,8 @@ export function convertHtmlElementsToText({
   removeAWithHref,
 }: {
   removeAWithHref?: boolean
-} = {}): Converter {
-  return (inputText: string): Conversion => {
+} = {}): ConverterLeaf {
+  return (input: string): ConversionLeaf => {
     let inputIndex = 0
     let outputOffset = 0
     let outputFragments: string[] = []
@@ -101,43 +119,43 @@ export function convertHtmlElementsToText({
         }
     > = []
     const title = "Conversion des éléments HTML en texte"
-    while (inputIndex < inputText.length) {
+    while (inputIndex < input.length) {
       // Find the next tag
-      const tagStartIndex = inputText.indexOf("<", inputIndex)
+      const tagStartIndex = input.indexOf("<", inputIndex)
 
       if (tagStartIndex === -1) {
         // No more tags, keep the remaining text unchanged.
-        outputFragments.push(
-          inputText.slice(inputIndex).replace(/[\n\r]/g, " "),
-        )
+        outputFragments.push(input.slice(inputIndex).replace(/[\n\r]/g, " "))
         return {
-          task: { sourceMap, title },
-          text: outputFragments.join(""),
+          input,
+          output: outputFragments.join(""),
+          sourceMap,
+          title,
         }
       }
 
       // Find the end of the tag.
-      const tagEndIndex = inputText.indexOf(">", tagStartIndex)
+      const tagEndIndex = input.indexOf(">", tagStartIndex)
       if (tagEndIndex === -1) {
         // Malformed HTML, just keep the remaining text unchanged.
-        outputFragments.push(
-          inputText.slice(inputIndex).replace(/[\n\r]/g, " "),
-        )
+        outputFragments.push(input.slice(inputIndex).replace(/[\n\r]/g, " "))
         return {
-          task: { sourceMap, title },
-          text: outputFragments.join(""),
+          input,
+          output: outputFragments.join(""),
+          sourceMap,
+          title,
         }
       }
 
-      const tagContent = inputText.slice(tagStartIndex, tagEndIndex + 1)
-      const isClosingTag = tagContent.startsWith("</")
-      const tagLength = tagContent.length
-      const tagMatch = tagContent.match(/^<\/?(!DOCTYPE|\?XML|[A-Z][A-Z0-9]*)/i)
+      const tag = input.slice(tagStartIndex, tagEndIndex + 1)
+      const isClosingTag = tag.startsWith("</")
+      const tagLength = tag.length
+      const tagMatch = tag.match(tagRegExp)
 
       if (tagMatch === null) {
         // Not a standard tag. Keep it as normal text.
         outputFragments.push(
-          inputText.slice(inputIndex, tagEndIndex + 1).replace(/[\n\r]/g, " "),
+          input.slice(inputIndex, tagEndIndex + 1).replace(/[\n\r]/g, " "),
         )
         inputIndex = tagEndIndex + 1
         continue
@@ -146,7 +164,7 @@ export function convertHtmlElementsToText({
       const tagName = tagMatch[1]
       const tagNameUpperCase = tagName.toUpperCase()
       const isSelfClosingTag =
-        tagContent.endsWith("/>") ||
+        tag.endsWith("/>") ||
         [
           "!DOCTYPE",
           "?XML",
@@ -174,9 +192,7 @@ export function convertHtmlElementsToText({
           if (tagStartIndex > inputIndex) {
             // Keep the text before tag as is.
             outputFragments.push(
-              inputText
-                .slice(inputIndex, tagStartIndex)
-                .replace(/[\n\r]/g, " "),
+              input.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
             )
           }
           sourceMap.push({
@@ -192,9 +208,7 @@ export function convertHtmlElementsToText({
           if (tagStartIndex > inputIndex) {
             // Keep the text before tag as is.
             outputFragments.push(
-              inputText
-                .slice(inputIndex, tagStartIndex)
-                .replace(/[\n\r]/g, " "),
+              input.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
             )
           }
           // Replace self-closing tag with new line.
@@ -203,6 +217,7 @@ export function convertHtmlElementsToText({
           sourceMap.push({
             inputIndex: tagStartIndex,
             inputLength: tagLength,
+            openingTag: tag,
             outputIndex: tagStartIndex + outputOffset,
             outputLength: 1,
           })
@@ -215,14 +230,13 @@ export function convertHtmlElementsToText({
           if (tagStartIndex > inputIndex) {
             // Keep the text before tag as is.
             outputFragments.push(
-              inputText
-                .slice(inputIndex, tagStartIndex)
-                .replace(/[\n\r]/g, " "),
+              input.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
             )
           }
           sourceMap.push({
             inputIndex: tagStartIndex,
             inputLength: tagLength,
+            openingTag: tag,
             outputIndex: tagStartIndex + outputOffset,
             outputLength: 0,
           })
@@ -230,9 +244,7 @@ export function convertHtmlElementsToText({
         } else {
           // Keep self-closing tag (and the text before tag).
           outputFragments.push(
-            inputText
-              .slice(inputIndex, tagEndIndex + 1)
-              .replace(/[\n\r]/g, " "),
+            input.slice(inputIndex, tagEndIndex + 1).replace(/[\n\r]/g, " "),
           )
         }
       } else {
@@ -248,7 +260,7 @@ export function convertHtmlElementsToText({
               case undefined: {
                 // Keep the text before closing tag and the closing tag as is.
                 outputFragments.push(
-                  inputText
+                  input
                     .slice(inputIndex, tagEndIndex + 1)
                     .replace(/[\n\r]/g, " "),
                 )
@@ -277,7 +289,7 @@ export function convertHtmlElementsToText({
                 // Keep the text before closing tag as is, and replace closing tag.
 
                 outputFragments.push(
-                  inputText
+                  input
                     .slice(inputIndex, tagStartIndex)
                     .replace(/[\n\r]/g, " "),
                 )
@@ -310,9 +322,7 @@ export function convertHtmlElementsToText({
             if (tagStartIndex > inputIndex) {
               // Keep the text before closing tag as is.
               outputFragments.push(
-                inputText
-                  .slice(inputIndex, tagStartIndex)
-                  .replace(/[\n\r]/g, " "),
+                input.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
               )
             }
             sourceMap.push({
@@ -325,18 +335,14 @@ export function convertHtmlElementsToText({
           }
         } else if (
           ["COLGROUP", "HEAD", "SCRIPT", "STYLE"].includes(tagNameUpperCase) ||
-          (removeAWithHref &&
-            tagNameUpperCase === "A" &&
-            / href=/i.test(tagContent))
+          (removeAWithHref && tagNameUpperCase === "A" && / href=/i.test(tag))
         ) {
           // Ignore opening tag, its content and closing tag.
 
           if (tagStartIndex > inputIndex) {
             // Keep the text before tag as is.
             outputFragments.push(
-              inputText
-                .slice(inputIndex, tagStartIndex)
-                .replace(/[\n\r]/g, " "),
+              input.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
             )
           }
           tagsStack.push({
@@ -377,9 +383,7 @@ export function convertHtmlElementsToText({
           if (tagStartIndex > inputIndex) {
             // Keep the text before tag as is.
             outputFragments.push(
-              inputText
-                .slice(inputIndex, tagStartIndex)
-                .replace(/[\n\r]/g, " "),
+              input.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
             )
           }
           // Skip opening tag.
@@ -387,6 +391,7 @@ export function convertHtmlElementsToText({
           sourceMap.push({
             inputIndex: tagStartIndex,
             inputLength: tagLength,
+            openingTag: tag,
             outputIndex: tagStartIndex + outputOffset,
             outputLength: 0,
           })
@@ -422,9 +427,7 @@ export function convertHtmlElementsToText({
           if (tagStartIndex > inputIndex) {
             // Keep the text before tag as is.
             outputFragments.push(
-              inputText
-                .slice(inputIndex, tagStartIndex)
-                .replace(/[\n\r]/g, " "),
+              input.slice(inputIndex, tagStartIndex).replace(/[\n\r]/g, " "),
             )
           }
           // Replace opening tag with new line.
@@ -433,6 +436,7 @@ export function convertHtmlElementsToText({
           sourceMap.push({
             inputIndex: tagStartIndex,
             inputLength: tagLength,
+            openingTag: tag,
             outputIndex: tagStartIndex + outputOffset,
             outputLength: 1,
           })
@@ -448,9 +452,7 @@ export function convertHtmlElementsToText({
           // Preserve opening tag.
 
           outputFragments.push(
-            inputText
-              .slice(inputIndex, tagEndIndex + 1)
-              .replace(/[\n\r]/g, " "),
+            input.slice(inputIndex, tagEndIndex + 1).replace(/[\n\r]/g, " "),
           )
           tagsStack.push({
             name: tagNameUpperCase,
@@ -461,17 +463,19 @@ export function convertHtmlElementsToText({
     }
 
     return {
-      task: { sourceMap, title },
-      text: outputFragments.join(""),
+      input,
+      output: outputFragments.join(""),
+      sourceMap,
+      title,
     }
   }
 }
 
-export function decodeNamedHtmlEntities(text: string): Conversion {
+export function decodeNamedHtmlEntities(input: string): ConversionLeaf {
   let outputOffset = 0
   const sourceMap: SourceMapSegment[] = []
   // Decode decimal (e.g., &#65;) or hexadecimal references (e.g., &#x4a;).
-  text = text.replace(
+  const output = input.replace(
     /&(amp|apos|asymp|copy|deg|euro|gt|lt|mdash|nbsp|ndash|ne|pound|quot|reg|trade);/gi,
     (slice, name, inputIndex: number) => {
       const replacement = characterByNamedHtmlEntity[
@@ -488,19 +492,18 @@ export function decodeNamedHtmlEntities(text: string): Conversion {
     },
   )
   return {
-    task: {
-      sourceMap,
-      title: "Décodage des entités HTML nommées",
-    },
-    text,
+    input,
+    output,
+    sourceMap,
+    title: "Décodage des entités HTML nommées",
   }
 }
 
-export function decodeNumericHtmlEntities(text: string): Conversion {
+export function decodeNumericHtmlEntities(input: string): ConversionLeaf {
   let outputOffset = 0
   const sourceMap: SourceMapSegment[] = []
   // Decode decimal (e.g., &#65;) or hexadecimal references (e.g., &#x4a;).
-  text = text.replace(
+  const output = input.replace(
     /&#(?:(\d+)|x([0-9A-F]+));/gi,
     (slice, decimalString, hexdecimalString, inputIndex: number) => {
       const charCode = parseInt(
@@ -519,22 +522,21 @@ export function decodeNumericHtmlEntities(text: string): Conversion {
     },
   )
   return {
-    task: {
-      sourceMap,
-      title: "Décodage des entités HTML numériques",
-    },
-    text,
+    input,
+    output,
+    sourceMap,
+    title: "Décodage des entités HTML numériques",
   }
 }
 
-export function* iterConversionTaskSourceMaps(
-  task: ConversionTask,
-): Generator<SourceMapSegment[], void> {
-  if ((task as ConversionTaskNode).tasks === undefined) {
-    yield (task as ConversionTaskLeaf).sourceMap
+export function* iterConversionLeafs(
+  conversion: Conversion,
+): Generator<ConversionLeaf, void> {
+  if ((conversion as ConversionNode).conversions === undefined) {
+    yield conversion as ConversionLeaf
   } else {
-    for (const subTask of (task as ConversionTaskNode).tasks) {
-      yield* iterConversionTaskSourceMaps(subTask)
+    for (const subconversion of (conversion as ConversionNode).conversions) {
+      yield* iterConversionLeafs(subconversion)
     }
   }
 }
@@ -543,53 +545,63 @@ export function* iterConversionTaskSourceMaps(
  * Caution: This iterator fails when successive original positions overlap.
  */
 export function* iterOriginalMergedPositionsFromSimplified(
-  task: ConversionTask,
-): Generator<TextPosition, void, TextPosition | undefined> {
-  const sourceMaps = [...iterConversionTaskSourceMaps(task)].reverse()
-  let position: TextPosition | undefined = { start: 0, stop: 0 }
-  const sourceMapsIterators = sourceMaps.map((sourceMap) => {
-    const sourceMapIterator =
-      iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(sourceMap)
+  conversion: Conversion,
+): Generator<FragmentReverseConversion, void, TextPosition | undefined> {
+  const conversionLeafs = [...iterConversionLeafs(conversion)].reverse()
+  let fragmentReverseConversion: FragmentReverseConversion | undefined = {
+    position: { start: 0, stop: 0 },
+  }
+  const conversionIterators = conversionLeafs.map((conversionLeaf) => {
+    const conversionIterator =
+      iterOriginalMergedPositionsFromSimplifiedUsingConversionLeaf(
+        conversionLeaf,
+      )
     // Launch iterator using a dummy position and ignore the result.
-    sourceMapIterator.next(position)
-    return sourceMapIterator
+    conversionIterator.next(fragmentReverseConversion)
+    return conversionIterator
   })
   // Send a dummy value and ask for the first position.
-  position = yield position
+  let position = yield fragmentReverseConversion
   while (position !== undefined) {
-    for (const sourceMapIterator of sourceMapsIterators) {
-      const result = sourceMapIterator.next(position)
+    fragmentReverseConversion = {
+      position: position,
+    }
+    for (const conversionIterator of conversionIterators) {
+      const result = conversionIterator.next(fragmentReverseConversion)
       if (result.done) {
         return
       }
-      position = result.value
+      fragmentReverseConversion = result.value
     }
-    position = yield position
+    position = yield fragmentReverseConversion
   }
-  // Stop the sourceMapsIterators.
-  for (const sourceMapIterator of sourceMapsIterators) {
-    sourceMapIterator.next(undefined)
+  // Stop the conversionIterators.
+  for (const conversionIterator of conversionIterators) {
+    conversionIterator.next(undefined)
   }
 }
 
 /**
  * Caution: This iterator fails when successive original positions overlap.
  */
-export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
-  sourceMap: SourceMapSegment[],
-): Generator<TextPosition, void, TextPosition | undefined> {
+export function* iterOriginalMergedPositionsFromSimplifiedUsingConversionLeaf(
+  conversion: ConversionLeaf,
+): Generator<
+  FragmentReverseConversion,
+  void,
+  FragmentReverseConversion | undefined
+> {
   let startSegmentIndex: number | undefined = undefined
   let state: "looking_for_start_segment" | "looking_for_stop_segment" =
     "looking_for_start_segment"
-  let simplifiedPosition: TextPosition | undefined = yield {
-    start: 0,
-    stop: 0,
+  let simplifiedFragmentReverseConversion = yield {
+    position: { start: 0, stop: 0 },
   }
 
   // Insert empty segment at start & end.
-  sourceMap = [
+  const sourceMap = [
     { inputIndex: 0, inputLength: 0, outputIndex: 0, outputLength: 0 },
-    ...sourceMap,
+    ...conversion.sourceMap,
     {
       inputIndex: Number.MAX_SAFE_INTEGER,
       inputLength: 0,
@@ -599,9 +611,14 @@ export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
   ]
   for (const [segmentIndex, segment] of sourceMap.entries()) {
     for (let changeSegment = false; !changeSegment; ) {
-      if (simplifiedPosition === undefined) {
+      if (simplifiedFragmentReverseConversion === undefined) {
         return
       }
+      let { position: simplifiedPosition } = simplifiedFragmentReverseConversion
+      let innerPrefix: string | undefined = undefined
+      let innerSuffix: string | undefined = undefined
+      let outerPrefix: string | undefined = undefined
+      let outerSuffix: string | undefined = undefined
       switch (state) {
         case "looking_for_start_segment": {
           const nextSegment = sourceMap[segmentIndex + 1]
@@ -638,6 +655,10 @@ export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
                 : stopSegmentIndex - 1
             for (let areaExtended = true; areaExtended; ) {
               areaExtended = false
+              innerPrefix = undefined
+              innerSuffix = undefined
+              outerPrefix = undefined
+              outerSuffix = undefined
               for (
                 let includedSegmentIndex = firstIncludedSegmentIndex;
                 includedSegmentIndex <= lastIncludedSegmentIndex;
@@ -649,28 +670,104 @@ export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
                   // Note: Add 1 to matchingSegmentIndex, because of empty segment
                   // inserted at start of source map.
                   if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
-                    firstIncludedSegmentIndex = matchingSegmentIndex + 1
-                    // Extend simplifiedPosition to include added segment.
-                    simplifiedPosition = {
-                      start: sourceMap[firstIncludedSegmentIndex].outputIndex,
-                      stop: simplifiedPosition.stop,
+                    let tagAddedToFragment = false
+                    const openingSegment = sourceMap[matchingSegmentIndex + 1]
+                    if (
+                      openingSegment.openingTag !== undefined &&
+                      openingSegment.outputIndex + openingSegment.outputLength <
+                        simplifiedPosition.start
+                    ) {
+                      const tagMatch =
+                        openingSegment.openingTag.match(tagRegExp)
+                      if (tagMatch !== null) {
+                        const tagName = tagMatch[1]
+                        const tagNameUpperCase = tagName.toUpperCase()
+                        if (
+                          [
+                            "B",
+                            "EM",
+                            "I",
+                            "SPAN",
+                            "STRONG",
+                            "SUB",
+                            "SUP",
+                          ].includes(tagNameUpperCase)
+                        ) {
+                          // Split the span into 2 identical spans.
+                          outerPrefix = `${outerPrefix ?? ""}</${tagName}>`
+                          innerPrefix = `${openingSegment.openingTag}${innerPrefix ?? ""}`
+                          tagAddedToFragment = true
+                        }
+                      }
                     }
-                    areaExtended = true
-                    break
+                    if (!tagAddedToFragment) {
+                      // Extend simplifiedPosition to include added opening segment.
+
+                      // If an included element was split, undo the split.
+                      innerPrefix = undefined
+                      outerPrefix = undefined
+
+                      firstIncludedSegmentIndex = matchingSegmentIndex + 1
+                      const firstIncludedSegment =
+                        sourceMap[firstIncludedSegmentIndex]
+                      simplifiedPosition = {
+                        start: firstIncludedSegment.outputIndex,
+                        stop: simplifiedPosition.stop,
+                      }
+                      areaExtended = true
+                      break
+                    }
                   }
                   if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
-                    lastIncludedSegmentIndex = matchingSegmentIndex + 1
-                    // Extend simplifiedPosition to include added segment.
-                    const lastIncludedSegment =
-                      sourceMap[lastIncludedSegmentIndex]
-                    simplifiedPosition = {
-                      start: simplifiedPosition.start,
-                      stop:
-                        lastIncludedSegment.outputIndex +
-                        lastIncludedSegment.outputLength,
+                    let tagAddedToFragment = false
+                    const openingSegment = sourceMap[includedSegmentIndex]
+                    const closingSegment = sourceMap[matchingSegmentIndex + 1]
+                    if (
+                      openingSegment.openingTag !== undefined &&
+                      simplifiedPosition.stop < closingSegment.outputIndex
+                    ) {
+                      const tagMatch =
+                        openingSegment.openingTag.match(tagRegExp)
+                      if (tagMatch !== null) {
+                        const tagName = tagMatch[1]
+                        const tagNameUpperCase = tagName.toUpperCase()
+                        if (
+                          [
+                            "B",
+                            "EM",
+                            "I",
+                            "SPAN",
+                            "STRONG",
+                            "SUB",
+                            "SUP",
+                          ].includes(tagNameUpperCase)
+                        ) {
+                          // Split the span into 2 identical spans.
+                          innerSuffix = `${innerSuffix ?? ""}</${tagName}>`
+                          outerSuffix = `${openingSegment.openingTag}${outerSuffix ?? ""}`
+                          tagAddedToFragment = true
+                        }
+                      }
                     }
-                    areaExtended = true
-                    break
+                    if (!tagAddedToFragment) {
+                      // Extend simplifiedPosition to include added closing segment.
+
+                      // If an included element was split, undo the split.
+                      innerSuffix = undefined
+                      outerSuffix = undefined
+
+                      lastIncludedSegmentIndex = matchingSegmentIndex + 1
+                      const lastIncludedSegment =
+                        sourceMap[lastIncludedSegmentIndex]
+                      simplifiedPosition = {
+                        start: simplifiedPosition.start,
+                        stop:
+                          lastIncludedSegment.outputIndex +
+                          lastIncludedSegment.outputLength,
+                      }
+                      areaExtended = true
+                      break
+                    }
                   }
                 }
               }
@@ -691,10 +788,26 @@ export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
               (lastIncludedSegment.outputIndex +
                 lastIncludedSegment.outputLength)
 
-            simplifiedPosition = yield {
-              start: originalStart,
-              stop: originalStop,
-            }
+            simplifiedFragmentReverseConversion = yield Object.fromEntries(
+              Object.entries({
+                innerPrefix:
+                  `${innerPrefix ?? ""}${simplifiedFragmentReverseConversion.innerPrefix ?? ""}` ||
+                  undefined,
+                innerSuffix:
+                  `${simplifiedFragmentReverseConversion.innerSuffix ?? ""}${innerSuffix ?? ""}` ||
+                  undefined,
+                outerPrefix:
+                  `${simplifiedFragmentReverseConversion.outerPrefix ?? ""}${outerPrefix ?? ""}` ||
+                  undefined,
+                outerSuffix:
+                  `${outerSuffix ?? ""}${simplifiedFragmentReverseConversion.outerSuffix ?? ""}` ||
+                  undefined,
+                position: {
+                  start: originalStart,
+                  stop: originalStop,
+                },
+              }).filter(([, value]) => value !== undefined),
+            ) as unknown as FragmentReverseConversion
             state = "looking_for_start_segment"
           }
           break
@@ -702,7 +815,7 @@ export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
 
         default: {
           assertNever(
-            "iterOriginalMergedPositionsFromSimplifiedUsingSourceMap.state",
+            "iterOriginalMergedPositionsFromSimplifiedUsingConversionLeaf.state",
             state,
           )
         }
@@ -715,11 +828,11 @@ export function* iterOriginalMergedPositionsFromSimplifiedUsingSourceMap(
  * Caution: This iterator fails when successive original positions overlap.
  */
 export function originalMergedPositionsFromSimplified(
-  task: ConversionTask,
+  conversion: Conversion,
   simplifiedPositions: TextPosition[],
-): TextPosition[] {
+): FragmentReverseConversion[] {
   const originalMergedPositionsFromSimplifiedIterator =
-    iterOriginalMergedPositionsFromSimplified(task)
+    iterOriginalMergedPositionsFromSimplified(conversion)
   // Initialize iterator by sending a dummy value and ignoring the result.
   originalMergedPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
   return simplifiedPositions.map((simplifiedPosition) => {
@@ -739,10 +852,10 @@ export function originalMergedPositionsFromSimplified(
  * So, there may be more original positions than simplified positions.
  */
 export function originalSplitPositionsFromSimplified(
-  task: ConversionTask,
+  conversion: Conversion,
   positions: TextPosition[],
 ): TextPosition[] {
-  for (const sourceMap of [...iterConversionTaskSourceMaps(task)].reverse()) {
+  for (const { sourceMap } of [...iterConversionLeafs(conversion)].reverse()) {
     positions = originalSplitPositionsFromSimplifiedUsingSourceMap(
       sourceMap,
       positions,
@@ -892,10 +1005,10 @@ export function originalSplitPositionsFromSimplifiedUsingSourceMap(
 export function replacePattern(
   pattern: RegExp | string,
   replacement: string,
-): Converter {
-  return (text: string): Conversion => {
+): ConverterLeaf {
+  return (input: string): ConversionLeaf => {
     const sourceMap: SourceMapSegment[] = []
-    text = text.replaceAll(pattern, (slice, ...rest) => {
+    const output = input.replaceAll(pattern, (slice, ...rest) => {
       const inputIndex: number = rest.at(-2)
       let expandedReplacement = replacement
       for (const [index, p] of rest.slice(0, -2).entries()) {
@@ -919,17 +1032,17 @@ export function replacePattern(
     }
 
     return {
-      task: {
-        sourceMap,
-        title: `Remplacement de ${pattern} par ${JSON.stringify(replacement)}`,
-      },
-      text,
+      input,
+      output,
+      sourceMap,
+      title: `Remplacement de ${pattern} par ${JSON.stringify(replacement)}`,
     }
   }
 }
 
-export function replacePatterns(text: string): Conversion {
-  const tasks: ConversionTask[] = []
+export function replacePatterns(input: string): ConversionNode {
+  const conversions: ConversionLeaf[] = []
+  let text = input
   for (const [pattern, replacement] of [
     // Note: The most englobing patterns must be first.
 
@@ -949,43 +1062,39 @@ export function replacePatterns(text: string): Conversion {
     [/[\uF031-\uF039\uF041-\uF054\uF061-\uF06A]/g, ""],
   ] as Array<[RegExp | string, string]>) {
     const conversion = replacePattern(pattern, replacement)(text)
-    if (
-      (conversion.task as ConversionTaskLeaf).sourceMap === undefined ||
-      (conversion.task as ConversionTaskLeaf).sourceMap.length !== 0
-    ) {
-      tasks.push(conversion.task)
-      text = conversion.text
+    if (conversion.sourceMap.length !== 0) {
+      conversions.push(conversion)
+      text = conversion.output
     }
   }
   return {
-    task: {
-      tasks,
-      title:
-        "Suppression des commentaires, scripts et styles HTML et nettoyage d'expressions",
-    },
-    text,
+    conversions,
+    input,
+    output: text,
+    title:
+      "Suppression des commentaires, scripts et styles HTML et nettoyage d'expressions",
   }
 }
 
 export function simplifyHtml({
   removeAWithHref,
-}: { removeAWithHref?: boolean } = {}): Converter {
-  return (text: string): Conversion =>
-    chainSimplifiers("Simplification du HTML", [
+}: { removeAWithHref?: boolean } = {}): ConverterNode {
+  return (input: string): ConversionNode =>
+    chainConverters("Simplification du HTML", [
       decodeNamedHtmlEntities,
       decodeNumericHtmlEntities,
       replacePatterns,
       simplifyUnicodeCharacters,
       convertHtmlElementsToText({ removeAWithHref }),
       simplifyText,
-    ])(text)
+    ])(input)
 }
 
-export function simplifyText(text: string): Conversion {
-  const tasks: ConversionTask[] = []
-
+export function simplifyText(input: string): ConversionNode {
+  const conversions: ConversionLeaf[] = []
+  let text = input
   for (const [title, pattern, replacement] of [
-    ["Remplacement des espaces multiples pas une espace unique", /  +/g, " "],
+    ["Remplacement des espaces multiples par une espace unique", /  +/g, " "],
     ["Suppression d'une espace en début de ligne", /^ /gm, ""],
     ["Suppression d'une espace en fin de ligne", / $/gm, ""],
     [
@@ -998,7 +1107,7 @@ export function simplifyText(text: string): Conversion {
   ] as Array<[string, RegExp | string, string]>) {
     let outputOffset = 0
     const sourceMap: SourceMapSegment[] = []
-    text = text.replaceAll(pattern, (slice, ...rest) => {
+    const output = text.replaceAll(pattern, (slice, ...rest) => {
       const inputIndex: number = rest.at(-2)
       let expandedReplacement = replacement
       for (const [index, p] of rest.slice(0, -2).entries()) {
@@ -1014,24 +1123,27 @@ export function simplifyText(text: string): Conversion {
       return expandedReplacement
     })
     if (sourceMap.length !== 0) {
-      tasks.push({
+      conversions.push({
+        input: text,
+        output,
         sourceMap,
         title,
       })
+      text = output
     }
   }
 
   return {
-    task: {
-      tasks,
-      title: "Simplification du texte",
-    },
-    text,
+    conversions,
+    input,
+    output: text,
+    title: "Simplification du texte",
   }
 }
 
-export function simplifyUnicodeCharacters(text: string): Conversion {
+export function simplifyUnicodeCharacters(input: string): ConversionLeaf {
   const sourceMap: SourceMapSegment[] = []
+  let text = input
   for (const [pattern, replacement] of [
     // Replace U+00A0 (no-break space) and tab with a normal space.
     [/[ \t]/g, " "],
@@ -1074,10 +1186,9 @@ export function simplifyUnicodeCharacters(text: string): Conversion {
   }
 
   return {
-    task: {
-      sourceMap,
-      title: "Simplification des caractères unicodes",
-    },
-    text,
+    input,
+    output: text,
+    sourceMap,
+    title: "Simplification des caractères unicodes",
   }
 }

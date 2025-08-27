@@ -62,8 +62,7 @@ describe("iterTextLinks", () => {
 				</li>
 			</ol>
     `)
-    const input = conversion.text
-    const context = new TextParserContext(input)
+    const context = new TextParserContext(conversion.output)
     const links = await Array.fromAsync(
       iterTextLinks(context, {
         date: "2025-07-14",
@@ -178,5 +177,21 @@ describe("iterTextLinks", () => {
       text: undefined,
       type: "article",
     })
+  })
+
+  test("Link to division", async () => {
+    const input = dedent`
+      I.- Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts est complété par une section 0I bis ainsi rédigée :
+    `
+    const context = new TextParserContext(input)
+    const links = await Array.fromAsync(
+      iterTextLinks(context, {
+        date: "2025-07-14",
+      }),
+    )
+    expect(links.length).toBe(1)
+    const link = links[0]
+    expect(link).toStrictEqual({})
+    expect(context.text(link.position)).toBe("Le code général des impôts")
   })
 })

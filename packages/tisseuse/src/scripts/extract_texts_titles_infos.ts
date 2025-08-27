@@ -15,7 +15,7 @@ import {
 } from "$lib/text_parsers/texts.js"
 import { espace } from "$lib/text_parsers/typography.js"
 import {
-  chainSimplifiers,
+  chainConverters,
   replacePatterns,
   simplifyText,
   simplifyUnicodeCharacters,
@@ -246,7 +246,7 @@ async function extractTextsNames(): Promise<number> {
 }
 
 function simplifyTextTitle(title: string): string {
-  return chainSimplifiers("Simplification d'un titre de texte", [
+  return chainConverters("Simplification d'un titre de texte", [
     replacePatterns,
     simplifyUnicodeCharacters,
     simplifyText,

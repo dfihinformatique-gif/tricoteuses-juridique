@@ -30,10 +30,10 @@ async function addLinksToHtmlDocument(
 ): Promise<number> {
   const inputHtml = await fs.readFile(inputDocumentPath, { encoding: "utf-8" })
   const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
-  const inputText = conversion.text
+  const inputText = conversion.output
   const context = new TextParserContext(inputText)
   const originalMergedPositionsFromSimplifiedIterator =
-    iterOriginalMergedPositionsFromSimplified(conversion.task)
+    iterOriginalMergedPositionsFromSimplified(conversion)
   // Initialize iterator by sending a dummy value and ignoring the result.
   originalMergedPositionsFromSimplifiedIterator.next({ start: 0, stop: 0 })
   let output = inputHtml
@@ -58,17 +58,26 @@ async function addLinksToHtmlDocument(
           )
           process.exit(1)
         }
-        const htmlPosition = result.value
-        const original = output.slice(
-          htmlPosition.start + outputOffset,
-          htmlPosition.stop + outputOffset,
-        )
-        const replacement = `<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>`
+        const articleReverseConversion = result.value
+        const original =
+          (articleReverseConversion.innerPrefix ?? "") +
+          output.slice(
+            articleReverseConversion.position.start + outputOffset,
+            articleReverseConversion.position.stop + outputOffset,
+          ) +
+          (articleReverseConversion.innerSuffix ?? "")
+        const replacement = `${articleReverseConversion.outerPrefix ?? ""}<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseConversion.outerSuffix ?? ""}`
         output =
-          output.slice(0, htmlPosition.start + outputOffset) +
+          output.slice(
+            0,
+            articleReverseConversion.position.start + outputOffset,
+          ) +
           replacement +
-          output.slice(htmlPosition.stop + outputOffset)
-        outputOffset += replacement.length - original.length
+          output.slice(articleReverseConversion.position.stop + outputOffset)
+        outputOffset +=
+          replacement.length -
+          (articleReverseConversion.position.stop -
+            articleReverseConversion.position.start)
         break
       }
 
@@ -95,17 +104,23 @@ async function addLinksToHtmlDocument(
           )
           process.exit(1)
         }
-        const htmlPosition = result.value
-        const original = output.slice(
-          htmlPosition.start + outputOffset,
-          htmlPosition.stop + outputOffset,
-        )
-        const replacement = `<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>`
+        const textReverseConversion = result.value
+        const original =
+          (textReverseConversion.innerPrefix ?? "") +
+          output.slice(
+            textReverseConversion.position.start + outputOffset,
+            textReverseConversion.position.stop + outputOffset,
+          ) +
+          (textReverseConversion.innerSuffix ?? "")
+        const replacement = `${textReverseConversion.outerPrefix ?? ""}<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>${textReverseConversion.outerSuffix ?? ""}`
         output =
-          output.slice(0, htmlPosition.start + outputOffset) +
+          output.slice(0, textReverseConversion.position.start + outputOffset) +
           replacement +
-          output.slice(htmlPosition.stop + outputOffset)
-        outputOffset += replacement.length - original.length
+          output.slice(textReverseConversion.position.stop + outputOffset)
+        outputOffset +=
+          replacement.length -
+          (textReverseConversion.position.stop -
+            textReverseConversion.position.start)
         break
       }
 

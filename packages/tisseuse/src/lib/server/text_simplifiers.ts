@@ -1,62 +1,35 @@
 import fs from "fs-extra"
 
 import {
-  convertHtmlElementsToText,
-  decodeNamedHtmlEntities,
-  decodeNumericHtmlEntities,
-  replacePatterns,
-  simplifyText,
-  simplifyUnicodeCharacters,
   type Conversion,
-  type ConversionTask,
-  type ConversionTaskLeaf,
-  type Converter,
+  type ConversionLeaf,
+  type ConversionNode,
 } from "$lib/text_simplifiers.js"
 
-export function chainAndWriteSimplifiers(
+export function writeConversion(
   filePathCore: string,
-  title: string,
-  simplifiers: Array<(text: string) => Conversion>,
-): Converter {
-  return (text: string): Conversion => {
-    let index = 0
-    const tasks: ConversionTask[] = []
-    for (const simplifier of simplifiers) {
-      const conversion = simplifier(text)
-      if (
-        (conversion.task as ConversionTaskLeaf).sourceMap === undefined ||
-        (conversion.task as ConversionTaskLeaf).sourceMap.length !== 0
-      ) {
-        tasks.push(conversion.task)
-        text = conversion.text
-        fs.writeJsonSync(
-          `${filePathCore}-${index}.conversion_task.json`,
-          conversion.task,
-        )
-        fs.writeFileSync(`${filePathCore}-${index}.html`, text, {
-          encoding: "utf-8",
-        })
-        index++
-      }
-    }
-    return {
-      task: { tasks, title },
-      text,
+  conversion: Conversion,
+  { recursive }: { recursive?: boolean } = {},
+): void {
+  if ((conversion as ConversionNode).conversions === undefined) {
+    fs.writeJsonSync(
+      `${filePathCore}_conversion.json`,
+      {
+        sourceMap: (conversion as ConversionLeaf).sourceMap,
+        title: conversion.title,
+      },
+      { encoding: "utf-8", spaces: 2 },
+    )
+  } else if (recursive) {
+    for (const [index, child] of (
+      conversion as ConversionNode
+    ).conversions.entries()) {
+      writeConversion(`${filePathCore}.${index + 1}`, child, { recursive })
     }
   }
-}
-
-export function simplifyHtmlAndWriteConversions(
-  filePathCore: string,
-  { removeAWithHref }: { removeAWithHref?: boolean } = {},
-): Converter {
-  return (text: string): Conversion =>
-    chainAndWriteSimplifiers(filePathCore, "Simplification du HTML", [
-      decodeNamedHtmlEntities,
-      decodeNumericHtmlEntities,
-      replacePatterns,
-      simplifyUnicodeCharacters,
-      convertHtmlElementsToText({ removeAWithHref }),
-      simplifyText,
-    ])(text)
+  if (conversion.output !== undefined) {
+    fs.writeFileSync(`${filePathCore}_simplifié.html`, conversion.output, {
+      encoding: "utf-8",
+    })
+  }
 }

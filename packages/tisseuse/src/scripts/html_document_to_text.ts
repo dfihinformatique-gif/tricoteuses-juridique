@@ -3,7 +3,7 @@ import path from "node:path"
 import sade from "sade"
 
 import { simplifyHtml } from "$lib/text_simplifiers.js"
-import { simplifyHtmlAndWriteConversions } from "$lib/server/text_simplifiers.js"
+import { writeConversion } from "$lib/server/text_simplifiers.js"
 
 async function htmlDocumentToText(
   inputDocumentPath: string,
@@ -20,23 +20,9 @@ async function htmlDocumentToText(
     0,
     -path.extname(inputFilename).length,
   )
-  const conversion = (
-    intermediate
-      ? simplifyHtmlAndWriteConversions(
-          path.join(outputDir, inputFilenameCore),
-          { removeAWithHref: true },
-        )
-      : simplifyHtml({ removeAWithHref: true })
-  )(inputHtml)
-  const textFilePath = path.join(outputDir, inputFilenameCore + ".txt")
-  await fs.writeFile(textFilePath, conversion.text, { encoding: "utf-8" })
-  const conversionTaskFilePath = path.join(
-    outputDir,
-    inputFilenameCore + ".conversion_task.json",
-  )
-  await fs.writeJson(conversionTaskFilePath, conversion.task, {
-    encoding: "utf-8",
-    spaces: 2,
+  const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
+  writeConversion(path.join(outputDir, inputFilenameCore), conversion, {
+    recursive: intermediate,
   })
   return 0
 }

@@ -15,7 +15,7 @@ import {
   createEnumerationOrBoundedInterval,
   iterAtomicFirstParentReferences,
 } from "./helpers.js"
-import { adjectifOrdinal, nombre, nombreRomainOu0i } from "./numbers.js"
+import { adjectifNumeralOrdinal, nombre, nombreRomainOu0i } from "./numbers.js"
 import {
   alternatives,
   chain,
@@ -40,9 +40,13 @@ import { espace } from "./typography.js"
 export const natureDivisionSingulier = alternatives(
   regExp("chapitre", { flags: "i", value: "chapitre" }),
   regExp("livre(?! des procédures fiscales)", { flags: "i", value: "livre" }),
-  regExp("(sous-)?paragraphe", { flags: "i", value: "paragraphe" }),
+  regExp("paragraphe", { flags: "i", value: "paragraphe" }),
   regExp("partie", { flags: "i", value: "partie" }),
-  regExp("(sous-)?section", { flags: "i", value: "section" }),
+  regExp("section", { flags: "i", value: "section" }),
+  regExp("sous-paragraphe", { flags: "i", value: "sous-paragraphe" }),
+  regExp("sous-section", { flags: "i", value: "sous-section" }),
+  regExp("sous-sous-paragraphe", { flags: "i", value: "sous-sous-paragraphe" }),
+  regExp("sous-titre", { flags: "i", value: "sous-titre" }),
   regExp("titre", { flags: "i", value: "titre" }),
 )
 
@@ -78,15 +82,13 @@ export const nomDivision = alternatives(
   ),
 )
 
-export const numeroDivision = chain([alternatives(nombreRomainOu0i, nombre)], {
-  value: (_, context) => context.text(),
-})
+export const numeroDivision = alternatives(nombreRomainOu0i, nombre)
 
 export const designationDivision = alternatives(
   chain([numeroDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({
+      ...(results[0] as TextAstLocalization),
       ...(results[1] ? { localizationAdverb: results[1] } : {}),
-      num: results[0] as string,
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -101,7 +103,7 @@ export const designationDivision = alternatives(
   }),
   convert(adjectifRelatifSingulier, {
     value: (result, context) => ({
-      localization: result as TextAstLocalization,
+      ...(result as TextAstLocalization),
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -112,7 +114,7 @@ export const division2Internal = alternatives(
   designationDivision,
   convert(relatifSingulier, {
     value: (result, context) => ({
-      localization: result as TextAstLocalization,
+      ...(result as TextAstLocalization),
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -138,15 +140,18 @@ export const division1Internal = alternatives(
         )) {
           ;(reference as unknown as TextAstDivision).type =
             results[2] as DivisionType
-          if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalization
+          if (
+            reference.index === undefined &&
+            reference.relative === undefined
+          ) {
+            Object.assign(reference, results[0] as TextAstLocalization)
           }
         }
         return { ...base, position: context.position() }
       },
     },
   ),
-  chain([adjectifOrdinal, espace, natureDivisionSingulier], {
+  chain([adjectifNumeralOrdinal, espace, natureDivisionSingulier], {
     value: (results, context) => ({
       index: results[0],
       position: context.position(),
@@ -204,7 +209,7 @@ export const listeDivisions = chain(
       alternatives(
         chain([adjectifRelatifPluriel], {
           value: (results, context) => ({
-            localization: results[0] as TextAstLocalization,
+            ...(results[0] as TextAstLocalization),
             position: context.position(),
             type: "incomplete-header",
           }),
@@ -229,7 +234,7 @@ export const divisions2Internal = alternatives(
   listeDivisions,
   convert(relatifPluriel, {
     value: (result, context) => ({
-      localization: result as TextAstLocalization,
+      ...(result as TextAstLocalization),
       position: context.position(),
       type: "incomplete-header",
     }),
@@ -255,8 +260,11 @@ export const divisions1Internal = alternatives(
         )) {
           ;(reference as unknown as TextAstDivision).type =
             results[2] as DivisionType
-          if (reference.localization === undefined) {
-            reference.localization = results[0] as TextAstLocalization
+          if (
+            reference.index === undefined &&
+            reference.relative === undefined
+          ) {
+            Object.assign(reference, results[0] as TextAstLocalization)
           }
         }
         return { ...base, position: context.position() }

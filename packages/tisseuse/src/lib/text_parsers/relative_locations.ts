@@ -4,7 +4,7 @@ import { espace } from "./typography.js"
 export const adjectifRelatifPluriel = alternatives(
   regExp("derni(er|ère)s", {
     flags: "i",
-    value: { absolute: -1 },
+    value: { index: -1 },
   }),
   regExp("mêmes", {
     flags: "i",
@@ -12,7 +12,7 @@ export const adjectifRelatifPluriel = alternatives(
   }),
   regExp("premi(er|ère)s", {
     flags: "i",
-    value: { absolute: 1 },
+    value: { index: 1 },
   }),
   regExp("présente?s", {
     flags: "i",
@@ -27,15 +27,15 @@ export const adjectifRelatifPluriel = alternatives(
 export const adjectifRelatifSingulier = alternatives(
   regExp("antépénultième", {
     flags: "i",
-    value: { absolute: -3 },
+    value: { index: -3 },
   }),
   regExp("avant-derni(er|ère)", {
     flags: "i",
-    value: { absolute: -2 },
+    value: { index: -2 },
   }),
   regExp("derni(er|ère)", {
     flags: "i",
-    value: { absolute: -1 },
+    value: { index: -1 },
   }),
   regExp("même", {
     flags: "i",
@@ -43,7 +43,7 @@ export const adjectifRelatifSingulier = alternatives(
   }),
   regExp("pénultième", {
     flags: "i",
-    value: { absolute: -2 },
+    value: { index: -2 },
   }),
   regExp("précédente?", {
     flags: "i",
@@ -51,7 +51,7 @@ export const adjectifRelatifSingulier = alternatives(
   }),
   regExp("premi(er|ère)", {
     flags: "i",
-    value: { absolute: 1 },
+    value: { index: 1 },
   }),
   regExp("présente?", {
     flags: "i",

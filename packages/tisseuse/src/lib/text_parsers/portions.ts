@@ -2,6 +2,7 @@ import {
   type CompoundReferencesSeparator,
   type PortionType,
   type TextAstAtomicReference,
+  type TextAstLocalization,
   type TextAstNumber,
   type TextAstPortion,
   type TextAstReference,
@@ -12,7 +13,7 @@ import {
 } from "./helpers.js"
 import {
   adjectifNumeralCardinal,
-  adjectifNumeralOrdinal,
+  adjectifNumeralOrdinalLong,
   adverbeMultiplicatif,
   nombreCardinal,
   nombreRomainCardinal,
@@ -99,7 +100,7 @@ export const numeroPortion = chain(
         index: nombre0.value + (nombre1 === null ? 0 : nombre1.value / 1000),
         num: `${nombre0.text}${nombre1 ? ` ${nombre0.text}` : ""}`,
         position: context.position(),
-        type: "partie",
+        type: "item",
       }
     },
   },
@@ -112,11 +113,11 @@ export const numeroPortion = chain(
 export const unePortion = chain(
   [
     alternatives(
-      convert(adjectifNumeralOrdinal, {
-        value: (result) => ({ index: result }) as TextAstPortion,
+      convert(adjectifNumeralOrdinalLong, {
+        value: (result) => ({ index: result }) as TextAstLocalization,
       }),
       convert(adjectifRelatifSingulier, {
-        value: (result) => ({ localization: result }) as TextAstPortion,
+        value: (result) => result as TextAstLocalization,
       }),
     ),
     espace,
@@ -138,7 +139,7 @@ export const plusieursPortions = chain(
     adjectifNumeralCardinal,
     espace,
     convert(adjectifRelatifPluriel, {
-      value: (result) => ({ localization: result }) as TextAstPortion,
+      value: (result) => result as TextAstLocalization,
     }),
     espace,
     naturePortionPluriel,

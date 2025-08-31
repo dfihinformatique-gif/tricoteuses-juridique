@@ -9,7 +9,6 @@ import {
   iterOriginalMergedPositionsFromSimplified,
   simplifyHtml,
 } from "$lib/text_simplifiers.js"
-import type { TextAstLocalizationRelative } from "$lib/text_parsers/ast.js"
 
 async function addLinksToHtmlDocument(
   inputDocumentPath: string,
@@ -81,12 +80,44 @@ async function addLinksToHtmlDocument(
         break
       }
 
+      case "division": {
+        const { position: divisionPosition, sectionTaId } = link
+        const result =
+          originalMergedPositionsFromSimplifiedIterator.next(divisionPosition)
+        if (result.done) {
+          console.error(
+            "Conversion of division position to HTML failed:",
+            divisionPosition,
+          )
+          process.exit(1)
+        }
+        const divisionReverseConversion = result.value
+        const original =
+          (divisionReverseConversion.innerPrefix ?? "") +
+          output.slice(
+            divisionReverseConversion.position.start + outputOffset,
+            divisionReverseConversion.position.stop + outputOffset,
+          ) +
+          (divisionReverseConversion.innerSuffix ?? "")
+        const replacement = `${divisionReverseConversion.outerPrefix ?? ""}<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseConversion.outerSuffix ?? ""}`
+        output =
+          output.slice(
+            0,
+            divisionReverseConversion.position.start + outputOffset,
+          ) +
+          replacement +
+          output.slice(divisionReverseConversion.position.stop + outputOffset)
+        outputOffset +=
+          replacement.length -
+          (divisionReverseConversion.position.stop -
+            divisionReverseConversion.position.start)
+        break
+      }
+
       case "texte": {
         const { text, position: textPosition } = link
         if (text.cid === undefined) {
-          if (
-            (text.localization as TextAstLocalizationRelative)?.relative !== 0
-          ) {
+          if (text.relative !== 0) {
             // It is not "la présente loi".
             throw new Error(
               `Link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,

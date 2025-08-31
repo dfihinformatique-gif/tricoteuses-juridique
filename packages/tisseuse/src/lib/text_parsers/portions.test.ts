@@ -22,7 +22,7 @@ describe("auPortion", () => {
           start: 3,
           stop: 5,
         },
-        type: "partie",
+        type: "item",
       },
       parent: {
         index: 3,
@@ -31,7 +31,7 @@ describe("auPortion", () => {
           start: 9,
           stop: 12,
         },
-        type: "partie",
+        type: "item",
       },
       position: {
         start: 0,
@@ -47,9 +47,7 @@ describe("auPortion", () => {
     const context = new TextParserContext(task.name)
     const result = auPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      localization: {
-        absolute: -1,
-      },
+      index: -1,
       position: {
         start: 0,
         stop: 17,
@@ -68,9 +66,7 @@ describe("auxPortions", () => {
     expect(result).toStrictEqual({
       count: 10,
       first: {
-        localization: {
-          absolute: -1,
-        },
+        index: -1,
         type: "alinéa",
       },
       position: {
@@ -95,7 +91,7 @@ describe("numeroPortion", () => {
         start: 0,
         stop: 2,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -111,7 +107,7 @@ describe("numeroPortion", () => {
         start: 0,
         stop: 3,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -127,7 +123,7 @@ describe("numeroPortion", () => {
         start: 0,
         stop: 1,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -143,7 +139,7 @@ describe("numeroPortion", () => {
         start: 0,
         stop: 2,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -159,7 +155,7 @@ describe("numeroPortion", () => {
         start: 0,
         stop: 1,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -175,7 +171,7 @@ describe("numeroPortion", () => {
         start: 0,
         stop: 3,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -191,7 +187,7 @@ describe("numeroPortion", () => {
         start: 0,
         stop: 1,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -205,9 +201,7 @@ describe("portions", () => {
     expect(result).toStrictEqual({
       count: 10,
       first: {
-        localization: {
-          absolute: -1,
-        },
+        index: -1,
         type: "alinéa",
       },
       position: {
@@ -226,9 +220,7 @@ describe("unePortion", () => {
     const context = new TextParserContext(task.name)
     const result = unePortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      localization: {
-        absolute: -2,
-      },
+      index: -2,
       position: {
         start: 0,
         stop: 20,
@@ -243,13 +235,11 @@ describe("unePortion", () => {
     const context = new TextParserContext(task.name)
     const result = unePortion(context) as TextAstPortion
     expect(result).toStrictEqual({
-      localization: {
-        relative: 0,
-      },
       position: {
         start: 0,
         stop: 11,
       },
+      relative: 0,
       type: "alinéa",
     })
     expect(context.remaining()).toBe("")

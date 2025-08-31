@@ -39,13 +39,13 @@ describe("espaceAdverbeRelatif", () => {
 describe("relatifPlurielPrepose", () => {
   test("premières", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(relatifPlurielPrepose(context)).toStrictEqual({ absolute: 1 })
+    expect(relatifPlurielPrepose(context)).toStrictEqual({ index: 1 })
     expect(context.remaining()).toBe("")
   })
 
   test("Ces premières", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(relatifPlurielPrepose(context)).toStrictEqual({ absolute: 1 })
+    expect(relatifPlurielPrepose(context)).toStrictEqual({ index: 1 })
     expect(context.remaining()).toBe("")
   })
 })
@@ -53,13 +53,13 @@ describe("relatifPlurielPrepose", () => {
 describe("relatifSingulierPrepose", () => {
   test("avant-dernière", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(relatifSingulierPrepose(context)).toStrictEqual({ absolute: -2 })
+    expect(relatifSingulierPrepose(context)).toStrictEqual({ index: -2 })
     expect(context.remaining()).toBe("")
   })
 
   test("Cette avant-dernière", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(relatifSingulierPrepose(context)).toStrictEqual({ absolute: -2 })
+    expect(relatifSingulierPrepose(context)).toStrictEqual({ index: -2 })
     expect(context.remaining()).toBe("")
   })
 })

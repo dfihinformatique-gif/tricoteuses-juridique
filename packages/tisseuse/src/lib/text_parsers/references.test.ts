@@ -55,9 +55,7 @@ describe("reference", () => {
                 child: {
                   count: 10,
                   first: {
-                    localization: {
-                      absolute: -1,
-                    },
+                    index: -1,
                     type: "alinéa",
                   },
                   position: {
@@ -73,7 +71,7 @@ describe("reference", () => {
                     start: 96,
                     stop: 97,
                   },
-                  type: "partie",
+                  type: "item",
                 },
                 position: {
                   start: 68,
@@ -496,24 +494,20 @@ describe("reference", () => {
     const result = reference(context) as TextAstParentChild
     expect(result).toStrictEqual({
       child: {
-        localization: {
-          relative: -1,
-        },
         position: {
           start: 4,
           stop: 21,
         },
+        relative: -1,
         type: "article",
       },
       parent: {
         nature: "CODE",
-        localization: {
-          relative: 0,
-        },
         position: {
           start: 25,
           stop: 34,
         },
+        relative: 0,
         type: "texte",
       },
       position: {
@@ -651,7 +645,7 @@ describe("reference", () => {
         start: 0,
         stop: 5,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -668,16 +662,14 @@ describe("reference", () => {
           start: 3,
           stop: 5,
         },
-        type: "partie",
+        type: "item",
       },
       parent: {
-        localization: {
-          relative: 0,
-        },
         position: {
           start: 9,
           stop: 24,
         },
+        relative: 0,
         type: "article",
       },
       position: {
@@ -724,13 +716,11 @@ describe("reference", () => {
       },
       parent: {
         nature: "CODE",
-        localization: {
-          relative: 0,
-        },
         position: {
           start: 25,
           stop: 37,
         },
+        relative: 0,
         type: "texte",
       },
       position: {
@@ -760,13 +750,11 @@ describe("reference", () => {
       },
       parent: {
         nature: "CODE",
-        localization: {
-          relative: 0,
-        },
         position: {
           start: 24,
           stop: 36,
         },
+        relative: 0,
         type: "texte",
       },
       position: {
@@ -852,9 +840,7 @@ describe("reference", () => {
       child: {
         count: 10,
         first: {
-          localization: {
-            absolute: -1,
-          },
+          index: -1,
           type: "alinéa",
         },
         position: {
@@ -893,7 +879,7 @@ describe("reference", () => {
         start: 0,
         stop: 4,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -909,7 +895,7 @@ describe("reference", () => {
         start: 0,
         stop: 4,
       },
-      type: "partie",
+      type: "item",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
@@ -928,7 +914,7 @@ describe("reference", () => {
             start: 3,
             stop: 4,
           },
-          type: "partie",
+          type: "item",
         },
         parent: {
           index: 3,
@@ -984,7 +970,7 @@ describe("reference", () => {
             start: 3,
             stop: 6,
           },
-          type: "partie",
+          type: "item",
         },
         parent: {
           index: 56,
@@ -993,7 +979,7 @@ describe("reference", () => {
             start: 8,
             stop: 11,
           },
-          type: "partie",
+          type: "item",
         },
         position: {
           start: 3,
@@ -1036,7 +1022,7 @@ describe("reference", () => {
     expect(result).toStrictEqual({
       child: {
         child: {
-          num: "7",
+          index: 7,
           position: {
             start: 3,
             stop: 15,
@@ -1097,12 +1083,12 @@ describe("reference", () => {
     expect(result).toStrictEqual({
       child: {
         child: {
-          num: "3",
+          index: 3,
           position: {
             start: 3,
             stop: 20,
           },
-          type: "paragraphe",
+          type: "sous-paragraphe",
         },
         parent: {
           num: "LO7-1",
@@ -1195,7 +1181,7 @@ describe("reference", () => {
         child: {
           child: {
             child: {
-              num: "III",
+              index: 3,
               position: {
                 start: 3,
                 stop: 15,
@@ -1203,7 +1189,7 @@ describe("reference", () => {
               type: "chapitre",
             },
             parent: {
-              num: "Ier",
+              index: 1,
               position: {
                 start: 19,
                 stop: 28,
@@ -1217,9 +1203,7 @@ describe("reference", () => {
             type: "parent-enfant",
           },
           parent: {
-            localization: {
-              absolute: 1,
-            },
+            index: 1,
             position: {
               start: 35,
               stop: 50,
@@ -1233,7 +1217,7 @@ describe("reference", () => {
           type: "parent-enfant",
         },
         parent: {
-          num: "Ier",
+          index: 1,
           position: {
             start: 54,
             stop: 63,

@@ -189,9 +189,36 @@ describe("iterTextLinks", () => {
         date: "2025-07-14",
       }),
     )
-    expect(links.length).toBe(1)
-    const link = links[0]
-    expect(link).toStrictEqual({})
-    expect(context.text(link.position)).toBe("Le code général des impôts")
+    expect(links).toStrictEqual([
+      {
+        division: {
+          index: 3,
+          position: {
+            start: 7,
+            stop: 19,
+          },
+          type: "chapitre",
+        },
+        position: {
+          start: 7,
+          stop: 94,
+        },
+        sectionTaId: "LEGISCTA000006147020",
+        text: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 71,
+            stop: 94,
+          },
+          title: "Code général des impôts",
+          type: "texte",
+        },
+        type: "division",
+      },
+    ])
+    expect(context.text(links[0].position)).toBe(
+      "chapitre III du titre Ier de la première partie du livre Ier du code général des impôts",
+    )
   })
 })

@@ -1,6 +1,7 @@
 import {
   type EuropeanLawNature,
   type FrenchLawNature,
+  type TextAstLocalization,
   type TextAstText,
   type TextAstTextIdentification,
   type TextAstTextInfos,
@@ -355,7 +356,9 @@ export const texte = chain(
         {
           value: (results) => ({
             ...(results[2] as TextAstText),
-            ...(results[0] === undefined ? {} : { localization: results[0] }),
+            ...(results[0] === undefined
+              ? {}
+              : (results[0] as TextAstLocalization)),
           }),
         },
       ),

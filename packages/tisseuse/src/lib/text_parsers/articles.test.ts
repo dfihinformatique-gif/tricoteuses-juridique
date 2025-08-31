@@ -53,14 +53,12 @@ describe("article", () => {
     const context = new TextParserContext(task.name)
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
-      localization: {
-        relative: 0,
-      },
       ofTheSaid: true,
       position: {
         start: 0,
         stop: 16,
       },
+      relative: 0,
       type: "article",
     })
     expect(context.remaining()).toBe("")
@@ -72,14 +70,12 @@ describe("article", () => {
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
       num: "L325-3",
-      localization: {
-        relative: 0,
-      },
       ofTheSaid: true,
       position: {
         start: 0,
         stop: 25,
       },
+      relative: 0,
       type: "article",
     })
     expect(context.remaining()).toBe("")
@@ -90,13 +86,11 @@ describe("article", () => {
     const context = new TextParserContext(task.name)
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
-      localization: {
-        relative: 0,
-      },
       position: {
         start: 0,
         stop: 12,
       },
+      relative: 0,
       type: "article",
     })
     expect(context.remaining()).toBe("")
@@ -108,13 +102,11 @@ describe("article", () => {
     const result = article(context) as TextAstArticle
     expect(result).toStrictEqual({
       num: "L325-3",
-      localization: {
-        relative: 0,
-      },
       position: {
         start: 0,
         stop: 21,
       },
+      relative: 0,
       type: "article",
     })
     expect(context.remaining()).toBe("")
@@ -195,14 +187,12 @@ describe("articles", () => {
     const context = new TextParserContext(task.name)
     const result = articles(context) as TextAstArticle
     expect(result).toStrictEqual({
-      localization: {
-        relative: 0,
-      },
       ofTheSaid: true,
       position: {
         start: 0,
         stop: 19,
       },
+      relative: 0,
       type: "article",
     })
     expect(context.remaining()).toBe("")
@@ -216,14 +206,12 @@ describe("articles", () => {
       coordinator: "et",
       left: {
         num: "L325-3",
-        localization: {
-          relative: 0,
-        },
         ofTheSaid: true,
         position: {
           start: 20,
           stop: 28,
         },
+        relative: 0,
         type: "article",
       },
       position: {
@@ -232,14 +220,12 @@ describe("articles", () => {
       },
       right: {
         num: "L325-4",
-        localization: {
-          relative: 0,
-        },
         ofTheSaid: true,
         position: {
           start: 32,
           stop: 40,
         },
+        relative: 0,
         type: "article",
       },
       type: "enumeration",
@@ -254,13 +240,11 @@ describe("articles", () => {
     const context = new TextParserContext(task.name)
     const result = articles(context) as TextAstArticle
     expect(result).toStrictEqual({
-      localization: {
-        relative: 0,
-      },
       position: {
         start: 0,
         stop: 14,
       },
+      relative: 0,
       type: "article",
     })
     expect(context.remaining()).toBe("")
@@ -274,13 +258,11 @@ describe("articles", () => {
       coordinator: "et",
       left: {
         num: "L325-3",
-        localization: {
-          relative: 0,
-        },
         position: {
           start: 15,
           stop: 23,
         },
+        relative: 0,
         type: "article",
       },
       position: {
@@ -289,13 +271,11 @@ describe("articles", () => {
       },
       right: {
         num: "L325-4",
-        localization: {
-          relative: 0,
-        },
         position: {
           start: 27,
           stop: 35,
         },
+        relative: 0,
         type: "article",
       },
       type: "enumeration",
@@ -366,7 +346,7 @@ describe("designationArticle", () => {
             start: 21,
             stop: 23,
           },
-          type: "partie",
+          type: "item",
         },
         last: {
           index: 5,
@@ -375,7 +355,7 @@ describe("designationArticle", () => {
             start: 26,
             stop: 28,
           },
-          type: "partie",
+          type: "item",
         },
         position: {
           start: 21,
@@ -447,13 +427,11 @@ describe("designationArticle", () => {
     const context = new TextParserContext(task.name)
     const result = designationArticle(context) as TextAstArticle
     expect(result).toStrictEqual({
-      localization: {
-        relative: 0,
-      },
       position: {
         start: 0,
         stop: 4,
       },
+      relative: 0,
       type: "article",
     })
     expect(context.remaining()).toBe("")
@@ -545,13 +523,11 @@ describe("listeArticles", () => {
         stop: 20,
       },
       right: {
-        localization: {
-          relative: "+∞",
-        },
         position: {
           start: 12,
           stop: 20,
         },
+        relative: "+∞",
         type: "article",
       },
       type: "enumeration",

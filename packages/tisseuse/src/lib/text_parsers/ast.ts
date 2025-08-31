@@ -46,12 +46,12 @@ export interface TextAstAction {
 
 export type TextAstArticle = {
   implicitText?: TextAstText | undefined
-  localization?: TextAstLocalization
   localizationAdverb?: LocalizationAdverb
   num?: string
   ofTheSaid?: boolean
   type: "article"
-} & TextAstPosition
+} & TextAstLocalization &
+  TextAstPosition
 
 export type TextAstAtomicReference =
   | TextAstArticle
@@ -89,11 +89,11 @@ export type TextAstCountedInterval = {
 } & TextAstPosition
 
 export type TextAstDivision = {
-  index?: number
-  localization?: TextAstLocalization
+  num?: string
   ofTheSaid?: boolean
   type: DivisionType
-} & TextAstPosition
+} & TextAstLocalization &
+  TextAstPosition
 
 export type TextAstEnumeration = {
   coordinator: "," | "et" | "ou"
@@ -110,19 +110,16 @@ export type TextAstExclusion = {
 
 export type TextAstIncompleteHeader = {
   num?: string
-  localization?: TextAstLocalization
   localizationAdverb?: LocalizationAdverb
   ofTheSaid?: boolean
   type: "incomplete-header"
-} & TextAstPosition
+} & TextAstLocalization &
+  TextAstPosition
 
-export type TextAstLocalization =
-  | TextAstLocalizationAbsolute
-  | TextAstLocalizationRelative
-
-export type TextAstLocalizationAbsolute = { absolute: number }
-
-export type TextAstLocalizationRelative = { relative: number | "+∞" }
+export interface TextAstLocalization {
+  index?: number
+  relative?: number | "+∞"
+}
 
 export type TextAstNumber = {
   text: string
@@ -136,11 +133,10 @@ export type TextAstParentChild = {
 } & TextAstPosition
 
 export type TextAstPortion = {
-  index?: number
-  localization?: TextAstLocalization
   ofTheSaid?: boolean
   type: PortionType
-} & TextAstPosition
+} & TextAstLocalization &
+  TextAstPosition
 
 export interface TextAstPosition {
   position: TextPosition
@@ -159,7 +155,7 @@ export type TextAstReferenceAndAction = {
   type: "reference_et_action"
 } & TextAstPosition
 
-export interface TextAstText {
+export type TextAstText = {
   /**
    * For the texts found in the Légifrance datasets, this is
    * Légifrance CID of the text.
@@ -168,7 +164,6 @@ export interface TextAstText {
   date?: string
   nature: LawNature
   legislation?: "international" | "UE"
-  localization?: TextAstLocalization
   /**
    * For the texts found in the Légifrance datasets, this is
    * Légifrance NUM of the text (for example the number of the law).
@@ -182,7 +177,7 @@ export interface TextAstText {
    */
   title?: string
   type: "texte"
-}
+} & TextAstLocalization
 
 export interface TextAstTextIdentification {
   date?: string
@@ -236,12 +231,15 @@ export const internationalLawNatures = ["CONVENTION"] as const
 
 export const divisionTypes = [
   "livre",
+  "partie",
   "titre",
+  "sous-titre",
   "chapitre",
   "section",
   "sous-section",
   "paragraphe",
   "sous-paragraphe",
+  "sous-sous-paragraphe",
 ] as const
 
 export const lawNatures = [
@@ -250,7 +248,11 @@ export const lawNatures = [
   ...internationalLawNatures,
 ] as const
 
-export const portionTypes = ["partie", "alinéa", "phrase"] as const
+/**
+ * Portions are elements of an article.
+ * "items" is a generic term for lines preceded with a number.
+ */
+export const portionTypes = ["item", "alinéa", "phrase"] as const
 
 export const localizationAdverbs = [
   "après",
@@ -269,11 +271,14 @@ export function isTextAstAtomicReference(
     case "incomplete-header":
     case "livre":
     case "paragraphe":
+    case "item":
     case "partie":
     case "phrase":
     case "section":
     case "sous-paragraphe":
     case "sous-section":
+    case "sous-sous-paragraphe":
+    case "sous-titre":
     case "texte":
     case "titre":
       return true

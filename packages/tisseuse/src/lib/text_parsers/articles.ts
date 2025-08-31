@@ -136,7 +136,7 @@ export const designationArticle = alternatives(
   ),
   convert(adjectifRelatifSingulier, {
     value: (result, context) => ({
-      localization: result as TextAstLocalization,
+      ...(result as TextAstLocalization),
       position: context.position(),
       type: "article",
     }),
@@ -145,7 +145,7 @@ export const designationArticle = alternatives(
 
 export const listeArticles1Internal = convert(adjectifRelatifPluriel, {
   value: (result, context) => ({
-    localization: result as TextAstLocalization,
+    ...(result as TextAstLocalization),
     position: context.position(),
     type: "article",
   }),
@@ -179,7 +179,7 @@ export const articles2Internal = alternatives(
   listeArticles,
   convert(relatifPluriel, {
     value: (result, context) => ({
-      localization: result as TextAstLocalization,
+      ...(result as TextAstLocalization),
       position: context.position(),
       type: "article",
     }),
@@ -206,8 +206,8 @@ export const articles1Internal = alternatives(
           if (article.type === "incomplete-header") {
             ;(article as unknown as TextAstArticle).type = "article"
           }
-          if (article.localization === undefined) {
-            article.localization = results[0] as TextAstLocalization
+          if (article.index === undefined && article.relative === undefined) {
+            Object.assign(article, results[0] as TextAstLocalization)
           }
         }
         return { ...base, position: context.position() }
@@ -278,8 +278,8 @@ export const article1Internal = alternatives(
           if (article.type === "incomplete-header") {
             ;(article as unknown as TextAstArticle).type = "article"
           }
-          if (article.localization === undefined) {
-            article.localization = results[0] as TextAstLocalization
+          if (article.index === undefined && article.relative === undefined) {
+            Object.assign(article, results[0] as TextAstLocalization)
           }
         }
         return { ...base, position: context.position() }

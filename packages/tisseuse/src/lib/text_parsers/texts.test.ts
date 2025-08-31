@@ -314,9 +314,9 @@ describe("Règle générale", () => {
       expect(result).toStrictEqual({
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
-        localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 19 },
+        relative: 0,
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -332,10 +332,10 @@ describe("Règle générale", () => {
         date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
-        localization: { relative: 0 },
         num: "2001/73/CEE",
         ofTheSaid: true,
         position: { start: 0, stop: 56 },
+        relative: 0,
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -347,9 +347,9 @@ describe("Règle générale", () => {
       const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         nature: "LOI_ORGANIQUE",
-        localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
+        relative: 0,
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -361,9 +361,9 @@ describe("Règle générale", () => {
       const result = texte(context) as TextAstText & TextAstPosition
       expect(result).toStrictEqual({
         nature: "LOI_ORGANIQUE",
-        localization: { relative: 0 },
         ofTheSaid: true,
         position: { start: 0, stop: 23 },
+        relative: 0,
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -379,10 +379,10 @@ describe("Règle générale", () => {
         cid: "JORFTEXT000000394028",
         date: "2003-09-05",
         nature: "LOI_ORGANIQUE",
-        localization: { relative: 0 },
         num: "2001-692",
         ofTheSaid: true,
         position: { start: 0, stop: 55 },
+        relative: 0,
         title:
           "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
         type: "texte",
@@ -398,9 +398,9 @@ describe("Règle générale", () => {
         cid: "JORFTEXT000000394028",
         date: "2003-09-05",
         nature: "LOI_ORGANIQUE",
-        localization: { relative: 0 },
         num: "2001-692",
         position: { start: 0, stop: 50 },
+        relative: 0,
         title:
           "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
         type: "texte",
@@ -416,9 +416,9 @@ describe("Règle générale", () => {
         date: "2003-09-05",
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
-        localization: { relative: 0 },
         num: "2001/73/CEE",
         position: { start: 0, stop: 51 },
+        relative: 0,
         type: "texte",
       })
       expect(context.remaining()).toBe("")

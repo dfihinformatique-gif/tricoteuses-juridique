@@ -18,9 +18,9 @@ export const eme = regExp("(èm)?e")
  * Nombre cardinal ou ordinal
  */
 export const nombre = alternatives(
-  regExp("1er", { value: 1 }),
+  regExp("1er", { value: { index: 1 } }),
   chain([regExp(String.raw`\d+`), optional(eme, { default: "" })], {
-    value: (results) => parseInt(results[0] as string),
+    value: (results) => ({ index: parseInt(results[0] as string) }),
   }),
 )
 
@@ -28,7 +28,7 @@ export const nombreCardinal = regExp(String.raw`\d+`, {
   value: (match) => parseInt(match[0] as string),
 })
 
-export const nombreOrdinal = alternatives(
+export const adjectifNumeralOrdinalCourt = alternatives(
   regExp("1er", { value: 1 }),
   chain([regExp(String.raw`\d+`), eme], {
     value: (results) => parseInt(results[0] as string),
@@ -49,10 +49,12 @@ export const nombreRomainOrdinal = alternatives(
 )
 
 export const nombreRomainOu0i = alternatives(
-  regExp("0I", { value: 0 }),
-  regExp("Ier", { value: 1 }),
+  regExp("0I", { value: { index: 0 } }),
+  regExp("Ier", { value: { index: 1 } }),
   chain([regExp(String.raw`[IVXLCDM]+`), optional(eme, { default: "" })], {
-    value: (results) => numberFromRomanNumeral(results[0] as string),
+    value: (results) => ({
+      index: numberFromRomanNumeral(results[0] as string),
+    }),
   }),
 )
 
@@ -132,7 +134,7 @@ export const adjectifNumeralCardinal = chain(
   },
 )
 
-export const adjectifNumeralOrdinal = alternatives(
+export const adjectifNumeralOrdinalLong = alternatives(
   regExp("premi(er|ère)", { flags: "i", value: 1 }),
   regExp("seconde?", { flags: "i", value: 2 }),
   chain([adjectifNumeralCardinal, regExp("ième", { flags: "i" })], {
@@ -140,9 +142,9 @@ export const adjectifNumeralOrdinal = alternatives(
   }),
 )
 
-export const adjectifOrdinal = alternatives(
-  nombreOrdinal,
-  adjectifNumeralOrdinal,
+export const adjectifNumeralOrdinal = alternatives(
+  adjectifNumeralOrdinalCourt,
+  adjectifNumeralOrdinalLong,
 )
 
 // Numérotation latine

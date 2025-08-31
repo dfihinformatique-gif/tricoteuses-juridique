@@ -8,6 +8,7 @@ import {
   type TextAstDivision,
   type TextAstIncompleteHeader,
   type TextAstLocalization,
+  type TextAstNumber,
   type TextAstParentChild,
   type TextAstReference,
 } from "./ast.js"
@@ -15,7 +16,11 @@ import {
   createEnumerationOrBoundedInterval,
   iterAtomicFirstParentReferences,
 } from "./helpers.js"
-import { adjectifNumeralOrdinal, nombre, nombreRomainOu0i } from "./numbers.js"
+import {
+  adjectifNumeralOrdinal,
+  nombreAsTextAstNumber,
+  nombreRomainOu0iAsTextAstNumber,
+} from "./numbers.js"
 import {
   alternatives,
   chain,
@@ -82,16 +87,23 @@ export const nomDivision = alternatives(
   ),
 )
 
-export const numeroDivision = alternatives(nombreRomainOu0i, nombre)
+export const numeroDivision = alternatives(
+  nombreRomainOu0iAsTextAstNumber,
+  nombreAsTextAstNumber,
+)
 
 export const designationDivision = alternatives(
   chain([numeroDivision, optional(espaceAdverbeRelatif, { default: "" })], {
-    value: (results, context) => ({
-      ...(results[0] as TextAstLocalization),
-      ...(results[1] ? { localizationAdverb: results[1] } : {}),
-      position: context.position(),
-      type: "incomplete-header",
-    }),
+    value: (results, context) => {
+      const numeroDivision = results[0] as TextAstNumber
+      return {
+        index: numeroDivision.value,
+        ...(results[1] ? { localizationAdverb: results[1] } : {}),
+        num: numeroDivision.text,
+        position: context.position(),
+        type: "incomplete-header",
+      }
+    },
   }),
   chain([nomDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({

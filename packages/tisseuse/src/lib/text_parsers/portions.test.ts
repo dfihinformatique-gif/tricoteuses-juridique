@@ -48,6 +48,7 @@ describe("auPortion", () => {
     const result = auPortion(context) as TextAstPortion
     expect(result).toStrictEqual({
       index: -1,
+      num: "dernier",
       position: {
         start: 0,
         stop: 17,
@@ -67,6 +68,7 @@ describe("auxPortions", () => {
       count: 10,
       first: {
         index: -1,
+        num: "derniers",
         type: "alinéa",
       },
       position: {
@@ -202,6 +204,7 @@ describe("portions", () => {
       count: 10,
       first: {
         index: -1,
+        num: "derniers",
         type: "alinéa",
       },
       position: {
@@ -221,6 +224,7 @@ describe("unePortion", () => {
     const result = unePortion(context) as TextAstPortion
     expect(result).toStrictEqual({
       index: -2,
+      num: "avant-dernier",
       position: {
         start: 0,
         stop: 20,

@@ -4,7 +4,10 @@ import { espace } from "./typography.js"
 export const adjectifRelatifPluriel = alternatives(
   regExp("derni(er|ère)s", {
     flags: "i",
-    value: { index: -1 },
+    value: (match, context) => ({
+      index: -1,
+      num: context.text(),
+    }),
   }),
   regExp("mêmes", {
     flags: "i",
@@ -12,7 +15,10 @@ export const adjectifRelatifPluriel = alternatives(
   }),
   regExp("premi(er|ère)s", {
     flags: "i",
-    value: { index: 1 },
+    value: (match, context) => ({
+      index: 1,
+      num: context.text(),
+    }),
   }),
   regExp("présente?s", {
     flags: "i",
@@ -27,15 +33,24 @@ export const adjectifRelatifPluriel = alternatives(
 export const adjectifRelatifSingulier = alternatives(
   regExp("antépénultième", {
     flags: "i",
-    value: { index: -3 },
+    value: (match, context) => ({
+      index: -3,
+      num: context.text(),
+    }),
   }),
   regExp("avant-derni(er|ère)", {
     flags: "i",
-    value: { index: -2 },
+    value: (match, context) => ({
+      index: -2,
+      num: context.text(),
+    }),
   }),
   regExp("derni(er|ère)", {
     flags: "i",
-    value: { index: -1 },
+    value: (match, context) => ({
+      index: -1,
+      num: context.text(),
+    }),
   }),
   regExp("même", {
     flags: "i",
@@ -43,7 +58,10 @@ export const adjectifRelatifSingulier = alternatives(
   }),
   regExp("pénultième", {
     flags: "i",
-    value: { index: -2 },
+    value: (match, context) => ({
+      index: -2,
+      num: context.text(),
+    }),
   }),
   regExp("précédente?", {
     flags: "i",
@@ -51,7 +69,10 @@ export const adjectifRelatifSingulier = alternatives(
   }),
   regExp("premi(er|ère)", {
     flags: "i",
-    value: { index: 1 },
+    value: (match, context) => ({
+      index: 1,
+      num: context.text(),
+    }),
   }),
   regExp("présente?", {
     flags: "i",

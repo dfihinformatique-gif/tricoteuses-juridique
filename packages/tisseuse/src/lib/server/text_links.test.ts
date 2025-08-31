@@ -193,6 +193,7 @@ describe("iterTextLinks", () => {
       {
         division: {
           index: 3,
+          num: "III",
           position: {
             start: 7,
             stop: 19,

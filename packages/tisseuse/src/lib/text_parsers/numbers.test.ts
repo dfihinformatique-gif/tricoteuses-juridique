@@ -6,11 +6,11 @@ import { type TextAstNumber } from "./ast.js"
 import {
   adjectifNumeralOrdinalCourt,
   adverbeMultiplicatif,
-  nombre,
+  nombreAsTextAstNumber,
   nombreCardinal,
   nombreRomainCardinal,
   nombreRomainOrdinal,
-  nombreRomainOu0i,
+  nombreRomainOu0iAsTextAstNumber,
 } from "./numbers.js"
 import { TextParserContext } from "./parsers.js"
 
@@ -117,12 +117,16 @@ describe("adverbeMultiplicatif", () => {
   }
 })
 
-describe("nombre", () => {
+describe("nombreAsTextAstNumber", () => {
   for (const number of [0, 1, 7, 15, 89, 1001, 2018]) {
     const cardinalNumber = number.toString()
     test(cardinalNumber, ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(nombre(context)).toStrictEqual({ index: number })
+      expect(nombreAsTextAstNumber(context)).toStrictEqual({
+        position: { start: 0, stop: cardinalNumber.length },
+        text: task.name,
+        value: number,
+      })
       expect(context.remaining()).toBe("")
     })
   }
@@ -161,26 +165,38 @@ describe("nombreRomainOrdinal", () => {
   }
 })
 
-describe("nombreRomainOu0i", () => {
+describe("nombreRomainOu0iAsTextAstNumber", () => {
   test("0I", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(nombreRomainOu0i(context)).toStrictEqual({ index: 0 })
+    expect(nombreRomainOu0iAsTextAstNumber(context)).toStrictEqual({
+      position: { start: 0, stop: task.name.length },
+      text: task.name,
+      value: 0,
+    })
     expect(context.remaining()).toBe("")
   })
-  for (const [romanNumber, num] of generateRomanNumbers()) {
-    test(`${romanNumber} == ${num}`, () => {
+  for (const [romanNumber, number] of generateRomanNumbers()) {
+    test(`${romanNumber} == ${number}`, () => {
       const context = new TextParserContext(romanNumber)
-      expect(nombreRomainOu0i(context) as TextAstNumber).toStrictEqual({
-        index: num,
+      expect(
+        nombreRomainOu0iAsTextAstNumber(context) as TextAstNumber,
+      ).toStrictEqual({
+        position: { start: 0, stop: romanNumber.length },
+        text: romanNumber,
+        value: number,
       })
       expect(context.remaining()).toBe("")
     })
     const ordinalRomanNumber =
-      romanNumber + (num === 1 ? "er" : Math.random() >= 0.5 ? "ème" : "e")
-    test(`${ordinalRomanNumber} == ${num}`, () => {
+      romanNumber + (number === 1 ? "er" : Math.random() >= 0.5 ? "ème" : "e")
+    test(`${ordinalRomanNumber} == ${number}`, () => {
       const context = new TextParserContext(ordinalRomanNumber)
-      expect(nombreRomainOu0i(context) as TextAstNumber).toStrictEqual({
-        index: num,
+      expect(
+        nombreRomainOu0iAsTextAstNumber(context) as TextAstNumber,
+      ).toStrictEqual({
+        position: { start: 0, stop: ordinalRomanNumber.length },
+        text: ordinalRomanNumber,
+        value: number,
       })
       expect(context.remaining()).toBe("")
     })

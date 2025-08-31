@@ -56,6 +56,7 @@ describe("reference", () => {
                   count: 10,
                   first: {
                     index: -1,
+                    num: "derniers",
                     type: "alinéa",
                   },
                   position: {
@@ -65,8 +66,8 @@ describe("reference", () => {
                   type: "counted-interval",
                 },
                 parent: {
-                  num: "I",
                   index: 1,
+                  num: "I",
                   position: {
                     start: 96,
                     stop: 97,
@@ -841,6 +842,7 @@ describe("reference", () => {
         count: 10,
         first: {
           index: -1,
+          num: "derniers",
           type: "alinéa",
         },
         position: {
@@ -1023,6 +1025,7 @@ describe("reference", () => {
       child: {
         child: {
           index: 7,
+          num: "7",
           position: {
             start: 3,
             stop: 15,
@@ -1084,6 +1087,7 @@ describe("reference", () => {
       child: {
         child: {
           index: 3,
+          num: "3",
           position: {
             start: 3,
             stop: 20,
@@ -1182,6 +1186,7 @@ describe("reference", () => {
           child: {
             child: {
               index: 3,
+              num: "III",
               position: {
                 start: 3,
                 stop: 15,
@@ -1190,6 +1195,7 @@ describe("reference", () => {
             },
             parent: {
               index: 1,
+              num: "Ier",
               position: {
                 start: 19,
                 stop: 28,
@@ -1204,6 +1210,7 @@ describe("reference", () => {
           },
           parent: {
             index: 1,
+            num: "première",
             position: {
               start: 35,
               stop: 50,
@@ -1218,6 +1225,7 @@ describe("reference", () => {
         },
         parent: {
           index: 1,
+          num: "Ier",
           position: {
             start: 54,
             stop: 63,

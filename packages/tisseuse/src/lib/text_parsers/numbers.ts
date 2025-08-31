@@ -17,10 +17,20 @@ export const eme = regExp("(èm)?e")
 /**
  * Nombre cardinal ou ordinal
  */
-export const nombre = alternatives(
-  regExp("1er", { value: { index: 1 } }),
+export const nombreAsTextAstNumber = alternatives(
+  regExp("1er", {
+    value: (match, context) => ({
+      position: context.position(),
+      text: context.text(),
+      value: 1,
+    }),
+  }),
   chain([regExp(String.raw`\d+`), optional(eme, { default: "" })], {
-    value: (results) => ({ index: parseInt(results[0] as string) }),
+    value: (results, context) => ({
+      position: context.position(),
+      text: context.text(),
+      value: parseInt(results[0] as string),
+    }),
   }),
 )
 
@@ -48,12 +58,26 @@ export const nombreRomainOrdinal = alternatives(
   }),
 )
 
-export const nombreRomainOu0i = alternatives(
-  regExp("0I", { value: { index: 0 } }),
-  regExp("Ier", { value: { index: 1 } }),
+export const nombreRomainOu0iAsTextAstNumber = alternatives(
+  regExp("0I", {
+    value: (match, context) => ({
+      position: context.position(),
+      text: context.text(),
+      value: 0,
+    }),
+  }),
+  regExp("Ier", {
+    value: (match, context) => ({
+      position: context.position(),
+      text: context.text(),
+      value: 1,
+    }),
+  }),
   chain([regExp(String.raw`[IVXLCDM]+`), optional(eme, { default: "" })], {
-    value: (results) => ({
-      index: numberFromRomanNumeral(results[0] as string),
+    value: (results, context) => ({
+      position: context.position(),
+      text: context.text(),
+      value: numberFromRomanNumeral(results[0] as string),
     }),
   }),
 )

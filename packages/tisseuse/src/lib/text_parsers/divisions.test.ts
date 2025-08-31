@@ -20,6 +20,7 @@ describe("designationDivision", () => {
     const result = designationDivision(context)
     expect(result).toStrictEqual({
       index: 0,
+      num: "0I",
       position: { start: 0, stop: 2 },
       type: "incomplete-header",
     })
@@ -46,6 +47,7 @@ describe("division", () => {
     const result = division(context) as TextAstDivision
     expect(result).toStrictEqual({
       index: 3,
+      num: "3",
       ofTheSaid: true,
       position: { start: 0, stop: 19 },
       type: "section",
@@ -59,6 +61,7 @@ describe("division", () => {
     const result = division(context) as TextAstDivision
     expect(result).toStrictEqual({
       index: 3,
+      num: "3",
       ofTheSaid: true,
       position: { start: 0, stop: 14 },
       type: "section",
@@ -84,7 +87,24 @@ describe("division", () => {
     const result = division(context) as TextAstDivision
     expect(result).toStrictEqual({
       index: 3,
+      num: "3",
       position: { start: 0, stop: 14 },
+      type: "section",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("première section", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = division(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      index: 1,
+      num: "première",
+      position: {
+        start: 0,
+        stop: 16,
+      },
       type: "section",
     })
     expect(context.remaining()).toBe("")
@@ -98,6 +118,7 @@ describe("division", () => {
     const result = division(context) as TextAstDivision
     expect(result).toStrictEqual({
       index: 0,
+      num: "0I",
       position: { start: 0, stop: 10 },
       type: "section",
     })
@@ -110,6 +131,7 @@ describe("division", () => {
     const result = division(context) as TextAstDivision
     expect(result).toStrictEqual({
       index: 3,
+      num: "3",
       position: { start: 0, stop: 9 },
       type: "section",
     })
@@ -126,6 +148,7 @@ describe("division1Internal", () => {
     const result = division1Internal(context) as TextAstDivision
     expect(result).toStrictEqual({
       index: 0,
+      num: "0I",
       position: { start: 0, stop: 10 },
       type: "section",
     })
@@ -140,6 +163,7 @@ describe("division2Internal", () => {
     const result = division2Internal(context)
     expect(result).toStrictEqual({
       index: 0,
+      num: "0I",
       position: { start: 0, stop: 2 },
       type: "incomplete-header",
     })
@@ -171,6 +195,7 @@ describe("divisions", () => {
       coordinator: "et",
       left: {
         index: 3,
+        num: "3",
         ofTheSaid: true,
         position: {
           start: 21,
@@ -184,6 +209,7 @@ describe("divisions", () => {
       },
       right: {
         index: 4,
+        num: "4",
         ofTheSaid: true,
         position: {
           start: 26,
@@ -206,6 +232,7 @@ describe("divisions", () => {
       coordinator: "et",
       left: {
         index: 3,
+        num: "3",
         ofTheSaid: true,
         position: {
           start: 15,
@@ -219,6 +246,7 @@ describe("divisions", () => {
       },
       right: {
         index: 4,
+        num: "4",
         ofTheSaid: true,
         position: {
           start: 20,
@@ -256,6 +284,7 @@ describe("divisions", () => {
       coordinator: "et",
       left: {
         index: 3,
+        num: "3",
         position: {
           start: 15,
           stop: 16,
@@ -268,6 +297,7 @@ describe("divisions", () => {
       },
       right: {
         index: 4,
+        num: "4",
         position: {
           start: 20,
           stop: 21,
@@ -289,6 +319,7 @@ describe("divisions", () => {
       coordinator: "et",
       left: {
         index: 3,
+        num: "3",
         position: {
           start: 9,
           stop: 10,
@@ -301,6 +332,7 @@ describe("divisions", () => {
       },
       right: {
         index: 4,
+        num: "4",
         position: {
           start: 14,
           stop: 15,
@@ -327,7 +359,11 @@ describe("natureDivisionSingulier", () => {
 describe("numeroDivision", () => {
   test("0I", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(numeroDivision(context)).toStrictEqual({ index: 0 })
+    expect(numeroDivision(context)).toStrictEqual({
+      position: { start: 0, stop: task.name.length },
+      text: task.name,
+      value: 0,
+    })
     expect(context.remaining()).toBe("")
   })
 })

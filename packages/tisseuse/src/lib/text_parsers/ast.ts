@@ -47,7 +47,6 @@ export interface TextAstAction {
 export type TextAstArticle = {
   implicitText?: TextAstText | undefined
   localizationAdverb?: LocalizationAdverb
-  num?: string
   ofTheSaid?: boolean
   type: "article"
 } & TextAstLocalization &
@@ -89,7 +88,6 @@ export type TextAstCountedInterval = {
 } & TextAstPosition
 
 export type TextAstDivision = {
-  num?: string
   ofTheSaid?: boolean
   type: DivisionType
 } & TextAstLocalization &
@@ -109,7 +107,6 @@ export type TextAstExclusion = {
 } & TextAstPosition
 
 export type TextAstIncompleteHeader = {
-  num?: string
   localizationAdverb?: LocalizationAdverb
   ofTheSaid?: boolean
   type: "incomplete-header"
@@ -118,6 +115,7 @@ export type TextAstIncompleteHeader = {
 
 export interface TextAstLocalization {
   index?: number
+  num?: string
   relative?: number | "+∞"
 }
 
@@ -164,11 +162,6 @@ export type TextAstText = {
   date?: string
   nature: LawNature
   legislation?: "international" | "UE"
-  /**
-   * For the texts found in the Légifrance datasets, this is
-   * Légifrance NUM of the text (for example the number of the law).
-   */
-  num?: string
   ofTheSaid?: boolean
   /**
    * For the texts found in the Légifrance datasets, the title

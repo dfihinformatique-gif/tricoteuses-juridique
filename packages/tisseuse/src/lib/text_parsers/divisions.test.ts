@@ -26,6 +26,30 @@ describe("designationDivision", () => {
     })
     expect(context.remaining()).toBe("")
   })
+
+  test("III", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = designationDivision(context)
+    expect(result).toStrictEqual({
+      index: 3,
+      num: "III",
+      position: { start: 0, stop: 3 },
+      type: "incomplete-header",
+    })
+    expect(context.remaining()).toBe("")
+  })
+
+  test("III bis", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = designationDivision(context)
+    expect(result).toStrictEqual({
+      index: 3.002,
+      num: "III bis",
+      position: { start: 0, stop: 7 },
+      type: "incomplete-header",
+    })
+    expect(context.remaining()).toBe("")
+  })
 })
 
 describe("division", () => {
@@ -360,9 +384,9 @@ describe("numeroDivision", () => {
   test("0I", ({ task }) => {
     const context = new TextParserContext(task.name)
     expect(numeroDivision(context)).toStrictEqual({
-      position: { start: 0, stop: task.name.length },
-      text: task.name,
-      value: 0,
+      index: 0,
+      num: "0I",
+      type: "incomplete-header",
     })
     expect(context.remaining()).toBe("")
   })

@@ -1,3 +1,39 @@
+const latinTeens: Array<string[]> = [
+  [],
+  ["un"],
+  ["du"], // duo
+  ["ter"],
+  ["quater"],
+  ["quin"],
+  ["sex"],
+  ["sept"],
+  ["oct"], // octo
+  ["nov"], // novo
+]
+const latinTens: Array<string[]> = [
+  [],
+  ["decies"],
+  ["vicies", "vecies"],
+  ["tricies", "trecies"],
+  ["quadragies"],
+  ["quinquagies"],
+  ["sexagies"],
+  ["septuagies"],
+  ["octogies"],
+  ["nonagies"],
+]
+const latinUnits: Array<string[]> = [
+  [],
+  ["semel"],
+  ["bis"],
+  ["ter"],
+  ["quater"],
+  ["quinquies"],
+  ["sexies"],
+  ["septies"],
+  ["octies"],
+  ["nonies", "novies"],
+]
 const romanNumeralConversionTable = [
   1000,
   "M",
@@ -50,6 +86,7 @@ const tens = [
   "quatre-vingt",
   "quatre-vingt-dix",
 ]
+
 const units = [
   "",
   "un",
@@ -151,6 +188,33 @@ export function* iterCardinalNumeralFormsFromNumber(
     yield roman
   }
   yield num.toString()
+}
+
+export function* iterLatinMultiplicativeAdverbsFromNumber(
+  num: number,
+): Generator<string, void> {
+  if (num <= 0) {
+    return
+  }
+  if (num < 10) {
+    yield* latinUnits[num]
+  } else if (num < 100) {
+    const decade = Math.floor(num / 10)
+    const unit = num % 10
+    for (const latinTen of latinTens[decade]) {
+      for (const latinTeen of latinTeens[unit]) {
+        yield `${latinTeen}${[2, 8, 9].includes(unit) && latinTen[0] !== "o" ? "o" : ""}${latinTen}`
+      }
+    }
+    if (decade < 9 && [8, 9].includes(unit)) {
+      const nextLatinTens = latinTens[decade + 1]
+      for (const nextLatinTen of nextLatinTens) {
+        yield `${unit === 8 ? "duo" : "un"}${nextLatinTen[0] === "o" ? "d" : "de"}${nextLatinTen}`
+      }
+    }
+  } else {
+    throw new Error("Number must be a less than 100.")
+  }
 }
 
 export function* iterOrdinalNumeralFormsFromNumber(

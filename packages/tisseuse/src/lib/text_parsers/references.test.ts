@@ -685,6 +685,72 @@ describe("reference", () => {
     expect(context.text(result.child.position)).toBe("3°")
   })
 
+  test("Au chapitre II bis du titre premier de la première partie du livre premier", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          child: {
+            index: 2.002,
+            num: "II bis",
+            position: {
+              start: 3,
+              stop: 18,
+            },
+            type: "chapitre",
+          },
+          parent: {
+            index: 1,
+            num: "premier",
+            position: {
+              start: 22,
+              stop: 35,
+            },
+            type: "titre",
+          },
+          position: {
+            start: 3,
+            stop: 35,
+          },
+          type: "parent-enfant",
+        },
+        parent: {
+          index: 1,
+          num: "première",
+          position: {
+            start: 42,
+            stop: 57,
+          },
+          type: "partie",
+        },
+        position: {
+          start: 3,
+          stop: 57,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        index: 1,
+        num: "premier",
+        position: {
+          start: 61,
+          stop: 74,
+        },
+        type: "livre",
+      },
+      position: {
+        start: 0,
+        stop: 74,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("au code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference

@@ -32,18 +32,6 @@ describe("iterTextLinks", () => {
         start: 83,
         stop: 85,
       },
-      text: {
-        cid: "JORFTEXT000042753580",
-        date: "2020-12-29",
-        nature: "LOI",
-        num: "2020-1721",
-        position: {
-          start: 99,
-          stop: 135,
-        },
-        title: "LOI n° 2020-1721 du 29 décembre 2020 de finances pour 2021",
-        type: "texte",
-      },
       type: "article",
     })
     expect(context.text(link3.position)).toBe("27")
@@ -113,7 +101,6 @@ describe("iterTextLinks", () => {
         start: 100,
         stop: 113,
       },
-      text: undefined,
       type: "article",
     })
   })
@@ -174,9 +161,61 @@ describe("iterTextLinks", () => {
         start: 100,
         stop: 113,
       },
-      text: undefined,
       type: "article",
     })
+  })
+
+  test("Implicit link to division", async () => {
+    const input = dedent`
+      I. – Le code général des impôts est ainsi modifié :
+      A. – Au chapitre II bis du titre premier de la première partie du livre premier :
+    `
+    const context = new TextParserContext(input)
+    const links = await Array.fromAsync(
+      iterTextLinks(context, {
+        date: "2025-07-14",
+      }),
+    )
+    expect(links).toStrictEqual([
+      {
+        position: {
+          start: 5,
+          stop: 31,
+        },
+        text: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 5,
+            stop: 31,
+          },
+          title: "Code général des impôts",
+          type: "texte",
+        },
+        type: "texte",
+      },
+      {
+        division: {
+          index: 2.002,
+          num: "II bis",
+          position: {
+            start: 60,
+            stop: 75,
+          },
+          type: "chapitre",
+        },
+        position: {
+          start: 60,
+          stop: 131,
+        },
+        sectionTaId: "LEGISCTA000048779194",
+        type: "division",
+      },
+    ])
+    expect(context.text(links[0].position)).toBe("Le code général des impôts")
+    expect(context.text(links[1].position)).toBe(
+      "chapitre II bis du titre premier de la première partie du livre premier",
+    )
   })
 
   test("Link to division", async () => {
@@ -205,16 +244,6 @@ describe("iterTextLinks", () => {
           stop: 94,
         },
         sectionTaId: "LEGISCTA000006147020",
-        text: {
-          cid: "LEGITEXT000006069577",
-          nature: "CODE",
-          position: {
-            start: 71,
-            stop: 94,
-          },
-          title: "Code général des impôts",
-          type: "texte",
-        },
         type: "division",
       },
     ])

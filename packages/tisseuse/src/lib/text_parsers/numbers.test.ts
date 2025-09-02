@@ -1,11 +1,14 @@
 import { describe, expect, test } from "vitest"
 
-import { romanNumeralFromNumber } from "$lib/numbers.js"
+import {
+  iterLatinMultiplicativeAdverbsFromNumber,
+  romanNumeralFromNumber,
+} from "$lib/numbers.js"
 
 import { type TextAstNumber } from "./ast.js"
 import {
   adjectifNumeralOrdinalCourt,
-  adverbeMultiplicatif,
+  adverbeMultiplicatifLatin,
   nombreAsTextAstNumber,
   nombreCardinal,
   nombreRomainCardinal,
@@ -14,66 +17,13 @@ import {
 } from "./numbers.js"
 import { TextParserContext } from "./parsers.js"
 
-function* generateLatinNumbers(): Generator<[string, number], void> {
-  const units: Record<string, string[]> = {
-    1: ["semel"],
-    2: ["bis"],
-    3: ["ter"],
-    4: ["quater"],
-    5: ["quinquies"],
-    6: ["sexies"],
-    7: ["septies"],
-    8: ["octies"],
-    9: ["nonies", "novies"],
-  }
-  const decades: Record<string, string[]> = {
-    10: ["decies"],
-    20: ["vicies", "vecies"],
-    30: ["tricies", "trecies"],
-    40: ["quadragies"],
-    50: ["quinquagies"],
-    60: ["sexagies"],
-    70: ["septuagies"],
-    80: ["octogies"],
-    90: ["nonagies"],
-  }
-  const unitDecades: Record<string, string> = {
-    0: "",
-    1: "un",
-    2: "du", // duo
-    3: "ter",
-    4: "quater",
-    5: "quin",
-    6: "sex",
-    7: "sept",
-    8: "oct", // octo
-    9: "nov", // novo
-  }
-  for (let i = 1; i < 100; i++) {
-    if (i < 10) {
-      for (const n of units[i]) {
-        yield [n, i]
-      }
-    } else {
-      for (const decade of decades[i - (i % 10)]) {
-        yield [
-          unitDecades[i % 10] +
-            ((i % 10 === 2 || i % 10 === 8 || i % 10 === 9) && decade[0] !== "o"
-              ? "o"
-              : "") +
-            decade,
-          i,
-        ]
-      }
-      if (i % 10 === 8 && i >= 18 && i <= 88) {
-        for (const decade of decades[i - (i % 10) + 10]) {
-          yield ["duod" + (decade[0] === "o" ? "" : "e") + decade, i]
-        }
-      } else if (i % 10 === 9 && i >= 19 && i <= 89) {
-        for (const decade of decades[i - (i % 10) + 10]) {
-          yield ["und" + (decade[0] === "o" ? "" : "e") + decade, i]
-        }
-      }
+function* generateLatinMultiplicativeAdverbs(): Generator<
+  [string, number],
+  void
+> {
+  for (let num = 1; num < 100; num++) {
+    for (const adverb of iterLatinMultiplicativeAdverbsFromNumber(num)) {
+      yield [adverb, num]
     }
   }
 }
@@ -105,11 +55,11 @@ describe("adjectifNumeralOrdinalCourt", () => {
   }
 })
 
-describe("adverbeMultiplicatif", () => {
-  for (const [latinNumber, number] of generateLatinNumbers()) {
+describe("adverbeMultiplicatifLatin", () => {
+  for (const [latinNumber, number] of generateLatinMultiplicativeAdverbs()) {
     test(`${latinNumber} == ${number}`, () => {
       const context = new TextParserContext(latinNumber)
-      expect((adverbeMultiplicatif(context) as TextAstNumber).value).toBe(
+      expect((adverbeMultiplicatifLatin(context) as TextAstNumber).value).toBe(
         number,
       )
       expect(context.remaining()).toBe("")

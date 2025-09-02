@@ -12,7 +12,7 @@ import {
   createEnumerationOrBoundedInterval,
   iterAtomicFirstParentReferences,
 } from "./helpers.js"
-import { adverbeMultiplicatif } from "./numbers.js"
+import { adverbeMultiplicatifLatin } from "./numbers.js"
 import {
   alternatives,
   chain,
@@ -90,7 +90,7 @@ export const nomArticle = alternatives(
             regExp(String.raw`[\dA-Z]+`),
             optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
           ],
-          convert(adverbeMultiplicatif, {
+          convert(adverbeMultiplicatifLatin, {
             value: (result) => (result as TextAstNumber).text,
           }),
         ),

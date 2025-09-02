@@ -14,7 +14,7 @@ import {
 import {
   adjectifNumeralCardinal,
   adjectifNumeralOrdinalLong,
-  adverbeMultiplicatif,
+  adverbeMultiplicatifLatin,
   nombreCardinal,
   nombreRomainCardinal,
 } from "./numbers.js"
@@ -89,16 +89,17 @@ export const numeroPortion = chain(
         }),
       }),
     ),
-    optional([espace, adverbeMultiplicatif], { default: null }),
+    optional([espace, adverbeMultiplicatifLatin], { default: null }),
     nonLettre,
   ],
   {
     value: (results, context) => {
       const nombre0 = results[0] as TextAstNumber
-      const nombre1 = results[1] as TextAstNumber | null
+      const nombre1 = (results[1] as [string, TextAstNumber] | null)?.[1]
       return {
-        index: nombre0.value + (nombre1 === null ? 0 : nombre1.value / 1000),
-        num: `${nombre0.text}${nombre1 ? ` ${nombre0.text}` : ""}`,
+        index:
+          nombre0.value + (nombre1 === undefined ? 0 : nombre1.value / 1000),
+        num: `${nombre0.text}${nombre1 === undefined ? "" : ` ${nombre1.text}`}`,
         position: context.position(),
         type: "item",
       }

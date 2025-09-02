@@ -173,7 +173,7 @@ export const adjectifNumeralOrdinal = alternatives(
 
 // Numérotation latine
 
-export const adverbeMultiplicatif = convert(
+export const adverbeMultiplicatifLatin = convert(
   alternatives(
     // Mustt be first:
     regExp("quinquagies", { flags: "i", value: 50 }),

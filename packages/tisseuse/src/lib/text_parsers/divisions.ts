@@ -18,6 +18,7 @@ import {
 } from "./helpers.js"
 import {
   adjectifNumeralOrdinal,
+  adverbeMultiplicatifLatin,
   nombreAsTextAstNumber,
   nombreRomainOu0iAsTextAstNumber,
 } from "./numbers.js"
@@ -87,23 +88,32 @@ export const nomDivision = alternatives(
   ),
 )
 
-export const numeroDivision = alternatives(
-  nombreRomainOu0iAsTextAstNumber,
-  nombreAsTextAstNumber,
+export const numeroDivision = chain(
+  [
+    alternatives(nombreRomainOu0iAsTextAstNumber, nombreAsTextAstNumber),
+    optional([espace, adverbeMultiplicatifLatin], { default: null }),
+  ],
+  {
+    value: (results) => {
+      const nombre0 = results[0] as TextAstNumber
+      const nombre1 = (results[1] as [string, TextAstNumber] | null)?.[1]
+      return {
+        index:
+          nombre0.value + (nombre1 === undefined ? 0 : nombre1.value / 1000),
+        num: `${nombre0.text}${nombre1 === undefined ? "" : ` ${nombre1.text}`}`,
+        type: "incomplete-header",
+      }
+    },
+  },
 )
 
 export const designationDivision = alternatives(
   chain([numeroDivision, optional(espaceAdverbeRelatif, { default: "" })], {
-    value: (results, context) => {
-      const numeroDivision = results[0] as TextAstNumber
-      return {
-        index: numeroDivision.value,
-        ...(results[1] ? { localizationAdverb: results[1] } : {}),
-        num: numeroDivision.text,
-        position: context.position(),
-        type: "incomplete-header",
-      }
-    },
+    value: (results, context) => ({
+      ...(results[0] as TextAstIncompleteHeader),
+      ...(results[1] ? { localizationAdverb: results[1] } : {}),
+      position: context.position(),
+    }),
   }),
   chain([nomDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({

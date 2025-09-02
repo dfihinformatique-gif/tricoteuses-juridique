@@ -32,6 +32,7 @@ import { iterReferences } from "$lib/text_parsers/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import {
   iterCardinalNumeralFormsFromNumber,
+  iterLatinMultiplicativeAdverbsFromNumber,
   iterOrdinalNumeralFormsFromNumber,
 } from "$lib/numbers.js"
 
@@ -39,7 +40,6 @@ export interface ArticleLink {
   article: TextAstArticle
   articleId: string
   position: TextPosition
-  text?: TextAstText & TextAstPosition
   type: "article"
 }
 
@@ -47,7 +47,6 @@ export interface DivisionLink {
   division: TextAstDivision & TextAstPosition
   position: TextPosition
   sectionTaId: string
-  text?: TextAstText & TextAstPosition
   type: "division"
 }
 
@@ -116,6 +115,33 @@ function* iterDeepestDivisionsOrArticles(
   }
 }
 
+function* iterDivisionTypesAndNumbers(
+  divisionType: string,
+  index: number,
+): Generator<string, void> {
+  const index0 = Math.floor(index)
+  const index1 = Math.floor((index - index0) * 1000)
+  if (index1 === 0) {
+    for (const ordinal of iterOrdinalNumeralFormsFromNumber(index0)) {
+      yield `${ordinal.toLowerCase()} ${divisionType}`
+    }
+    for (const cardinal of iterCardinalNumeralFormsFromNumber(index0)) {
+      yield `${divisionType} ${cardinal.toLowerCase()}`
+    }
+  } else {
+    for (const latinMultiplicativeAdverb of iterLatinMultiplicativeAdverbsFromNumber(
+      index1,
+    )) {
+      for (const ordinal of iterOrdinalNumeralFormsFromNumber(index0)) {
+        yield `${ordinal.toLowerCase()} ${latinMultiplicativeAdverb} ${divisionType}`
+      }
+      for (const cardinal of iterCardinalNumeralFormsFromNumber(index0)) {
+        yield `${divisionType} ${latinMultiplicativeAdverb} ${cardinal.toLowerCase()}`
+      }
+    }
+  }
+}
+
 export async function* iterTextLinks(
   context: TextParserContext,
   {
@@ -141,10 +167,17 @@ export async function* iterTextLinks(
   let currentSectionTaId: string | undefined = undefined
   let currentTextId: string | undefined = undefined
 
+  /**
+   * iterArticleLinks
+   */
   async function* iterArticleLinks(
     article: TextAstArticle,
-    text?: (TextAstText & TextAstPosition) | undefined,
-    isSingleDeepDivisionOrArticle?: boolean | undefined,
+    /**
+     * Defined only when article is the unique descendant of a text and optionally its divisions.
+     */
+    ancestors:
+      | Array<TextAstDivision | (TextAstText & TextAstPosition)>
+      | undefined = undefined,
   ): AsyncGenerator<ArticleLink, void> {
     if (article.relative === 0 && currentArticleId !== undefined) {
       // "le même article", "le présent article", etc
@@ -264,21 +297,29 @@ export async function* iterTextLinks(
 
     if (currentArticleId !== undefined) {
       const position =
-        text === undefined || !isSingleDeepDivisionOrArticle
+        ancestors === undefined
           ? article.position!
-          : article.position!.start < text.position!.start
-            ? { start: article.position.start, stop: text.position.stop }
-            : { start: text.position.start, stop: article.position.stop }
+          : article.position!.start < ancestors[0].position!.start
+            ? {
+                start: article.position.start,
+                stop: ancestors[0].position.stop,
+              }
+            : {
+                start: ancestors[0].position.start,
+                stop: article.position.stop,
+              }
       yield {
         article,
         articleId: currentArticleId,
         position,
-        text,
         type: "article",
       }
     }
   }
 
+  /**
+   * iterDivisionLinks
+   */
   async function* iterDivisionLinks(
     division: TextAstDivision,
     divisionChildReference?: TextAstParentChild,
@@ -287,8 +328,13 @@ export async function* iterTextLinks(
       | JorfSectionTaLienSectionTa[]
       | LegiSectionTaLienSectionTa[]
       | LegiTextelrLienSectionTa[],
-    text?: (TextAstText & TextAstPosition) | undefined,
-    isSingleDeepDivisionOrArticle?: boolean | undefined,
+    /**
+     * Defined only when division is the unique descendant of a text and optionally its parent
+     * divisions.
+     */
+    ancestors:
+      | Array<TextAstDivision | (TextAstText & TextAstPosition)>
+      | undefined = undefined,
   ): AsyncGenerator<ArticleLink | DivisionLink, void> {
     if (division.relative === 0 && currentSectionTaId !== undefined) {
       // "le même chapitre", "la présente section", etc
@@ -303,6 +349,18 @@ export async function* iterTextLinks(
       | LegiSectionTaLienSectionTa
       | LegiTextelrLienSectionTa
       | undefined = undefined
+    if (parentLiensSectionTa === undefined && currentTextId !== undefined) {
+      const textelr = (
+        await db<{ data: JorfTextelr | LegiTextelr }[]>`
+          SELECT data
+          FROM textelr
+          WHERE id = ${currentTextId}
+        `
+      )[0]?.data
+      if (textelr !== undefined) {
+        parentLiensSectionTa = textelr.STRUCT?.LIEN_SECTION_TA
+      }
+    }
     if (parentLiensSectionTa !== undefined) {
       for (const parentLienSectionTa of parentLiensSectionTa) {
         if (
@@ -311,31 +369,29 @@ export async function* iterTextLinks(
         ) {
           continue
         }
-        const divisionTypeAndnumber = parentLienSectionTa["#text"]
+        const sectionTaTypeAndNumber = parentLienSectionTa["#text"]
           ?.split(":")[0]
           .trim()
           .toLowerCase()
           .split(/\s+/)
           .map((fragment: string) => fragment.trim())
-          .filter((fragment: string) => fragment !== "") as
-          | [string, string]
-          | undefined
-        if (divisionTypeAndnumber !== undefined) {
+          .filter((fragment: string) => fragment !== "")
+          .join(" ")
+        if (sectionTaTypeAndNumber !== undefined) {
           let found = false
           if (division.index !== undefined) {
-            found =
-              (division.type === divisionTypeAndnumber[1] &&
-                [...iterOrdinalNumeralFormsFromNumber(division.index)]
-                  .map((ordinal) => ordinal.toLowerCase())
-                  .includes(divisionTypeAndnumber[0])) ||
-              (division.type === divisionTypeAndnumber[0] &&
-                [...iterCardinalNumeralFormsFromNumber(division.index)]
-                  .map((cardinal) => cardinal.toLowerCase())
-                  .includes(divisionTypeAndnumber[1]))
+            found = iterDivisionTypesAndNumbers(
+              division.type,
+              division.index,
+            ).some(
+              (divisionTypeAndNumber) =>
+                divisionTypeAndNumber === sectionTaTypeAndNumber,
+            )
           }
           if (!found && division.num !== undefined) {
             found =
-              division.num.toLowerCase() === divisionTypeAndnumber.join(" ")
+              `${division.type} ${division.num.toLowerCase()}` ===
+              sectionTaTypeAndNumber
           }
 
           if (found) {
@@ -350,10 +406,6 @@ export async function* iterTextLinks(
       divisionChildReference === undefined
         ? []
         : [...iterDeepestDivisionsOrArticles(divisionChildReference.child)]
-    const divisionSingleDeepDivisionOrArticle =
-      divisionDeepestDivisionsOrArticles.length === 1
-        ? divisionDeepestDivisionsOrArticles[0]
-        : undefined
     let addedLinksCount = 0
     if (divisionChildReference !== undefined) {
       for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
@@ -381,8 +433,9 @@ export async function* iterTextLinks(
           case "article": {
             yield* iterArticleLinks(
               atomicReference,
-              text,
-              atomicReference === divisionSingleDeepDivisionOrArticle,
+              divisionDeepestDivisionsOrArticles.length === 1
+                ? [...(ancestors ?? []), division]
+                : undefined,
             )
             addedLinksCount++
             break
@@ -422,8 +475,9 @@ export async function* iterTextLinks(
               atomicReference,
               parentChildReference,
               subdivisionsLiensSectionTa,
-              text,
-              atomicReference === divisionSingleDeepDivisionOrArticle,
+              divisionDeepestDivisionsOrArticles.length === 1
+                ? [...(ancestors ?? []), division]
+                : undefined,
             )
             addedLinksCount++
             break
@@ -443,17 +497,22 @@ export async function* iterTextLinks(
       currentSectionTaId = divisionLienSectionTa?.["@id"]
       if (currentSectionTaId !== undefined) {
         const position =
-          text === undefined || !isSingleDeepDivisionOrArticle
+          ancestors === undefined
             ? division.position!
-            : division.position!.start < text.position!.start
-              ? { start: division.position.start, stop: text.position.stop }
-              : { start: text.position.start, stop: division.position.stop }
+            : division.position!.start < ancestors[0].position!.start
+              ? {
+                  start: division.position.start,
+                  stop: ancestors[0].position.stop,
+                }
+              : {
+                  start: ancestors[0].position.start,
+                  stop: division.position.stop,
+                }
         assert.notStrictEqual(position, undefined)
         yield {
           division,
           position,
           sectionTaId: currentSectionTaId,
-          text,
           type: "division",
         }
       }
@@ -601,10 +660,6 @@ export async function* iterTextLinks(
             parentChildReference === undefined
               ? []
               : [...iterDeepestDivisionsOrArticles(parentChildReference.child)]
-          const textSingleDeepDivisionOrArticle =
-            textDeepestDivisionsOrArticles.length === 1
-              ? textDeepestDivisionsOrArticles[0]
-              : undefined
           let addedLinksCount = 0
           if (parentChildReference !== undefined) {
             for (const atomicOrParentChildReferenceInText of iterAtomicOrParentChildReferences(
@@ -635,8 +690,9 @@ export async function* iterTextLinks(
                 case "article": {
                   yield* iterArticleLinks(
                     atomicReferenceInText,
-                    atomicReference, // text
-                    atomicReferenceInText === textSingleDeepDivisionOrArticle,
+                    textDeepestDivisionsOrArticles.length === 1
+                      ? [atomicReference] // text
+                      : undefined,
                   )
                   addedLinksCount++
                   break
@@ -672,8 +728,9 @@ export async function* iterTextLinks(
                     atomicReferenceInText,
                     parentChildReferenceInText,
                     liensSectionTa,
-                    atomicReference, // text
-                    atomicReferenceInText === textSingleDeepDivisionOrArticle,
+                    textDeepestDivisionsOrArticles.length === 1
+                      ? [atomicReference] // text
+                      : undefined,
                   )
                   addedLinksCount++
                   break

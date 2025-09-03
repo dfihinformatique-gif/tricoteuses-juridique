@@ -466,31 +466,31 @@ export function* iterIncludedReferences(
   yield reference
   switch (reference.type) {
     case "bounded-interval": {
-      yield* iterAtomicReferences(reference.first)
-      yield* iterAtomicReferences(reference.last)
+      yield* iterIncludedReferences(reference.first)
+      yield* iterIncludedReferences(reference.last)
       break
     }
 
     case "counted-interval": {
-      yield* iterAtomicReferences(reference.first)
+      yield* iterIncludedReferences(reference.first)
       break
     }
 
     case "enumeration":
     case "exclusion": {
-      yield* iterAtomicReferences(reference.left)
-      yield* iterAtomicReferences(reference.right)
+      yield* iterIncludedReferences(reference.left)
+      yield* iterIncludedReferences(reference.right)
       break
     }
 
     case "parent-enfant": {
-      yield* iterAtomicReferences(reference.parent)
-      yield* iterAtomicReferences(reference.child)
+      yield* iterIncludedReferences(reference.parent)
+      yield* iterIncludedReferences(reference.child)
       break
     }
 
     case "reference_et_action": {
-      yield* iterAtomicReferences(reference.reference)
+      yield* iterIncludedReferences(reference.reference)
       break
     }
 

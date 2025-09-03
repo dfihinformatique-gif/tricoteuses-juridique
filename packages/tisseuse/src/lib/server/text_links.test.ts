@@ -7,7 +7,7 @@ import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import { iterTextLinks } from "./text_links.js"
 
 describe("iterTextLinks", () => {
-  test("Explicit link in text", async () => {
+  test("Lien explicite dans du texte", async () => {
     const input =
       "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020"
     const context = new TextParserContext(input)
@@ -37,7 +37,7 @@ describe("iterTextLinks", () => {
     expect(context.text(link3.position)).toBe("27")
   })
 
-  test("Implicit link in HTML", async () => {
+  test("Lien implicite dans du HTML", async () => {
     const transformation = simplifyHtml({ removeAWithHref: true })(dedent`
       <ol class="assnatawlist4" style="margin:0pt; padding-left:0pt">
 				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
@@ -105,7 +105,7 @@ describe("iterTextLinks", () => {
     })
   })
 
-  test("Implicit link in text", async () => {
+  test("Lien implicite dans du texte", async () => {
     const input = dedent`
       I. - Le code général des impôts est ainsi modifié :
       A. - A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé par le montant : « 6 807 € » ;
@@ -165,7 +165,7 @@ describe("iterTextLinks", () => {
     })
   })
 
-  test("Implicit link to division", async () => {
+  test("Lien implicite vers une division", async () => {
     const input = dedent`
       I. – Le code général des impôts est ainsi modifié :
       A. – Au chapitre II bis du titre premier de la première partie du livre premier :
@@ -218,7 +218,36 @@ describe("iterTextLinks", () => {
     )
   })
 
-  test("Link to division", async () => {
+  test("Lien implicite vers l'article 223 VO bis du CGI", async () => {
+    const input = "l'article 223 VO bis"
+    const context = new TextParserContext(input)
+    const links = await Array.fromAsync(
+      iterTextLinks(context, {
+        date: "2025-07-14",
+      }),
+    )
+    expect(links).toStrictEqual([
+      {
+        article: {
+          num: "223 VO bis",
+          position: {
+            start: 0,
+            stop: 20,
+          },
+          type: "article",
+        },
+        articleId: "LEGIARTI000048803814",
+        position: {
+          start: 0,
+          stop: 20,
+        },
+        type: "article",
+      },
+    ])
+    expect(context.text(links[0].position)).toBe("l'article 223 VO bis")
+  })
+
+  test("Lien vers une division", async () => {
     const input = dedent`
       I.- Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts est complété par une section 0I bis ainsi rédigée :
     `
@@ -250,5 +279,144 @@ describe("iterTextLinks", () => {
     expect(context.text(links[0].position)).toBe(
       "chapitre III du titre Ier de la première partie du livre Ier du code général des impôts",
     )
+  })
+
+  test("Liens implicites avant et dans une citation du CGI", async () => {
+    const input = dedent`
+      I. – Le code général des impôts est ainsi modifié :
+      A. – Au chapitre II bis du titre premier de la première partie du livre premier :
+      1° A l'article 223 VK :
+      4° Après l'article 223 VO quaterdecies, il est inséré un article 223 VO quindecies ainsi rédigé :
+      « Art. 223 VO quindecies. - Sur option exercée par l'entité constitutive déclarante, et par dérogation au 3° de l'article 223 VO bis, les plus ou moins-values sur participations sont incluses dans le résultat qualifié d'une entité constitutive.
+    `
+    const context = new TextParserContext(input)
+    const links = await Array.fromAsync(
+      iterTextLinks(context, {
+        date: "2025-07-14",
+      }),
+    )
+    expect(links).toStrictEqual([
+      {
+        position: {
+          start: 5,
+          stop: 31,
+        },
+        text: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 5,
+            stop: 31,
+          },
+          title: "Code général des impôts",
+          type: "texte",
+        },
+        type: "texte",
+      },
+      {
+        division: {
+          index: 2.002,
+          num: "II bis",
+          position: {
+            start: 60,
+            stop: 75,
+          },
+          type: "chapitre",
+        },
+        position: {
+          start: 60,
+          stop: 131,
+        },
+        sectionTaId: "LEGISCTA000048779194",
+        type: "division",
+      },
+      {
+        article: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 8,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            type: "texte",
+          },
+          num: "223 VK",
+          position: {
+            start: 137,
+            stop: 155,
+          },
+          type: "article",
+        },
+        articleId: "LEGIARTI000051215558",
+        position: {
+          start: 137,
+          stop: 155,
+        },
+        type: "article",
+      },
+      {
+        article: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 8,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            type: "texte",
+          },
+          num: "223 VO quaterdecies",
+          position: {
+            start: 167,
+            stop: 196,
+          },
+          type: "article",
+        },
+        articleId: "LEGIARTI000048803838",
+        position: {
+          start: 167,
+          stop: 196,
+        },
+        type: "article",
+      },
+      {
+        article: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 8,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            type: "texte",
+          },
+          num: "223 VO bis",
+          position: {
+            start: 370,
+            stop: 388,
+          },
+          type: "article",
+        },
+        articleId: "LEGIARTI000048803814",
+        position: {
+          start: 370,
+          stop: 388,
+        },
+        type: "article",
+      },
+    ])
+    expect(context.text(links[0].position)).toBe("Le code général des impôts")
+    expect(context.text(links[1].position)).toBe(
+      "chapitre II bis du titre premier de la première partie du livre premier",
+    )
+    expect(context.text(links[2].position)).toBe("A l'article 223 VK")
+    expect(context.text(links[3].position)).toBe(
+      "l'article 223 VO quaterdecies",
+    )
+    expect(context.text(links[4].position)).toBe("article 223 VO bis")
   })
 })

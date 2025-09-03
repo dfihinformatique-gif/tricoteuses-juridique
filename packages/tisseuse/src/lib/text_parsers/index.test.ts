@@ -319,7 +319,7 @@ describe("getReferences", () => {
     expect(context.text(reference.child.position)).toBe("article 7")
   })
 
-  test("Début de l'article 2 du PLF", () => {
+  test("Le début de l'article 2 du PLF", () => {
     const input = dedent`
       I. - Le code général des impôts est ainsi modifié :
       A. - A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé par le montant : « 6 807 € » ;
@@ -495,6 +495,14 @@ describe("getReferences", () => {
       ),
     ).toBe("II")
   })
+
+  test("il est inséré un article 223 VO quindecies ainsi rédigé", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([])
+  })
 })
 
 describe("getReferences, test spécifiques", () => {
@@ -512,6 +520,190 @@ describe("getReferences, test spécifiques", () => {
     )
     expect(context.text(references[1].position)).toBe(
       "l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012",
+    )
+  })
+
+  test("Références avant et dans citation", () => {
+    const input = dedent`
+      I. – Le code général des impôts est ainsi modifié :
+      A. – Au chapitre II bis du titre premier de la première partie du livre premier :
+      1° A l'article 223 VK :
+      4° Après l'article 223 VO quaterdecies, il est inséré un article 223 VO quindecies ainsi rédigé :
+      « Art. 223 VO quindecies. - Sur option exercée par l'entité constitutive déclarante, et par dérogation au 3° de l'article 223 VO bis, les plus ou moins-values sur participations sont incluses dans le résultat qualifié d'une entité constitutive.
+    `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([
+      {
+        action: {
+          action: "MODIFICATION",
+        },
+        position: {
+          start: 5,
+          stop: 49,
+        },
+        reference: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 5,
+            stop: 31,
+          },
+          title: "Code général des impôts",
+          type: "texte",
+        },
+        type: "reference_et_action",
+      },
+      {
+        child: {
+          child: {
+            child: {
+              index: 2.002,
+              num: "II bis",
+              position: {
+                start: 60,
+                stop: 75,
+              },
+              type: "chapitre",
+            },
+            parent: {
+              index: 1,
+              num: "premier",
+              position: {
+                start: 79,
+                stop: 92,
+              },
+              type: "titre",
+            },
+            position: {
+              start: 60,
+              stop: 92,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            index: 1,
+            num: "première",
+            position: {
+              start: 99,
+              stop: 114,
+            },
+            type: "partie",
+          },
+          position: {
+            start: 60,
+            stop: 114,
+          },
+          type: "parent-enfant",
+        },
+        parent: {
+          index: 1,
+          num: "premier",
+          position: {
+            start: 118,
+            stop: 131,
+          },
+          type: "livre",
+        },
+        position: {
+          start: 57,
+          stop: 131,
+        },
+        type: "parent-enfant",
+      },
+      {
+        implicitText: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 8,
+            stop: 31,
+          },
+          title: "Code général des impôts",
+          type: "texte",
+        },
+        num: "223 VK",
+        position: {
+          start: 137,
+          stop: 155,
+        },
+        type: "article",
+      },
+      {
+        action: {
+          action: "CREATION",
+        },
+        position: {
+          start: 167,
+          stop: 211,
+        },
+        reference: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 8,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            type: "texte",
+          },
+          num: "223 VO quaterdecies",
+          position: {
+            start: 167,
+            stop: 196,
+          },
+          type: "article",
+        },
+        type: "reference_et_action",
+      },
+      {
+        child: {
+          index: 3,
+          num: "3°",
+          position: {
+            start: 362,
+            stop: 364,
+          },
+          type: "item",
+        },
+        parent: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 8,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            type: "texte",
+          },
+          num: "223 VO bis",
+          position: {
+            start: 370,
+            stop: 388,
+          },
+          type: "article",
+        },
+        position: {
+          start: 359,
+          stop: 388,
+        },
+        type: "parent-enfant",
+      },
+    ])
+    expect(context.text(references[0].position)).toBe(
+      "Le code général des impôts est ainsi modifié",
+    )
+    expect(context.text(references[1].position)).toBe(
+      "Au chapitre II bis du titre premier de la première partie du livre premier",
+    )
+    expect(context.text(references[2].position)).toBe("A l'article 223 VK")
+    expect(context.text(references[3].position)).toBe(
+      "l'article 223 VO quaterdecies, il est inséré",
+    )
+    expect(context.text(references[4].position)).toBe(
+      "au 3° de l'article 223 VO bis",
     )
   })
 
@@ -590,7 +782,51 @@ describe("getReferences, test spécifiques", () => {
     )
   })
 
-  test("Références dans citation simple", () => {
+  test("Référence de type parent-child dans citation simple", async () => {
+    const input = "« aux deux derniers alinéas de l'article 223 WA ter »"
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([
+      {
+        child: {
+          count: 2,
+          first: {
+            index: -1,
+            num: "derniers",
+            type: "alinéa",
+          },
+          position: {
+            start: 6,
+            stop: 27,
+          },
+          type: "counted-interval",
+        },
+        parent: {
+          num: "223 WA ter",
+          position: {
+            start: 33,
+            stop: 51,
+          },
+          type: "article",
+        },
+        position: {
+          start: 2,
+          stop: 51,
+        },
+        type: "parent-enfant",
+      },
+    ])
+    const reference0 = references[0] as TextAstParentChild
+    expect(context.text(reference0.position)).toBe(
+      "aux deux derniers alinéas de l'article 223 WA ter",
+    )
+    const reference1 = reference0.parent
+    expect(context.text(reference1.position)).toBe("article 223 WA ter")
+    const reference2 = reference0.child
+    expect(context.text(reference2.position)).toBe("deux derniers alinéas")
+  })
+
+  test("Références de type article dans citation simple", () => {
     const input = dedent`
       « III bis. – Par dérogation au I du présent article, le taux prévu à l'article 278 [...] »
     `

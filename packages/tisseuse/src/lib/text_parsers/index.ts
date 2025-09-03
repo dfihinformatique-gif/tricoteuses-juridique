@@ -7,7 +7,7 @@ import { citation, convertCitationToText } from "./citations.js"
 import { iterIncludedReferences } from "./helpers.js"
 import { chain, TextParserContext, type TextParser } from "./parsers.js"
 import { reference } from "./references.js"
-import { iterOriginalMergedPositionsFromTransformed } from "./transformers.js"
+import { originalMergedPositionsFromTransformed } from "./transformers.js"
 
 export function* iterReferences(
   context: TextParserContext,
@@ -28,7 +28,7 @@ export function* iterReferences(
 
   let candidate: RegExpExecArray | null
   const candidateRegExp =
-    /(?:(?:^|\n)«)|(?:(?<=^|\P{Alphabetic})(?:«)|(?:au|le|du)(?:dit)?(?= )|(?:[àa] +)?la(?:dite)?(?= )|(?:[àa] +)?(?:l')|(?:aux|les|des)(?:dits)?(?= ))/giv
+    /(?:(?:^|\n)«)|(?<=^|\P{Alphabetic})(?:(?:«)|(?:au|le|du)(?:dit)?(?= )|(?:[àa] +)?la(?:dite)?(?= )|(?:[àa] +)?(?:l')|(?:aux|les|des)(?:dits)?(?= ))/giv
   while ((candidate = candidateRegExp.exec(context.input)) !== null) {
     const index = candidate.index
     context.offset = index
@@ -41,10 +41,6 @@ export function* iterReferences(
       const citationContext = new TextParserContext(
         citationTransformation.output,
       )
-      const originalMergedPositionsFromTransformedIterator =
-        iterOriginalMergedPositionsFromTransformed(citationTransformation)
-      // Initialize iterator by sending a dummy value and ignoring the result.
-      originalMergedPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
       for (const reference of iterReferences(citationContext, {
         citationParser,
         referenceParser,
@@ -53,20 +49,23 @@ export function* iterReferences(
         for (const includedReference of iterIncludedReferences(reference)) {
           const positionInCitation = (includedReference as TextAstPosition)
             .position
-          const result =
-            originalMergedPositionsFromTransformedIterator.next(
-              positionInCitation,
-            )
-          if (result.done) {
+          if (positionInCitation === undefined) {
+            continue
+          }
+          // Note: Iterator iterOriginalMergedPositionsFromTransformed can't be used,
+          // because positions of included references are not sequential, they are embedded
+          // in their parent.
+          const reverseTransformations = originalMergedPositionsFromTransformed(
+            citationTransformation,
+            [positionInCitation],
+          )
+          if (reverseTransformations.length !== 1) {
             throw new Error(
-              `Reverse transformation of position in citation to absolute position failed: ${positionInCitation}`,
+              `Reverse transformation of position in citation to absolute position failed: ${positionInCitation} has been tranformed to ${reverseTransformations}`,
             )
           }
-          const reverseTransformation = result.value
-          if (reverseTransformation !== undefined) {
-            ;(includedReference as TextAstPosition).position =
-              reverseTransformation.position
-          }
+          ;(includedReference as TextAstPosition).position =
+            reverseTransformations[0].position
         }
 
         yield reference

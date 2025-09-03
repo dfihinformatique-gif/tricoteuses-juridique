@@ -2,8 +2,8 @@ import fs from "fs-extra"
 import path from "node:path"
 import sade from "sade"
 
-import { simplifyHtml } from "$lib/text_simplifiers.js"
-import { writeConversion } from "$lib/server/text_simplifiers.js"
+import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
+import { writeTransformation } from "$lib/server/text_parsers/simplifiers.js"
 
 async function htmlDocumentToText(
   inputDocumentPath: string,
@@ -20,8 +20,8 @@ async function htmlDocumentToText(
     0,
     -path.extname(inputFilename).length,
   )
-  const conversion = simplifyHtml({ removeAWithHref: true })(inputHtml)
-  writeConversion(path.join(outputDir, inputFilenameCore), conversion, {
+  const transformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
+  writeTransformation(path.join(outputDir, inputFilenameCore), transformation, {
     recursive: intermediate,
   })
   return 0
@@ -29,7 +29,10 @@ async function htmlDocumentToText(
 
 sade("html_document_to_text <html_document> <output_dir>", true)
   .describe("Convert an HTML document to an extremely simplified text")
-  .option("-i, --intermediate", "Generate files for intermediate conversions")
+  .option(
+    "-i, --intermediate",
+    "Generate files for intermediate transformations",
+  )
   .action(async (inputDocumentPath, outputDir, options) => {
     process.exit(
       await htmlDocumentToText(inputDocumentPath, outputDir, options),

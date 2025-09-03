@@ -15,11 +15,11 @@ import {
 } from "$lib/text_parsers/texts.js"
 import { espace } from "$lib/text_parsers/typography.js"
 import {
-  chainConverters,
   replacePatterns,
   simplifyText,
   simplifyUnicodeCharacters,
-} from "$lib/text_simplifiers.js"
+} from "$lib/text_parsers/simplifiers.js"
+import { chainTransformers } from "$lib/text_parsers/transformers.js"
 
 type TextCidByWordsTree = {
   cid?: string | string[]
@@ -246,11 +246,11 @@ async function extractTextsNames(): Promise<number> {
 }
 
 function simplifyTextTitle(title: string): string {
-  return chainConverters("Simplification d'un titre de texte", [
+  return chainTransformers("Simplification d'un titre de texte", [
     replacePatterns,
     simplifyUnicodeCharacters,
     simplifyText,
-  ])(title).text
+  ])(title).output
 }
 
 sade("extract_texts_titles_infos", true)

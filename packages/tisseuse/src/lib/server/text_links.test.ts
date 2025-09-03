@@ -2,7 +2,7 @@ import dedent from "dedent-js"
 import { describe, expect, test } from "vitest"
 
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { simplifyHtml } from "$lib/text_simplifiers.js"
+import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 
 import { iterTextLinks } from "./text_links.js"
 
@@ -38,7 +38,7 @@ describe("iterTextLinks", () => {
   })
 
   test("Implicit link in HTML", async () => {
-    const conversion = simplifyHtml({ removeAWithHref: true })(dedent`
+    const transformation = simplifyHtml({ removeAWithHref: true })(dedent`
       <ol class="assnatawlist4" style="margin:0pt; padding-left:0pt">
 				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
 					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span style="font-family:Marianne; font-size:9pt; color:#000000">I.</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">-</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">Le code général des impôts est ainsi modifié</span><span style="font-family:Marianne; font-size:9pt; color:#000000">&nbsp;</span><span style="font-family:Marianne; font-size:9pt; color:#000000">:</span>
@@ -50,7 +50,7 @@ describe("iterTextLinks", () => {
 				</li>
 			</ol>
     `)
-    const context = new TextParserContext(conversion.output)
+    const context = new TextParserContext(transformation.output)
     const links = await Array.fromAsync(
       iterTextLinks(context, {
         date: "2025-07-14",

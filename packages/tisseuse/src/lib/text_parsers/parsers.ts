@@ -6,8 +6,8 @@ import type {
   TextAstText,
   TextAstTextInfos,
   TextInfosByWordsTree,
-  TextPosition,
 } from "./ast.js"
+import type { TextPosition } from "./positions.js"
 
 export type TextInfosConverter = (
   infos: TextAstTextInfos,

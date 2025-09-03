@@ -515,6 +515,125 @@ describe("getReferences, test spécifiques", () => {
     )
   })
 
+  test("Références dans citation multi-lignes", () => {
+    const input = dedent`
+      « Art. 223 VO quindecies. - Sur option exercée par l'entité constitutive déclarante, et par dérogation au 3° de l'article 223 VO bis, les plus ou moins-values sur participations sont incluses dans le résultat qualifié d'une entité constitutive.
+      « L'option mentionnée au premier alinéa est valable pour une période de cinq exercices, à compter de celui au titre duquel elle est exercée, et s'applique à toutes les entités constitutives situées dans l'État ou le territoire pour lequel elle a été formulée. Elle est formulée sur la déclaration mentionnée au II de l'article 223 WW souscrite au titre du premier exercice d'application. Elle est reconduite tacitement, sauf renonciation formulée par l'entité constitutive déclarante sur la déclaration mentionnée au même II souscrite au titre du dernier exercice d'application de l'option.
+      « En cas de renonciation, une nouvelle option ne peut pas être exercée au titre des cinq exercices suivant le dernier exercice d'application de l'option. La renonciation ne peut porter sur des participations pour lesquelles une perte ou une moins-value a été prise en compte dans le résultat qualifié. » ;
+           `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([
+      {
+        child: {
+          index: 3,
+          num: "3°",
+          position: {
+            start: 106,
+            stop: 108,
+          },
+          type: "item",
+        },
+        parent: {
+          num: "223 VO bis",
+          position: {
+            start: 114,
+            stop: 132,
+          },
+          type: "article",
+        },
+        position: {
+          start: 103,
+          stop: 132,
+        },
+        type: "parent-enfant",
+      },
+      {
+        index: 1,
+        position: {
+          start: 267,
+          stop: 284,
+        },
+        type: "alinéa",
+      },
+      {
+        child: {
+          index: 2,
+          num: "II",
+          position: {
+            start: 556,
+            stop: 558,
+          },
+          type: "item",
+        },
+        parent: {
+          num: "223 WW",
+          position: {
+            start: 564,
+            stop: 578,
+          },
+          type: "article",
+        },
+        position: {
+          start: 553,
+          stop: 578,
+        },
+        type: "parent-enfant",
+      },
+    ])
+    expect(context.text(references[0].position)).toBe(
+      "au 3° de l'article 223 VO bis",
+    )
+    expect(context.text(references[1].position)).toBe("au premier alinéa")
+    expect(context.text(references[2].position)).toBe(
+      "au II de l'article 223 WW",
+    )
+  })
+
+  test("Références dans citation simple", () => {
+    const input = dedent`
+      « III bis. – Par dérogation au I du présent article, le taux prévu à l'article 278 [...] »
+    `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([
+      {
+        child: {
+          index: 1,
+          num: "I",
+          position: {
+            start: 31,
+            stop: 32,
+          },
+          type: "item",
+        },
+        parent: {
+          position: {
+            start: 36,
+            stop: 51,
+          },
+          relative: 0,
+          type: "article",
+        },
+        position: {
+          start: 28,
+          stop: 51,
+        },
+        type: "parent-enfant",
+      },
+      {
+        num: "278",
+        position: {
+          start: 67,
+          stop: 82,
+        },
+        type: "article",
+      },
+    ])
+    expect(context.text(references[0].position)).toBe("au I du présent article")
+    expect(context.text(references[1].position)).toBe("à l'article 278")
+  })
+
   test("Suppression d'implicitText lorsqu'un article a un texte parent", () => {
     const input = dedent`
       l'article 47 de la Constitution.

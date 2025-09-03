@@ -7,8 +7,8 @@ import {
   type TextAstEnumeration,
   type TextAstParentChild,
   type TextAstReference,
-  type TextPosition,
 } from "./ast.js"
+import type { TextPosition } from "./positions.js"
 
 const priorityByCoordinator: Record<CompoundReferencesSeparator, number> = {
   ",": 1,
@@ -456,6 +456,46 @@ export function* iterAtomicReferences(
 
     default: {
       yield reference
+    }
+  }
+}
+
+export function* iterIncludedReferences(
+  reference: TextAstReference,
+): Generator<TextAstReference, void> {
+  yield reference
+  switch (reference.type) {
+    case "bounded-interval": {
+      yield* iterAtomicReferences(reference.first)
+      yield* iterAtomicReferences(reference.last)
+      break
+    }
+
+    case "counted-interval": {
+      yield* iterAtomicReferences(reference.first)
+      break
+    }
+
+    case "enumeration":
+    case "exclusion": {
+      yield* iterAtomicReferences(reference.left)
+      yield* iterAtomicReferences(reference.right)
+      break
+    }
+
+    case "parent-enfant": {
+      yield* iterAtomicReferences(reference.parent)
+      yield* iterAtomicReferences(reference.child)
+      break
+    }
+
+    case "reference_et_action": {
+      yield* iterAtomicReferences(reference.reference)
+      break
+    }
+
+    default: {
+      // Do nothing.
     }
   }
 }

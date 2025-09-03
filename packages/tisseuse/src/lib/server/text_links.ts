@@ -15,6 +15,11 @@ import type {
   LegiTextelr,
   LegiTextelrLienSectionTa,
 } from "$lib/legal/legi.js"
+import {
+  iterCardinalNumeralFormsFromNumber,
+  iterLatinMultiplicativeAdverbsFromNumber,
+  iterOrdinalNumeralFormsFromNumber,
+} from "$lib/numbers.js"
 import { db } from "$lib/server/databases/index.js"
 import {
   isTextAstDivision,
@@ -25,16 +30,11 @@ import {
   type TextAstPosition,
   type TextAstReference,
   type TextAstText,
-  type TextPosition,
 } from "$lib/text_parsers/ast.js"
 import { iterAtomicOrParentChildReferences } from "$lib/text_parsers/helpers.js"
 import { iterReferences } from "$lib/text_parsers/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import {
-  iterCardinalNumeralFormsFromNumber,
-  iterLatinMultiplicativeAdverbsFromNumber,
-  iterOrdinalNumeralFormsFromNumber,
-} from "$lib/numbers.js"
+import type { TextPosition } from "$lib/text_parsers/positions.js"
 
 export interface ArticleLink {
   article: TextAstArticle

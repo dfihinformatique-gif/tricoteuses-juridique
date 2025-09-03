@@ -1,5 +1,7 @@
 import { assertNever } from "$lib/asserts.js"
 
+import type { TextPosition } from "./positions.js"
+
 export type CompoundReferencesSeparator =
   (typeof compoundReferencesSeparators)[number]
 
@@ -187,11 +189,6 @@ export interface TextAstTextInfos {
 
 export type TextInfosByWordsTree = TextAstTextInfos & {
   [word: string]: TextInfosByWordsTree
-}
-
-export interface TextPosition {
-  start: number
-  stop: number
 }
 
 export const compoundReferencesSeparators = [

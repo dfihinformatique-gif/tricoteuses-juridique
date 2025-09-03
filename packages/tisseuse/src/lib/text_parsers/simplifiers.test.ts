@@ -2,21 +2,23 @@ import dedent from "dedent-js"
 import { describe, expect, test } from "vitest"
 
 import {
-  chainConverters,
   convertHtmlElementsToText,
-  originalMergedPositionsFromSimplified,
-  originalSplitPositionsFromSimplified,
   replacePatterns,
   simplifyHtml,
   simplifyText,
   simplifyUnicodeCharacters,
-} from "./text_simplifiers.js"
+} from "./simplifiers.js"
+import {
+  chainTransformers,
+  originalMergedPositionsFromTransformed,
+  originalSplitPositionsFromTransformed,
+} from "./transformers.js"
 
 describe("convertHtmlElementsToText", () => {
   describe("convert doctype to text", () => {
     test("Remove doctype", () => {
-      const conversion = convertHtmlElementsToText()(`<!DOCTYPE html>`)
-      expect(conversion).toStrictEqual({
+      const transformation = convertHtmlElementsToText()(`<!DOCTYPE html>`)
+      expect(transformation).toStrictEqual({
         input: "<!DOCTYPE html>",
         output: "",
         sourceMap: [
@@ -35,10 +37,10 @@ describe("convertHtmlElementsToText", () => {
 
   describe("convert a to text", () => {
     test("Keep a content", () => {
-      const conversion = convertHtmlElementsToText()(
+      const transformation = convertHtmlElementsToText()(
         `<a href=".">Hello world!</a>`,
       )
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: '<a href=".">Hello world!</a>',
         output: "Hello world!",
         sourceMap: [
@@ -63,10 +65,10 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("Remove a", () => {
-      const conversion = convertHtmlElementsToText({
+      const transformation = convertHtmlElementsToText({
         removeAWithHref: true,
       })(`<a href=".">Hello world!</a>`)
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: `<a href=".">Hello world!</a>`,
         output: "",
         sourceMap: [
@@ -82,10 +84,10 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("Remove a containing span", () => {
-      const conversion = convertHtmlElementsToText({
+      const transformation = convertHtmlElementsToText({
         removeAWithHref: true,
       })(`<a href="."><span>Hello world!</span></a>`)
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: '<a href="."><span>Hello world!</span></a>',
         output: "",
         sourceMap: [
@@ -103,8 +105,8 @@ describe("convertHtmlElementsToText", () => {
 
   describe("convert br to text", () => {
     test("only br without closing /", () => {
-      const conversion = convertHtmlElementsToText()("<br>")
-      expect(conversion).toStrictEqual({
+      const transformation = convertHtmlElementsToText()("<br>")
+      expect(transformation).toStrictEqual({
         input: "<br>",
         output: "\n",
         sourceMap: [
@@ -121,8 +123,8 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("only br with closing /", () => {
-      const conversion = convertHtmlElementsToText()("<br />")
-      expect(conversion).toStrictEqual({
+      const transformation = convertHtmlElementsToText()("<br />")
+      expect(transformation).toStrictEqual({
         input: "<br />",
         output: "\n",
         sourceMap: [
@@ -139,8 +141,8 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("text and br and text", () => {
-      const conversion = convertHtmlElementsToText()("Hello<br>world!")
-      expect(conversion).toStrictEqual({
+      const transformation = convertHtmlElementsToText()("Hello<br>world!")
+      expect(transformation).toStrictEqual({
         input: "Hello<br>world!",
         output: "Hello\nworld!",
         sourceMap: [
@@ -159,8 +161,8 @@ describe("convertHtmlElementsToText", () => {
 
   describe("convert p to text", () => {
     test("only p", () => {
-      const conversion = convertHtmlElementsToText()("<p>Hello world!</p>")
-      expect(conversion).toStrictEqual({
+      const transformation = convertHtmlElementsToText()("<p>Hello world!</p>")
+      expect(transformation).toStrictEqual({
         input: "<p>Hello world!</p>",
         output: "\nHello world!\n",
         sourceMap: [
@@ -187,14 +189,14 @@ describe("convertHtmlElementsToText", () => {
 
   describe("convert script to text", () => {
     test("only script", () => {
-      const conversion = convertHtmlElementsToText()(
+      const transformation = convertHtmlElementsToText()(
         dedent`
           <script lang="ts">
             const x = Hello world!
           </script>
         `,
       )
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: dedent`
           <script lang="ts">
             const x = Hello world!
@@ -214,7 +216,7 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("html > script", () => {
-      const conversion = convertHtmlElementsToText()(
+      const transformation = convertHtmlElementsToText()(
         dedent`
           <html>
             <script lang="ts">
@@ -224,7 +226,7 @@ describe("convertHtmlElementsToText", () => {
           </html>
         `,
       )
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: dedent`
           <html>
             <script lang="ts">
@@ -264,10 +266,10 @@ describe("convertHtmlElementsToText", () => {
 
   describe("convert span to text", () => {
     test("only span", () => {
-      const conversion = convertHtmlElementsToText()(
+      const transformation = convertHtmlElementsToText()(
         "<span>Hello world!</span>",
       )
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: "<span>Hello world!</span>",
         output: "Hello world!",
         sourceMap: [
@@ -292,10 +294,10 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("span and text", () => {
-      const conversion = convertHtmlElementsToText()(
+      const transformation = convertHtmlElementsToText()(
         "<span>Hello</span> world!",
       )
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: "<span>Hello</span> world!",
         output: "Hello world!",
         sourceMap: [
@@ -320,10 +322,10 @@ describe("convertHtmlElementsToText", () => {
     })
 
     test("span ending with space and text", () => {
-      const conversion = convertHtmlElementsToText()(
+      const transformation = convertHtmlElementsToText()(
         "<span>Hello </span>world!",
       )
-      expect(conversion).toStrictEqual({
+      expect(transformation).toStrictEqual({
         input: "<span>Hello </span>world!",
         output: "Hello world!",
         sourceMap: [
@@ -349,9 +351,9 @@ describe("convertHtmlElementsToText", () => {
   })
 })
 
-describe("chainConverters", () => {
+describe("chainTransformers", () => {
   test("multiple spaces and new lines", () => {
-    const { output } = chainConverters("Simplification du HTML", [
+    const { output } = chainTransformers("Simplification du HTML", [
       simplifyUnicodeCharacters,
       convertHtmlElementsToText(),
       simplifyText,
@@ -398,23 +400,21 @@ describe("chainConverters", () => {
   })
 })
 
-describe("originalMergedPositionsFromSimplified", () => {
+describe("originalMergedPositionsFromTransformed", () => {
   test("<div>a <p>first sentence</p>a<p> second sentence</p></div>", ({
     task,
   }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("a\nfirst sentence\na\nsecond sentence")
     const textPosition = { start: 8, stop: 34 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "sentence\na\nsecond sentence",
     )
-    const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-      conversion,
-      [textPosition],
-    )
-    expect(fragmentsReverseConversion).toStrictEqual([
+    const fragmentsReverseTransformation =
+      originalMergedPositionsFromTransformed(transformation, [textPosition])
+    expect(fragmentsReverseTransformation).toStrictEqual([
       {
         position: {
           start: 7,
@@ -424,16 +424,16 @@ describe("originalMergedPositionsFromSimplified", () => {
     ])
     expect(
       html.slice(
-        fragmentsReverseConversion[0].position.start,
-        fragmentsReverseConversion[0].position.stop,
+        fragmentsReverseTransformation[0].position.start,
+        fragmentsReverseTransformation[0].position.stop,
       ),
     ).toBe("<p>first sentence</p>a<p> second sentence</p>")
   })
 
   test("<div><p>first sentence</p><p>second sentence</p></div>", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("first sentence\nsecond sentence")
     const textPosition0 = { start: 0, stop: 5 }
     expect(text.slice(textPosition0.start, textPosition0.stop)).toBe("first")
@@ -443,11 +443,9 @@ describe("originalMergedPositionsFromSimplified", () => {
     )
     {
       // Test first HTML position only
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition0],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [textPosition0])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           position: {
             start: 8,
@@ -457,18 +455,16 @@ describe("originalMergedPositionsFromSimplified", () => {
       ])
       expect(
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ),
       ).toBe("first")
     }
     {
       // Test second HTML position only
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition1],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [textPosition1])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           position: {
             start: 5,
@@ -478,18 +474,19 @@ describe("originalMergedPositionsFromSimplified", () => {
       ])
       expect(
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ),
       ).toBe("<p>first sentence</p><p>second sentence</p>")
     }
     {
       // Test the merging of 2 overlapping HTML positions.
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition0, textPosition1],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [
+          textPosition0,
+          textPosition1,
+        ])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           position: {
             start: 8,
@@ -505,14 +502,14 @@ describe("originalMergedPositionsFromSimplified", () => {
       ])
       expect(
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ),
       ).toBe("first")
       expect(
         html.slice(
-          fragmentsReverseConversion[1].position.start,
-          fragmentsReverseConversion[1].position.stop,
+          fragmentsReverseTransformation[1].position.start,
+          fragmentsReverseTransformation[1].position.stop,
         ),
       ).toBe("<p>first sentence</p><p>second sentence</p>")
     }
@@ -520,8 +517,8 @@ describe("originalMergedPositionsFromSimplified", () => {
 
   test("<div>word1<p>word2 word3</p><p>word4</p></div>", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("word1\nword2 word3\nword4")
     const textPosition0 = { start: 0, stop: 11 }
     expect(text.slice(textPosition0.start, textPosition0.stop)).toBe(
@@ -533,11 +530,9 @@ describe("originalMergedPositionsFromSimplified", () => {
     )
     {
       // Test first HTML position only
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition0],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [textPosition0])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           position: {
             start: 5,
@@ -547,18 +542,16 @@ describe("originalMergedPositionsFromSimplified", () => {
       ])
       expect(
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ),
       ).toBe("word1<p>word2 word3</p>")
     }
     {
       // Test second HTML position only
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition1],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [textPosition1])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           position: {
             start: 10,
@@ -568,18 +561,19 @@ describe("originalMergedPositionsFromSimplified", () => {
       ])
       expect(
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ),
       ).toBe("<p>word2 word3</p><p>word4</p>")
     }
     {
       // Test the merging of 2 overlapping HTML positions.
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition0, textPosition1],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [
+          textPosition0,
+          textPosition1,
+        ])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           position: {
             start: 5,
@@ -595,14 +589,14 @@ describe("originalMergedPositionsFromSimplified", () => {
       ])
       expect(
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ),
       ).toBe("word1<p>word2 word3</p>")
       expect(
         html.slice(
-          fragmentsReverseConversion[1].position.start,
-          fragmentsReverseConversion[1].position.stop,
+          fragmentsReverseTransformation[1].position.start,
+          fragmentsReverseTransformation[1].position.stop,
         ),
       ).toBe("<p>word2 word3</p><p>word4</p>")
     }
@@ -612,19 +606,17 @@ describe("originalMergedPositionsFromSimplified", () => {
     task,
   }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello very complex world!")
     {
       const textPosition = { start: 11, stop: 25 }
       expect(text.slice(textPosition.start, textPosition.stop)).toBe(
         "complex world!",
       )
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [textPosition])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           innerPrefix: "<b>",
           outerPrefix: "</b>",
@@ -635,12 +627,12 @@ describe("originalMergedPositionsFromSimplified", () => {
         },
       ])
       expect(
-        (fragmentsReverseConversion[0].innerPrefix ?? "") +
+        (fragmentsReverseTransformation[0].innerPrefix ?? "") +
           html.slice(
-            fragmentsReverseConversion[0].position.start,
-            fragmentsReverseConversion[0].position.stop,
+            fragmentsReverseTransformation[0].position.start,
+            fragmentsReverseTransformation[0].position.stop,
           ) +
-          (fragmentsReverseConversion[0].innerSuffix ?? ""),
+          (fragmentsReverseTransformation[0].innerSuffix ?? ""),
       ).toBe("<b><span>complex</span></b> <i>world!</i>")
     }
     {
@@ -648,11 +640,9 @@ describe("originalMergedPositionsFromSimplified", () => {
       expect(text.slice(textPosition.start, textPosition.stop)).toBe(
         "complex world",
       )
-      const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-        conversion,
-        [textPosition],
-      )
-      expect(fragmentsReverseConversion).toStrictEqual([
+      const fragmentsReverseTransformation =
+        originalMergedPositionsFromTransformed(transformation, [textPosition])
+      expect(fragmentsReverseTransformation).toStrictEqual([
         {
           innerPrefix: "<b>",
           innerSuffix: "</i>",
@@ -665,28 +655,26 @@ describe("originalMergedPositionsFromSimplified", () => {
         },
       ])
       expect(
-        (fragmentsReverseConversion[0].innerPrefix ?? "") +
+        (fragmentsReverseTransformation[0].innerPrefix ?? "") +
           html.slice(
-            fragmentsReverseConversion[0].position.start,
-            fragmentsReverseConversion[0].position.stop,
+            fragmentsReverseTransformation[0].position.start,
+            fragmentsReverseTransformation[0].position.stop,
           ) +
-          (fragmentsReverseConversion[0].innerSuffix ?? ""),
+          (fragmentsReverseTransformation[0].innerSuffix ?? ""),
       ).toBe("<b><span>complex</span></b> <i>world</i>")
     }
   })
 
   test("<p>Hello <span>world</span>!</p>, detect world", () => {
     const html = "<p>Hello <span>world</span>!</p>"
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 6, stop: 11 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe("world")
-    const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-      conversion,
-      [textPosition],
-    )
-    expect(fragmentsReverseConversion).toStrictEqual([
+    const fragmentsReverseTransformation =
+      originalMergedPositionsFromTransformed(transformation, [textPosition])
+    expect(fragmentsReverseTransformation).toStrictEqual([
       {
         position: {
           start: 15,
@@ -696,26 +684,24 @@ describe("originalMergedPositionsFromSimplified", () => {
     ])
     expect(
       html.slice(
-        fragmentsReverseConversion[0].position.start,
-        fragmentsReverseConversion[0].position.stop,
+        fragmentsReverseTransformation[0].position.start,
+        fragmentsReverseTransformation[0].position.stop,
       ),
     ).toBe("world")
   })
 
   test("<p>Hello <span>world</span>!</p>, detect Hello world!", () => {
     const html = "<p>Hello <span>world</span>!</p>"
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 0, stop: 12 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "Hello world!",
     )
-    const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-      conversion,
-      [textPosition],
-    )
-    expect(fragmentsReverseConversion).toStrictEqual([
+    const fragmentsReverseTransformation =
+      originalMergedPositionsFromTransformed(transformation, [textPosition])
+    expect(fragmentsReverseTransformation).toStrictEqual([
       {
         position: {
           start: 3,
@@ -725,26 +711,24 @@ describe("originalMergedPositionsFromSimplified", () => {
     ])
     expect(
       html.slice(
-        fragmentsReverseConversion[0].position.start,
-        fragmentsReverseConversion[0].position.stop,
+        fragmentsReverseTransformation[0].position.start,
+        fragmentsReverseTransformation[0].position.stop,
       ),
     ).toBe("Hello <span>world</span>!")
   })
 
   test("<p>Hello <span>world!</span></p>, detect Hello world!", () => {
     const html = "<p>Hello <span>world!</span></p>"
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 0, stop: 12 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "Hello world!",
     )
-    const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-      conversion,
-      [textPosition],
-    )
-    expect(fragmentsReverseConversion).toStrictEqual([
+    const fragmentsReverseTransformation =
+      originalMergedPositionsFromTransformed(transformation, [textPosition])
+    expect(fragmentsReverseTransformation).toStrictEqual([
       {
         position: {
           start: 3,
@@ -754,26 +738,24 @@ describe("originalMergedPositionsFromSimplified", () => {
     ])
     expect(
       html.slice(
-        fragmentsReverseConversion[0].position.start,
-        fragmentsReverseConversion[0].position.stop,
+        fragmentsReverseTransformation[0].position.start,
+        fragmentsReverseTransformation[0].position.stop,
       ),
     ).toBe("Hello <span>world!</span>")
   })
 
   test("<span>Au I de l’article</span> 197", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Au I de l'article 197")
     const textPosition = { start: 10, stop: 21 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "article 197",
     )
-    const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-      conversion,
-      [textPosition],
-    )
-    expect(fragmentsReverseConversion).toStrictEqual([
+    const fragmentsReverseTransformation =
+      originalMergedPositionsFromTransformed(transformation, [textPosition])
+    expect(fragmentsReverseTransformation).toStrictEqual([
       {
         innerPrefix: "<span>",
         outerPrefix: "</span>",
@@ -784,27 +766,25 @@ describe("originalMergedPositionsFromSimplified", () => {
       },
     ])
     expect(
-      (fragmentsReverseConversion[0].innerPrefix ?? "") +
+      (fragmentsReverseTransformation[0].innerPrefix ?? "") +
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ) +
-        (fragmentsReverseConversion[0].innerSuffix ?? ""),
+        (fragmentsReverseTransformation[0].innerSuffix ?? ""),
     ).toBe("<span>article</span> 197")
   })
 
   test("<span>Hello world!</span>", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 11, stop: 12 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe("!")
-    const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-      conversion,
-      [textPosition],
-    )
-    expect(fragmentsReverseConversion).toStrictEqual([
+    const fragmentsReverseTransformation =
+      originalMergedPositionsFromTransformed(transformation, [textPosition])
+    expect(fragmentsReverseTransformation).toStrictEqual([
       {
         position: {
           start: 17,
@@ -818,18 +798,16 @@ describe("originalMergedPositionsFromSimplified", () => {
     task,
   }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("1° les articles 199 decies E, 199 decies EA")
     const textPosition = { start: 3, stop: 28 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "les articles 199 decies E",
     )
-    const fragmentsReverseConversion = originalMergedPositionsFromSimplified(
-      conversion,
-      [textPosition],
-    )
-    expect(fragmentsReverseConversion).toStrictEqual([
+    const fragmentsReverseTransformation =
+      originalMergedPositionsFromTransformed(transformation, [textPosition])
+    expect(fragmentsReverseTransformation).toStrictEqual([
       {
         innerPrefix: "<span>",
         innerSuffix: "</span>",
@@ -842,32 +820,33 @@ describe("originalMergedPositionsFromSimplified", () => {
       },
     ])
     expect(
-      (fragmentsReverseConversion[0].innerPrefix ?? "") +
+      (fragmentsReverseTransformation[0].innerPrefix ?? "") +
         html.slice(
-          fragmentsReverseConversion[0].position.start,
-          fragmentsReverseConversion[0].position.stop,
+          fragmentsReverseTransformation[0].position.start,
+          fragmentsReverseTransformation[0].position.stop,
         ) +
-        (fragmentsReverseConversion[0].innerSuffix ?? ""),
+        (fragmentsReverseTransformation[0].innerSuffix ?? ""),
       `<span>199 </span><i>decies</i><span> E</span>`,
     )
   })
 })
 
-describe("originalSplitPositionsFromSimplified", () => {
+describe("originalSplitPositionsFromTransformed", () => {
   test("<div>a <p>first sentence</p>a<p> second sentence</p></div>", ({
     task,
   }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("a\nfirst sentence\na\nsecond sentence")
     const textPosition = { start: 8, stop: 34 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "sentence\na\nsecond sentence",
     )
-    const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-      textPosition,
-    ])
+    const htmlPositions = originalSplitPositionsFromTransformed(
+      transformation,
+      [textPosition],
+    )
     expect(htmlPositions.length).toBe(3)
     expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
       "sentence",
@@ -880,8 +859,8 @@ describe("originalSplitPositionsFromSimplified", () => {
 
   test("<div><p>first sentence</p><p>second sentence</p></div>", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("first sentence\nsecond sentence")
     const textPosition0 = { start: 0, stop: 5 }
     expect(text.slice(textPosition0.start, textPosition0.stop)).toBe("first")
@@ -891,16 +870,18 @@ describe("originalSplitPositionsFromSimplified", () => {
     )
     {
       // Test first HTML position only
-      const htmlPosition = originalSplitPositionsFromSimplified(conversion, [
-        textPosition0,
-      ])[0]
+      const htmlPosition = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition0],
+      )[0]
       expect(html.slice(htmlPosition.start, htmlPosition.stop)).toBe("first")
     }
     {
       // Test second HTML position only
-      const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-        textPosition1,
-      ])
+      const htmlPositions = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition1],
+      )
       expect(htmlPositions.length).toBe(2)
       expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
         "sentence",
@@ -911,10 +892,10 @@ describe("originalSplitPositionsFromSimplified", () => {
     }
     {
       // Test the merging of 2 overlapping HTML positions.
-      const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-        textPosition0,
-        textPosition1,
-      ])
+      const htmlPositions = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition0, textPosition1],
+      )
       expect(htmlPositions.length).toBe(3)
       expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
         "first",
@@ -930,8 +911,8 @@ describe("originalSplitPositionsFromSimplified", () => {
 
   test("<div>word1<p>word2 word3</p><p>word4</p></div>", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("word1\nword2 word3\nword4")
     const textPosition0 = { start: 0, stop: 11 }
     expect(text.slice(textPosition0.start, textPosition0.stop)).toBe(
@@ -943,9 +924,10 @@ describe("originalSplitPositionsFromSimplified", () => {
     )
     {
       // Test first HTML position only
-      const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-        textPosition0,
-      ])
+      const htmlPositions = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition0],
+      )
       expect(htmlPositions.length).toBe(2)
       expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
         "word1",
@@ -956,9 +938,10 @@ describe("originalSplitPositionsFromSimplified", () => {
     }
     {
       // Test second HTML position only
-      const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-        textPosition1,
-      ])
+      const htmlPositions = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition1],
+      )
       expect(htmlPositions.length).toBe(2)
       expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
         "word3",
@@ -969,10 +952,10 @@ describe("originalSplitPositionsFromSimplified", () => {
     }
     {
       // Test the merging of 2 overlapping HTML positions.
-      const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-        textPosition0,
-        textPosition1,
-      ])
+      const htmlPositions = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition0, textPosition1],
+      )
       expect(htmlPositions.length).toBe(4)
       expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
         "word1",
@@ -993,17 +976,18 @@ describe("originalSplitPositionsFromSimplified", () => {
     task,
   }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello very complex world!")
     {
       const textPosition = { start: 11, stop: 25 }
       expect(text.slice(textPosition.start, textPosition.stop)).toBe(
         "complex world!",
       )
-      const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-        textPosition,
-      ])
+      const htmlPositions = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition],
+      )
       expect(htmlPositions.length).toBe(2)
       expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
         "<span>complex</span>",
@@ -1017,9 +1001,10 @@ describe("originalSplitPositionsFromSimplified", () => {
       expect(text.slice(textPosition.start, textPosition.stop)).toBe(
         "complex world",
       )
-      const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-        textPosition,
-      ])
+      const htmlPositions = originalSplitPositionsFromTransformed(
+        transformation,
+        [textPosition],
+      )
       expect(htmlPositions.length).toBe(3)
       expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
         "<span>complex</span>",
@@ -1035,12 +1020,12 @@ describe("originalSplitPositionsFromSimplified", () => {
 
   test("<p>Hello <span>world</span>!</p>, detect world", () => {
     const html = "<p>Hello <span>world</span>!</p>"
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 6, stop: 11 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe("world")
-    const htmlPosition = originalSplitPositionsFromSimplified(conversion, [
+    const htmlPosition = originalSplitPositionsFromTransformed(transformation, [
       textPosition,
     ])[0]
     expect(html.slice(htmlPosition.start, htmlPosition.stop)).toBe("world")
@@ -1048,14 +1033,14 @@ describe("originalSplitPositionsFromSimplified", () => {
 
   test("<p>Hello <span>world</span>!</p>, detect Hello world!", () => {
     const html = "<p>Hello <span>world</span>!</p>"
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 0, stop: 12 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "Hello world!",
     )
-    const htmlPosition = originalSplitPositionsFromSimplified(conversion, [
+    const htmlPosition = originalSplitPositionsFromTransformed(transformation, [
       textPosition,
     ])[0]
     expect(html.slice(htmlPosition.start, htmlPosition.stop)).toBe(
@@ -1065,16 +1050,17 @@ describe("originalSplitPositionsFromSimplified", () => {
 
   test("<p>Hello <span>world!</span></p>, detect Hello world!", () => {
     const html = "<p>Hello <span>world!</span></p>"
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 0, stop: 12 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "Hello world!",
     )
-    const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-      textPosition,
-    ])
+    const htmlPositions = originalSplitPositionsFromTransformed(
+      transformation,
+      [textPosition],
+    )
     expect(htmlPositions.length).toBe(1)
     expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
       "Hello <span>world!</span>",
@@ -1083,16 +1069,17 @@ describe("originalSplitPositionsFromSimplified", () => {
 
   test("<span>Au I de l’article</span> 197", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Au I de l'article 197")
     const textPosition = { start: 10, stop: 21 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe(
       "article 197",
     )
-    const htmlPositions = originalSplitPositionsFromSimplified(conversion, [
-      textPosition,
-    ])
+    const htmlPositions = originalSplitPositionsFromTransformed(
+      transformation,
+      [textPosition],
+    )
     expect(htmlPositions.length).toBe(2)
     expect(html.slice(htmlPositions[0].start, htmlPositions[0].stop)).toBe(
       "article",
@@ -1104,12 +1091,12 @@ describe("originalSplitPositionsFromSimplified", () => {
 
   test("<span>Hello world!</span>", ({ task }) => {
     const html = task.name
-    const conversion = simplifyHtml({ removeAWithHref: true })(html)
-    const text = conversion.output
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
     expect(text).toBe("Hello world!")
     const textPosition = { start: 11, stop: 12 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe("!")
-    const htmlPosition = originalSplitPositionsFromSimplified(conversion, [
+    const htmlPosition = originalSplitPositionsFromTransformed(transformation, [
       textPosition,
     ])[0]
     expect(htmlPosition).toStrictEqual({
@@ -1121,8 +1108,8 @@ describe("originalSplitPositionsFromSimplified", () => {
 
 describe("replacePatterns", () => {
   test("add space after n°", () => {
-    const { conversions } = replacePatterns("Loi organique N°1234")
-    expect(conversions).toStrictEqual([
+    const { transformations } = replacePatterns("Loi organique N°1234")
+    expect(transformations).toStrictEqual([
       {
         input: "Loi organique N°1234",
         output: "Loi organique N° 1234",
@@ -1255,11 +1242,14 @@ describe("simplifyHtml", () => {
 
 describe("simplifyText", () => {
   test("multiple spaces and new lines", () => {
-    const conversion = simplifyText(
+    const transformation = simplifyText(
       "   \n  \n  Hello    world!   \n     \n     \n     ",
     )
-    expect(conversion).toStrictEqual({
-      conversions: [
+    expect(transformation).toStrictEqual({
+      input: "   \n  \n  Hello    world!   \n     \n     \n     ",
+      output: "Hello world!",
+      title: "Simplification du texte",
+      transformations: [
         {
           input: "   \n  \n  Hello    world!   \n     \n     \n     ",
           output: " \n \n Hello world! \n \n \n ",
@@ -1418,9 +1408,6 @@ describe("simplifyText", () => {
           title: "Suppression d'un saut de ligne en fin de texte",
         },
       ],
-      input: "   \n  \n  Hello    world!   \n     \n     \n     ",
-      output: "Hello world!",
-      title: "Simplification du texte",
     })
   })
 })

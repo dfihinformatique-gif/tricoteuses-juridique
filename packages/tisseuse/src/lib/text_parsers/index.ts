@@ -1,51 +1,71 @@
+import { definitionArticle } from "./articles.js"
 import type {
+  TextAstArticle,
   TextAstCitation,
+  TextAstDivision,
   TextAstPosition,
   TextAstReference,
 } from "./ast.js"
 import { citation, convertCitationToText } from "./citations.js"
+import { definitionDivision } from "./divisions.js"
 import { iterIncludedReferences } from "./helpers.js"
-import { chain, TextParserContext, type TextParser } from "./parsers.js"
+import { TextParserContext } from "./parsers.js"
 import { reference } from "./references.js"
 import { originalMergedPositionsFromTransformed } from "./transformers.js"
 
 export function* iterReferences(
   context: TextParserContext,
-  {
-    citationParser = citation,
-    referenceParser = reference,
-  }: {
-    citationParser?: TextParser | TextParser[]
-    referenceParser?: TextParser | TextParser[]
-  } = {},
 ): Generator<TextAstReference, void> {
-  if (Array.isArray(citationParser)) {
-    citationParser = chain(citationParser)
-  }
-  if (Array.isArray(referenceParser)) {
-    referenceParser = chain(referenceParser)
-  }
-
   let candidate: RegExpExecArray | null
-  const candidateRegExp =
-    /(?:(?:^|\n)«)|(?<=^|\P{Alphabetic})(?:(?:«)|(?:au|le|du)(?:dit)?(?= )|(?:[àa] +)?la(?:dite)?(?= )|(?:[àa] +)?(?:l')|(?:aux|les|des)(?:dits)?(?= ))/giv
+  const candidateRegExp = new RegExp(
+    String.raw`
+      (?:
+        ^                             # début de ligne
+        (?:                           # définition d'un article ou d'une division
+          art\.
+          |chapitre
+          |livre
+          |paragraphe
+          |partie"
+          |section
+          |sous-paragraphe
+          |sous-section
+          |sous-sous-paragraphe
+          |sous-titre
+          |titre
+        )
+        (?= )
+      )
+      |(?<=^|\P{Alphabetic})(?:
+        (?:«)                         # citation
+        |(?:au|le|du)(?:dit)?(?= )
+        |(?:[àa] +)?la(?:dite)?(?= )
+        |(?:[àa] +)?(?:l')
+        |(?:aux|les|des)(?:dits)?(?= )
+      )
+    `
+      .replace(/\s+#.*$/gm, "") // Remove comments
+      .replace(/^\s+/gm, "")
+      .replace(/\n/g, "")
+      .replace(/\\n/g, "\n"),
+    "gimv",
+  )
   while ((candidate = candidateRegExp.exec(context.input)) !== null) {
     const index = candidate.index
     context.offset = index
-    if (["\n«", "«"].includes(candidate[0])) {
-      const citation = citationParser(context) as TextAstCitation | undefined
-      if (citation === undefined) {
+    if (candidate[0] === "«") {
+      // ligne de citation ou citation simple
+      const citationAst = citation(context) as TextAstCitation | undefined
+      if (citationAst === undefined) {
         continue
       }
-      const citationTransformation = convertCitationToText(context, citation)
+      const citationTransformation = convertCitationToText(context, citationAst)
       const citationContext = new TextParserContext(
         citationTransformation.output,
       )
-      for (const reference of iterReferences(citationContext, {
-        citationParser,
-        referenceParser,
-      })) {
+      for (let reference of iterReferences(citationContext)) {
         // Convert position of reference in citation to an absolute position.
+        reference = structuredClone(reference)
         for (const includedReference of iterIncludedReferences(reference)) {
           const positionInCitation = (includedReference as TextAstPosition)
             .position
@@ -70,30 +90,49 @@ export function* iterReferences(
 
         yield reference
       }
-      candidateRegExp.lastIndex = citation.position.stop
-    } else {
-      const reference = referenceParser(context) as TextAstReference | undefined
-      if (reference === undefined) {
+      candidateRegExp.lastIndex = citationAst.position.stop
+    } else if (candidate[0].toLowerCase() === "art.") {
+      const definitionArticleAst = definitionArticle(context) as
+        | TextAstArticle
+        | undefined
+      if (definitionArticleAst === undefined) {
         continue
       }
-      yield reference
-      candidateRegExp.lastIndex = reference.position.stop
+      yield definitionArticleAst
+      candidateRegExp.lastIndex = definitionArticleAst.position.stop
+    } else if (
+      [
+        "chapitre",
+        "livre",
+        "paragraphe",
+        "partie",
+        "section",
+        "sous-paragraphe",
+        "sous-section",
+        "sous-sous-paragraphe",
+        "sous-titre",
+        "titre",
+      ].includes(candidate[0].toLowerCase())
+    ) {
+      const definitionDivisionAst = definitionDivision(context) as
+        | TextAstDivision
+        | undefined
+      if (definitionDivisionAst === undefined) {
+        continue
+      }
+      yield definitionDivisionAst
+      candidateRegExp.lastIndex = definitionDivisionAst.position.stop
+    } else {
+      const referenceAst = reference(context) as TextAstReference | undefined
+      if (referenceAst === undefined) {
+        continue
+      }
+      yield referenceAst
+      candidateRegExp.lastIndex = referenceAst.position.stop
     }
   }
 }
 
 export const getReferences = (
   context: TextParserContext,
-  {
-    citationParser = citation,
-    referenceParser = reference,
-  }: {
-    citationParser?: TextParser | TextParser[]
-    referenceParser?: TextParser | TextParser[]
-  } = {},
-): TextAstReference[] => [
-  ...iterReferences(context, {
-    citationParser,
-    referenceParser,
-  }),
-]
+): TextAstReference[] => [...iterReferences(context)]

@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import { type TextAstDivision, type TextAstEnumeration } from "./ast.js"
 import {
+  definitionDivision,
   designationDivision,
   division,
   division1Internal,
@@ -11,6 +12,127 @@ import {
   numeroDivision,
 } from "./divisions.js"
 import { TextParserContext } from "./parsers.js"
+
+describe("definitionDivision", () => {
+  test("Chapitre Ier", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 1,
+      num: "Ier",
+      position: {
+        start: 0,
+        stop: 12,
+      },
+      type: "chapitre",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Chapitre Ier nonies", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 1.009,
+      num: "Ier nonies",
+      position: {
+        start: 0,
+        stop: 19,
+      },
+      type: "chapitre",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Chapitre II", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 2,
+      num: "II",
+      position: {
+        start: 0,
+        stop: 11,
+      },
+      type: "chapitre",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Section 0I bis", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 0.002,
+      num: "0I bis",
+      position: {
+        start: 0,
+        stop: 14,
+      },
+      type: "section",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Section unique", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 1,
+      num: "unique",
+      position: {
+        start: 0,
+        stop: 14,
+      },
+      type: "section",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Sous-section 2", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 2,
+      num: "2",
+      position: {
+        start: 0,
+        stop: 14,
+      },
+      type: "sous-section",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("TITRE II", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 2,
+      num: "II",
+      position: {
+        start: 0,
+        stop: 8,
+      },
+      type: "titre",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+})
 
 describe("designationDivision", () => {
   // Exemple : section 0I du chapitre III du titre Ier de la première partie du livre Ier du code général des impôts
@@ -386,7 +508,6 @@ describe("numeroDivision", () => {
     expect(numeroDivision(context)).toStrictEqual({
       index: 0,
       num: "0I",
-      type: "incomplete-header",
     })
     expect(context.remaining()).toBe("")
   })

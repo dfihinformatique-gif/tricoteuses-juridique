@@ -174,6 +174,7 @@ export function* iterCardinalNumeralFormsFromNumber(
   if (num === 1) {
     yield "premier"
     yield "première"
+    yield "unique"
     yield "Ier"
     yield "Ière"
     yield "1er"

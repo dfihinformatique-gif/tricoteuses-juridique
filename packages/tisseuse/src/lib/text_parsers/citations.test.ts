@@ -84,33 +84,33 @@ describe("citation", () => {
     )
   })
 
-  test("\n« ligne 1\n« ligne 2\n« ligne 3 »", ({ task }) => {
+  test("« ligne 1\n« ligne 2\n« ligne 3 »", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = citation(context) as TextAstCitation
     expect(result).toStrictEqual({
       content: [
         {
           position: {
-            start: 3,
-            stop: 10,
+            start: 2,
+            stop: 9,
           },
         },
         {
           position: {
-            start: 13,
-            stop: 20,
+            start: 12,
+            stop: 19,
           },
         },
         {
           position: {
-            start: 23,
-            stop: 30,
+            start: 22,
+            stop: 29,
           },
         },
       ],
       position: {
         start: 0,
-        stop: 32,
+        stop: 31,
       },
       type: "citation",
     })
@@ -121,33 +121,33 @@ describe("citation", () => {
     expect(context.text(result.content[2].position)).toBe("ligne 3")
   })
 
-  test("\n« ligne 1 »\n« ligne 2 »\n« ligne 3 »", ({ task }) => {
+  test("« ligne 1 »\n« ligne 2 »\n« ligne 3 »", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = citation(context) as TextAstCitation
     expect(result).toStrictEqual({
       content: [
         {
           position: {
-            start: 3,
-            stop: 10,
+            start: 2,
+            stop: 9,
           },
         },
         {
           position: {
-            start: 15,
-            stop: 22,
+            start: 14,
+            stop: 21,
           },
         },
         {
           position: {
-            start: 27,
-            stop: 34,
+            start: 26,
+            stop: 33,
           },
         },
       ],
       position: {
         start: 0,
-        stop: 36,
+        stop: 35,
       },
       type: "citation",
     })

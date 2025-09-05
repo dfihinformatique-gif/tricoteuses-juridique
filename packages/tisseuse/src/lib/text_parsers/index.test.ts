@@ -506,6 +506,338 @@ describe("getReferences", () => {
 })
 
 describe("getReferences, test spécifiques", () => {
+  test("Définition d'un nouvel article", () => {
+    const input = dedent`
+      22° Après l'article 223 WA quinquies, il est inséré un article 223 WA quinquies A ainsi rédigé :
+      « Art. 223 WA quinquies A. - Les charges de personnel et les actifs corporels d'une entité soumise à un régime de dividendes déductibles mentionnée au I de l'article 223 WR bis ou détenue dans les conditions du V du même article, sont réduits proportionnellement au bénéfice exclu du calcul du bénéfice qualifié de l'entité conformément aux II et III de l'article 223 WR bis. » ;
+    `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([
+      {
+        action: {
+          action: "CREATION",
+        },
+        position: {
+          start: 10,
+          stop: 51,
+        },
+        reference: {
+          num: "223 WA quinquies",
+          position: {
+            start: 10,
+            stop: 36,
+          },
+          type: "article",
+        },
+        type: "reference_et_action",
+      },
+      {
+        definition: true,
+        num: "223 WA quinquies A",
+        position: {
+          start: 99,
+          stop: 122,
+        },
+        type: "article",
+      },
+      {
+        child: {
+          index: 1,
+          num: "I",
+          position: {
+            start: 248,
+            stop: 249,
+          },
+          type: "item",
+        },
+        parent: {
+          num: "223 WR bis",
+          position: {
+            start: 255,
+            stop: 273,
+          },
+          type: "article",
+        },
+        position: {
+          start: 245,
+          stop: 273,
+        },
+        type: "parent-enfant",
+      },
+      {
+        child: {
+          index: 5,
+          num: "V",
+          position: {
+            start: 308,
+            stop: 309,
+          },
+          type: "item",
+        },
+        parent: {
+          position: {
+            start: 313,
+            stop: 325,
+          },
+          relative: 0,
+          type: "article",
+        },
+        position: {
+          start: 305,
+          stop: 325,
+        },
+        type: "parent-enfant",
+      },
+      {
+        child: {
+          coordinator: "et",
+          left: {
+            index: 2,
+            num: "II",
+            position: {
+              start: 438,
+              stop: 440,
+            },
+            type: "item",
+          },
+          position: {
+            start: 438,
+            stop: 447,
+          },
+          right: {
+            index: 3,
+            num: "III",
+            position: {
+              start: 444,
+              stop: 447,
+            },
+            type: "item",
+          },
+          type: "enumeration",
+        },
+        parent: {
+          num: "223 WR bis",
+          position: {
+            start: 453,
+            stop: 471,
+          },
+          type: "article",
+        },
+        position: {
+          start: 434,
+          stop: 471,
+        },
+        type: "parent-enfant",
+      },
+    ])
+    expect(context.text(references[0].position)).toBe(
+      "l'article 223 WA quinquies, il est inséré",
+    )
+    expect(context.text(references[1].position)).toBe("Art. 223 WA quinquies A")
+    expect(context.text(references[2].position)).toBe(
+      "au I de l'article 223 WR bis",
+    )
+    expect(context.text(references[3].position)).toBe("du V du même article")
+    expect(context.text(references[4].position)).toBe(
+      "aux II et III de l'article 223 WR bis",
+    )
+  })
+
+  test("Définition de nouvelles divisions et de nouveaux articles", () => {
+    const input = dedent`
+      2° Le livre III est complété par un titre II ainsi rédigé :
+      « TITRE II
+      « TAXES NE RELEVANT PAS DU RÉGIME GÉNÉRAL D'ACCISE
+      « Chapitre Ier
+      « Dispositions générales
+      « Section unique
+      « Eléments taxables et territoires
+      « Art. L. 321-1. - Les articles L. 311-1, L. 312-3, L. 313-2 et L. 314-3 à L. 314-6 sont applicables aux taxes régies par le présent titre.
+      « Art. L. 321-2. - Pour l'application du présent titre, les cinq territoires mentionnés à l'article L. 112-4 sont regardés comme un territoire de taxation unique. »
+    `
+    const context = new TextParserContext(input)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([
+      {
+        action: {
+          action: "CREATION",
+        },
+        position: {
+          start: 3,
+          stop: 28,
+        },
+        reference: {
+          index: 3,
+          num: "III",
+          position: {
+            start: 3,
+            stop: 15,
+          },
+          type: "livre",
+        },
+        type: "reference_et_action",
+      },
+      {
+        definition: true,
+        index: 2,
+        num: "II",
+        position: {
+          start: 62,
+          stop: 70,
+        },
+        type: "titre",
+      },
+      {
+        definition: true,
+        index: 1,
+        num: "Ier",
+        position: {
+          start: 124,
+          stop: 136,
+        },
+        type: "chapitre",
+      },
+      {
+        definition: true,
+        index: 1,
+        num: "unique",
+        position: {
+          start: 164,
+          stop: 178,
+        },
+        type: "section",
+      },
+      {
+        definition: true,
+        num: "L321-1",
+        position: {
+          start: 216,
+          stop: 229,
+        },
+        type: "article",
+      },
+      {
+        coordinator: "et",
+        left: {
+          coordinator: ",",
+          left: {
+            coordinator: ",",
+            left: {
+              num: "L311-1",
+              position: {
+                start: 246,
+                stop: 254,
+              },
+              type: "article",
+            },
+            position: {
+              start: 246,
+              stop: 264,
+            },
+            right: {
+              num: "L312-3",
+              position: {
+                start: 256,
+                stop: 264,
+              },
+              type: "article",
+            },
+            type: "enumeration",
+          },
+          position: {
+            start: 246,
+            stop: 274,
+          },
+          right: {
+            num: "L313-2",
+            position: {
+              start: 266,
+              stop: 274,
+            },
+            type: "article",
+          },
+          type: "enumeration",
+        },
+        position: {
+          start: 233,
+          stop: 297,
+        },
+        right: {
+          first: {
+            num: "L314-3",
+            position: {
+              start: 278,
+              stop: 286,
+            },
+            type: "article",
+          },
+          last: {
+            num: "L314-6",
+            position: {
+              start: 289,
+              stop: 297,
+            },
+            type: "article",
+          },
+          position: {
+            start: 278,
+            stop: 297,
+          },
+          type: "bounded-interval",
+        },
+        type: "enumeration",
+      },
+      {
+        position: {
+          start: 336,
+          stop: 352,
+        },
+        relative: 0,
+        type: "titre",
+      },
+      {
+        definition: true,
+        num: "L321-2",
+        position: {
+          start: 356,
+          stop: 369,
+        },
+        type: "article",
+      },
+      {
+        position: {
+          start: 392,
+          stop: 408,
+        },
+        relative: 0,
+        type: "titre",
+      },
+      {
+        num: "L112-4",
+        position: {
+          start: 442,
+          stop: 462,
+        },
+        type: "article",
+      },
+    ])
+    expect(context.text(references[0].position)).toBe(
+      "Le livre III est complété",
+    )
+    expect(context.text(references[1].position)).toBe("TITRE II")
+    expect(context.text(references[2].position)).toBe("Chapitre Ier")
+    expect(context.text(references[3].position)).toBe("Section unique")
+    expect(context.text(references[4].position)).toBe("Art. L. 321-1")
+    expect(context.text(references[5].position)).toBe(
+      "Les articles L. 311-1, L. 312-3, L. 313-2 et L. 314-3 à L. 314-6",
+    )
+    expect(context.text(references[6].position)).toBe("le présent titre")
+    expect(context.text(references[7].position)).toBe("Art. L. 321-2")
+    expect(context.text(references[8].position)).toBe("du présent titre")
+    expect(context.text(references[9].position)).toBe("à l'article L. 112-4")
+  })
+
   test("Gestion des offsets dans iterReferences", () => {
     const input = dedent`
       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -525,8 +857,8 @@ describe("getReferences, test spécifiques", () => {
 
   test("Références avant et dans citation", () => {
     const input = dedent`
-      I. – Le code général des impôts est ainsi modifié :
-      A. – Au chapitre II bis du titre premier de la première partie du livre premier :
+      I. - Le code général des impôts est ainsi modifié :
+      A. - Au chapitre II bis du titre premier de la première partie du livre premier :
       1° A l'article 223 VK :
       4° Après l'article 223 VO quaterdecies, il est inséré un article 223 VO quindecies ainsi rédigé :
       « Art. 223 VO quindecies. - Sur option exercée par l'entité constitutive déclarante, et par dérogation au 3° de l'article 223 VO bis, les plus ou moins-values sur participations sont incluses dans le résultat qualifié d'une entité constitutive.
@@ -717,6 +1049,15 @@ describe("getReferences, test spécifiques", () => {
     const references = getReferences(context)
     expect(references).toStrictEqual([
       {
+        definition: true,
+        num: "223 VO quindecies",
+        position: {
+          start: 2,
+          stop: 24,
+        },
+        type: "article",
+      },
+      {
         child: {
           index: 3,
           num: "3°",
@@ -773,11 +1114,12 @@ describe("getReferences, test spécifiques", () => {
         type: "parent-enfant",
       },
     ])
-    expect(context.text(references[0].position)).toBe(
+    expect(context.text(references[0].position)).toBe("Art. 223 VO quindecies")
+    expect(context.text(references[1].position)).toBe(
       "au 3° de l'article 223 VO bis",
     )
-    expect(context.text(references[1].position)).toBe("au premier alinéa")
-    expect(context.text(references[2].position)).toBe(
+    expect(context.text(references[2].position)).toBe("au premier alinéa")
+    expect(context.text(references[3].position)).toBe(
       "au II de l'article 223 WW",
     )
   })
@@ -828,7 +1170,7 @@ describe("getReferences, test spécifiques", () => {
 
   test("Références de type article dans citation simple", () => {
     const input = dedent`
-      « III bis. – Par dérogation au I du présent article, le taux prévu à l'article 278 [...] »
+      « III bis. - Par dérogation au I du présent article, le taux prévu à l'article 278 [...] »
     `
     const context = new TextParserContext(input)
     const references = getReferences(context)

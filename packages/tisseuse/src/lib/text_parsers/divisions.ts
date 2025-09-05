@@ -101,18 +101,40 @@ export const numeroDivision = chain(
         index:
           nombre0.value + (nombre1 === undefined ? 0 : nombre1.value / 1000),
         num: `${nombre0.text}${nombre1 === undefined ? "" : ` ${nombre1.text}`}`,
-        type: "incomplete-header",
       }
     },
+  },
+)
+
+/**
+ * Déclaration d'un article
+ * Exemple : « Art. L. 322‑66. - blablabla… en début de ligne
+ */
+export const definitionDivision = chain(
+  [
+    regExp("^", { flags: "m" }),
+    natureDivisionSingulier,
+    espace,
+    numeroDivision,
+    regExp("$", { flags: "m" }),
+  ],
+  {
+    value: (results, context) => ({
+      definition: true,
+      ...(results[3] as TextAstLocalization),
+      position: context.position(),
+      type: results[1] as string,
+    }),
   },
 )
 
 export const designationDivision = alternatives(
   chain([numeroDivision, optional(espaceAdverbeRelatif, { default: "" })], {
     value: (results, context) => ({
-      ...(results[0] as TextAstIncompleteHeader),
+      ...(results[0] as TextAstLocalization),
       ...(results[1] ? { localizationAdverb: results[1] } : {}),
       position: context.position(),
+      type: "incomplete-header",
     }),
   }),
   chain([nomDivision, optional(espaceAdverbeRelatif, { default: "" })], {

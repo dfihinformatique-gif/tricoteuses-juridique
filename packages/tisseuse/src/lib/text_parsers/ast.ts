@@ -47,6 +47,7 @@ export interface TextAstAction {
 }
 
 export type TextAstArticle = {
+  definition?: boolean
   implicitText?: TextAstText | undefined
   localizationAdverb?: LocalizationAdverb
   ofTheSaid?: boolean
@@ -90,6 +91,7 @@ export type TextAstCountedInterval = {
 } & TextAstPosition
 
 export type TextAstDivision = {
+  definition?: boolean
   ofTheSaid?: boolean
   type: DivisionType
 } & TextAstLocalization &

@@ -244,7 +244,23 @@ export const regExp =
       flags,
       value,
     }: {
-      flags?: "d" | "di" | "div" | "i" | "iv" | "v" | null
+      flags?:
+        | "d"
+        | "di"
+        | "dim"
+        | "dimv"
+        | "div"
+        | "dm"
+        | "dmv"
+        | "dv"
+        | "i"
+        | "im"
+        | "imv"
+        | "iv"
+        | "m"
+        | "mv"
+        | "v"
+        | null
       value?: TextAst | RegExpConverter
     } = {},
   ): TextParser =>

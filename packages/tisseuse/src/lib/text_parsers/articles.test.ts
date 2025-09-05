@@ -10,6 +10,7 @@ import { TextParserContext } from "./parsers.js"
 import {
   article,
   articles,
+  definitionArticle,
   designationArticle,
   listeArticles,
   nomArticle,
@@ -284,6 +285,158 @@ describe("articles", () => {
     expect(context.text(result.position)).toBe(task.name)
     expect(context.text(result.left.position)).toBe("L. 325-3")
     expect(context.text(result.right.position)).toBe("L. 325-4")
+  })
+})
+
+describe("definitionArticle", () => {
+  test("Art. L. 322-66. - ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "L322-66",
+      position: {
+        start: 0,
+        stop: 14,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("Art. L. 322-66")
+  })
+
+  test("Art. L. 166 BA. - ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "L166 BA",
+      position: {
+        start: 0,
+        stop: 14,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("Art. L. 166 BA")
+  })
+
+  test("Art. L. 134-17-1. - ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "L134-17-1",
+      position: {
+        start: 0,
+        stop: 16,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("Art. L. 134-17-1")
+  })
+
+  test("Art. 223 VO quindecies. - ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "223 VO quindecies",
+      position: {
+        start: 0,
+        stop: 22,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("Art. 223 VO quindecies")
+  })
+
+  test("Art. 223 VR quater. - ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "223 VR quater",
+      position: {
+        start: 0,
+        stop: 18,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("Art. 223 VR quater")
+  })
+
+  test("Art. 223 WA quinquies A. - ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "223 WA quinquies A",
+      position: {
+        start: 0,
+        stop: 23,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("Art. 223 WA quinquies A")
+  })
+
+  test("Art. L. 80 R. - I. - Les agents de l’administration fiscale contrôlent le respect", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "L80 R",
+      position: {
+        start: 0,
+        stop: 12,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe(
+      "I. - Les agents de l’administration fiscale contrôlent le respect",
+    )
+    expect(context.text(result.position)).toBe("Art. L. 80 R")
+  })
+
+  test("Art. 235 ter XB - I. - 1. Il est institué une taxe", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "235 ter XB",
+      position: {
+        start: 0,
+        stop: 15,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("I. - 1. Il est institué une taxe")
+    expect(context.text(result.position)).toBe("Art. 235 ter XB")
+  })
+
+  test("Art. L. 542-10-2. - A. - Le produit du tarif de stockage", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "L542-10-2",
+      position: {
+        start: 0,
+        stop: 16,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("A. - Le produit du tarif de stockage")
+    expect(context.text(result.position)).toBe("Art. L. 542-10-2")
   })
 })
 
@@ -760,6 +913,13 @@ describe("nomArticle", () => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("L321-3")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("L. 322-66", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = nomArticle(context)
+    expect(result).toBe("L322-66")
     expect(context.remaining()).toBe("")
   })
 

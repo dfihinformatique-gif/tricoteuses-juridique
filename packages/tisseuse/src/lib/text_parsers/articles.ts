@@ -100,6 +100,61 @@ export const nomArticle = alternatives(
   ),
   nomSpecialArticle,
 )
+/**
+ * Numéro d’article, utilisé lors de sa definition,
+ * par exemple « L.O 113-1 » ou « L328-1 A bis-0 » ou « préliminaire »
+ * Attention cette règle est plus stricte que nomArticle, car, par exemple,
+ * dans la ligne :
+ *  « Art. 235 ter XB - I. - 1. Il est institué une taxe […]
+ * le numéro est 235 ter XB et I. et 1. sont des numéros de portions.
+ */
+export const nomArticleDefinition = alternatives(
+  chain(
+    [
+      typeArticle,
+      regExp(String.raw`\d+`),
+      optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
+      repeat([
+        alternatives(regExp("-"), regExp(String.raw` ?\.`), espace),
+        alternatives(
+          [
+            regExp(String.raw`[\dA-Z]+`),
+            optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
+          ],
+          convert(adverbeMultiplicatifLatin, {
+            value: (result) => (result as TextAstNumber).text,
+          }),
+        ),
+      ]),
+    ],
+    { value: (results, context) => context.textFromResults(results) },
+  ),
+  nomSpecialArticle,
+)
+
+/**
+ * Déclaration d'un article
+ * Exemple : « Art. L. 322‑66. - blablabla… en début de ligne
+ */
+export const definitionArticle = chain(
+  [
+    chain(
+      [regExp(String.raw`^art\. `, { flags: "im" }), nomArticleDefinition],
+      {
+        value: (results, context) => ({
+          definition: true,
+          num: results[1] as string,
+          position: context.position(),
+          type: "article",
+        }),
+      },
+    ),
+    regExp(String.raw`\.? ?- ?`),
+  ],
+  {
+    value: (results) => results[0],
+  },
+)
 
 /**
  * Désignation d’un article, de façon absolue (avec son numero ou nom) ou relative (précédent, suivant, …)

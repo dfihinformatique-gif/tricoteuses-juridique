@@ -9,8 +9,8 @@ import {
 import type { TransformationLeaf } from "./transformers.js"
 import { espaceOuRien } from "./typography.js"
 
-export const citationLigne = regExp(String.raw`« ?([^»\n]+)`, {
-  flags: "d",
+export const citationLigne = regExp(String.raw`^« ?([^»\n]+)`, {
+  flags: "dm",
   value: (match) => {
     let stop = match.indices![1][1]
     if (match[1].endsWith(" ")) {
@@ -44,7 +44,6 @@ export const citationSimple = regExp(String.raw`« ?(.*?) ?»`, {
 export const citation = alternatives(
   chain(
     [
-      regExp(String.raw`\n`),
       repeat(citationLigne, {
         separator: regExp(String.raw`»?\n`),
         // Remove separators from results.
@@ -57,7 +56,7 @@ export const citation = alternatives(
     ],
     {
       value: (results, context) => ({
-        content: results[1],
+        content: results[0],
         position: context.position(),
         type: "citation",
       }),

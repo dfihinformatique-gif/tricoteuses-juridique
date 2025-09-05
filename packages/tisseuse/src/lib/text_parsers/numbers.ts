@@ -25,6 +25,13 @@ export const nombreAsTextAstNumber = alternatives(
       value: 1,
     }),
   }),
+  regExp("unique", {
+    value: (match, context) => ({
+      position: context.position(),
+      text: context.text(),
+      value: 1,
+    }),
+  }),
   chain([regExp(String.raw`\d+`), optional(eme, { default: "" })], {
     value: (results, context) => ({
       position: context.position(),

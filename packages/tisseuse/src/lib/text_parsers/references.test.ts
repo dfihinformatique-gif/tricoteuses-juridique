@@ -1206,6 +1206,39 @@ describe("reference", () => {
     ).toBe("sous-paragraphe 3")
   })
 
+  test("du V du même article", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        index: 5,
+        num: "V",
+        position: {
+          start: 3,
+          stop: 4,
+        },
+        type: "item",
+      },
+      parent: {
+        position: {
+          start: 8,
+          stop: 20,
+        },
+        relative: 0,
+        type: "article",
+      },
+      position: {
+        start: 0,
+        stop: 20,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe("même article")
+    expect(context.text(result.child.position)).toBe("V")
+  })
+
   test("l'article 7 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
@@ -1237,9 +1270,6 @@ describe("reference", () => {
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
   })
-  // testSingleLink("à l'article 7 du code pénal");
-  // testSingleLink("à l'article 7 bis du code pénal");
-  // testSingleLink("à l'article 7 vicies A du code pénal");
 
   test("Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts", ({
     task,

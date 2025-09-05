@@ -524,8 +524,8 @@ export async function* iterTextLinks(
           case "livre":
           case "paragraphe":
           case "partie":
-          case "sous-paragraphe":
           case "section":
+          case "sous-paragraphe":
           case "sous-section":
           case "sous-sous-paragraphe":
           case "sous-titre":
@@ -747,8 +747,8 @@ export async function* iterTextLinks(
         case "livre":
         case "paragraphe":
         case "partie":
-        case "sous-paragraphe":
         case "section":
+        case "sous-paragraphe":
         case "sous-section":
         case "sous-sous-paragraphe":
         case "sous-titre":
@@ -844,8 +844,8 @@ export async function* iterTextLinks(
         case "livre":
         case "paragraphe":
         case "partie":
-        case "sous-paragraphe":
         case "section":
+        case "sous-paragraphe":
         case "sous-section":
         case "sous-sous-paragraphe":
         case "sous-titre":
@@ -913,8 +913,9 @@ export async function* iterTextLinks(
                 case "chapitre":
                 case "livre":
                 case "paragraphe":
-                case "sous-paragraphe":
+                case "partie":
                 case "section":
+                case "sous-paragraphe":
                 case "sous-section":
                 case "sous-sous-paragraphe":
                 case "sous-titre":

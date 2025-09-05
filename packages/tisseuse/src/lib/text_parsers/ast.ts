@@ -222,8 +222,8 @@ export const frenchLawNatures = [
 export const internationalLawNatures = ["CONVENTION"] as const
 
 export const divisionTypes = [
-  "livre",
   "partie",
+  "livre",
   "titre",
   "sous-titre",
   "chapitre",

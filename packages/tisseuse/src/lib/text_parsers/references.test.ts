@@ -1391,6 +1391,68 @@ describe("reference", () => {
       ),
     ).toBe("chapitre III")
   })
+
+  test("Le livre III de la partie législative du code des impositions sur les biens et services", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          index: 3,
+          num: "III",
+          position: {
+            start: 3,
+            stop: 12,
+          },
+          type: "livre",
+        },
+        parent: {
+          num: "législative",
+          position: {
+            start: 19,
+            stop: 37,
+          },
+          type: "partie",
+        },
+        position: {
+          start: 3,
+          stop: 37,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "LEGITEXT000044595989",
+        nature: "CODE",
+        position: {
+          start: 41,
+          stop: 87,
+        },
+        title: "Code des impositions sur les biens et services",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 87,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.parent.position)).toBe(
+      "code des impositions sur les biens et services",
+    )
+    expect(context.text(result.child.position)).toBe(
+      "livre III de la partie législative",
+    )
+    expect(
+      context.text((result.child as TextAstParentChild).parent.position),
+    ).toBe("partie législative")
+    expect(
+      context.text((result.child as TextAstParentChild).child.position),
+    ).toBe("livre III")
+  })
 })
 
 describe("uniteBasePreciseeSingulier", () => {

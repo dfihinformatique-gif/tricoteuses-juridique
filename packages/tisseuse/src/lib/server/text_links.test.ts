@@ -7,6 +7,38 @@ import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import { iterTextLinks } from "./text_links.js"
 
 describe("iterTextLinks", () => {
+  test("Lien à l'intérieur de la partie législative d'un code", async () => {
+    const input =
+      "Le livre III de la partie législative du code des impositions sur les biens et services"
+    const context = new TextParserContext(input)
+    const links = await Array.fromAsync(
+      iterTextLinks(context, {
+        date: "2025-07-14",
+      }),
+    )
+    expect(links.length).toBe(1)
+    expect(links).toStrictEqual([
+      {
+        division: {
+          index: 3,
+          num: "III",
+          position: {
+            start: 3,
+            stop: 12,
+          },
+          type: "livre",
+        },
+        position: {
+          start: 3,
+          stop: 87,
+        },
+        sectionTaId: "LEGISCTA000044604035",
+        type: "external_division",
+      },
+    ])
+    expect(context.text(links[0].position)).toBe("TODO")
+  })
+
   test("Lien explicite dans du texte", async () => {
     const input =
       "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020"
@@ -161,7 +193,7 @@ describe("iterTextLinks", () => {
         start: 100,
         stop: 113,
       },
-      type: "article",
+      type: "external_article",
     })
   })
 

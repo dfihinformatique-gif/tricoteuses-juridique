@@ -22,8 +22,10 @@ import {
 } from "$lib/numbers.js"
 import { db } from "$lib/server/databases/index.js"
 import {
+  divisionTypes,
   isTextAstDivision,
   isTextAstPortion,
+  type DivisionType,
   type TextAstArticle,
   type TextAstDivision,
   type TextAstParentChild,
@@ -477,6 +479,68 @@ export async function* iterTextLinks(
             divisionLienSectionTa = parentLienSectionTa
             break
           }
+        }
+      }
+      if (divisionLienSectionTa === undefined) {
+        // Division not found.
+        // If parentLiensSectionTa contains a "Partie législative" sectionTa, use it
+        // as division, because in legislative texts, the "Partie législative" is often
+        // implicit in references.
+        // For example:
+        // "Le livre III du code des impositions sur les biens et services"
+        // instead of:
+        // "Le livre III de la partie législative du code des impositions sur les biens et services"
+        divisionLienSectionTa = parentLiensSectionTa
+          .filter(
+            (parentLienSectionTa) =>
+              parentLienSectionTa["@debut"] <= date &&
+              parentLienSectionTa["@fin"] >= date,
+          )
+          .find((parentLienSectionTa) => {
+            const sectionTaNameSplit = parentLienSectionTa["#text"]
+              ?.split(":")[0]
+              .trim()
+              .toLowerCase()
+              .split(/\s+/)
+              .map((fragment: string) => fragment.trim())
+              .filter((fragment: string) => fragment !== "")
+            return (
+              sectionTaNameSplit !== undefined &&
+              sectionTaNameSplit.length === 2 &&
+              divisionTypes.includes(sectionTaNameSplit[0] as DivisionType) &&
+              sectionTaNameSplit[1] === "législative"
+            )
+          })
+        if (divisionLienSectionTa !== undefined) {
+          // Create an invisible division containing the "Partie législative".
+          const sectionTaNameSplit = divisionLienSectionTa["#text"]!.split(
+            ":",
+          )[0]
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)
+            .map((fragment: string) => fragment.trim())
+            .filter((fragment: string) => fragment !== "")
+          const insertedDivision: TextAstDivision = {
+            num: sectionTaNameSplit[1],
+            position: {
+              // Position start - stop = 0 ⇒ invisible
+              start: division.position.stop,
+              stop: division.position.stop,
+            },
+            type: sectionTaNameSplit[0] as DivisionType,
+          }
+          divisionChildReference = {
+            child: divisionChildReference ?? division,
+            parent: insertedDivision,
+            position: {
+              // Position start - stop = 0 ⇒ invisible
+              start: division.position.stop,
+              stop: division.position.stop,
+            },
+            type: "parent-enfant",
+          }
+          division = insertedDivision
         }
       }
     }

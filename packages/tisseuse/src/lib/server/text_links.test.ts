@@ -36,7 +36,43 @@ describe("iterTextLinks", () => {
         type: "external_division",
       },
     ])
-    expect(context.text(links[0].position)).toBe("TODO")
+    expect(context.text(links[0].position)).toBe(
+      "livre III de la partie législative du code des impositions sur les biens et services",
+    )
+  })
+
+  test("Lien à l'intérieur d'une partie législative implicite d'un code", async () => {
+    const input =
+      "Le livre III du code des impositions sur les biens et services"
+    const context = new TextParserContext(input)
+    const links = await Array.fromAsync(
+      iterTextLinks(context, {
+        date: "2025-07-14",
+      }),
+    )
+    expect(links.length).toBe(1)
+    expect(links).toStrictEqual([
+      {
+        division: {
+          index: 3,
+          num: "III",
+          position: {
+            start: 3,
+            stop: 12,
+          },
+          type: "livre",
+        },
+        position: {
+          start: 3,
+          stop: 62,
+        },
+        sectionTaId: "LEGISCTA000044604035",
+        type: "external_division",
+      },
+    ])
+    expect(context.text(links[0].position)).toBe(
+      "livre III du code des impositions sur les biens et services",
+    )
   })
 
   test("Lien explicite dans du texte", async () => {

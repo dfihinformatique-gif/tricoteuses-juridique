@@ -36,25 +36,72 @@ import { iterReferences } from "$lib/text_parsers/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import type { TextPosition } from "$lib/text_parsers/positions.js"
 
-export interface ArticleLink {
+export type DefinitionOrLink =
+  | ArticleDefinition
+  | ArticleLink
+  // | DivisionDefinition
+  | DivisionLink
+  | TextLink
+
+export interface ArticleDefinition {
+  article: TextAstArticle
+  /**
+   * Same value as article.position, added for homogeneity
+   */
+  position: TextPosition
+  textId: string
+  type: "article_definition"
+}
+
+export interface ArticleExternalLink {
   article: TextAstArticle
   articleId: string
   position: TextPosition
-  type: "article"
+  type: "external_article"
 }
 
-export interface DivisionLink {
-  division: TextAstDivision & TextAstPosition
+export interface ArticleInternalLink {
+  article: TextAstArticle
+  definition: ArticleDefinition
+  position: TextPosition
+  type: "internal_article"
+}
+
+export type ArticleLink = ArticleExternalLink | ArticleInternalLink
+
+// export interface DivisionDefinition {
+//   division: TextAstDivision
+// /**
+//  * Same value as division.position, added for homogeneity
+//  */
+// position: TextPosition
+//   textId: string
+//   type: "division_definition"
+// }
+
+export interface DivisionExternalLink {
+  division: TextAstDivision
   position: TextPosition
   sectionTaId: string
-  type: "division"
+  type: "external_division"
 }
 
-export interface TextLink {
+// export interface DivisionInternalLink {
+//   division: TextAstDivision
+//   definition: DivisionDefinition
+//   position: TextPosition
+//   type: "internal_division"
+// }
+
+export type DivisionLink = DivisionExternalLink // | DivisionInternalLink
+
+export interface TextExternalLink {
   position: TextPosition
   text: TextAstText & TextAstPosition
-  type: "texte"
+  type: "external_text"
 }
+
+export type TextLink = TextExternalLink // No internal link yet
 
 function* iterDeepestDivisionsOrArticles(
   reference: TextAstReference,
@@ -157,9 +204,13 @@ export async function* iterTextLinks(
     logPartialReferences?: boolean
     logReferences?: boolean
   },
-): AsyncGenerator<ArticleLink | DivisionLink | TextLink, void> {
+): AsyncGenerator<DefinitionOrLink, void> {
   assert.notStrictEqual(date, undefined, "Date option is required")
 
+  const articleDefinitionByNumByTextId: Record<
+    string,
+    Record<string, ArticleDefinition>
+  > = {}
   let currentArticleId: string | undefined = undefined
   let currentCodeId: string | undefined = undefined
   let currentConstitutionId: string | undefined = undefined
@@ -184,6 +235,34 @@ export async function* iterTextLinks(
       // Do nothing.
       return
     }
+
+    if (currentTextId !== undefined && article.num !== undefined) {
+      const articleDefinition =
+        articleDefinitionByNumByTextId[currentTextId]?.[article.num]
+      if (articleDefinition !== undefined) {
+        const position =
+          ancestors === undefined
+            ? article.position!
+            : article.position!.start < ancestors[0].position!.start
+              ? {
+                  start: article.position.start,
+                  stop: ancestors[0].position.stop,
+                }
+              : {
+                  start: ancestors[0].position.start,
+                  stop: article.position.stop,
+                }
+
+        yield {
+          article,
+          definition: articleDefinition,
+          position,
+          type: "internal_article",
+        }
+        return
+      }
+    }
+
     let articlesInfos: Array<{
       data: JorfArticle | LegiArticle
       id: string
@@ -312,7 +391,7 @@ export async function* iterTextLinks(
         article,
         articleId: currentArticleId,
         position,
-        type: "article",
+        type: "external_article",
       }
     }
   }
@@ -422,9 +501,9 @@ export async function* iterTextLinks(
         assert.notStrictEqual(atomicReference.type, "parent-enfant")
         assert.notStrictEqual(atomicReference.type, "reference_et_action")
         switch (atomicReference.type) {
+          case "alinéa":
           case "incomplete-header":
           case "item":
-          case "alinéa":
           case "phrase": {
             // Ignore sub-article & incomplete-header references.
             break
@@ -483,13 +562,14 @@ export async function* iterTextLinks(
             break
           }
 
-          default:
+          default: {
             if (logIgnoredReferencesTypes) {
               console.log(
                 `In "${context.input.slice(divisionChildReference.position.start, divisionChildReference.position.stop)}": Reference of type ${atomicReference.type} ignored in division`,
               )
               console.log(JSON.stringify(divisionChildReference, null, 2))
             }
+          }
         }
       }
     }
@@ -513,18 +593,216 @@ export async function* iterTextLinks(
           division,
           position,
           sectionTaId: currentSectionTaId,
-          type: "division",
+          type: "external_division",
         }
       }
     }
   }
 
+  /**
+   * updateCurrentTextId
+   */
+  function updateCurrentTextId(
+    reference: TextAstReference,
+    text: TextAstText,
+  ): void {
+    switch (text.nature) {
+      case "ARRETE":
+      case "CIRCULAIRE":
+      case "CONVENTION":
+      case "DECRET":
+      case "DECRET_LOI":
+      case "DIRECTIVE_EURO":
+      case "REGLEMENTEUROPEEN": {
+        // TODO
+        currentTextId = undefined
+        break
+      }
+
+      case "CODE": {
+        if (text.relative === 0 && currentCodeId !== undefined) {
+          currentTextId = currentCodeId
+          break
+        }
+
+        if (text.cid === undefined) {
+          if (logPartialReferences) {
+            console.log(
+              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+            )
+          }
+          currentTextId = undefined
+          break
+        }
+
+        currentTextId = currentCodeId = text.cid
+        break
+      }
+
+      case "CONSTITUTION": {
+        if (text.relative === 0 && currentCodeId !== undefined) {
+          currentTextId = currentConstitutionId
+          break
+        }
+
+        if (text.cid === undefined) {
+          if (logPartialReferences) {
+            console.log(
+              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+            )
+          }
+          currentTextId = undefined
+          break
+        }
+
+        currentTextId = currentConstitutionId = text.cid
+        break
+      }
+
+      case "LOI":
+      case "LOI_CONSTIT":
+      case "LOI_ORGANIQUE":
+      case "ORDONNANCE": {
+        if (text.relative === 0 && currentCodeId !== undefined) {
+          currentTextId = currentLawId
+          break
+        }
+
+        if (text.cid === undefined) {
+          if (logPartialReferences) {
+            console.log(
+              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+            )
+          }
+          currentTextId = undefined
+          break
+        }
+
+        currentTextId = currentLawId = text.cid
+        break
+      }
+
+      default: {
+        assertNever("nature", text.nature)
+      }
+    }
+  }
+
+  //
+  // FIRST STEP: Store declarations of divisions & articles.
+  //
+  // A two steps process is needed, because in a bill an article definition
+  // may occur after references to it.
+  //
+
+  const references: TextAstReference[] = []
   for (const reference of iterReferences(context)) {
     if (logReferences) {
       console.log(
         `In "${context.input.slice(reference.position.start, reference.position.stop)}": \nReference "${context.text(reference.position)}": ${JSON.stringify(reference, null, 2)}`,
       )
     }
+    references.push(reference)
+    for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
+      reference,
+    )) {
+      const atomicReference =
+        atomicOrParentChildReference.type === "parent-enfant"
+          ? atomicOrParentChildReference.parent
+          : atomicOrParentChildReference
+      assert.notStrictEqual(atomicReference.type, "parent-enfant")
+      assert.notStrictEqual(atomicReference.type, "reference_et_action")
+      switch (atomicReference.type) {
+        case "alinéa":
+        case "incomplete-header":
+        case "item":
+        case "phrase": {
+          // Ignore sub-article & incomplete-header references.
+          break
+        }
+
+        case "article": {
+          if (atomicReference.definition) {
+            if (currentTextId === undefined) {
+              if (logPartialReferences) {
+                console.log(
+                  `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing currentTextId for article definition`,
+                )
+              }
+            } else {
+              ;(articleDefinitionByNumByTextId[currentTextId] ??= {})[
+                atomicReference.num!
+              ] = {
+                article: atomicReference,
+                position: atomicReference.position,
+                textId: currentTextId,
+                type: "article_definition",
+              }
+            }
+          }
+          break
+        }
+
+        case "chapitre":
+        case "livre":
+        case "paragraphe":
+        case "partie":
+        case "sous-paragraphe":
+        case "section":
+        case "sous-section":
+        case "sous-sous-paragraphe":
+        case "sous-titre":
+        case "titre": {
+          if (atomicReference.definition) {
+            if (currentTextId === undefined) {
+              if (logPartialReferences) {
+                console.log(
+                  `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing currentTextId for division definition`,
+                )
+              }
+            } else {
+              // TODO: Needs to use a sequenece of nums instead and each of the num cas have differenet syntaxes!
+              // ;(divisionDefinitionByNumByTextId[currentTextId] ??= {})[
+              //   atomicReference.num!
+              // ] = {
+              //   division: atomicReference,
+              //   textId: currentTextId,
+              //   type: "division_definition",
+              // }
+            }
+          }
+          break
+        }
+
+        case "texte": {
+          updateCurrentTextId(reference, atomicReference)
+          break
+        }
+
+        default: {
+          // assertNever("AtomicReference", atomicReference)
+          if (logIgnoredReferencesTypes) {
+            console.log(
+              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Reference ${JSON.stringify(atomicReference, null, 2)} ignored`,
+            )
+            console.log(JSON.stringify(reference, null, 2))
+          }
+        }
+      }
+    }
+  }
+
+  //
+  // SECOND STEP: Create links.
+  //
+
+  currentArticleId = undefined
+  currentCodeId = undefined
+  currentConstitutionId = undefined
+  currentLawId = undefined
+  currentSectionTaId = undefined
+  currentTextId = undefined
+  for (const reference of references) {
     for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
       reference,
     )) {
@@ -539,16 +817,26 @@ export async function* iterTextLinks(
       assert.notStrictEqual(atomicReference.type, "parent-enfant")
       assert.notStrictEqual(atomicReference.type, "reference_et_action")
       switch (atomicReference.type) {
+        case "alinéa":
         case "incomplete-header":
         case "item":
-        case "alinéa":
         case "phrase": {
           // Ignore sub-article & incomplete-header references.
           break
         }
 
         case "article": {
-          yield* iterArticleLinks(atomicReference)
+          if (atomicReference.definition && currentTextId !== undefined) {
+            const articleDefinition =
+              articleDefinitionByNumByTextId[currentTextId]?.[
+                atomicReference.num!
+              ]
+            if (articleDefinition !== undefined) {
+              yield articleDefinition
+            }
+          } else {
+            yield* iterArticleLinks(atomicReference)
+          }
           break
         }
 
@@ -562,99 +850,23 @@ export async function* iterTextLinks(
         case "sous-sous-paragraphe":
         case "sous-titre":
         case "titre": {
-          yield* iterDivisionLinks(atomicReference, parentChildReference)
+          if (atomicReference.definition && currentTextId !== undefined) {
+            // TODO
+            // const divisionDefinition =
+            //   divisionDefinitionByNumByTextId[currentTextId]?.[
+            //     atomicReference.num!
+            //   ]
+            // if (divisionDefinition !== undefined) {
+            //   yield divisionDefinition
+            // }
+          } else {
+            yield* iterDivisionLinks(atomicReference, parentChildReference)
+          }
           break
         }
 
         case "texte": {
-          switch (atomicReference.nature) {
-            case "ARRETE":
-            case "CIRCULAIRE":
-            case "CONVENTION":
-            case "DECRET":
-            case "DECRET_LOI":
-            case "DIRECTIVE_EURO":
-            case "REGLEMENTEUROPEEN": {
-              // TODO
-              currentTextId = undefined
-              break
-            }
-
-            case "CODE": {
-              if (
-                atomicReference.relative === 0 &&
-                currentCodeId !== undefined
-              ) {
-                currentTextId = currentCodeId
-                break
-              }
-
-              if (atomicReference.cid === undefined) {
-                if (logPartialReferences) {
-                  console.log(
-                    `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
-                  )
-                }
-                currentTextId = undefined
-                break
-              }
-
-              currentTextId = currentCodeId = atomicReference.cid
-              break
-            }
-
-            case "CONSTITUTION": {
-              if (
-                atomicReference.relative === 0 &&
-                currentCodeId !== undefined
-              ) {
-                currentTextId = currentConstitutionId
-                break
-              }
-
-              if (atomicReference.cid === undefined) {
-                if (logPartialReferences) {
-                  console.log(
-                    `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
-                  )
-                }
-                currentTextId = undefined
-                break
-              }
-
-              currentTextId = currentConstitutionId = atomicReference.cid
-              break
-            }
-
-            case "LOI":
-            case "LOI_CONSTIT":
-            case "LOI_ORGANIQUE":
-            case "ORDONNANCE": {
-              if (
-                atomicReference.relative === 0 &&
-                currentCodeId !== undefined
-              ) {
-                currentTextId = currentLawId
-                break
-              }
-
-              if (atomicReference.cid === undefined) {
-                if (logPartialReferences) {
-                  console.log(
-                    `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${atomicReference.nature} reference ${JSON.stringify(atomicReference, null, 2)}`,
-                  )
-                }
-                currentTextId = undefined
-                break
-              }
-
-              currentTextId = currentLawId = atomicReference.cid
-              break
-            }
-
-            default:
-              assertNever("nature", atomicReference.nature)
-          }
+          updateCurrentTextId(reference, atomicReference)
 
           const textDeepestDivisionsOrArticles =
             parentChildReference === undefined
@@ -679,9 +891,9 @@ export async function* iterTextLinks(
                 "reference_et_action",
               )
               switch (atomicReferenceInText.type) {
+                case "alinéa":
                 case "incomplete-header":
                 case "item":
-                case "alinéa":
                 case "phrase": {
                   // Ignore sub-article & incomplete-header references.
                   break
@@ -736,13 +948,14 @@ export async function* iterTextLinks(
                   break
                 }
 
-                default:
+                default: {
                   if (logIgnoredReferencesTypes) {
                     console.log(
                       `In "${context.input.slice(reference.position.start, parentChildReference.position.stop)}": Reference of type ${atomicReferenceInText.type} ignored in text`,
                     )
                     console.log(JSON.stringify(parentChildReference, null, 2))
                   }
+                }
               }
             }
           }
@@ -752,13 +965,13 @@ export async function* iterTextLinks(
             yield {
               position,
               text: atomicReference,
-              type: "texte",
+              type: "external_text",
             }
           }
           break
         }
 
-        default:
+        default: {
           // assertNever("AtomicReference", atomicReference)
           if (logIgnoredReferencesTypes) {
             console.log(
@@ -766,6 +979,7 @@ export async function* iterTextLinks(
             )
             console.log(JSON.stringify(reference, null, 2))
           }
+        }
       }
     }
   }

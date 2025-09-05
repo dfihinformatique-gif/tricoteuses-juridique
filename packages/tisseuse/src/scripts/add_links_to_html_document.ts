@@ -44,7 +44,43 @@ async function addLinksToHtmlDocument(
     logReferences,
   })) {
     switch (link.type) {
-      case "article": {
+      case "article_definition": {
+        const { article, position: articlePosition, textId } = link
+        const result =
+          originalMergedPositionsFromTransformedIterator.next(articlePosition)
+        if (result.done) {
+          console.error(
+            "Transformation of article position to HTML failed:",
+            articlePosition,
+          )
+          process.exit(1)
+        }
+        const articleReverseTransformation = result.value
+        const original =
+          (articleReverseTransformation.innerPrefix ?? "") +
+          output.slice(
+            articleReverseTransformation.position.start + outputOffset,
+            articleReverseTransformation.position.stop + outputOffset,
+          ) +
+          (articleReverseTransformation.innerSuffix ?? "")
+        const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<span class="definition_article" id="definition_article_${textId}_${article.num!}">${original}</span>${articleReverseTransformation.outerSuffix ?? ""}`
+        output =
+          output.slice(
+            0,
+            articleReverseTransformation.position.start + outputOffset,
+          ) +
+          replacement +
+          output.slice(
+            articleReverseTransformation.position.stop + outputOffset,
+          )
+        outputOffset +=
+          replacement.length -
+          (articleReverseTransformation.position.stop -
+            articleReverseTransformation.position.start)
+        break
+      }
+
+      case "external_article": {
         const { articleId, position: articlePosition } = link
         const result =
           originalMergedPositionsFromTransformedIterator.next(articlePosition)
@@ -63,7 +99,7 @@ async function addLinksToHtmlDocument(
             articleReverseTransformation.position.stop + outputOffset,
           ) +
           (articleReverseTransformation.innerSuffix ?? "")
-        const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
+        const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
         output =
           output.slice(
             0,
@@ -80,7 +116,7 @@ async function addLinksToHtmlDocument(
         break
       }
 
-      case "division": {
+      case "external_division": {
         const { position: divisionPosition, sectionTaId } = link
         const result =
           originalMergedPositionsFromTransformedIterator.next(divisionPosition)
@@ -99,7 +135,7 @@ async function addLinksToHtmlDocument(
             divisionReverseTransformation.position.stop + outputOffset,
           ) +
           (divisionReverseTransformation.innerSuffix ?? "")
-        const replacement = `${divisionReverseTransformation.outerPrefix ?? ""}<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseTransformation.outerSuffix ?? ""}`
+        const replacement = `${divisionReverseTransformation.outerPrefix ?? ""}<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseTransformation.outerSuffix ?? ""}`
         output =
           output.slice(
             0,
@@ -116,7 +152,7 @@ async function addLinksToHtmlDocument(
         break
       }
 
-      case "texte": {
+      case "external_text": {
         const { text, position: textPosition } = link
         if (text.cid === undefined) {
           if (text.relative !== 0) {
@@ -145,7 +181,7 @@ async function addLinksToHtmlDocument(
             textReverseTransformation.position.stop + outputOffset,
           ) +
           (textReverseTransformation.innerSuffix ?? "")
-        const replacement = `${textReverseTransformation.outerPrefix ?? ""}<a href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>${textReverseTransformation.outerSuffix ?? ""}`
+        const replacement = `${textReverseTransformation.outerPrefix ?? ""}<a class="lien_texte_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>${textReverseTransformation.outerSuffix ?? ""}`
         output =
           output.slice(
             0,
@@ -157,6 +193,42 @@ async function addLinksToHtmlDocument(
           replacement.length -
           (textReverseTransformation.position.stop -
             textReverseTransformation.position.start)
+        break
+      }
+
+      case "internal_article": {
+        const { definition, position: articlePosition } = link
+        const result =
+          originalMergedPositionsFromTransformedIterator.next(articlePosition)
+        if (result.done) {
+          console.error(
+            "Transformation of article position to HTML failed:",
+            articlePosition,
+          )
+          process.exit(1)
+        }
+        const articleReverseTransformation = result.value
+        const original =
+          (articleReverseTransformation.innerPrefix ?? "") +
+          output.slice(
+            articleReverseTransformation.position.start + outputOffset,
+            articleReverseTransformation.position.stop + outputOffset,
+          ) +
+          (articleReverseTransformation.innerSuffix ?? "")
+        const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!}" style="background-color: #eae462">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
+        output =
+          output.slice(
+            0,
+            articleReverseTransformation.position.start + outputOffset,
+          ) +
+          replacement +
+          output.slice(
+            articleReverseTransformation.position.stop + outputOffset,
+          )
+        outputOffset +=
+          replacement.length -
+          (articleReverseTransformation.position.stop -
+            articleReverseTransformation.position.start)
         break
       }
 

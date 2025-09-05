@@ -32,7 +32,7 @@ describe("iterTextLinks", () => {
         start: 83,
         stop: 85,
       },
-      type: "article",
+      type: "external_article",
     })
     expect(context.text(link3.position)).toBe("27")
   })
@@ -73,7 +73,7 @@ describe("iterTextLinks", () => {
         title: "Code général des impôts",
         type: "texte",
       },
-      type: "texte",
+      type: "external_text",
     })
     expect(context.text(link0.position)).toBe("Le code général des impôts")
     const link1 = links[1]
@@ -101,7 +101,7 @@ describe("iterTextLinks", () => {
         start: 100,
         stop: 113,
       },
-      type: "article",
+      type: "external_article",
     })
   })
 
@@ -133,7 +133,7 @@ describe("iterTextLinks", () => {
         title: "Code général des impôts",
         type: "texte",
       },
-      type: "texte",
+      type: "external_text",
     })
     expect(context.text(link0.position)).toBe("Le code général des impôts")
     const link1 = links[1]
@@ -192,7 +192,7 @@ describe("iterTextLinks", () => {
           title: "Code général des impôts",
           type: "texte",
         },
-        type: "texte",
+        type: "external_text",
       },
       {
         division: {
@@ -209,7 +209,7 @@ describe("iterTextLinks", () => {
           stop: 131,
         },
         sectionTaId: "LEGISCTA000048779194",
-        type: "division",
+        type: "external_division",
       },
     ])
     expect(context.text(links[0].position)).toBe("Le code général des impôts")
@@ -241,7 +241,7 @@ describe("iterTextLinks", () => {
           start: 0,
           stop: 20,
         },
-        type: "article",
+        type: "external_article",
       },
     ])
     expect(context.text(links[0].position)).toBe("l'article 223 VO bis")
@@ -273,7 +273,7 @@ describe("iterTextLinks", () => {
           stop: 94,
         },
         sectionTaId: "LEGISCTA000006147020",
-        type: "division",
+        type: "external_division",
       },
     ])
     expect(context.text(links[0].position)).toBe(
@@ -311,7 +311,7 @@ describe("iterTextLinks", () => {
           title: "Code général des impôts",
           type: "texte",
         },
-        type: "texte",
+        type: "external_text",
       },
       {
         division: {
@@ -328,7 +328,7 @@ describe("iterTextLinks", () => {
           stop: 131,
         },
         sectionTaId: "LEGISCTA000048779194",
-        type: "division",
+        type: "external_division",
       },
       {
         article: {
@@ -354,7 +354,7 @@ describe("iterTextLinks", () => {
           start: 137,
           stop: 155,
         },
-        type: "article",
+        type: "external_article",
       },
       {
         article: {
@@ -380,7 +380,7 @@ describe("iterTextLinks", () => {
           start: 167,
           stop: 196,
         },
-        type: "article",
+        type: "external_article",
       },
       {
         article: {
@@ -406,7 +406,7 @@ describe("iterTextLinks", () => {
           start: 370,
           stop: 388,
         },
-        type: "article",
+        type: "external_article",
       },
     ])
     expect(context.text(links[0].position)).toBe("Le code général des impôts")

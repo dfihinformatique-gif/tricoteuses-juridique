@@ -1,0 +1,345 @@
+import {
+  type CompoundReferencesSeparator,
+  type PortionType,
+  type TextAstAtomicReference,
+  type TextAstLocalization,
+  type TextAstNumber,
+  type TextAstPortion,
+  type TextAstReference,
+} from "./ast.js"
+import {
+  createEnumerationOrBoundedInterval,
+  createParentChildTreeFromReferences,
+} from "./helpers.js"
+import {
+  adjectifNumeralCardinal,
+  adjectifNumeralOrdinalLong,
+  adverbeMultiplicatifLatin,
+  nombreCardinal,
+  nombreRomainCardinal,
+} from "./numbers.js"
+import {
+  alternatives,
+  chain,
+  convert,
+  optional,
+  regExp,
+  repeat,
+} from "./parsers.js"
+import {
+  ditPluriel,
+  ditSingulier,
+  introPluriel,
+  introSingulier,
+  liaisonPluriel,
+  liaisonSingulier,
+} from "./prepositions.js"
+import {
+  adjectifRelatifPluriel,
+  adjectifRelatifSingulier,
+  relatifPlurielPrepose,
+} from "./relative_locations.js"
+import { separateurEnumeration, separateurPlage } from "./separators.js"
+import {
+  espace,
+  espaceOuRien,
+  lettreAsciiMinuscule,
+  nonLettre,
+} from "./typography.js"
+
+export const naturePortionSingulier = alternatives(
+  regExp("alinéa", { flags: "i", value: "alinéa" }),
+  regExp("phrase", { flags: "i", value: "phrase" }),
+)
+
+export const naturePortionPluriel = chain(
+  [naturePortionSingulier, regExp("s", { flags: "i" })],
+  { value: (results) => results[0] },
+)
+
+/**
+ * Numéro de portion d'article, par exemple « III » ou « c » ou « 3° »
+ *
+ * Au sein d'un article, une portion peut contenir des sous-…-portions ou des alinéas
+ * NB: s’il s’avère plus utile lors de la réutilisation de mieux séparer et structurer
+ *  ces différents cas, il faudrait découper cette règle en trois.
+ */
+export const numeroPortion = chain(
+  [
+    alternatives(
+      convert(nombreRomainCardinal, {
+        value: (result, context) => ({
+          position: context.position(),
+          text: context.text(),
+          value: result as number,
+        }),
+      }),
+      convert(lettreAsciiMinuscule, {
+        value: (result, context) => ({
+          position: context.position(),
+          text: result as string,
+          value: (result as string).charCodeAt(0) - "a".charCodeAt(0) + 1,
+        }),
+      }),
+      chain([nombreCardinal, regExp("[°o]?", { flags: "i" })], {
+        value: (results, context) => ({
+          position: context.position(),
+          text: context.text(),
+          value: results[0] as number,
+        }),
+      }),
+    ),
+    optional([espace, adverbeMultiplicatifLatin], { default: null }),
+    nonLettre,
+  ],
+  {
+    value: (results, context) => {
+      const nombre0 = results[0] as TextAstNumber
+      const nombre1 = (results[1] as [string, TextAstNumber] | null)?.[1]
+      return {
+        index:
+          nombre0.value + (nombre1 === undefined ? 0 : nombre1.value / 1000),
+        num: `${nombre0.text}${nombre1 === undefined ? "" : ` ${nombre1.text}`}`,
+        position: context.position(),
+        type: "item",
+      }
+    },
+  },
+)
+
+/**
+ * Portion désignée soit par un adjectif relatif soit par un ordinal écrit en lettres,
+ * par exemple « même alinéa » ou « troisième phrase »
+ */
+export const unePortion = chain(
+  [
+    alternatives(
+      convert(adjectifNumeralOrdinalLong, {
+        value: (result) => ({ index: result }) as TextAstLocalization,
+      }),
+      convert(adjectifRelatifSingulier, {
+        value: (result) => result as TextAstLocalization,
+      }),
+    ),
+    espace,
+    naturePortionSingulier,
+  ],
+  {
+    value: (results, context) => ({
+      ...(results[0] as TextAstPortion),
+      position: context.position(),
+      type: results[2] as PortionType,
+    }),
+  },
+)
+
+export const numeroPortionOuUnePortion = alternatives(unePortion, numeroPortion)
+
+export const plusieursPortions = chain(
+  [
+    adjectifNumeralCardinal,
+    espace,
+    convert(adjectifRelatifPluriel, {
+      value: (result) => result as TextAstLocalization,
+    }),
+    espace,
+    naturePortionPluriel,
+  ],
+  {
+    value: (results, context) => ({
+      count: results[0] as number,
+      first: {
+        ...(results[2] as TextAstPortion),
+        type: results[4] as PortionType,
+      },
+      position: context.position(),
+      type: "counted-interval",
+    }),
+  },
+)
+
+/**
+ * Note: `listeQuelquesPortions`, `listePortion`, `listePortions`
+ * et `listeQuelquesPortions` sont quasiment identiques.
+ * TODO: Les fusionner ?
+ */
+export const listePlusieursPortions = chain(
+  [
+    plusieursPortions,
+    repeat([
+      alternatives(separateurEnumeration, separateurPlage),
+      alternatives(unePortion, plusieursPortions),
+    ]),
+  ],
+  {
+    value: (results, context) =>
+      createEnumerationOrBoundedInterval(
+        results[0] as TextAstReference,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
+        context.position(),
+      ),
+  },
+)
+
+/**
+ * TODO: Plus réfléchir aux différentes formulations possibles.
+ * Attention à ne pas capturer « [elle] les a [reconnus] »,
+ * qui pourrait facilement devenir un faux positif dans la loi 78-17.
+ *
+ * Note: `listeQuelquesPortions`, `listePortion`, `listePortions`
+ * et `listeQuelquesPortions` sont quasiment identiques.
+ * TODO: Les fusionner ?
+ */
+export const listePortion = chain(
+  [
+    alternatives(numeroPortionOuUnePortion, plusieursPortions),
+    repeat([
+      alternatives(separateurEnumeration, separateurPlage),
+      alternatives(numeroPortionOuUnePortion, plusieursPortions),
+    ]),
+  ],
+  {
+    value: (results, context) =>
+      createEnumerationOrBoundedInterval(
+        results[0] as TextAstReference,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
+        context.position(),
+      ),
+  },
+)
+
+/**
+ * Note: `listeQuelquesPortions`, `listePortion`, `listePortions`
+ * et `listeQuelquesPortions` sont quasiment identiques.
+ * TODO: Les fusionner ?
+ */
+export const listeQuelquesPortions = chain(
+  [
+    alternatives(numeroPortionOuUnePortion, plusieursPortions),
+    repeat(
+      [
+        alternatives(separateurEnumeration, separateurPlage),
+        alternatives(numeroPortionOuUnePortion, plusieursPortions),
+      ],
+      { min: 1 },
+    ),
+  ],
+  {
+    value: (results, context) =>
+      createEnumerationOrBoundedInterval(
+        results[0] as TextAstReference,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
+        context.position(),
+      ),
+  },
+)
+
+/**
+ * Note: `listeQuelquesPortions`, `listePortion`, `listePortions`
+ * et `listeQuelquesPortions` sont quasiment identiques.
+ * TODO: Les fusionner ?
+ */
+export const listePortions = alternatives(
+  listePlusieursPortions,
+  listeQuelquesPortions,
+)
+
+export const portionsEntreParentheses = chain(
+  [
+    espace,
+    regExp(String.raw`\(`),
+    espaceOuRien,
+    listePortion,
+    espaceOuRien,
+    regExp(String.raw`\)`),
+  ],
+  { value: (results) => results[3] },
+)
+
+export const localisationPortion = alternatives(
+  chain([liaisonSingulier, listePortion], { value: (results) => results[1] }),
+  chain([liaisonPluriel, listePortions], { value: (results) => results[1] }),
+  portionsEntreParentheses,
+)
+
+export const portion = chain(
+  [
+    optional(ditSingulier, { default: null }),
+    listePortion,
+    repeat(localisationPortion),
+  ],
+  {
+    value: (results, context) =>
+      createParentChildTreeFromReferences(
+        results[1] as TextAstReference,
+        results[2] as TextAstAtomicReference[],
+        context.position(),
+      ),
+  },
+)
+
+export const portions = chain(
+  [
+    optional(ditPluriel, { default: null }),
+    optional(
+      chain([relatifPlurielPrepose, espace], {
+        value: (results) => results[0],
+      }),
+      { default: null },
+    ),
+    listePortions,
+    repeat(localisationPortion),
+  ],
+  {
+    value: (results, context) =>
+      createParentChildTreeFromReferences(
+        results[2] as TextAstReference,
+        results[3] as TextAstAtomicReference[],
+        context.position(),
+      ),
+  },
+)
+
+export const auPortion = chain([introSingulier, portion], {
+  value: (results, context) => ({
+    ...(results[1] as TextAstReference),
+    position: context.position(),
+  }),
+})
+
+export const auxPortions = chain([introPluriel, portions], {
+  value: (results, context) => ({
+    ...(results[1] as TextAstReference),
+    position: context.position(),
+  }),
+})
+
+export const portionPrecisePluriel = chain(
+  [
+    portions,
+    repeat([separateurEnumeration, alternatives(auxPortions, auPortion)]),
+  ],
+  {
+    value: (results, context) =>
+      createEnumerationOrBoundedInterval(
+        results[0] as TextAstReference,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
+        context.position(),
+      ),
+  },
+)
+
+export const portionPreciseSingulier = chain(
+  [
+    portion,
+    repeat([separateurEnumeration, alternatives(auxPortions, auPortion)]),
+  ],
+  {
+    value: (results, context) =>
+      createEnumerationOrBoundedInterval(
+        results[0] as TextAstReference,
+        results[1] as Array<[CompoundReferencesSeparator, TextAstReference]>,
+        context.position(),
+      ),
+  },
+)

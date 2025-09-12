@@ -10,7 +10,7 @@ import type {
   LegiTextelr,
   LegiTextelrLienSectionTa,
 } from "@tricoteuses/legifrance"
-import assert from "assert"
+import assert from "node:assert"
 
 import { assertNever } from "$lib/asserts.js"
 import {

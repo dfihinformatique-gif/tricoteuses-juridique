@@ -1,4 +1,4 @@
-import assert from "assert"
+import assert from "node:assert"
 import postgres from "postgres"
 
 import config from "$lib/server/config.js"

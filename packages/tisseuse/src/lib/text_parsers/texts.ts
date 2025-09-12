@@ -130,6 +130,14 @@ export const decisionConseilConstitutionnel = regExp(
   },
 )
 
+export const optionalEspaceDuTerritoire = optional(
+  alternatives(
+    regExp(" de la République française", { flags: "i" }),
+    regExp(" du pays", { flags: "i" }),
+  ),
+  { default: null },
+)
+
 /**
  * Règle principale pour la reconnaissance d’un texte français
  *
@@ -140,6 +148,7 @@ export const texteFrancais = alternatives(
   chain(
     [
       natureTexteFrancais,
+      optionalEspaceDuTerritoire,
       optional([espace, numeroEtOuDateTexteFrancais], {
         default: null,
         value: (results) => (results as [string, TextAstTextIdentification])[1],
@@ -171,10 +180,10 @@ export const texteFrancais = alternatives(
     {
       value: (results) => {
         const { nature, type } = results[0] as TextAstText
-        const { date, num } = (results[1] ??
-          results[3] ??
+        const { date, num } = (results[2] ??
+          results[4] ??
           {}) as TextAstTextIdentification
-        const { cid } = (results[2] ?? {}) as TextAstTextInfos
+        const { cid } = (results[3] ?? {}) as TextAstTextInfos
         if (cid === undefined && date === undefined && num === undefined) {
           return undefined
         }

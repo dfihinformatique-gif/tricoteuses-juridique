@@ -23,6 +23,15 @@ describe("Textes français", () => {
       expect(context.remaining()).toBe("")
     })
 
+    test("n° 77-561 du 3 juin 1977", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(numeroEtOuDateTexteFrancais(context)).toStrictEqual({
+        date: "1977-06-03",
+        num: "77-561",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
     test("no 2001-692 du 1er août 2001", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(numeroEtOuDateTexteFrancais(context)).toStrictEqual({

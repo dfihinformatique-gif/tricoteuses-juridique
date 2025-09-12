@@ -8,7 +8,7 @@ const __dirname = dirname(__filename)
 
 export default defineConfig({
   build: {
-    target: "es2020", // Target ES2020
+    target: "es2021", // Target ES2020
     outDir: "dist",
     lib: {
       // Could also be a dictionary or array of multiple entry points.

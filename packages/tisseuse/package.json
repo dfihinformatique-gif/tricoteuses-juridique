@@ -1,12 +1,49 @@
 {
   "name": "@tricoteuses/tisseuse",
   "description": "Link (to) French legislative documents",
-  "version": "0.1.0",
+  "version": "0.1.1",
+  "keywords": [
+    "Assemblée nationale",
+    "France",
+    "Légifrance",
+    "law",
+    "open data",
+    "Parliament",
+    "Sénat"
+  ],
+  "author": "Emmanuel Raviart <emmanuel@raviart.com>",
+  "bugs": {
+    "url": "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/issues"
+  },
+  "homepage": "https://tricoteuses.fr/",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique.git"
+  },
+  "type": "module",
   "engines": {
     "node": ">=22.14.0"
   },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "typedoc": "./src/lib/index.ts",
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "vite build",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint .",
+    "prepare": "npm run build",
     "test": "vitest"
   },
   "devDependencies": {

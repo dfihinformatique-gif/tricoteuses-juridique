@@ -1,6 +1,6 @@
 {
   "name": "@tricoteuses/juridique",
-  "description": "Monorepo for projects based on Tricoteuses' Assemblee, Légifrance & Sénat",
+  "description": "Monorepo for projects based on both Tricoteuses' Assemblee, Légifrance & Sénat",
   "version": "0.0.1",
   "private": true,
   "workspaces": [

@@ -1,6 +1,6 @@
 # Tricoteuses Juridique
 
-_Monorepo for projects based on Tricoteuses' Assemblee, Légifrance & Sénat_
+_Monorepo for projects based on both Tricoteuses' Assemblee, Légifrance & Sénat_
 
 ## Getting Started
 

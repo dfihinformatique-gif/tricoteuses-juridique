@@ -32,7 +32,7 @@
     ".": {
       "typedoc": "./src/lib/index.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/lib/index.d.ts"
     },
     "./package.json": "./package.json"
   },

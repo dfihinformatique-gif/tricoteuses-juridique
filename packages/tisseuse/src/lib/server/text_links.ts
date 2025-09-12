@@ -1,26 +1,24 @@
-import assert from "assert"
-
-import { assertNever } from "$lib/asserts.js"
 import type {
   JorfArticle,
   JorfSectionTa,
   JorfSectionTaLienSectionTa,
   JorfTextelr,
   JorfTextelrLienSectionTa,
-} from "$lib/legal/jorf.js"
-import type {
   LegiArticle,
   LegiSectionTa,
   LegiSectionTaLienSectionTa,
   LegiTextelr,
   LegiTextelrLienSectionTa,
-} from "$lib/legal/legi.js"
+} from "@tricoteuses/legifrance"
+import assert from "assert"
+
+import { assertNever } from "$lib/asserts.js"
 import {
   iterCardinalNumeralFormsFromNumber,
   iterLatinMultiplicativeAdverbsFromNumber,
   iterOrdinalNumeralFormsFromNumber,
 } from "$lib/numbers.js"
-import { db } from "$lib/server/databases/index.js"
+import { legiDb } from "$lib/server/databases/index.js"
 import {
   divisionTypes,
   isTextAstDivision,
@@ -271,7 +269,7 @@ export async function* iterTextLinks(
     }> = []
     if (currentTextId !== undefined) {
       articlesInfos = [
-        ...(await db<
+        ...(await legiDb<
           {
             data: JorfArticle | LegiArticle
             id: string
@@ -291,7 +289,7 @@ export async function* iterTextLinks(
       defaultTextId !== currentTextId
     ) {
       articlesInfos = [
-        ...(await db<
+        ...(await legiDb<
           {
             data: JorfArticle | LegiArticle
             id: string
@@ -308,7 +306,7 @@ export async function* iterTextLinks(
     if (articlesInfos.length === 0 && article.num !== undefined) {
       // Look whether there exists only one text with this article number.
       articlesInfos = [
-        ...(await db<
+        ...(await legiDb<
           {
             data: JorfArticle | LegiArticle
             id: string
@@ -432,7 +430,7 @@ export async function* iterTextLinks(
       | undefined = undefined
     if (parentLiensSectionTa === undefined && currentTextId !== undefined) {
       const textelr = (
-        await db<{ data: JorfTextelr | LegiTextelr }[]>`
+        await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
           SELECT data
           FROM textelr
           WHERE id = ${currentTextId}
@@ -602,7 +600,7 @@ export async function* iterTextLinks(
               | undefined = undefined
             if (divisionLienSectionTa !== undefined) {
               divisionSectionTa = (
-                await db<{ data: JorfSectionTa | LegiSectionTa }[]>`
+                await legiDb<{ data: JorfSectionTa | LegiSectionTa }[]>`
                   SELECT data
                   FROM section_ta
                   WHERE id = ${divisionLienSectionTa["@id"]}
@@ -991,7 +989,7 @@ export async function* iterTextLinks(
                     | undefined = undefined
                   if (currentTextId !== undefined) {
                     textelr = (
-                      await db<{ data: JorfTextelr | LegiTextelr }[]>`
+                      await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
                       SELECT data
                       FROM textelr
                       WHERE id = ${currentTextId}

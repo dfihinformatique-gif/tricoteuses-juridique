@@ -57,7 +57,7 @@ function addTextCidToWordsTree(
   }
 }
 
-async function extractTextsNames(): Promise<number> {
+async function extractTextsInfos(): Promise<number> {
   const textCidByOtherTitleWordsTree: TextCidByWordsTree = {}
   const textCidByStandardTitleWordsTree: Record<string, TextCidByWordsTree> = {}
   const textInfosByCid: Record<
@@ -253,11 +253,11 @@ function simplifyTextTitle(title: string): string {
   ])(title).output
 }
 
-sade("extract_texts_titles_infos", true)
+sade("extract_texts_infos", true)
   .describe(
-    "Extract names of codes, laws, etc and convert them to JSON structures used by text parser",
+    "Extract names of codes, laws, etc and convert them to JSON structures use for links, search, etc",
   )
   .action(async () => {
-    process.exit(await extractTextsNames())
+    process.exit(await extractTextsInfos())
   })
   .parse(process.argv)

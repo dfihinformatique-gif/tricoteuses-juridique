@@ -70,7 +70,7 @@ export function chainTransformers(
   }
 }
 
-export function* iterTransformationLeafs(
+function* iterTransformationLeafs(
   transformation: Transformation,
 ): Generator<TransformationLeaf, void> {
   if ((transformation as TransformationNode).transformations === undefined) {
@@ -131,7 +131,7 @@ export function* iterOriginalMergedPositionsFromTransformed(
 /**
  * Caution: This iterator fails when successive original positions overlap.
  */
-export function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
+function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
   transformation: TransformationLeaf,
 ): Generator<
   FragmentReverseTransformation,
@@ -417,7 +417,7 @@ export function originalSplitPositionsFromTransformed(
  * Note: The original positions are split when they overlap.
  * So, there may be more original positions than transformed positions.
  */
-export function originalSplitPositionsFromTransformedUsingSourceMap(
+function originalSplitPositionsFromTransformedUsingSourceMap(
   sourceMap: SourceMapSegment[],
   transformedPositions: TextPosition[],
 ): TextPosition[] {

@@ -16,12 +16,12 @@ export const assembleeDb = postgres({
 })
 export const assembleeVersionNumber = 7
 
-export const db = postgres({
-  database: config.db.database,
-  host: config.db.host,
-  password: config.db.password,
-  port: config.db.port,
-  user: config.db.user,
+export const legiDb = postgres({
+  database: config.legiDb.database,
+  host: config.legiDb.host,
+  password: config.legiDb.password,
+  port: config.legiDb.port,
+  user: config.legiDb.user,
 })
 export const versionNumber = 16
 
@@ -56,13 +56,13 @@ export async function checkAssembleeDb(): Promise<void> {
 export async function checkDb(): Promise<void> {
   assert(
     (
-      await db`SELECT EXISTS (
+      await legiDb`SELECT EXISTS (
         SELECT * FROM information_schema.tables WHERE table_name='version'
       )`
     )[0]?.exists,
     'Database is not initialized. Run "npm run configure" to do it.',
   )
-  const version = (await db<Version[]>`SELECT * FROM version`)[0]
+  const version = (await legiDb<Version[]>`SELECT * FROM version`)[0]
   assert.notStrictEqual(
     version,
     undefined,

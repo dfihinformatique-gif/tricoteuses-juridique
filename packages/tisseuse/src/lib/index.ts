@@ -145,9 +145,11 @@ export {
 } from "./text_parsers/simplifiers.js"
 export {
   identificationTexteEuropeen,
+  natureTexteFrancais,
   numeroEtOuDateTexteFrancais,
   numeroTexteEuropeen,
   numeroTexteFrancais,
+  optionalEspaceDuTerritoire,
   texte,
   texteEuropeen,
   texteFrancais,

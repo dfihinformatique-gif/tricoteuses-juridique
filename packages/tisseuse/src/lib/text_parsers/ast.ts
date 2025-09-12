@@ -110,6 +110,15 @@ export type TextAstExclusion = {
   type: "exclusion"
 } & TextAstPosition
 
+export interface TextAstTextIdentification {
+  date?: string
+  /**
+   * For the texts found in the Légifrance datasets, this is
+   * Légifrance NUM of the text (for example the number of the law).
+   */
+  num?: string
+}
+
 export type TextAstIncompleteHeader = {
   localizationAdverb?: LocalizationAdverb
   ofTheSaid?: boolean
@@ -175,15 +184,6 @@ export type TextAstText = {
   title?: string
   type: "texte"
 } & TextAstLocalization
-
-export interface TextAstTextIdentification {
-  date?: string
-  /**
-   * For the texts found in the Légifrance datasets, this is
-   * Légifrance NUM of the text (for example the number of the law).
-   */
-  num?: string
-}
 
 export interface TextAstTextInfos {
   cid: string | string[]

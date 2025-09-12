@@ -2,6 +2,10 @@
 
 _Monorepo for projects based on both Tricoteuses' Assemblee, Légifrance & Sénat_
 
+Contained projects:
+
+* [Tricoteuses Tisseuse](packages/tisseuse): Add links to French legislative documents
+
 ## Getting Started
 
 ### Installation

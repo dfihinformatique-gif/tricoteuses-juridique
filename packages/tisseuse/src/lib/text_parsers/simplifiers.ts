@@ -522,6 +522,9 @@ export function replacePatterns(input: string): TransformationNode {
     [/<style.*?>.*?<\/style>/gis, ""],
     // Ensure that there is always a space after "n°".
     [/(\sn°)([^\s])/gi, "$1 $2"],
+    // \u200E: left-to-right mark
+    // \u200E: right-to-left mark
+    [/[\u200E\u200F]/g, ""],
     // Remove Sénat "pastillage":
     // - \uF04B-\uF054 are circled numbers 0-9.
     // - \uF031-\uF039 are left-half circled numbers 1-9.
@@ -615,8 +618,8 @@ export function simplifyUnicodeCharacters(input: string): TransformationLeaf {
   for (const [pattern, replacement] of [
     // Replace U+00A0 (no-break space) and tab with a normal space.
     [/[ \t]/g, " "],
-    // Replace three non-ASCII dashes (U+2010, U+2011 et U+2013) with a minus sign.
-    [/[‐‑–]/g, "-"],
+    // Replace three non-ASCII dashes (U+2010, U+2011, U+2013 et U+00B7) with a minus sign.
+    [/[‐‑–·]/g, "-"],
     // Replace non-ASCII apostrophe.
     [/’/g, "'"],
     // Replace İ (I with a point) with normal I.
@@ -625,7 +628,7 @@ export function simplifyUnicodeCharacters(input: string): TransformationLeaf {
     // But Légifrance uses a classic I…
     ["İ", "I"],
   ] as Array<[RegExp | string, string]>) {
-    text = text.replaceAll(pattern, (slice, ...rest) => {
+    text = text.replaceAll(pattern, (_slice, ...rest) => {
       const inputIndex: number = rest.at(-2)
       const sourceMapSegment: SourceMapSegment = {
         inputIndex,

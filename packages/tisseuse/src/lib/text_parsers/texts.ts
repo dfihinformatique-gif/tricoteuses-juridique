@@ -63,14 +63,14 @@ const textsCidsByNatureAndNum =
  */
 export const natureTexteFrancais = convert(
   alternatives(
-    regExp("arrêté", { flags: "i", value: "ARRETE" }),
-    regExp("circulaire", { flags: "i", value: "CIRCULAIRE" }),
+    regExp("arrêtés?", { flags: "i", value: "ARRETE" }),
+    regExp("circulaires?", { flags: "i", value: "CIRCULAIRE" }),
     // JORFTEXT000000702211 Code professionnel local du 26 juillet 1900 pour l'Alsace et la Moselle
     regExp("code professionnel local", { flags: "i", value: "LOI" }),
     regExp("code", { flags: "i", value: "CODE" }),
     regExp("Constitution", { value: "CONSTITUTION" }),
     regExp("décret-loi", { flags: "i", value: "DECRET_LOI" }),
-    regExp("décret", { flags: "i", value: "DECRET" }),
+    regExp("décrets?", { flags: "i", value: "DECRET" }),
     regExp("loi constitutionnelle", {
       flags: "i",
       value: "LOI_CONSTIT",

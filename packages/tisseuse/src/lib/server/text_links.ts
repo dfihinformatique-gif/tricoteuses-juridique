@@ -25,14 +25,17 @@ import {
   isTextAstPortion,
   type DivisionType,
   type TextAstArticle,
+  type TextAstAtomicReference,
   type TextAstDivision,
   type TextAstParentChild,
   type TextAstPosition,
   type TextAstReference,
   type TextAstText,
 } from "$lib/text_parsers/ast.js"
-import { iterAtomicOrParentChildReferences } from "$lib/text_parsers/helpers.js"
-import { iterReferences } from "$lib/text_parsers/index.js"
+import {
+  iterCitationReferences,
+  iterReferences,
+} from "$lib/text_parsers/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import type { TextPosition } from "$lib/text_parsers/positions.js"
 
@@ -103,7 +106,53 @@ export interface TextExternalLink {
 
 export type TextLink = TextExternalLink // No internal link yet
 
+function* iterAtomicOrParentChildReferences(
+  context: TextParserContext,
+  reference: TextAstReference,
+): Generator<TextAstAtomicReference | TextAstParentChild, void> {
+  switch (reference.type) {
+    case "bounded-interval": {
+      yield* iterAtomicOrParentChildReferences(context, reference.first)
+      yield* iterAtomicOrParentChildReferences(context, reference.last)
+      break
+    }
+
+    case "counted-interval": {
+      yield* iterAtomicOrParentChildReferences(context, reference.first)
+      break
+    }
+
+    case "enumeration":
+    case "exclusion": {
+      yield* iterAtomicOrParentChildReferences(context, reference.left)
+      yield* iterAtomicOrParentChildReferences(context, reference.right)
+      break
+    }
+
+    case "reference_et_action": {
+      yield* iterAtomicOrParentChildReferences(context, reference.reference)
+      const { originalCitations } = reference.action
+      if (originalCitations !== undefined) {
+        for (const citation of originalCitations) {
+          for (const citationReference of iterCitationReferences(
+            context,
+            citation,
+          )) {
+            yield* iterAtomicOrParentChildReferences(context, citationReference)
+          }
+        }
+      }
+      break
+    }
+
+    default: {
+      yield reference
+    }
+  }
+}
+
 function* iterDeepestDivisionsOrArticles(
+  context: TextParserContext,
   reference: TextAstReference,
 ): Generator<TextAstArticle | TextAstDivision> {
   if (reference.type === "texte") {
@@ -121,29 +170,29 @@ function* iterDeepestDivisionsOrArticles(
     switch (reference.type) {
       case "bounded-interval": {
         // Caution: This is a approximation.
-        yield* iterDeepestDivisionsOrArticles(reference.first)
-        yield* iterDeepestDivisionsOrArticles(reference.last)
+        yield* iterDeepestDivisionsOrArticles(context, reference.first)
+        yield* iterDeepestDivisionsOrArticles(context, reference.last)
         break
       }
 
       case "counted-interval": {
-        yield* iterDeepestDivisionsOrArticles(reference.first)
+        yield* iterDeepestDivisionsOrArticles(context, reference.first)
         break
       }
 
       case "enumeration":
       case "exclusion": {
-        yield* iterDeepestDivisionsOrArticles(reference.left)
-        yield* iterDeepestDivisionsOrArticles(reference.right)
+        yield* iterDeepestDivisionsOrArticles(context, reference.left)
+        yield* iterDeepestDivisionsOrArticles(context, reference.right)
         break
       }
 
       case "parent-enfant": {
         const childDeepestDivisionsOrArticles = [
-          ...iterDeepestDivisionsOrArticles(reference.child),
+          ...iterDeepestDivisionsOrArticles(context, reference.child),
         ]
         if (childDeepestDivisionsOrArticles.length === 0) {
-          yield* iterDeepestDivisionsOrArticles(reference.parent)
+          yield* iterDeepestDivisionsOrArticles(context, reference.parent)
         } else {
           yield* childDeepestDivisionsOrArticles
         }
@@ -151,7 +200,18 @@ function* iterDeepestDivisionsOrArticles(
       }
 
       case "reference_et_action": {
-        yield* iterDeepestDivisionsOrArticles(reference.reference)
+        yield* iterDeepestDivisionsOrArticles(context, reference.reference)
+        const { originalCitations } = reference.action
+        if (originalCitations !== undefined) {
+          for (const citation of originalCitations) {
+            for (const citationReference of iterCitationReferences(
+              context,
+              citation,
+            )) {
+              yield* iterDeepestDivisionsOrArticles(context, citationReference)
+            }
+          }
+        }
         break
       }
 
@@ -546,10 +606,16 @@ export async function* iterTextLinks(
     const divisionDeepestDivisionsOrArticles =
       divisionChildReference === undefined
         ? []
-        : [...iterDeepestDivisionsOrArticles(divisionChildReference.child)]
+        : [
+            ...iterDeepestDivisionsOrArticles(
+              context,
+              divisionChildReference.child,
+            ),
+          ]
     let addedLinksCount = 0
     if (divisionChildReference !== undefined) {
       for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
+        context,
         divisionChildReference.child,
       )) {
         const atomicReference =
@@ -766,6 +832,7 @@ export async function* iterTextLinks(
     }
     references.push(reference)
     for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
+      context,
       reference,
     )) {
       const atomicReference =
@@ -866,6 +933,7 @@ export async function* iterTextLinks(
   currentTextId = undefined
   for (const reference of references) {
     for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
+      context,
       reference,
     )) {
       const atomicReference =
@@ -933,10 +1001,16 @@ export async function* iterTextLinks(
           const textDeepestDivisionsOrArticles =
             parentChildReference === undefined
               ? []
-              : [...iterDeepestDivisionsOrArticles(parentChildReference.child)]
+              : [
+                  ...iterDeepestDivisionsOrArticles(
+                    context,
+                    parentChildReference.child,
+                  ),
+                ]
           let addedLinksCount = 0
           if (parentChildReference !== undefined) {
             for (const atomicOrParentChildReferenceInText of iterAtomicOrParentChildReferences(
+              context,
               parentChildReference.child,
             )) {
               const atomicReferenceInText =

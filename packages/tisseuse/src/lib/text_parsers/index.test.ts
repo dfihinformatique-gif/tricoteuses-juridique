@@ -361,6 +361,23 @@ describe("getReferences", () => {
         action: {
           action: "MODIFICATION",
           actionInContent: true,
+          originalCitations: [
+            {
+              content: [
+                {
+                  position: {
+                    start: 130,
+                    stop: 137,
+                  },
+                },
+              ],
+              position: {
+                start: 128,
+                stop: 139,
+              },
+              type: "citation",
+            },
+          ],
         },
         position: {
           start: 57,

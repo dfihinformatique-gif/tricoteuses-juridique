@@ -50,10 +50,10 @@ async function addLinksToHtmlDocument(
   if (outputDocumentPath !== undefined) {
     const inputText = transformation.output
     const context = new TextParserContext(inputText)
-    const originalMergedPositionsFromTransformedIterator =
+    const originalPositionsFromTransformedIterator =
       iterOriginalMergedPositionsFromTransformed(transformation)
     // Initialize iterator by sending a dummy value and ignoring the result.
-    originalMergedPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
+    originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
     let output = inputHtml
     let outputOffset = 0
 
@@ -68,7 +68,7 @@ async function addLinksToHtmlDocument(
         case "article_definition": {
           const { article, position: articlePosition, textId } = link
           const result =
-            originalMergedPositionsFromTransformedIterator.next(articlePosition)
+            originalPositionsFromTransformedIterator.next(articlePosition)
           if (result.done) {
             console.error(
               "Transformation of article position to HTML failed:",
@@ -104,7 +104,7 @@ async function addLinksToHtmlDocument(
         case "external_article": {
           const { articleId, position: articlePosition } = link
           const result =
-            originalMergedPositionsFromTransformedIterator.next(articlePosition)
+            originalPositionsFromTransformedIterator.next(articlePosition)
           if (result.done) {
             console.error(
               "Transformation of article position to HTML failed:",
@@ -140,9 +140,7 @@ async function addLinksToHtmlDocument(
         case "external_division": {
           const { position: divisionPosition, sectionTaId } = link
           const result =
-            originalMergedPositionsFromTransformedIterator.next(
-              divisionPosition,
-            )
+            originalPositionsFromTransformedIterator.next(divisionPosition)
           if (result.done) {
             console.error(
               "Transformation of division position to HTML failed:",
@@ -188,7 +186,7 @@ async function addLinksToHtmlDocument(
           }
 
           const result =
-            originalMergedPositionsFromTransformedIterator.next(textPosition)
+            originalPositionsFromTransformedIterator.next(textPosition)
           if (result.done) {
             console.error(
               "Transformation of text position to HTML failed:",
@@ -222,7 +220,7 @@ async function addLinksToHtmlDocument(
         case "internal_article": {
           const { definition, position: articlePosition } = link
           const result =
-            originalMergedPositionsFromTransformedIterator.next(articlePosition)
+            originalPositionsFromTransformedIterator.next(articlePosition)
           if (result.done) {
             console.error(
               "Transformation of article position to HTML failed:",

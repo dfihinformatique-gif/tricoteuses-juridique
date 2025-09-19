@@ -13,6 +13,40 @@ import { TextParserContext } from "./parsers.js"
 import { reference } from "./references.js"
 import { originalMergedPositionsFromTransformed } from "./transformers.js"
 
+export function* iterCitationReferences(
+  context: TextParserContext,
+  citation: TextAstCitation,
+): Generator<TextAstReference, void> {
+  const citationTransformation = convertCitationToText(context, citation)
+  const citationContext = new TextParserContext(citationTransformation.output)
+  for (let reference of iterReferences(citationContext)) {
+    // Convert position of reference in citation to an absolute position.
+    reference = structuredClone(reference)
+    for (const includedReference of iterIncludedReferences(reference)) {
+      const positionInCitation = (includedReference as TextAstPosition).position
+      if (positionInCitation === undefined) {
+        continue
+      }
+      // Note: Iterator iterOriginalMergedPositionsFromTransformed can't be used,
+      // because positions of included references are not sequential, they are embedded
+      // in their parent.
+      const reverseTransformations = originalMergedPositionsFromTransformed(
+        citationTransformation,
+        [positionInCitation],
+      )
+      if (reverseTransformations.length !== 1) {
+        throw new Error(
+          `Reverse transformation of position in citation to absolute position failed: ${positionInCitation} has been tranformed to ${reverseTransformations}`,
+        )
+      }
+      ;(includedReference as TextAstPosition).position =
+        reverseTransformations[0].position
+    }
+
+    yield reference
+  }
+}
+
 export function* iterReferences(
   context: TextParserContext,
 ): Generator<TextAstReference, void> {
@@ -59,37 +93,7 @@ export function* iterReferences(
       if (citationAst === undefined) {
         continue
       }
-      const citationTransformation = convertCitationToText(context, citationAst)
-      const citationContext = new TextParserContext(
-        citationTransformation.output,
-      )
-      for (let reference of iterReferences(citationContext)) {
-        // Convert position of reference in citation to an absolute position.
-        reference = structuredClone(reference)
-        for (const includedReference of iterIncludedReferences(reference)) {
-          const positionInCitation = (includedReference as TextAstPosition)
-            .position
-          if (positionInCitation === undefined) {
-            continue
-          }
-          // Note: Iterator iterOriginalMergedPositionsFromTransformed can't be used,
-          // because positions of included references are not sequential, they are embedded
-          // in their parent.
-          const reverseTransformations = originalMergedPositionsFromTransformed(
-            citationTransformation,
-            [positionInCitation],
-          )
-          if (reverseTransformations.length !== 1) {
-            throw new Error(
-              `Reverse transformation of position in citation to absolute position failed: ${positionInCitation} has been tranformed to ${reverseTransformations}`,
-            )
-          }
-          ;(includedReference as TextAstPosition).position =
-            reverseTransformations[0].position
-        }
-
-        yield reference
-      }
+      yield* iterCitationReferences(context, citationAst)
       candidateRegExp.lastIndex = citationAst.position.stop
     } else if (candidate[0].toLowerCase() === "art.") {
       const definitionArticleAst = definitionArticle(context) as

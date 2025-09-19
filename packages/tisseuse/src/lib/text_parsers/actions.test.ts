@@ -86,6 +86,23 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "MODIFICATION",
         actionInContent: true,
+        originalCitations: [
+          {
+            content: [
+              {
+                position: {
+                  start: 14,
+                  stop: 33,
+                },
+              },
+            ],
+            position: {
+              start: 12,
+              stop: 35,
+            },
+            type: "citation",
+          },
+        ],
       })
       expect(context.remaining()).toBe("")
     })
@@ -97,6 +114,38 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "MODIFICATION",
         actionInContent: true,
+        originalCitations: [
+          {
+            content: [
+              {
+                position: {
+                  start: 18,
+                  stop: 30,
+                },
+              },
+            ],
+            position: {
+              start: 16,
+              stop: 32,
+            },
+            type: "citation",
+          },
+          {
+            content: [
+              {
+                position: {
+                  start: 38,
+                  stop: 48,
+                },
+              },
+            ],
+            position: {
+              start: 36,
+              stop: 50,
+            },
+            type: "citation",
+          },
+        ],
       })
       expect(context.remaining()).toBe("")
     })
@@ -118,6 +167,23 @@ describe("actions", () => {
       expect(action(context)).toStrictEqual({
         action: "SUPPRESSION",
         actionInContent: true,
+        originalCitations: [
+          {
+            content: [
+              {
+                position: {
+                  start: 15,
+                  stop: 38,
+                },
+              },
+            ],
+            position: {
+              start: 13,
+              stop: 40,
+            },
+            type: "citation",
+          },
+        ],
       })
       expect(context.remaining()).toBe("")
     })

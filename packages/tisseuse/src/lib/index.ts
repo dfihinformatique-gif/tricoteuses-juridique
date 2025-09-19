@@ -82,7 +82,6 @@ export {
   createEnumerationOrBoundedInterval,
   createParentChildTreeFromReferences,
   iterAtomicFirstParentReferences,
-  iterAtomicOrParentChildReferences,
   iterAtomicReferences,
   iterIncludedReferences,
 } from "./text_parsers/helpers.js"

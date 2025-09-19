@@ -388,39 +388,6 @@ export function* iterAtomicFirstParentReferences<
   }
 }
 
-export function* iterAtomicOrParentChildReferences(
-  reference: TextAstReference,
-): Generator<TextAstAtomicReference | TextAstParentChild, void> {
-  switch (reference.type) {
-    case "bounded-interval": {
-      yield* iterAtomicOrParentChildReferences(reference.first)
-      yield* iterAtomicOrParentChildReferences(reference.last)
-      break
-    }
-
-    case "counted-interval": {
-      yield* iterAtomicOrParentChildReferences(reference.first)
-      break
-    }
-
-    case "enumeration":
-    case "exclusion": {
-      yield* iterAtomicOrParentChildReferences(reference.left)
-      yield* iterAtomicOrParentChildReferences(reference.right)
-      break
-    }
-
-    case "reference_et_action": {
-      yield* iterAtomicOrParentChildReferences(reference.reference)
-      break
-    }
-
-    default: {
-      yield reference
-    }
-  }
-}
-
 export function* iterAtomicReferences(
   reference: TextAstReference,
 ): Generator<TextAstAtomicReference, void> {

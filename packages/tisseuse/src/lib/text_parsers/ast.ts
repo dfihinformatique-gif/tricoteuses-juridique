@@ -44,6 +44,7 @@ export interface TextAstAction {
     | "MODIFICATION"
     | "SUPPRESSION"
   actionInContent?: boolean
+  originalCitations?: TextAstCitation[]
 }
 
 export type TextAstArticle = {

@@ -14,7 +14,6 @@ jobs:
         run: npm install
       - name: Configure tisseuse
         run: |
-          cd packages/tisseuse
           cat > .env << EOF
           # PostgreSQL database configuration
           ASSEMBLEE_DB_NAME="assemblee"
@@ -30,9 +29,9 @@ jobs:
           LEGI_DB_USER="legi"
           LEGI_DB_PASSWORD="${{ secrets.LEGI_DB_PASSWORD }}"
           EOF
+        working-directory: packages/tisseuse/
       - name: Extract titles from texts
-        run: |
-          npx tsx src/scripts/extract_texts_titles_infos.ts
-      - name: Launch tisseuse tests
-        run: |
-          npm test
+        run: npx tsx src/scripts/extract_texts_titles_infos.ts
+        working-directory: packages/tisseuse/
+      - name: Launch every tricoteuses-juridique tests (tisseuse…)
+        run: npm test

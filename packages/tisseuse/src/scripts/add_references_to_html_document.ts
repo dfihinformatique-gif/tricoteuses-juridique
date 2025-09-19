@@ -71,7 +71,7 @@ async function addReferencesToHtmlDocument(
           articleReverseTransformation.position.stop + outputOffset,
         ) +
         (articleReverseTransformation.innerSuffix ?? "")
-      const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<span style="background-color: #eae462" title=${escapeHtml(JSON.stringify(reference))}>${original}</span>${articleReverseTransformation.outerSuffix ?? ""}`
+      const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<span style="background-color: #eae462" title="${escapeHtml(JSON.stringify(reference), true)}">${original}</span>${articleReverseTransformation.outerSuffix ?? ""}`
       output =
         output.slice(
           0,

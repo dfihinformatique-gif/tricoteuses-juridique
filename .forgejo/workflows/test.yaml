@@ -1,0 +1,34 @@
+on:
+  push:
+
+enable-email-notifications: true
+
+jobs:
+  test:
+    runs-on: juridique
+    steps:
+      - name: Checkout tricoteuses-juridique
+        uses: https://code.forgejo.org/actions/checkout@v4
+      - name: Install tricoteuses-juridique
+        run: npm install
+      - name: Configure tisseuse
+        run: |
+          cd packages/tisseuse
+          cat > .env << EOF
+          # PostgreSQL database configuration
+          ASSEMBLEE_DB_NAME="assemblee"
+          ASSEMBLEE_DB_HOST="${{ vars.ASSEMBLEE_DB_HOST }}"
+          ASSEMBLEE_DB_PORT=${{ vars.ASSEMBLEE_DB_PORT }}
+          ASSEMBLEE_DB_USER="assemblee"
+          ASSEMBLEE_DB_PASSWORD="${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
+
+          # PostgreSQL database configuration
+          LEGI_DB_NAME="legi"
+          LEGI_DB_HOST="${{ vars.LEGI_DB_HOST }}"
+          LEGI_DB_PORT=${{ vars.LEGI_DB_PORT }}
+          LEGI_DB_USER="legi"
+          LEGI_DB_PASSWORD="${{ secrets.LEGI_DB_PASSWORD }}"
+          EOF
+      - name: Launch tisseuse tests
+        run: |
+          npm test

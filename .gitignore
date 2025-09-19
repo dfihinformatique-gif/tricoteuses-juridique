@@ -4,3 +4,6 @@ node_modules/
 # Env
 /packages/*/*.env
 !/packages/*/example.env
+
+# Ensure that text_titles_infos.json remains empty:
+packages/tisseuse/src/lib/text_parsers/text_titles_infos.json

@@ -30,6 +30,9 @@ jobs:
           LEGI_DB_USER="legi"
           LEGI_DB_PASSWORD="${{ secrets.LEGI_DB_PASSWORD }}"
           EOF
+      - name: Extract titles from texts
+        run: |
+          npx tsx src/scripts/extract_texts_titles_infos.ts
       - name: Launch tisseuse tests
         run: |
           npm test

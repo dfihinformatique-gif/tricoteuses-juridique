@@ -112,6 +112,7 @@ export type TextAstExclusion = {
 
 export interface TextAstTextIdentification {
   date?: string
+  dateCalendrierRepublicain?: string
   /**
    * For the texts found in the Légifrance datasets, this is
    * Légifrance NUM of the text (for example the number of the law).
@@ -182,6 +183,7 @@ export type TextAstText = {
    * input.
    */
   title?: string
+  titleWithoutDateNatureAndNum?: string
   type: "texte"
 } & TextAstLocalization
 

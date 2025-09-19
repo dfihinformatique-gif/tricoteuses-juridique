@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest"
 
-import { date, duDate } from "./dates.js"
+import { date, dateCalendrierRepublicain, duDate } from "./dates.js"
 import { TextParserContext } from "./parsers.js"
 
 const months: Record<string, string> = {
@@ -48,6 +48,50 @@ describe("date", () => {
       expect(context.remaining()).toBe("")
     })
   }
+
+  test("16-03-1803", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(date(context)).toBe("1803-03-16")
+    expect(context.remaining()).toBe("")
+  })
+})
+
+describe("dateCalendrierRepublicain", () => {
+  test("18 germinal an X", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(dateCalendrierRepublicain(context)).toBe(task.name)
+    expect(context.remaining()).toBe("")
+  })
+
+  test("21 ventôse an VII", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(dateCalendrierRepublicain(context)).toBe(task.name)
+    expect(context.remaining()).toBe("")
+  })
+
+  test("25 brumaire an VIII", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(dateCalendrierRepublicain(context)).toBe(task.name)
+    expect(context.remaining()).toBe("")
+  })
+
+  test("25 ventôse an XI", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(dateCalendrierRepublicain(context)).toBe(task.name)
+    expect(context.remaining()).toBe("")
+  })
+
+  test("28 pluviôse an VIII", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(dateCalendrierRepublicain(context)).toBe(task.name)
+    expect(context.remaining()).toBe("")
+  })
+
+  test("29 floréal an 10", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(dateCalendrierRepublicain(context)).toBe("29 floréal an X")
+    expect(context.remaining()).toBe("")
+  })
 })
 
 describe("duDate", () => {
@@ -55,8 +99,34 @@ describe("duDate", () => {
     const duFrenchDate = "du " + frenchDate
     test(duFrenchDate, ({ task }) => {
       const context = new TextParserContext(task.name)
-      expect(duDate(context)).toBe(isoDate)
+      expect(duDate(context)).toStrictEqual({ date: isoDate })
       expect(context.remaining()).toBe("")
     })
   }
+
+  test("du 18 germinal an X", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(duDate(context)).toStrictEqual({
+      dateCalendrierRepublicain: "18 germinal an X",
+    })
+    expect(context.remaining()).toBe("")
+  })
+
+  test("du 18 germinal an X (8 avril 1802)", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(duDate(context)).toStrictEqual({
+      date: "1802-04-08",
+      dateCalendrierRepublicain: "18 germinal an X",
+    })
+    expect(context.remaining()).toBe("")
+  })
+
+  test("du 25 ventôse an XI (16-03-1803)", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(duDate(context)).toStrictEqual({
+      date: "1803-03-16",
+      dateCalendrierRepublicain: "25 ventôse an XI",
+    })
+    expect(context.remaining()).toBe("")
+  })
 })

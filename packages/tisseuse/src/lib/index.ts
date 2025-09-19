@@ -1,4 +1,5 @@
 export { formatLongDate } from "./dates.js"
+export { jsonReplacer } from "./json.js"
 export {
   iterCardinalNumeralFormsFromNumber,
   iterLatinMultiplicativeAdverbsFromNumber,
@@ -144,6 +145,7 @@ export {
   simplifyUnicodeCharacters,
 } from "./text_parsers/simplifiers.js"
 export {
+  definitionTexteFrancais,
   identificationTexteEuropeen,
   natureTexteFrancais,
   numeroEtOuDateTexteFrancais,

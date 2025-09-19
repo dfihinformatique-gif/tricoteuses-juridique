@@ -37,9 +37,12 @@ const textInfosByCid =
 const textCidByOtherTitleWordsTree =
   (textTitlesInfos as { textCidByOtherTitleWordsTree?: TextAstTextInfos })
     .textCidByOtherTitleWordsTree ?? {}
-const textCidByStandardTitleWordsTree =
-  (textTitlesInfos as { textCidByStandardTitleWordsTree?: TextAstTextInfos })
-    .textCidByStandardTitleWordsTree ?? {}
+const textCidByTitleWithoutDateNatureAndNumWordsTree =
+  (
+    textTitlesInfos as {
+      textCidByTitleWithoutDateNatureAndNumWordsTree?: TextAstTextInfos
+    }
+  ).textCidByTitleWithoutDateNatureAndNumWordsTree ?? {}
 const textsCidsByNatureAndDate =
   (
     textTitlesInfos as {
@@ -71,6 +74,7 @@ export const natureTexteFrancais = convert(
     regExp("Constitution", { value: "CONSTITUTION" }),
     regExp("décret-loi", { flags: "i", value: "DECRET_LOI" }),
     regExp("décrets?", { flags: "i", value: "DECRET" }),
+    regExp("livre(?= des procédures fiscales)", { flags: "i", value: "CODE" }),
     regExp("loi constitutionnelle", {
       flags: "i",
       value: "LOI_CONSTIT",
@@ -100,21 +104,22 @@ export const natureTexteFrancais = convert(
  * Symbole « n° » + identifiant d’un texte français, par exemple « n° 2001-692 »
  */
 export const numeroTexteFrancais = chain(
-  [numero, regExp(String.raw`\d+(-\d+)?`)],
+  [optional(numero, { default: null }), regExp(String.raw`\d+(-\d+)?`)],
   {
     value: (results) => results[1],
   },
 )
 
 export const numeroEtOuDateTexteFrancais = alternatives(
-  chain([numeroTexteFrancais, optional(espaceDuDate, { default: "" })], {
+  duDate,
+  chain([numeroTexteFrancais, optional(espaceDuDate, { default: null })], {
     value: (results) =>
-      results[1]
-        ? { date: results[1] as string, num: results[0] as string }
-        : { num: results[0] as string },
-  }),
-  convert(duDate, {
-    value: (result) => ({ date: result as string }),
+      results[1] === null
+        ? { num: results[0] as string }
+        : {
+            ...(results[1] as TextAstTextIdentification),
+            num: results[0] as string,
+          },
   }),
 )
 
@@ -139,6 +144,87 @@ export const optionalEspaceDuTerritoire = optional(
 )
 
 /**
+ * Déclaration d’un (nom de) texte français
+ *
+ * Note: Ce parser suppose  que l'input finit avec le nom du texte
+ *  et qu'elle ne contient rien d'autre après..
+ * Note: Ce parser n'utilise pas wordsTree car il sert à le générer.
+ */
+export const definitionTexteFrancais = alternatives(
+  chain(
+    [
+      natureTexteFrancais,
+      optionalEspaceDuTerritoire,
+      espace,
+      numeroEtOuDateTexteFrancais,
+      regExp(".*"),
+    ],
+    {
+      value: (results) => {
+        const text = {
+          ...(results[0] as TextAstText),
+          ...(results[3] as TextAstTextIdentification),
+        } as TextAstText
+        const titleWithoutDateNatureAndNum =
+          (results[4] as string).trim() || undefined
+        if (titleWithoutDateNatureAndNum !== undefined) {
+          text.titleWithoutDateNatureAndNum = titleWithoutDateNatureAndNum
+        }
+        return text
+      },
+    },
+  ),
+  chain(
+    [
+      natureTexteFrancais,
+      regExp("[^()]+"),
+      regExp(String.raw`\( ?`),
+      numeroEtOuDateTexteFrancais,
+      regExp(String.raw` ?\)`),
+    ],
+    {
+      value: (results) => {
+        const text = {
+          ...(results[0] as TextAstText),
+          ...(results[3] as TextAstTextIdentification),
+        } as TextAstText
+        const titleWithoutDateNatureAndNum =
+          (results[1] as string).trim() || undefined
+        if (titleWithoutDateNatureAndNum !== undefined) {
+          text.titleWithoutDateNatureAndNum = titleWithoutDateNatureAndNum
+        }
+        return text
+      },
+    },
+  ),
+  chain(
+    [
+      alternatives(
+        regExp("code", { flags: "i", value: "CODE" }),
+        regExp("livre(?= des procédures fiscales)", {
+          flags: "i",
+          value: "CODE",
+        }),
+      ),
+      regExp(".+"),
+    ],
+    {
+      value: (results) => {
+        const text = {
+          ...(results[0] as TextAstText),
+        } as TextAstText
+        const titleWithoutDateNatureAndNum =
+          (results[1] as string).trim() || undefined
+        if (titleWithoutDateNatureAndNum !== undefined) {
+          text.titleWithoutDateNatureAndNum = titleWithoutDateNatureAndNum
+        }
+        return text
+      },
+    },
+  ),
+)
+
+/**
  * Règle principale pour la reconnaissance d’un texte français
  *
  * Note: Une majuscule est nécessaire à Constitution pour éviter des faux positifs
@@ -156,7 +242,17 @@ export const texteFrancais = alternatives(
       optional(
         [
           espace,
-          wordsTree(textCidByStandardTitleWordsTree as TextInfosByWordsTree),
+          convert(
+            wordsTree(
+              textCidByTitleWithoutDateNatureAndNumWordsTree as TextInfosByWordsTree,
+            ),
+            {
+              value: (result, context) => ({
+                ...(result as TextAstTextInfos),
+                titleWithoutDateNatureAndNum: context.text(),
+              }),
+            },
+          ),
         ],
         {
           default: null,
@@ -183,7 +279,8 @@ export const texteFrancais = alternatives(
         const { date, num } = (results[2] ??
           results[4] ??
           {}) as TextAstTextIdentification
-        const { cid } = (results[3] ?? {}) as TextAstTextInfos
+        const { cid, titleWithoutDateNatureAndNum } = (results[3] ??
+          {}) as TextAstTextInfos & { titleWithoutDateNatureAndNum?: string }
         if (cid === undefined && date === undefined && num === undefined) {
           return undefined
         }
@@ -233,6 +330,7 @@ export const texteFrancais = alternatives(
             nature: nature ?? textInfos?.nature,
             num,
             title: textInfos?.title,
+            titleWithoutDateNatureAndNum,
             type,
           }).filter(([, value]) => value !== undefined),
         )
@@ -249,7 +347,6 @@ export const texteFrancais = alternatives(
         const { cid } = results[0] as TextInfosByWordsTree
         const textInfos =
           typeof cid === "string" ? textInfosByCid[cid] : undefined
-
         return Object.fromEntries(
           Object.entries({
             cid,
@@ -294,15 +391,16 @@ export const numeroTexteEuropeen = chain(
  * Identification d’un texte européen, c’est-à-dire son numero et/ou sa date (sa nature est traitée ailleurs)
  */
 export const identificationTexteEuropeen = alternatives(
-  chain([numeroTexteEuropeen, optional(espaceDuDate, { default: "" })], {
+  chain([numeroTexteEuropeen, optional(espaceDuDate, { default: null })], {
     value: (results) =>
-      results[1]
-        ? { date: results[1] as string, num: results[0] as string }
-        : { num: results[0] as string },
+      results[1] === null
+        ? { num: results[0] as string }
+        : {
+            ...(results[1] as TextAstTextIdentification),
+            num: results[0] as string,
+          },
   }),
-  convert(duDate, {
-    value: (result) => ({ date: result as string }),
-  }),
+  duDate,
 )
 
 /**

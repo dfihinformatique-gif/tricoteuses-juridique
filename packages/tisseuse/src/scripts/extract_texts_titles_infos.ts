@@ -2,18 +2,12 @@ import type { LegiTexteVersion } from "@tricoteuses/legifrance"
 import fs from "fs-extra"
 import sade from "sade"
 
+import { jsonReplacer } from "$lib/json.js"
 import { numberFromRomanNumeral } from "$lib/numbers.js"
 import { legiDb } from "$lib/server/databases/index.js"
-import type {
-  TextAstText,
-  TextAstTextIdentification,
-} from "$lib/text_parsers/ast.js"
-import { chain, TextParserContext } from "$lib/text_parsers/parsers.js"
-import {
-  natureTexteFrancais,
-  numeroEtOuDateTexteFrancais,
-} from "$lib/text_parsers/texts.js"
-import { espace } from "$lib/text_parsers/typography.js"
+import type { TextAstText } from "$lib/text_parsers/ast.js"
+import { TextParserContext } from "$lib/text_parsers/parsers.js"
+import { definitionTexteFrancais } from "$lib/text_parsers/texts.js"
 import {
   replacePatterns,
   simplifyText,
@@ -59,7 +53,10 @@ function addTextCidToWordsTree(
 
 async function extractTextsNames(): Promise<number> {
   const textCidByOtherTitleWordsTree: TextCidByWordsTree = {}
-  const textCidByStandardTitleWordsTree: Record<string, TextCidByWordsTree> = {}
+  const textCidByTitleWithoutDateNatureAndNumWordsTree: Record<
+    string,
+    TextCidByWordsTree
+  > = {}
   const textInfosByCid: Record<
     string,
     {
@@ -96,121 +93,65 @@ async function extractTextsNames(): Promise<number> {
       const dateSignature =
         texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
       const num = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NUM
-      const title = texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL
-      if (title === undefined) {
+      const rawTitle = texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL
+      if (rawTitle === undefined) {
         console.warn(`Ignoring ${nature} ${id} without title.`)
         continue
       }
+      const title = rawTitle
+        .replace(/\n/g, " ")
+        .replace(/ {2,}/g, " ")
+        .replace(/ \(\d+\)\.?$/, "")
+        .replace(/\.$/, "")
 
       textInfosByCid[cid] = {
         nature,
-        title: title
-          .replace(/\n/g, " ")
-          .replace(/ {2,}/g, " ")
-          .replace(/ \(\d+\)$/, ""),
+        title,
       }
 
-      const otherTitles: string[] = []
-      let titleToParse: string
+      const otherTitles = new Set<string>()
+      const titlesToParse = new Set<string>()
       switch (title) {
         case "Constitution du 4 octobre 1958": {
-          titleToParse = title
-          otherTitles.push("Constitution")
-          break
-        }
-        case "Loi 16 décembre 1941 relative aux créations, transferts ou suppressions d'offices ministériels.": {
-          otherTitles.push(title)
-          titleToParse =
-            "Loi du 16 décembre 1941 relative aux créations, transferts ou suppressions d'offices ministériels"
+          titlesToParse.add(title)
+          otherTitles.add("Constitution")
           break
         }
 
         case "Loi contenant organisation du notariat (loi 25 ventôse an XI)": {
-          otherTitles.push(title)
-          otherTitles.push(
-            "Loi contenant organisation du notariat (loi du 25 ventôse an XI)",
+          titlesToParse.add(
+            "Loi du 25 ventôse an XI (16 mars 1803) contenant organisation du notariat",
           )
-          otherTitles.push(
-            "Loi du 25 ventôse an XI contenant organisation du notariat",
-          )
-          titleToParse =
-            "Loi du 16 mars 1803 contenant organisation du notariat"
-          break
-        }
-
-        case "Loi de finances rectificative pour 1963 (n° 63-1293 du 21 décembre 1963)": {
-          titleToParse =
-            "Loi n° 63-1293 du 21 décembre 1963 de finances rectificative pour 1963"
-          break
-        }
-
-        case "Loi de finances rectificative pour 1964 (n° 64-1278 du 23 décembre 1964)": {
-          titleToParse =
-            "Loi n° 64-1278 du 23 décembre 1964 de finances rectificative pour 1964"
-          break
-        }
-
-        case "LOI de programmation du « nouveau contrat pour l'école » (n° 95-836 du 13  juillet 1995)": {
-          titleToParse =
-            "Loi n° 95-836 du 13 juillet 1995 de programmation du « nouveau contrat pour l'école »"
           break
         }
 
         case "Loi des 16-24 août 1790 sur l'organisation judiciaire": {
-          otherTitles.push(title)
-          titleToParse = "Loi du 16 août 1790 sur l'organisation judiciaire"
+          otherTitles.add(title)
+          titlesToParse.add("Loi du 16 août 1790 sur l'organisation judiciaire")
           break
         }
 
-        case "Loi du 18 germinal an X (8 avril 1802) relative à l'organisation des cultes": {
-          otherTitles.push(title)
-          otherTitles.push(
-            "Loi du 18 germinal an X relative à l'organisation des cultes",
+        case "Loi n° 77-1423 du 27 décembre 1977 77-1423 du 27 décembre 1977 autorisant l'approbation de la convention sur le commerce international des espèces de faune et de flore sauvages menacées d'extinction, ensemble quatre annexes, ouverte à la signature à Washington jusqu'au 30 avril 1973 et, après cette date, à Berne jusqu'au 31 décembre 1974": {
+          titlesToParse.add(
+            "Loi n° 77-1423 du 27 décembre 1977 autorisant l'approbation de la convention sur le commerce international des espèces de faune et de flore sauvages menacées d'extinction, ensemble quatre annexes, ouverte à la signature à Washington jusqu'au 30 avril 1973 et, après cette date, à Berne jusqu'au 31 décembre 1974",
           )
-          otherTitles.push(
-            "Loi relative à l'organisation des cultes (loi du 18 germinal an X)",
-          )
-          titleToParse =
-            "Loi du 8 avril 1802 relative à l'organisation des cultes"
           break
         }
 
         default: {
-          titleToParse = title
+          titlesToParse.add(title)
         }
       }
-      const simplifiedTitle = simplifyTextTitle(titleToParse)
-      if (
-        [
-          "CONSTITUTION",
-          "LOI",
-          "LOI_CONSTIT",
-          "LOI_ORGANIQUE",
-          "LOI_PROGRAMME",
-          "ORDONNANCE",
-        ].includes(nature)
-      ) {
+
+      for (const titleToParse of titlesToParse) {
+        const simplifiedTitle = simplifyTextTitle(titleToParse)
         const context = new TextParserContext(simplifiedTitle)
-        const titleParsing = chain(
-          [natureTexteFrancais, espace, numeroEtOuDateTexteFrancais],
-          {
-            value: (results) => ({
-              ...(results[0] as TextAstText),
-              ...(results[2] as TextAstTextIdentification),
-            }),
-          },
-        )(context) as TextAstText | undefined
+        const titleParsing = definitionTexteFrancais(context) as
+          | TextAstText
+          | undefined
         if (titleParsing == null) {
           throw new Error(
             `Unparsable title of ${nature} n° ${num} du ${dateSignature} (${cid}): ${titleToParse}`,
-          )
-        }
-        const standardTitle = context.remaining()
-        if (standardTitle !== "") {
-          addTextCidToWordsTree(
-            textCidByStandardTitleWordsTree,
-            standardTitle,
-            cid,
           )
         }
         if (titleParsing.date !== undefined) {
@@ -221,8 +162,21 @@ async function extractTextsNames(): Promise<number> {
           ;((textsCidsByNatureAndNum[nature] ??= {})[titleParsing.num] ??=
             []).push(cid)
         }
-      } else {
-        addTextCidToWordsTree(textCidByOtherTitleWordsTree, titleToParse, cid)
+        if (
+          titleParsing.titleWithoutDateNatureAndNum === undefined &&
+          nature !== "CONSTITUTION"
+        ) {
+          throw new Error(
+            `Unable to extract title without date, nature & num from ${nature} n° ${num} du ${dateSignature} (${cid}): ${titleToParse}`,
+          )
+        }
+        if (titleParsing.titleWithoutDateNatureAndNum !== undefined) {
+          addTextCidToWordsTree(
+            textCidByTitleWithoutDateNatureAndNumWordsTree,
+            titleParsing.titleWithoutDateNatureAndNum,
+            cid,
+          )
+        }
       }
 
       for (const title of otherTitles) {
@@ -235,11 +189,11 @@ async function extractTextsNames(): Promise<number> {
     {
       textInfosByCid,
       textCidByOtherTitleWordsTree,
-      textCidByStandardTitleWordsTree,
+      textCidByTitleWithoutDateNatureAndNumWordsTree,
       textsCidsByNatureAndDate,
       textsCidsByNatureAndNum,
     },
-    { encoding: "utf-8", spaces: 2 },
+    { encoding: "utf-8", replacer: jsonReplacer, spaces: 2 },
   )
 
   return 0

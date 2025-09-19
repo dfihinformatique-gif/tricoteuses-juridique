@@ -299,6 +299,14 @@ describe("getReferences", () => {
     ).toBe("14° bis")
   })
 
+  test("il est inséré un article 223 VO quindecies ainsi rédigé", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const references = getReferences(context)
+    expect(references).toStrictEqual([])
+  })
+
   test("l'article 3 de la convention", ({ task }) => {
     const context = new TextParserContext(task.name)
     const references = getReferences(context)
@@ -344,6 +352,7 @@ describe("getReferences", () => {
             stop: 31,
           },
           title: "Code général des impôts",
+          titleWithoutDateNatureAndNum: "général des impôts",
           type: "texte",
         },
         type: "reference_et_action",
@@ -390,6 +399,7 @@ describe("getReferences", () => {
                 stop: 31,
               },
               title: "Code général des impôts",
+              titleWithoutDateNatureAndNum: "général des impôts",
               type: "texte",
             },
             num: "196 B",
@@ -494,14 +504,6 @@ describe("getReferences", () => {
           .right.position,
       ),
     ).toBe("II")
-  })
-
-  test("il est inséré un article 223 VO quindecies ainsi rédigé", ({
-    task,
-  }) => {
-    const context = new TextParserContext(task.name)
-    const references = getReferences(context)
-    expect(references).toStrictEqual([])
   })
 })
 
@@ -882,6 +884,7 @@ describe("getReferences, test spécifiques", () => {
             stop: 31,
           },
           title: "Code général des impôts",
+          titleWithoutDateNatureAndNum: "général des impôts",
           type: "texte",
         },
         type: "reference_et_action",
@@ -952,6 +955,7 @@ describe("getReferences, test spécifiques", () => {
             stop: 31,
           },
           title: "Code général des impôts",
+          titleWithoutDateNatureAndNum: "général des impôts",
           type: "texte",
         },
         num: "223 VK",
@@ -978,6 +982,7 @@ describe("getReferences, test spécifiques", () => {
               stop: 31,
             },
             title: "Code général des impôts",
+            titleWithoutDateNatureAndNum: "général des impôts",
             type: "texte",
           },
           num: "223 VO quaterdecies",
@@ -1008,6 +1013,7 @@ describe("getReferences, test spécifiques", () => {
               stop: 31,
             },
             title: "Code général des impôts",
+            titleWithoutDateNatureAndNum: "général des impôts",
             type: "texte",
           },
           num: "223 VO bis",
@@ -1245,6 +1251,7 @@ describe("getReferences, test spécifiques", () => {
           stop: 110,
         },
         title: "LOI n° 2011-1977 du 28 décembre 2011 de finances pour 2012",
+        titleWithoutDateNatureAndNum: "de finances pour 2012",
         type: "texte",
       },
       position: {

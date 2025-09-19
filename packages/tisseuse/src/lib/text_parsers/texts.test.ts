@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import { type TextAstPosition, type TextAstText } from "./ast.js"
 import { TextParserContext } from "./parsers.js"
 import {
+  definitionTexteFrancais,
   identificationTexteEuropeen,
   numeroEtOuDateTexteFrancais,
   numeroTexteEuropeen,
@@ -14,6 +15,37 @@ import {
 } from "./texts.js"
 
 describe("Textes français", () => {
+  describe("definitionTexteFrancais", () => {
+    test("Loi du 25 ventôse an XI (16-03-1803) contenant organisation du notariat", ({
+      task,
+    }) => {
+      const context = new TextParserContext(task.name)
+      expect(definitionTexteFrancais(context)).toStrictEqual({
+        date: "1803-03-16",
+        dateCalendrierRepublicain: "25 ventôse an XI",
+        nature: "LOI",
+        titleWithoutDateNatureAndNum: "contenant organisation du notariat",
+        type: "texte",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test("Loi n°77-1423 du 27 décembre 1977 AUTORISANT L'APPROBATION DE LA CONVENTION SUR LE COMMERCE INTERNATIONAL DES ESPECES DE FAUNE ET DE FLORE SAUVAGE MENACEES D'EXTINCTION, ENSEMBLE 4 ANNEXES, OUVERTE A LA SIGNATURE A WASHINGTON JUSQU'AU 30 AVRIL 1973, ET APRES CETTE DATE A BERNE JUSQU'AU 31 décembre 1974", ({
+      task,
+    }) => {
+      const context = new TextParserContext(task.name)
+      expect(definitionTexteFrancais(context)).toStrictEqual({
+        date: "1977-12-27",
+        nature: "LOI",
+        num: "77-1423",
+        titleWithoutDateNatureAndNum:
+          "AUTORISANT L'APPROBATION DE LA CONVENTION SUR LE COMMERCE INTERNATIONAL DES ESPECES DE FAUNE ET DE FLORE SAUVAGE MENACEES D'EXTINCTION, ENSEMBLE 4 ANNEXES, OUVERTE A LA SIGNATURE A WASHINGTON JUSQU'AU 30 AVRIL 1973, ET APRES CETTE DATE A BERNE JUSQU'AU 31 décembre 1974",
+        type: "texte",
+      })
+      expect(context.remaining()).toBe("")
+    })
+  })
+
   describe("numeroEtOuDateTexteFrancais", () => {
     test("n° 2001-692", ({ task }) => {
       const context = new TextParserContext(task.name)
@@ -75,6 +107,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006071191",
         nature: "CODE",
         title: "Code de l'éducation",
+        titleWithoutDateNatureAndNum: "de l'éducation",
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -86,6 +119,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006071556",
         nature: "CODE",
         title: "Code forestier de Mayotte",
+        titleWithoutDateNatureAndNum: "forestier de Mayotte",
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -97,6 +131,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006069577",
         nature: "CODE",
         title: "Code général des impôts",
+        titleWithoutDateNatureAndNum: "général des impôts",
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -108,6 +143,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006069577",
         nature: "CODE",
         title: "Code général des impôts",
+        titleWithoutDateNatureAndNum: "général des impôts",
         type: "texte",
       })
       expect(context.remaining()).toBe(" est")
@@ -119,6 +155,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006069569",
         nature: "CODE",
         title: "Code général des impôts, annexe II",
+        titleWithoutDateNatureAndNum: "général des impôts, annexe 2",
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -130,6 +167,7 @@ describe("Textes français", () => {
         cid: "LEGITEXT000006069574",
         nature: "CODE",
         title: "Code général des impôts, annexe III",
+        titleWithoutDateNatureAndNum: "général des impôts, annexe III",
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -180,6 +218,8 @@ describe("Textes français", () => {
         },
         title:
           "LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027",
+        titleWithoutDateNatureAndNum:
+          "de programmation des finances publiques pour les années 2023 à 2027",
         type: "texte",
       })
       expect(context.remaining()).toBe("")

@@ -107,8 +107,7 @@ export const numeroDivision = chain(
 )
 
 /**
- * Déclaration d'un article
- * Exemple : « Art. L. 322‑66. - blablabla… en début de ligne
+ * Déclaration d'une division
  */
 export const definitionDivision = chain(
   [

@@ -405,6 +405,7 @@ describe("reference", () => {
           stop: 27,
         },
         title: "Code pénal",
+        titleWithoutDateNatureAndNum: "pénal",
         type: "texte",
       },
       position: {
@@ -437,6 +438,7 @@ describe("reference", () => {
           stop: 31,
         },
         title: "Code pénal",
+        titleWithoutDateNatureAndNum: "pénal",
         type: "texte",
       },
       position: {
@@ -762,6 +764,7 @@ describe("reference", () => {
         stop: 13,
       },
       title: "Code pénal",
+      titleWithoutDateNatureAndNum: "pénal",
       type: "texte",
     })
     expect(context.remaining()).toBe("")
@@ -1239,6 +1242,43 @@ describe("reference", () => {
     expect(context.text(result.child.position)).toBe("V")
   })
 
+  test("l'article 43 de la loi de finances pour 2000 (n° 99-1172 du 30 décembre 1999)", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        num: "43",
+        position: {
+          start: 2,
+          stop: 12,
+        },
+        type: "article",
+      },
+      parent: {
+        cid: "JORFTEXT000000762233",
+        date: "1999-12-30",
+        nature: "LOI",
+        num: "99-1172",
+        position: {
+          start: 19,
+          stop: 77,
+        },
+        title: "Loi n° 99-1172 du 30 décembre 1999 de finances pour 2000",
+        titleWithoutDateNatureAndNum: "de finances pour 2000",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 77,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("l'article 7 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
@@ -1259,6 +1299,7 @@ describe("reference", () => {
           stop: 25,
         },
         title: "Code pénal",
+        titleWithoutDateNatureAndNum: "pénal",
         type: "texte",
       },
       position: {
@@ -1342,6 +1383,7 @@ describe("reference", () => {
           stop: 90,
         },
         title: "Code général des impôts",
+        titleWithoutDateNatureAndNum: "général des impôts",
         type: "texte",
       },
       position: {
@@ -1430,6 +1472,8 @@ describe("reference", () => {
           stop: 87,
         },
         title: "Code des impositions sur les biens et services",
+        titleWithoutDateNatureAndNum:
+          "des impositions sur les biens et services",
         type: "texte",
       },
       position: {

@@ -174,7 +174,6 @@ export type TextAstText = {
    * Légifrance CID of the text.
    */
   cid?: string
-  date?: string
   nature: LawNature
   legislation?: "international" | "UE"
   ofTheSaid?: boolean
@@ -184,9 +183,10 @@ export type TextAstText = {
    * input.
    */
   title?: string
-  titleWithoutDateNatureAndNum?: string
+  titleRest?: string
   type: "texte"
-} & TextAstLocalization
+} & TextAstTextIdentification &
+  TextAstLocalization
 
 export interface TextAstTextInfos {
   cid: string | string[]

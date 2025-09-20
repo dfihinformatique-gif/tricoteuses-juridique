@@ -405,7 +405,7 @@ describe("reference", () => {
           stop: 27,
         },
         title: "Code pénal",
-        titleWithoutDateNatureAndNum: "pénal",
+        titleRest: "pénal",
         type: "texte",
       },
       position: {
@@ -438,7 +438,7 @@ describe("reference", () => {
           stop: 31,
         },
         title: "Code pénal",
-        titleWithoutDateNatureAndNum: "pénal",
+        titleRest: "pénal",
         type: "texte",
       },
       position: {
@@ -764,7 +764,7 @@ describe("reference", () => {
         stop: 13,
       },
       title: "Code pénal",
-      titleWithoutDateNatureAndNum: "pénal",
+      titleRest: "pénal",
       type: "texte",
     })
     expect(context.remaining()).toBe("")
@@ -1266,7 +1266,7 @@ describe("reference", () => {
           stop: 77,
         },
         title: "Loi n° 99-1172 du 30 décembre 1999 de finances pour 2000",
-        titleWithoutDateNatureAndNum: "de finances pour 2000",
+        titleRest: "de finances pour 2000",
         type: "texte",
       },
       position: {
@@ -1299,7 +1299,7 @@ describe("reference", () => {
           stop: 25,
         },
         title: "Code pénal",
-        titleWithoutDateNatureAndNum: "pénal",
+        titleRest: "pénal",
         type: "texte",
       },
       position: {
@@ -1383,7 +1383,7 @@ describe("reference", () => {
           stop: 90,
         },
         title: "Code général des impôts",
-        titleWithoutDateNatureAndNum: "général des impôts",
+        titleRest: "général des impôts",
         type: "texte",
       },
       position: {
@@ -1472,8 +1472,7 @@ describe("reference", () => {
           stop: 87,
         },
         title: "Code des impositions sur les biens et services",
-        titleWithoutDateNatureAndNum:
-          "des impositions sur les biens et services",
+        titleRest: "des impositions sur les biens et services",
         type: "texte",
       },
       position: {

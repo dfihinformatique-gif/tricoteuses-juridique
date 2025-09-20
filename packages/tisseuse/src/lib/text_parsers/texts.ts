@@ -37,12 +37,12 @@ const textInfosByCid =
 const textCidByOtherTitleWordsTree =
   (textTitlesInfos as { textCidByOtherTitleWordsTree?: TextAstTextInfos })
     .textCidByOtherTitleWordsTree ?? {}
-const textCidByTitleWithoutDateNatureAndNumWordsTree =
+const textCidByTitleRestWordsTree =
   (
     textTitlesInfos as {
-      textCidByTitleWithoutDateNatureAndNumWordsTree?: TextAstTextInfos
+      textCidByTitleRestWordsTree?: TextAstTextInfos
     }
-  ).textCidByTitleWithoutDateNatureAndNumWordsTree ?? {}
+  ).textCidByTitleRestWordsTree ?? {}
 const textsCidsByNatureAndDate =
   (
     textTitlesInfos as {
@@ -165,10 +165,9 @@ export const definitionTexteFrancais = alternatives(
           ...(results[0] as TextAstText),
           ...(results[3] as TextAstTextIdentification),
         } as TextAstText
-        const titleWithoutDateNatureAndNum =
-          (results[4] as string).trim() || undefined
-        if (titleWithoutDateNatureAndNum !== undefined) {
-          text.titleWithoutDateNatureAndNum = titleWithoutDateNatureAndNum
+        const titleRest = (results[4] as string).trim() || undefined
+        if (titleRest !== undefined) {
+          text.titleRest = titleRest
         }
         return text
       },
@@ -188,10 +187,9 @@ export const definitionTexteFrancais = alternatives(
           ...(results[0] as TextAstText),
           ...(results[3] as TextAstTextIdentification),
         } as TextAstText
-        const titleWithoutDateNatureAndNum =
-          (results[1] as string).trim() || undefined
-        if (titleWithoutDateNatureAndNum !== undefined) {
-          text.titleWithoutDateNatureAndNum = titleWithoutDateNatureAndNum
+        const titleRest = (results[1] as string).trim() || undefined
+        if (titleRest !== undefined) {
+          text.titleRest = titleRest
         }
         return text
       },
@@ -213,10 +211,9 @@ export const definitionTexteFrancais = alternatives(
         const text = {
           ...(results[0] as TextAstText),
         } as TextAstText
-        const titleWithoutDateNatureAndNum =
-          (results[1] as string).trim() || undefined
-        if (titleWithoutDateNatureAndNum !== undefined) {
-          text.titleWithoutDateNatureAndNum = titleWithoutDateNatureAndNum
+        const titleRest = (results[1] as string).trim() || undefined
+        if (titleRest !== undefined) {
+          text.titleRest = titleRest
         }
         return text
       },
@@ -243,13 +240,11 @@ export const texteFrancais = alternatives(
         [
           espace,
           convert(
-            wordsTree(
-              textCidByTitleWithoutDateNatureAndNumWordsTree as TextInfosByWordsTree,
-            ),
+            wordsTree(textCidByTitleRestWordsTree as TextInfosByWordsTree),
             {
               value: (result, context) => ({
                 ...(result as TextAstTextInfos),
-                titleWithoutDateNatureAndNum: context.text(),
+                titleRest: context.text(),
               }),
             },
           ),
@@ -279,8 +274,9 @@ export const texteFrancais = alternatives(
         const { date, num } = (results[2] ??
           results[4] ??
           {}) as TextAstTextIdentification
-        const { cid, titleWithoutDateNatureAndNum } = (results[3] ??
-          {}) as TextAstTextInfos & { titleWithoutDateNatureAndNum?: string }
+        const { cid, titleRest } = (results[3] ?? {}) as TextAstTextInfos & {
+          titleRest?: string
+        }
         if (cid === undefined && date === undefined && num === undefined) {
           return undefined
         }
@@ -330,7 +326,7 @@ export const texteFrancais = alternatives(
             nature: nature ?? textInfos?.nature,
             num,
             title: textInfos?.title,
-            titleWithoutDateNatureAndNum,
+            titleRest,
             type,
           }).filter(([, value]) => value !== undefined),
         )

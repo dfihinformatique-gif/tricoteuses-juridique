@@ -53,7 +53,7 @@ function addTextCidToWordsTree(
 
 async function extractTextsNames(): Promise<number> {
   const textCidByOtherTitleWordsTree: TextCidByWordsTree = {}
-  const textCidByTitleWithoutDateNatureAndNumWordsTree: Record<
+  const textCidByTitleRestWordsTree: Record<
     string,
     TextCidByWordsTree
   > = {}
@@ -163,17 +163,17 @@ async function extractTextsNames(): Promise<number> {
             []).push(cid)
         }
         if (
-          titleParsing.titleWithoutDateNatureAndNum === undefined &&
+          titleParsing.titleRest === undefined &&
           nature !== "CONSTITUTION"
         ) {
           throw new Error(
             `Unable to extract title without date, nature & num from ${nature} n° ${num} du ${dateSignature} (${cid}): ${titleToParse}`,
           )
         }
-        if (titleParsing.titleWithoutDateNatureAndNum !== undefined) {
+        if (titleParsing.titleRest !== undefined) {
           addTextCidToWordsTree(
-            textCidByTitleWithoutDateNatureAndNumWordsTree,
-            titleParsing.titleWithoutDateNatureAndNum,
+            textCidByTitleRestWordsTree,
+            titleParsing.titleRest,
             cid,
           )
         }
@@ -189,7 +189,7 @@ async function extractTextsNames(): Promise<number> {
     {
       textInfosByCid,
       textCidByOtherTitleWordsTree,
-      textCidByTitleWithoutDateNatureAndNumWordsTree,
+      textCidByTitleRestWordsTree,
       textsCidsByNatureAndDate,
       textsCidsByNatureAndNum,
     },

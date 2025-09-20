@@ -16,6 +16,15 @@ export const assembleeDb = postgres({
 })
 export const assembleeVersionNumber = 7
 
+export const legiAnomaliesDb = postgres({
+  database: config.legiAnomaliesDb.database,
+  host: config.legiAnomaliesDb.host,
+  password: config.legiAnomaliesDb.password,
+  port: config.legiAnomaliesDb.port,
+  user: config.legiAnomaliesDb.user,
+})
+export const legiAnomaliesVersionNumber = 1
+
 export const legiDb = postgres({
   database: config.legiDb.database,
   host: config.legiDb.host,
@@ -23,9 +32,11 @@ export const legiDb = postgres({
   port: config.legiDb.port,
   user: config.legiDb.user,
 })
-export const versionNumber = 16
+export const legiVersionNumber = 16
 
-/// Check that assemblee database exists and is up to date.
+/**
+ * Check that assemblee database exists and is up to date.
+ */
 export async function checkAssembleeDb(): Promise<void> {
   assert(
     (
@@ -52,26 +63,60 @@ export async function checkAssembleeDb(): Promise<void> {
   )
 }
 
-/// Check that database exists and is up to date.
-export async function checkDb(): Promise<void> {
+/**
+ * Check that legi_anomalies database exists and is up to date.
+ */
+export async function checkLegiAnomaliesDb(): Promise<void> {
+  assert(
+    (
+      await legiAnomaliesDb`SELECT EXISTS (
+        SELECT * FROM information_schema.tables WHERE table_name='version'
+      )`
+    )[0]?.exists,
+    'Legi Anomalies database is not initialized. Run "npm run configure" to do it.',
+  )
+  const version = (await legiAnomaliesDb<Version[]>`SELECT * FROM version`)[0]
+  assert.notStrictEqual(
+    version,
+    undefined,
+    'Legi Anomalies database has no version number. Run "npm run configure" to do it.',
+  )
+  assert(
+    version.number <= legiAnomaliesVersionNumber,
+    "Legi Anomalies database format is too recent.",
+  )
+  assert.strictEqual(
+    version.number,
+    legiVersionNumber,
+    'Legi Anomalies database must be upgraded. Run "npm run configure" to do it.',
+  )
+}
+
+/**
+ * Check that legi database exists and is up to date.
+ */
+export async function checkLegiDb(): Promise<void> {
   assert(
     (
       await legiDb`SELECT EXISTS (
         SELECT * FROM information_schema.tables WHERE table_name='version'
       )`
     )[0]?.exists,
-    'Database is not initialized. Run "npm run configure" to do it.',
+    'Legi database is not initialized. Run "npm run configure" to do it.',
   )
   const version = (await legiDb<Version[]>`SELECT * FROM version`)[0]
   assert.notStrictEqual(
     version,
     undefined,
-    'Database has no version number. Run "npm run configure" to do it.',
+    'Legi database has no version number. Run "npm run configure" to do it.',
   )
-  assert(version.number <= versionNumber, "Database format is too recent.")
+  assert(
+    version.number <= legiVersionNumber,
+    "Legi database format is too recent.",
+  )
   assert.strictEqual(
     version.number,
-    versionNumber,
-    'Database must be upgraded. Run "npm run configure" to do it.',
+    legiVersionNumber,
+    'Legi database must be upgraded. Run "npm run configure" to do it.',
   )
 }

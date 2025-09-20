@@ -35,6 +35,15 @@ export function auditConfig(
   )
   audit.attribute(
     data,
+    "legiAnomaliesDb",
+    true,
+    errors,
+    remainingKeys,
+    auditDb,
+    auditRequire,
+  )
+  audit.attribute(
+    data,
     "legiDb",
     true,
     errors,

@@ -1,74 +1,56 @@
-import type { LegiTexteVersion } from "@tricoteuses/legifrance"
+import { Anomalies, type LegiTexteVersion } from "@tricoteuses/legifrance"
 import fs from "fs-extra"
 import sade from "sade"
 
-import { numberFromRomanNumeral } from "$lib/numbers.js"
-import { legiDb } from "$lib/server/databases/index.js"
-import type {
-  TextAstText,
-  TextAstTextIdentification,
-} from "$lib/text_parsers/ast.js"
-import { chain, TextParserContext } from "$lib/text_parsers/parsers.js"
-import {
-  natureTexteFrancais,
-  numeroEtOuDateTexteFrancais,
-} from "$lib/text_parsers/texts.js"
-import { espace } from "$lib/text_parsers/typography.js"
+import { formatLongDate } from "$lib/dates"
+import { jsonReplacer } from "$lib/json.js"
+import { legiAnomaliesDb, legiDb } from "$lib/server/databases/index.js"
+import type { TextAstText } from "$lib/text_parsers/ast.js"
+import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import {
   replacePatterns,
   simplifyText,
   simplifyUnicodeCharacters,
 } from "$lib/text_parsers/simplifiers.js"
+import { definitionTexteFrancais } from "$lib/text_parsers/texts.js"
 import { chainTransformers } from "$lib/text_parsers/transformers.js"
 
-type TextCidByWordsTree = {
-  cid?: string | string[]
-} & {
-  [word: string]: TextCidByWordsTree
+interface AnalyseTitre {
+  date?: string
+  dateCalendrierRepublicain?: string
+  nature?: string
+  num?: string
+  resteDuTitre?: string
 }
 
-function addTextCidToWordsTree(
-  textCidByWordsTree: TextCidByWordsTree,
-  title: string,
-  cid: string,
-): void {
-  const words = simplifyTextTitle(
-    title
-      .replace(/ \(\d+\)$/, "")
-      .replace(/\.$/, "")
-      .replace(/[\n,()]/g, " "),
-  )
-    .split(" ")
-    .map((word) =>
-      /^[IVX]+$/gi.test(word)
-        ? numberFromRomanNumeral(word).toString()
-        : word.toLowerCase().replace(/^no$/, "n°"),
-    )
-  let textCidByWordsNode = textCidByWordsTree
-  for (const word of words) {
-    textCidByWordsNode = (textCidByWordsNode[word] ??= {}) as TextCidByWordsTree
-  }
-  if (textCidByWordsNode.cid == undefined) {
-    textCidByWordsNode.cid = cid
-  } else if (Array.isArray(textCidByWordsNode.cid)) {
-    textCidByWordsNode.cid.push(cid)
-  } else {
-    textCidByWordsNode.cid = [textCidByWordsNode.cid, cid]
-  }
+interface LegifranceTextDescription {
+  analysesTitres: AnalyseTitre[]
+  cid: string
+  date: string
+  nature: string
+  num?: string
+  titres: Set<string>
+}
+
+interface TextDescription {
+  legifrance?: LegifranceTextDescription
+  titresOfficieux?: string[]
 }
 
 async function extractTextsInfos(): Promise<number> {
-  const textCidByOtherTitleWordsTree: TextCidByWordsTree = {}
-  const textCidByStandardTitleWordsTree: Record<string, TextCidByWordsTree> = {}
-  const textInfosByCid: Record<
+  const anomalies = new Anomalies(legiAnomaliesDb, [
+    "date du texte différente",
+    "format du titre du texte non reconnu",
+    "nature du texte différente",
+    "num du texte différent",
+    // "texte différent",
+  ])
+  await anomalies.load()
+
+  const legifranceTextDescriptionByCid = new Map<
     string,
-    {
-      nature: string
-      title: string
-    }
-  > = {}
-  const textsCidsByNatureAndDate: Record<string, Record<string, string[]>> = {}
-  const textsCidsByNatureAndNum: Record<string, Record<string, string[]>> = {}
+    LegifranceTextDescription
+  >()
   for (const nature of [
     // "ARRETE",
     // "CIRCULAIRE",
@@ -90,157 +72,359 @@ async function extractTextsInfos(): Promise<number> {
       FROM texte_version
       WHERE
         nature = ${nature}
-        and id LIKE 'LEGITEXT%'
+        AND (
+          id LIKE 'LEGITEXT%'
+          OR id LIKE 'JORFTEXT%'
+        )
     `) {
       const cid = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.CID
-      const dateSignature =
-        texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
+      const date = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
       const num = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NUM
-      const title = texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL
-      if (title === undefined) {
-        console.warn(`Ignoring ${nature} ${id} without title.`)
-        continue
+      // if (id === "LEGITEXT000005617202") {
+      //   // Loi n° 96-64 du 29 janvier 1996 autorisant la ratification du traité d'amitié
+      //   // et de coopération entre la République française et la République d'Ouzbékistan
+      //   // has the CID JORFTEXT000000367879 of:
+      //   // LOI no 94-1098 du 19 décembre 1994 autorisant la ratification de la convention
+      //   // sur l'interdiction de la mise au point, de la fabrication, du stockage et de
+      //   // l'emploi des armes chimiques et sur leur destruction
+      //   // => Ignore it.
+      //   await anomalies.add({
+      //     category: "texte différent",
+      //     id,
+      //     message: `Le texte a changé pour le même CID ${cid}`,
+      //   })
+      //   continue
+      // }
+      let legifranceTextDescription = legifranceTextDescriptionByCid.get(cid)
+      if (legifranceTextDescription === undefined) {
+        legifranceTextDescription = {
+          analysesTitres: [],
+          cid,
+          date,
+          nature,
+          titres: new Set(),
+        }
+        legifranceTextDescriptionByCid.set(cid, legifranceTextDescription)
+      } else {
+        if (date !== "2999-01-01") {
+          if (legifranceTextDescription.date === "2999-01-01") {
+            legifranceTextDescription.date = date
+          } else if (date !== legifranceTextDescription.date) {
+            await anomalies.add({
+              category: "date du texte différente",
+              id,
+              message: `La date du texte a changé pour le même CID ${cid}: ${legifranceTextDescription.date} et ${date}`,
+              path: "META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE",
+            })
+          }
+        }
+        if (nature !== legifranceTextDescription.nature) {
+          await anomalies.add({
+            category: "nature du texte différente",
+            id,
+            message: `La nature du texte a changé pour le même CID ${cid}: ${legifranceTextDescription.nature} et ${nature}`,
+            path: "META.META_COMMUN.NATURE",
+          })
+        }
+        if (num !== undefined) {
+          if (legifranceTextDescription.num === undefined) {
+            legifranceTextDescription.num = num
+          } else if (num !== legifranceTextDescription.num) {
+            await anomalies.add({
+              category: "num du texte différent",
+              id,
+              message: `Le num du texte a changé pour le même CID ${cid}: ${legifranceTextDescription.num} et ${num}`,
+              path: "META.META_SPEC.META_TEXTE_CHRONICLE.NUM",
+            })
+          }
+        }
       }
 
-      textInfosByCid[cid] = {
-        nature,
-        title: title
+      for (const [titlePath, rawTitle] of [
+        [
+          "META.META_SPEC.META_TEXTE_VERSION.TITRE",
+          texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITRE,
+        ],
+        [
+          "META.META_SPEC.META_TEXTE_VERSION.TITREFULL",
+          texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL,
+        ],
+      ]) {
+        if (rawTitle === undefined) {
+          continue
+        }
+        const title = rawTitle
           .replace(/\n/g, " ")
           .replace(/ {2,}/g, " ")
-          .replace(/ \(\d+\)$/, ""),
-      }
+          .replace(/ \(\d+\)\.?$/, "")
+          .replace(/\.$/, "")
 
-      const otherTitles: string[] = []
-      let titleToParse: string
-      switch (title) {
-        case "Constitution du 4 octobre 1958": {
-          titleToParse = title
-          otherTitles.push("Constitution")
-          break
+        if (["code", "loi", "ordonnance"].includes(title.toLowerCase())) {
+          // Example: JORFTEXT000000569621
+          continue
         }
-        case "Loi 16 décembre 1941 relative aux créations, transferts ou suppressions d'offices ministériels.": {
-          otherTitles.push(title)
-          titleToParse =
-            "Loi du 16 décembre 1941 relative aux créations, transferts ou suppressions d'offices ministériels"
-          break
+        const otherTitles = new Set<string>()
+        const titlesToParse = new Set<string>()
+        switch (title) {
+          case "Constitution du 4 octobre 1958": {
+            titlesToParse.add(title)
+            otherTitles.add("Constitution")
+            break
+          }
+
+          case "Loi contenant organisation du notariat (loi 25 ventôse an XI)": {
+            titlesToParse.add(
+              "Loi du 25 ventôse an XI (16 mars 1803) contenant organisation du notariat",
+            )
+            break
+          }
+
+          case "Loi des 16-24 août 1790 sur l'organisation judiciaire": {
+            otherTitles.add(title)
+            titlesToParse.add(
+              "Loi du 16 août 1790 sur l'organisation judiciaire",
+            )
+            break
+          }
+
+          case "Loi du 25 juillet 1891":
+          case "Loi du 25 juillet 1891 autorisant le Mont-de-Piété de Paris à faire des avances sur valeurs mobilières au porteur": {
+            titlesToParse.add(title)
+            if (date !== "1891-07-25") {
+              titlesToParse.add(`Loi du ${formatLongDate(date)}`)
+              titlesToParse.add(
+                `Loi du ${formatLongDate(date)} autorisant le Mont-de-Piété de Paris à faire des avances sur valeurs mobilières au porteur`,
+              )
+            }
+            break
+          }
+
+          case "Loi n° 1987 du 24 mai 1941":
+          case "Loi n° 1987 du 24 mai 1941 relative à la normalisation": {
+            titlesToParse.add(title)
+            titlesToParse.add("Loi n° 41-1987 du 24 mai 1941")
+            titlesToParse.add(
+              "Loi n° 41-1987 du 24 mai 1941 relative à la normalisation",
+            )
+            break
+          }
+
+          case "Loi n° 427 du 1er avril 1942":
+          case "Loi n° 427 du 1er avril 1942 relative aux titres de navigation maritime": {
+            titlesToParse.add(title)
+            titlesToParse.add("Loi n° 42-427 du 1 avril 1942")
+            titlesToParse.add(
+              "Loi n° 42-427 du 1 avril 1942 relative aux titres de navigation maritime",
+            )
+            break
+          }
+
+          case "Loi n° 71-562 du 12 juillet 1971":
+          case "Loi n° 71-562 du 12 juillet 1971 de programme sur l'équipement sportif et socio-éducatif": {
+            titlesToParse.add(title)
+            if (date !== "1971-07-12") {
+              titlesToParse.add(`Loi n° 71-562 du ${formatLongDate(date)}`)
+              titlesToParse.add(
+                `Loi n° 71-562 du ${formatLongDate(date)} de programme sur l'équipement sportif et socio-éducatif`,
+              )
+            }
+            break
+          }
+
+          case "Loi n° 72-516 du 28 septembre 1972":
+          case "Loi n° 72-516 du 28 septembre 1972 amendant l'ordonnance n° 67-813 du 26 septembre 1967 relative aux sociétés coopératives agricoles, à leurs unions, à leurs fédérations, aux sociétés d'intérêt collectif agricole et aux sociétés mixtes d'intérêt agricole": {
+            titlesToParse.add(title)
+            if (date !== "1972-09-28") {
+              titlesToParse.add(`Loi n° 72-516 du ${formatLongDate(date)}`)
+              titlesToParse.add(
+                `Loi n° 72-516 du ${formatLongDate(date)} amendant l'ordonnance n° 67-813 du 26 septembre 1967 relative aux sociétés coopératives agricoles, à leurs unions, à leurs fédérations, aux sociétés d'intérêt collectif agricole et aux sociétés mixtes d'intérêt agricole`,
+              )
+            }
+            break
+          }
+
+          case "Loi n° 77-1423 du 27 décembre 1977 77-1423 du 27 décembre 1977 autorisant l'approbation de la convention sur le commerce international des espèces de faune et de flore sauvages menacées d'extinction, ensemble quatre annexes, ouverte à la signature à Washington jusqu'au 30 avril 1973 et, après cette date, à Berne jusqu'au 31 décembre 1974": {
+            anomalies.add({
+              category: "format du titre du texte non reconnu",
+              id,
+              message:
+                "Le titre contient deux fois le numéro et la date du texte",
+              path: titlePath,
+            })
+            titlesToParse.add(
+              "Loi n° 77-1423 du 27 décembre 1977 autorisant l'approbation de la convention sur le commerce international des espèces de faune et de flore sauvages menacées d'extinction, ensemble quatre annexes, ouverte à la signature à Washington jusqu'au 30 avril 1973 et, après cette date, à Berne jusqu'au 31 décembre 1974",
+            )
+            break
+          }
+
+          case "Loi n° 93-931 du 22 juillet 1993": {
+            titlesToParse.add(title)
+            if (num !== "93-931") {
+              titlesToParse.add("Loi n° 93-937 du 22 juillet 1993")
+            }
+            break
+          }
+
+          default: {
+            titlesToParse.add(title)
+          }
         }
 
-        case "Loi contenant organisation du notariat (loi 25 ventôse an XI)": {
-          otherTitles.push(title)
-          otherTitles.push(
-            "Loi contenant organisation du notariat (loi du 25 ventôse an XI)",
+        for (const titleToParse of titlesToParse) {
+          legifranceTextDescription.titres.add(titleToParse)
+          const simplifiedTitle = simplifyTextTitle(titleToParse)
+          const context = new TextParserContext(simplifiedTitle)
+          const titleParsing = definitionTexteFrancais(context) as
+            | TextAstText
+            | undefined
+          if (titleParsing == null) {
+            anomalies.add({
+              category: "format du titre du texte non reconnu",
+              id,
+              message: `Le titre de ${nature} n° ${num} du ${date} (${cid}) a probablement une erreur : "${titleToParse}"`,
+              path: titlePath,
+            })
+            continue
+          }
+          if (titleParsing.date !== undefined) {
+            if (legifranceTextDescription.date === "2999-01-01") {
+              legifranceTextDescription.date = titleParsing.date
+            } else if (titleParsing.date !== legifranceTextDescription.date) {
+              anomalies.add({
+                category: "date du texte différente",
+                id,
+                message: `La date "${titleParsing.date}" extraite du titre diffère de la date du texte "${legifranceTextDescription.date}"`,
+                path: titlePath,
+              })
+            }
+          }
+          if (
+            titleParsing.nature !== undefined &&
+            titleParsing.nature !== legifranceTextDescription.nature
+          ) {
+            anomalies.add({
+              category: "nature du texte différente",
+              id,
+              message: `La nature "${titleParsing.nature}" extraite du titre diffère de la nature du texte "${legifranceTextDescription.nature}"`,
+              path: titlePath,
+            })
+          }
+          if (
+            titleParsing.num !== undefined &&
+            titleParsing.num !== legifranceTextDescription.num
+          ) {
+            if (legifranceTextDescription.num === undefined) {
+              legifranceTextDescription.num = titleParsing.num
+            } else {
+              anomalies.add({
+                category: "num du texte différent",
+                id,
+                message: `Le num "${titleParsing.num}" extrait du titre diffère du num du texte "${legifranceTextDescription.num}"`,
+                path: titlePath,
+              })
+            }
+          }
+          // if (
+          //   titleParsing.titleRest === undefined &&
+          //   nature !== "CONSTITUTION"
+          // ) {
+          //   throw new Error(
+          //     `Unable to extract title without date, nature & num from ${nature} n° ${num} du ${date} (${cid}): ${titleToParse}`,
+          //   )
+          // }
+          // if (titleParsing.titleRest !== undefined) {
+          //   addTextCidToWordsTree(
+          //     textCidByTitleRestWordsTree,
+          //     titleParsing.titleRest,
+          //     cid,
+          //   )
+          // }
+          const analyseTitre = legifranceTextDescription.analysesTitres.find(
+            ({ date, dateCalendrierRepublicain, nature, num, resteDuTitre }) =>
+              (date === undefined ||
+                titleParsing.date === undefined ||
+                date === titleParsing.date) &&
+              (dateCalendrierRepublicain === undefined ||
+                titleParsing.dateCalendrierRepublicain === undefined ||
+                dateCalendrierRepublicain ===
+                  titleParsing.dateCalendrierRepublicain) &&
+              (nature === undefined ||
+                titleParsing.nature === undefined ||
+                nature === titleParsing.nature) &&
+              (num === undefined ||
+                titleParsing.num === undefined ||
+                num === titleParsing.num) &&
+              (resteDuTitre === undefined ||
+                titleParsing.titleRest === undefined ||
+                resteDuTitre === titleParsing.titleRest),
           )
-          otherTitles.push(
-            "Loi du 25 ventôse an XI contenant organisation du notariat",
-          )
-          titleToParse =
-            "Loi du 16 mars 1803 contenant organisation du notariat"
-          break
+          if (analyseTitre === undefined) {
+            legifranceTextDescription.analysesTitres.push(
+              Object.fromEntries(
+                Object.entries({
+                  date: titleParsing.date,
+                  dateCalendrierRepublicain:
+                    titleParsing.dateCalendrierRepublicain,
+                  nature: titleParsing.nature,
+                  num: titleParsing.num,
+                  resteDuTitre: titleParsing.titleRest,
+                }).filter(([_key, value]) => value !== undefined),
+              ) as AnalyseTitre,
+            )
+          } else {
+            if (
+              titleParsing.date !== undefined &&
+              analyseTitre.date === undefined
+            ) {
+              analyseTitre.date = titleParsing.date
+            }
+            if (
+              titleParsing.dateCalendrierRepublicain !== undefined &&
+              analyseTitre.dateCalendrierRepublicain === undefined
+            ) {
+              analyseTitre.dateCalendrierRepublicain =
+                titleParsing.dateCalendrierRepublicain
+            }
+            if (
+              titleParsing.nature !== undefined &&
+              analyseTitre.nature === undefined
+            ) {
+              analyseTitre.nature = titleParsing.nature
+            }
+            if (
+              titleParsing.num !== undefined &&
+              analyseTitre.num === undefined
+            ) {
+              analyseTitre.num = titleParsing.num
+            }
+            if (
+              titleParsing.titleRest !== undefined &&
+              analyseTitre.resteDuTitre === undefined
+            ) {
+              analyseTitre.resteDuTitre = titleParsing.titleRest
+            }
+          }
         }
 
-        case "Loi de finances rectificative pour 1963 (n° 63-1293 du 21 décembre 1963)": {
-          titleToParse =
-            "Loi n° 63-1293 du 21 décembre 1963 de finances rectificative pour 1963"
-          break
+        for (const title of otherTitles) {
+          legifranceTextDescription.titres.add(title)
         }
-
-        case "Loi de finances rectificative pour 1964 (n° 64-1278 du 23 décembre 1964)": {
-          titleToParse =
-            "Loi n° 64-1278 du 23 décembre 1964 de finances rectificative pour 1964"
-          break
-        }
-
-        case "LOI de programmation du « nouveau contrat pour l'école » (n° 95-836 du 13  juillet 1995)": {
-          titleToParse =
-            "Loi n° 95-836 du 13 juillet 1995 de programmation du « nouveau contrat pour l'école »"
-          break
-        }
-
-        case "Loi des 16-24 août 1790 sur l'organisation judiciaire": {
-          otherTitles.push(title)
-          titleToParse = "Loi du 16 août 1790 sur l'organisation judiciaire"
-          break
-        }
-
-        case "Loi du 18 germinal an X (8 avril 1802) relative à l'organisation des cultes": {
-          otherTitles.push(title)
-          otherTitles.push(
-            "Loi du 18 germinal an X relative à l'organisation des cultes",
-          )
-          otherTitles.push(
-            "Loi relative à l'organisation des cultes (loi du 18 germinal an X)",
-          )
-          titleToParse =
-            "Loi du 8 avril 1802 relative à l'organisation des cultes"
-          break
-        }
-
-        default: {
-          titleToParse = title
-        }
-      }
-      const simplifiedTitle = simplifyTextTitle(titleToParse)
-      if (
-        [
-          "CONSTITUTION",
-          "LOI",
-          "LOI_CONSTIT",
-          "LOI_ORGANIQUE",
-          "LOI_PROGRAMME",
-          "ORDONNANCE",
-        ].includes(nature)
-      ) {
-        const context = new TextParserContext(simplifiedTitle)
-        const titleParsing = chain(
-          [natureTexteFrancais, espace, numeroEtOuDateTexteFrancais],
-          {
-            value: (results) => ({
-              ...(results[0] as TextAstText),
-              ...(results[2] as TextAstTextIdentification),
-            }),
-          },
-        )(context) as TextAstText | undefined
-        if (titleParsing == null) {
-          throw new Error(
-            `Unparsable title of ${nature} n° ${num} du ${dateSignature} (${cid}): ${titleToParse}`,
-          )
-        }
-        const standardTitle = context.remaining()
-        if (standardTitle !== "") {
-          addTextCidToWordsTree(
-            textCidByStandardTitleWordsTree,
-            standardTitle,
-            cid,
-          )
-        }
-        if (titleParsing.date !== undefined) {
-          ;((textsCidsByNatureAndDate[nature] ??= {})[titleParsing.date] ??=
-            []).push(cid)
-        }
-        if (titleParsing.num !== undefined) {
-          ;((textsCidsByNatureAndNum[nature] ??= {})[titleParsing.num] ??=
-            []).push(cid)
-        }
-      } else {
-        addTextCidToWordsTree(textCidByOtherTitleWordsTree, titleToParse, cid)
-      }
-
-      for (const title of otherTitles) {
-        addTextCidToWordsTree(textCidByOtherTitleWordsTree, title, cid)
       }
     }
   }
   await fs.writeJson(
-    "src/lib/text_parsers/text_titles_infos.json",
-    {
-      textInfosByCid,
-      textCidByOtherTitleWordsTree,
-      textCidByStandardTitleWordsTree,
-      textsCidsByNatureAndDate,
-      textsCidsByNatureAndNum,
-    },
-    { encoding: "utf-8", spaces: 2 },
+    "texts_infos.json",
+    [...legifranceTextDescriptionByCid.entries()]
+      .sort(([cid1], [cid2]) => cid1.localeCompare(cid2))
+      .map(([_cid, legifranceTextDescription]) => ({
+        legifrance: {
+          ...legifranceTextDescription,
+          titres: [...legifranceTextDescription.titres].sort(),
+        },
+      })),
+    { encoding: "utf-8", replacer: jsonReplacer, spaces: 2 },
   )
+  await anomalies.save()
 
   return 0
 }

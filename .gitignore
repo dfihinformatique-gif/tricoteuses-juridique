@@ -1,9 +1,12 @@
-dist/
 node_modules/
 
 # Env
 /packages/*/*.env
 !/packages/*/example.env
 
+/packages/chercheuse/.svelte-kit
+/packages/chercheuse/build
+
+packages/tisseuse/dist
 # Ensure that text_titles_infos.json remains empty:
 packages/tisseuse/src/lib/text_parsers/text_titles_infos.json

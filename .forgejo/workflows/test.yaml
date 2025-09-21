@@ -28,7 +28,6 @@ jobs:
           LEGI_ANOMALIES_DB_PORT=${{ vars.LEGI_ANOMALIES_DB_PORT }}
           LEGI_ANOMALIES_DB_USER="legi_anomalies"
           LEGI_ANOMALIES_DB_PASSWORD="${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
-          EOF
 
           # Légifrance PostgreSQL database configuration
           LEGI_DB_NAME="legi"

@@ -15,14 +15,22 @@ jobs:
       - name: Configure tisseuse
         run: |
           cat > .env << EOF
-          # PostgreSQL database configuration
+          # Assemblée PostgreSQL database configuration
           ASSEMBLEE_DB_NAME="assemblee"
           ASSEMBLEE_DB_HOST="${{ vars.ASSEMBLEE_DB_HOST }}"
           ASSEMBLEE_DB_PORT=${{ vars.ASSEMBLEE_DB_PORT }}
           ASSEMBLEE_DB_USER="assemblee"
           ASSEMBLEE_DB_PASSWORD="${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
 
-          # PostgreSQL database configuration
+          # Légifrance Anomalies PostgreSQL database configuration
+          LEGI_ANOMALIES_DB_NAME="legi_anomalies"
+          LEGI_ANOMALIES_DB_HOST="${{ vars.LEGI_ANOMALIES_DB_HOST }}"
+          LEGI_ANOMALIES_DB_PORT=${{ vars.LEGI_ANOMALIES_DB_PORT }}
+          LEGI_ANOMALIES_DB_USER="legi_anomalies"
+          LEGI_ANOMALIES_DB_PASSWORD="${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
+          EOF
+
+          # Légifrance PostgreSQL database configuration
           LEGI_DB_NAME="legi"
           LEGI_DB_HOST="${{ vars.LEGI_DB_HOST }}"
           LEGI_DB_PORT=${{ vars.LEGI_DB_PORT }}

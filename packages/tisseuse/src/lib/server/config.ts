@@ -6,6 +6,7 @@ export interface Config {
   assembleeDb: DatabaseConfig
   legiAnomaliesDb: DatabaseConfig
   legiDb: DatabaseConfig
+  tisseuseDb: DatabaseConfig
 }
 
 export interface DatabaseConfig {
@@ -37,6 +38,13 @@ const [config, error] = validateConfig({
     database: process.env.LEGI_DB_NAME,
     user: process.env.LEGI_DB_USER,
     password: process.env.LEGI_DB_PASSWORD,
+  },
+  tisseuseDb: {
+    host: process.env.TISSEUSE_DB_HOST,
+    port: process.env.TISSEUSE_DB_PORT,
+    database: process.env.TISSEUSE_DB_NAME,
+    user: process.env.TISSEUSE_DB_USER,
+    password: process.env.TISSEUSE_DB_PASSWORD,
   },
 }) as [Config, unknown]
 if (error !== null) {

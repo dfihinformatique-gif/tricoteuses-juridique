@@ -1,6 +1,6 @@
 # Tricoteuses Tisseuse
 
-_Add links to French legislative documents_
+_Find links in/to French legislative documents_
 
 By: Emmanuel Raviart <mailto:emmanuel@raviart.com>
 

@@ -35,6 +35,13 @@ jobs:
           LEGI_DB_PORT=${{ vars.LEGI_DB_PORT }}
           LEGI_DB_USER="legi"
           LEGI_DB_PASSWORD="${{ secrets.LEGI_DB_PASSWORD }}"
+
+          # Tisseuse PostgreSQL database configuration
+          TISSEUSE_DB_NAME="tisseuse"
+          TISSEUSE_DB_HOST="${{ vars.TISSEUSE_DB_HOST }}"
+          TISSEUSE_DB_PORT=${{ vars.TISSEUSE_DB_PORT }}
+          TISSEUSE_DB_USER="tisseuse"
+          TISSEUSE_DB_PASSWORD="${{ secrets.TISSEUSE_DB_PASSWORD }}"
           EOF
         working-directory: packages/tisseuse/
       - name: Extract titles from texts

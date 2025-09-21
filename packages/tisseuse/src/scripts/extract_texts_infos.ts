@@ -4,7 +4,11 @@ import sade from "sade"
 
 import { formatLongDate } from "$lib/dates"
 import { jsonReplacer } from "$lib/json.js"
-import { legiAnomaliesDb, legiDb } from "$lib/server/databases/index.js"
+import {
+  legiAnomaliesDb,
+  legiDb,
+  tisseuseDb,
+} from "$lib/server/databases/index.js"
 import type { TextAstText } from "$lib/text_parsers/ast.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import {
@@ -324,21 +328,6 @@ async function extractTextsInfos(): Promise<number> {
               })
             }
           }
-          // if (
-          //   titleParsing.titleRest === undefined &&
-          //   nature !== "CONSTITUTION"
-          // ) {
-          //   throw new Error(
-          //     `Unable to extract title without date, nature & num from ${nature} n° ${num} du ${date} (${cid}): ${titleToParse}`,
-          //   )
-          // }
-          // if (titleParsing.titleRest !== undefined) {
-          //   addTextCidToWordsTree(
-          //     textCidByTitleRestWordsTree,
-          //     titleParsing.titleRest,
-          //     cid,
-          //   )
-          // }
           const analyseTitre = legifranceTextDescription.analysesTitres.find(
             ({ date, dateCalendrierRepublicain, nature, num, resteDuTitre }) =>
               (date === undefined ||
@@ -412,6 +401,47 @@ async function extractTextsInfos(): Promise<number> {
       }
     }
   }
+
+  const existingTitreTexteAutocompletionKeys = new Set(
+    (
+      await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
+        SELECT *
+        FROM titre_texte_autocompletion
+        WHERE id LIKE 'JORFTEXT%' OR id LIKE 'LEGITEXT%'
+      `
+    ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
+  )
+  for (const { cid, titres } of legifranceTextDescriptionByCid.values()) {
+    for (const titre of titres) {
+      if (
+        !existingTitreTexteAutocompletionKeys.delete(
+          JSON.stringify([cid, titre]),
+        )
+      ) {
+        await tisseuseDb`
+          INSERT INTO titre_texte_autocompletion (
+            autocompletion,
+            id
+          ) VALUES (
+            ${titre},
+            ${cid}
+          )
+        `
+      }
+    }
+  }
+  for (const obsoleteTitreTexteAutocompletionKey of existingTitreTexteAutocompletionKeys) {
+    const [id, autocompletion] = JSON.parse(
+      obsoleteTitreTexteAutocompletionKey,
+    ) as [string, string]
+    await tisseuseDb`
+      DELETE FROM titre_texte_autocompletion
+      WHERE
+        id = ${id}
+        AND autocompletion = ${autocompletion}
+    `
+  }
+
   await fs.writeJson(
     "texts_infos.json",
     [...legifranceTextDescriptionByCid.entries()]

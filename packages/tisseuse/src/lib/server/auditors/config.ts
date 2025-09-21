@@ -51,6 +51,15 @@ export function auditConfig(
     auditDb,
     auditRequire,
   )
+  audit.attribute(
+    data,
+    "tisseuseDb",
+    true,
+    errors,
+    remainingKeys,
+    auditDb,
+    auditRequire,
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

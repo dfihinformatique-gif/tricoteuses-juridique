@@ -30,6 +30,6 @@ jobs:
 
   update_tisseuse_database:
     needs: [test]
-    if: forge.event.workflow_run.conclusion == 'success' && forge.event.workflow_run.head_branch == forge.event.repository.default_branch
+    if: forge.event.workflow_run.head_branch == forge.event.repository.default_branch
     runs-on: juridique
     uses: ./.forgejo/workflows/update_tisseuse_database.yml

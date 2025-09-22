@@ -6,7 +6,7 @@ enable-email-notifications: true
 
 jobs:
   update_tisseuse_database:
-    if: forge.event.workflow_run.conclusion == 'success' && forge.event.workflow_run.head_branch == forge.event.repository.default_branch
+    if: forge.event.workflow_run.head_branch == forge.event.repository.default_branch
     runs-on: juridique
     steps:
       - name: Checkout tricoteuses-juridique

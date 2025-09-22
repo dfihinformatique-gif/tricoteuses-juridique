@@ -27,3 +27,5 @@ jobs:
       - name: Extract texts infos (without generating anything)
         run: npx tsx src/scripts/extract_texts_infos.ts
         working-directory: packages/tisseuse/
+      - name: Update Tisseuse database (only when current branch is default branch)
+        uses: .forgejo/workflows/update_tisseuse_database.yml

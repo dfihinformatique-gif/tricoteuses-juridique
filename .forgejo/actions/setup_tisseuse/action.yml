@@ -1,5 +1,18 @@
 name: Setup Tricoteuses Tisseuse
 description: Install Tricoteuses Tisseuse & create its environment
+inputs:
+  ASSEMBLEE_DB_PASSWORD:
+    description: "Password of Assemblée PostgreSQL database"
+    required: true
+  LEGI_ANOMALIES_DB_PASSWORD:
+    description: "Password of Légifrance Anomalies PostgreSQL database"
+    required: true
+  LEGI_DB_PASSWORD:
+    description: "Password of Légifrance PostgreSQL database"
+    required: true
+  TISSEUSE_DB_PASSWORD:
+    description: "Password of Tisseuse PostgreSQL database"
+    required: true
 runs:
   using: composite
   steps:
@@ -14,28 +27,28 @@ runs:
         ASSEMBLEE_DB_HOST="${{ vars.ASSEMBLEE_DB_HOST }}"
         ASSEMBLEE_DB_PORT=${{ vars.ASSEMBLEE_DB_PORT }}
         ASSEMBLEE_DB_USER="assemblee"
-        ASSEMBLEE_DB_PASSWORD="${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
+        ASSEMBLEE_DB_PASSWORD="${{ inputs.ASSEMBLEE_DB_PASSWORD }}"
 
         # Légifrance Anomalies PostgreSQL database configuration
         LEGI_ANOMALIES_DB_NAME="legi_anomalies"
         LEGI_ANOMALIES_DB_HOST="${{ vars.LEGI_ANOMALIES_DB_HOST }}"
         LEGI_ANOMALIES_DB_PORT=${{ vars.LEGI_ANOMALIES_DB_PORT }}
         LEGI_ANOMALIES_DB_USER="legi_anomalies"
-        LEGI_ANOMALIES_DB_PASSWORD="${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
+        LEGI_ANOMALIES_DB_PASSWORD="${{ inputs.LEGI_ANOMALIES_DB_PASSWORD }}"
 
         # Légifrance PostgreSQL database configuration
         LEGI_DB_NAME="legi"
         LEGI_DB_HOST="${{ vars.LEGI_DB_HOST }}"
         LEGI_DB_PORT=${{ vars.LEGI_DB_PORT }}
         LEGI_DB_USER="legi"
-        LEGI_DB_PASSWORD="${{ secrets.LEGI_DB_PASSWORD }}"
+        LEGI_DB_PASSWORD="${{ inputs.LEGI_DB_PASSWORD }}"
 
         # Tisseuse PostgreSQL database configuration
         TISSEUSE_DB_NAME="tisseuse"
         TISSEUSE_DB_HOST="${{ vars.TISSEUSE_DB_HOST }}"
         TISSEUSE_DB_PORT=${{ vars.TISSEUSE_DB_PORT }}
         TISSEUSE_DB_USER="tisseuse"
-        TISSEUSE_DB_PASSWORD="${{ secrets.TISSEUSE_DB_PASSWORD }}"
+        TISSEUSE_DB_PASSWORD="${{ inputs.TISSEUSE_DB_PASSWORD }}"
         EOF
       shell: bash
       working-directory: packages/tisseuse/

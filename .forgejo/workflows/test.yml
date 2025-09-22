@@ -14,7 +14,7 @@ jobs:
         uses: https://code.forgejo.org/actions/checkout@v4
       - name: Setup Tricoteuses Tisseuse
         uses: ./.forgejo/actions/setup_tisseuse
-        secrets:
+        with:
           ASSEMBLEE_DB_PASSWORD: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
           LEGI_ANOMALIES_DB_PASSWORD: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
           LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"

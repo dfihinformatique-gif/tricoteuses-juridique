@@ -16,6 +16,11 @@ jobs:
         uses: https://code.forgejo.org/actions/checkout@v4
       - name: Setup Tricoteuses Tisseuse
         uses: ./.forgejo/actions/setup_tisseuse
+        with:
+          assemblee_db_password: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
+          legi_anomalies_db_password: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
+          legi_db_password: "${{ secrets.LEGI_DB_PASSWORD }}"
+          tisseuse_db_password: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
       - name: Configure Tisseuse database
         run: npm run configure
         working-directory: packages/tisseuse/

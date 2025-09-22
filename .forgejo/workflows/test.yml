@@ -14,11 +14,11 @@ jobs:
         uses: https://code.forgejo.org/actions/checkout@v4
       - name: Setup Tricoteuses Tisseuse
         uses: ./.forgejo/actions/setup_tisseuse
-        with:
-          assemblee_db_password: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
-          legi_anomalies_db_password: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
-          legi_db_password: "${{ secrets.LEGI_DB_PASSWORD }}"
-          tisseuse_db_password: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
+        secrets:
+          ASSEMBLEE_DB_PASSWORD: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
+          LEGI_ANOMALIES_DB_PASSWORD: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
+          LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"
+          TISSEUSE_DB_PASSWORD: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
       - name: Extract titles from texts
         run: npx tsx src/scripts/extract_texts_titles_infos.ts
         working-directory: packages/tisseuse/
@@ -33,3 +33,8 @@ jobs:
     if: forge.ref_name == 'main'
     runs-on: juridique
     uses: ./.forgejo/workflows/update_tisseuse_database.yml
+    secrets:
+      ASSEMBLEE_DB_PASSWORD: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
+      LEGI_ANOMALIES_DB_PASSWORD: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
+      LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"
+      TISSEUSE_DB_PASSWORD: "${{ secrets.TISSEUSE_DB_PASSWORD }}"

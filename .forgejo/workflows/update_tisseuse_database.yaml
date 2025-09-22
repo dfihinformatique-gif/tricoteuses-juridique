@@ -1,0 +1,25 @@
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Test"]
+    types:
+      - completed
+
+enable-email-notifications: true
+
+jobs:
+  update_tisseuse_database:
+    if: ${{ forge.event.workflow_run.conclusion == 'success' }} && forge.event.workflow_run.head_branch == forge.event.repository.default_branch }}
+    runs-on: juridique
+    steps:
+      - name: Setup Tisseuse
+        uses: ./.forgejo/actions/setup_tisseuse/
+      - name: Configure Tisseuse database
+        run: npm run configure
+        working-directory: packages/tisseuse/
+      - name: Extract titles from texts
+        run: npx tsx src/scripts/extract_texts_titles_infos.ts
+        working-directory: packages/tisseuse/
+      - name: Extract texts infos
+        run: npx tsx src/scripts/extract_texts_infos.ts --autocompletion
+        working-directory: packages/tisseuse/

@@ -41,7 +41,13 @@ interface TextDescription {
   titresOfficieux?: string[]
 }
 
-async function extractTextsInfos(): Promise<number> {
+async function extractTextsInfos({
+  autocompletion: generateAutocompletions,
+  json: generateTextsInfosJson,
+}: {
+  autocompletion?: boolean
+  json?: boolean
+}): Promise<number> {
   const anomalies = new Anomalies(legiAnomaliesDb, [
     "date du texte différente",
     "format du titre du texte non reconnu",
@@ -402,58 +408,63 @@ async function extractTextsInfos(): Promise<number> {
     }
   }
 
-  const existingTitreTexteAutocompletionKeys = new Set(
-    (
-      await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
-        SELECT *
-        FROM titre_texte_autocompletion
-        WHERE id LIKE 'JORFTEXT%' OR id LIKE 'LEGITEXT%'
-      `
-    ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
-  )
-  for (const { cid, titres } of legifranceTextDescriptionByCid.values()) {
-    for (const titre of titres) {
-      if (
-        !existingTitreTexteAutocompletionKeys.delete(
-          JSON.stringify([cid, titre]),
-        )
-      ) {
-        await tisseuseDb`
-          INSERT INTO titre_texte_autocompletion (
-            autocompletion,
-            id
-          ) VALUES (
-            ${titre},
-            ${cid}
-          )
+  if (generateAutocompletions) {
+    const existingTitreTexteAutocompletionKeys = new Set(
+      (
+        await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
+          SELECT *
+          FROM titre_texte_autocompletion
+          WHERE id LIKE 'JORFTEXT%' OR id LIKE 'LEGITEXT%'
         `
+      ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
+    )
+    for (const { cid, titres } of legifranceTextDescriptionByCid.values()) {
+      for (const titre of titres) {
+        if (
+          !existingTitreTexteAutocompletionKeys.delete(
+            JSON.stringify([cid, titre]),
+          )
+        ) {
+          await tisseuseDb`
+            INSERT INTO titre_texte_autocompletion (
+              autocompletion,
+              id
+            ) VALUES (
+              ${titre},
+              ${cid}
+            )
+          `
+        }
       }
     }
-  }
-  for (const obsoleteTitreTexteAutocompletionKey of existingTitreTexteAutocompletionKeys) {
-    const [id, autocompletion] = JSON.parse(
-      obsoleteTitreTexteAutocompletionKey,
-    ) as [string, string]
-    await tisseuseDb`
-      DELETE FROM titre_texte_autocompletion
-      WHERE
-        id = ${id}
-        AND autocompletion = ${autocompletion}
-    `
+    for (const obsoleteTitreTexteAutocompletionKey of existingTitreTexteAutocompletionKeys) {
+      const [id, autocompletion] = JSON.parse(
+        obsoleteTitreTexteAutocompletionKey,
+      ) as [string, string]
+      await tisseuseDb`
+        DELETE FROM titre_texte_autocompletion
+        WHERE
+          id = ${id}
+          AND autocompletion = ${autocompletion}
+      `
+    }
   }
 
-  await fs.writeJson(
-    "texts_infos.json",
-    [...legifranceTextDescriptionByCid.entries()]
-      .sort(([cid1], [cid2]) => cid1.localeCompare(cid2))
-      .map(([_cid, legifranceTextDescription]) => ({
-        legifrance: {
-          ...legifranceTextDescription,
-          titres: [...legifranceTextDescription.titres].sort(),
-        },
-      })),
-    { encoding: "utf-8", replacer: jsonReplacer, spaces: 2 },
-  )
+  if (generateTextsInfosJson) {
+    await fs.writeJson(
+      "texts_infos.json",
+      [...legifranceTextDescriptionByCid.entries()]
+        .sort(([cid1], [cid2]) => cid1.localeCompare(cid2))
+        .map(([_cid, legifranceTextDescription]) => ({
+          legifrance: {
+            ...legifranceTextDescription,
+            titres: [...legifranceTextDescription.titres].sort(),
+          },
+        })),
+      { encoding: "utf-8", replacer: jsonReplacer, spaces: 2 },
+    )
+  }
+
   await anomalies.save()
 
   return 0
@@ -471,7 +482,9 @@ sade("extract_texts_infos", true)
   .describe(
     "Extract names of codes, laws, etc and convert them to JSON structures use for links, search, etc",
   )
-  .action(async () => {
-    process.exit(await extractTextsInfos())
+  .option("-a, --autocompletion", "Generate autocompletions SQL table")
+  .option("-j, --json", "Generate texts infos JSON file")
+  .action(async (options) => {
+    process.exit(await extractTextsInfos(options))
   })
   .parse(process.argv)

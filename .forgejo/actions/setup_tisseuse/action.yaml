@@ -1,0 +1,43 @@
+name: Setup Tricoteuses Tisseuse
+description: Install Tricoteuses Tisseuse & create its environment
+runs:
+  using: composite
+  steps:
+    - name: Checkout tricoteuses-juridique
+      uses: https://code.forgejo.org/actions/checkout@v4
+    - name: Install tricoteuses-juridique
+      run: npm install
+      shell: bash
+    - name: Set Tricoteuses Tisseuse environment
+      run: |
+        cat > .env << EOF
+        # Assemblée PostgreSQL database configuration
+        ASSEMBLEE_DB_NAME="assemblee"
+        ASSEMBLEE_DB_HOST="${{ vars.ASSEMBLEE_DB_HOST }}"
+        ASSEMBLEE_DB_PORT=${{ vars.ASSEMBLEE_DB_PORT }}
+        ASSEMBLEE_DB_USER="assemblee"
+        ASSEMBLEE_DB_PASSWORD="${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
+
+        # Légifrance Anomalies PostgreSQL database configuration
+        LEGI_ANOMALIES_DB_NAME="legi_anomalies"
+        LEGI_ANOMALIES_DB_HOST="${{ vars.LEGI_ANOMALIES_DB_HOST }}"
+        LEGI_ANOMALIES_DB_PORT=${{ vars.LEGI_ANOMALIES_DB_PORT }}
+        LEGI_ANOMALIES_DB_USER="legi_anomalies"
+        LEGI_ANOMALIES_DB_PASSWORD="${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
+
+        # Légifrance PostgreSQL database configuration
+        LEGI_DB_NAME="legi"
+        LEGI_DB_HOST="${{ vars.LEGI_DB_HOST }}"
+        LEGI_DB_PORT=${{ vars.LEGI_DB_PORT }}
+        LEGI_DB_USER="legi"
+        LEGI_DB_PASSWORD="${{ secrets.LEGI_DB_PASSWORD }}"
+
+        # Tisseuse PostgreSQL database configuration
+        TISSEUSE_DB_NAME="tisseuse"
+        TISSEUSE_DB_HOST="${{ vars.TISSEUSE_DB_HOST }}"
+        TISSEUSE_DB_PORT=${{ vars.TISSEUSE_DB_PORT }}
+        TISSEUSE_DB_USER="tisseuse"
+        TISSEUSE_DB_PASSWORD="${{ secrets.TISSEUSE_DB_PASSWORD }}"
+        EOF
+      shell: bash
+      working-directory: packages/tisseuse/

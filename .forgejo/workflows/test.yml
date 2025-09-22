@@ -10,8 +10,10 @@ jobs:
   test:
     runs-on: juridique
     steps:
+      - name: Checkout tricoteuses-juridique
+        uses: https://code.forgejo.org/actions/checkout@v4
       - name: Setup Tricoteuses Tisseuse
-        uses: ./.forgejo/actions/setup_tisseuse/
+        uses: ./.forgejo/actions/setup_tisseuse
       - name: Extract titles from texts
         run: npx tsx src/scripts/extract_texts_titles_infos.ts
         working-directory: packages/tisseuse/

@@ -3,8 +3,6 @@ description: Install Tricoteuses Tisseuse & create its environment
 runs:
   using: composite
   steps:
-    - name: Checkout tricoteuses-juridique
-      uses: https://code.forgejo.org/actions/checkout@v4
     - name: Install tricoteuses-juridique
       run: npm install
       shell: bash

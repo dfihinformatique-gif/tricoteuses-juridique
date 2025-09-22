@@ -12,8 +12,10 @@ jobs:
     if: ${{ forge.event.workflow_run.conclusion == 'success' }} && forge.event.workflow_run.head_branch == forge.event.repository.default_branch }}
     runs-on: juridique
     steps:
-      - name: Setup Tisseuse
-        uses: ./.forgejo/actions/setup_tisseuse/
+      - name: Checkout tricoteuses-juridique
+        uses: https://code.forgejo.org/actions/checkout@v4
+      - name: Setup Tricoteuses Tisseuse
+        uses: ./.forgejo/actions/setup_tisseuse
       - name: Configure Tisseuse database
         run: npm run configure
         working-directory: packages/tisseuse/

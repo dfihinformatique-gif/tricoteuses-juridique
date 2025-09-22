@@ -1140,26 +1140,26 @@ describe("simplifyHtml", () => {
   test("PLF article 2 title with <a> without href in <h5>", () => {
     const { output } = simplifyHtml({ removeAWithHref: true })(dedent`
       <h5 style="margin-top:18pt; margin-bottom:18pt; font-size:12pt">
-				<a id="_Toc179428408"><span style="color:#0070b9">B – Mesures fiscales</span></a><span style="font-size:7.5pt"> </span>
-			</h5>
-		`)
+        <a id="_Toc179428408"><span style="color:#0070b9">B – Mesures fiscales</span></a><span style="font-size:7.5pt"> </span>
+      </h5>
+    `)
     expect(output).toBe("B - Mesures fiscales")
   })
 
   test("PLF article 2 subtitle", () => {
     const { output } = simplifyHtml({ removeAWithHref: true })(dedent`
       <table style="width:100%; padding:0pt; border-collapse:collapse">
-				<tbody><tr>
-					<td style="width:497.5pt; border-left:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:0pt 0pt 1.4pt 1.02pt; vertical-align:middle">
-						<h6 style="margin:1pt 1pt 1pt 4pt; line-height:13pt">
-							<a id="_Toc179428409"><span style="font-size:10pt; font-weight:bold; color:#0070b9">ARTICLE</span> <span style="font-size:10pt; font-weight:bold; color:#0070b9">2</span> <span style="color:#ffffff">: </span><br><span style="font-size:10pt; color:#0070b9">Indexation
+        <tbody><tr>
+          <td style="width:497.5pt; border-left:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:0pt 0pt 1.4pt 1.02pt; vertical-align:middle">
+            <h6 style="margin:1pt 1pt 1pt 4pt; line-height:13pt">
+              <a id="_Toc179428409"><span style="font-size:10pt; font-weight:bold; color:#0070b9">ARTICLE</span> <span style="font-size:10pt; font-weight:bold; color:#0070b9">2</span> <span style="color:#ffffff">: </span><br><span style="font-size:10pt; color:#0070b9">Indexation
     sur l’inflation du barème de l’impôt sur le revenu pour les revenus de
     2024 et les grilles de taux par défaut du prélèvement à la source</span></a>
-						</h6>
-					</td>
-				</tr>
-			</tbody></table>
-		`)
+            </h6>
+          </td>
+        </tr>
+      </tbody></table>
+    `)
     expect(output).toBe(dedent`
       ARTICLE 2 :
       Indexation sur l'inflation du barème de l'impôt sur le revenu pour les revenus de 2024 et les grilles de taux par défaut du prélèvement à la source
@@ -1169,22 +1169,22 @@ describe("simplifyHtml", () => {
   test("PLF article 2 first alineas", () => {
     const { output } = simplifyHtml({ removeAWithHref: true })(dedent`
       <p class="assnatFPFdebutartexte">
-				&nbsp;
-			</p>
-			<p class="assnatFPFdebutartexte">
-				&nbsp;
-			</p>
-			<ol class="assnatawlist4" style="margin:0pt; padding-left:0pt">
-				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
-					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>I.</span><span>&nbsp;</span><span>-</span><span>&nbsp;</span><span>Le code général des impôts est ainsi modifié</span><span>&nbsp;</span><span>:</span>
-				</li>
-			</ol>
-			<ol start="2" class="assnatawlist3" style="margin:0pt; padding-left:0pt">
-				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
-					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>A.</span><span>&nbsp;</span><span>– A la première phrase du second alinéa de l’article 196 B, le montant</span><span>&nbsp;</span><span>: «</span><span>&nbsp;</span><span>6</span><span>&nbsp;</span><span>674</span><span>&nbsp;</span><span>€</span><span>&nbsp;</span><span>» est remplacé par le montant</span><span>&nbsp;</span><span>: «</span><span>&nbsp;</span><span>6</span><span>&nbsp;</span><span>807</span><span>&nbsp;</span><span>€</span><span>&nbsp;</span><span>»</span><span>&nbsp;</span><span>;</span>
-				</li>
-			</ol>
-		`)
+        &nbsp;
+      </p>
+      <p class="assnatFPFdebutartexte">
+        &nbsp;
+      </p>
+      <ol class="assnatawlist4" style="margin:0pt; padding-left:0pt">
+        <li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+          <span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>I.</span><span>&nbsp;</span><span>-</span><span>&nbsp;</span><span>Le code général des impôts est ainsi modifié</span><span>&nbsp;</span><span>:</span>
+        </li>
+      </ol>
+      <ol start="2" class="assnatawlist3" style="margin:0pt; padding-left:0pt">
+        <li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+          <span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>A.</span><span>&nbsp;</span><span>– A la première phrase du second alinéa de l’article 196 B, le montant</span><span>&nbsp;</span><span>: «</span><span>&nbsp;</span><span>6</span><span>&nbsp;</span><span>674</span><span>&nbsp;</span><span>€</span><span>&nbsp;</span><span>» est remplacé par le montant</span><span>&nbsp;</span><span>: «</span><span>&nbsp;</span><span>6</span><span>&nbsp;</span><span>807</span><span>&nbsp;</span><span>€</span><span>&nbsp;</span><span>»</span><span>&nbsp;</span><span>;</span>
+        </li>
+      </ol>
+    `)
     expect(output).toBe(dedent`
       I. - Le code général des impôts est ainsi modifié :
       A. - A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé par le montant : « 6 807 € » ;
@@ -1194,41 +1194,41 @@ describe("simplifyHtml", () => {
   test("PLF article 3 title, subtitle & first alineas", () => {
     const { output } = simplifyHtml({ removeAWithHref: true })(dedent`
       <div class="assnatSection27">
-			<table style="width:100%; padding:0pt; border-collapse:collapse">
-				<tbody><tr>
-					<td style="width:497.5pt; border-left:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:0pt 0pt 1.4pt 1.02pt; vertical-align:middle">
-						<h6 style="margin:1pt 1pt 1pt 4pt; line-height:13pt">
-							<a id="_Toc179428410"><span style="font-size:10pt; font-weight:bold; color:#0070b9">ARTICLE</span> <span style="font-size:10pt; font-weight:bold; color:#0070b9">3</span> <span style="color:#ffffff">: </span><br><span style="font-size:10pt; color:#0070b9">Instauration d'une contribution différentielle sur les hauts revenus</span></a>
-						</h6>
-					</td>
-				</tr>
-			</tbody></table>
-			<p class="assnatFPFdebutartexte">
-				&nbsp;
-			</p>
-			<p class="assnatFPFdebutartexte">
-				&nbsp;
-			</p>
-			<ol class="assnatawlist8" style="margin:0pt; padding-left:0pt">
-				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
-					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>I.- Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts est complété par une section 0I </span><span class="assnatEmphasis">bis</span><span> ainsi rédigée</span><span>&nbsp;</span><span>:</span>
-				</li>
-			</ol>
-			<ol start="2" class="assnatawlist3" style="margin:0pt; padding-left:0pt">
-				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
-					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>«</span><span>&nbsp;</span><span>Section 0I </span><span class="assnatEmphasis">bis</span>
-				</li>
-				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
-					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>«</span><span>&nbsp;</span><span>Contribution différentielle applicable à certains contribuables titulaires de hauts revenus</span>
-				</li>
-				<li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
-					<span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>«</span><span>&nbsp;</span><span class="assnatEmphasis">Art. 224</span><span>.
+      <table style="width:100%; padding:0pt; border-collapse:collapse">
+        <tbody><tr>
+          <td style="width:497.5pt; border-left:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:0pt 0pt 1.4pt 1.02pt; vertical-align:middle">
+            <h6 style="margin:1pt 1pt 1pt 4pt; line-height:13pt">
+              <a id="_Toc179428410"><span style="font-size:10pt; font-weight:bold; color:#0070b9">ARTICLE</span> <span style="font-size:10pt; font-weight:bold; color:#0070b9">3</span> <span style="color:#ffffff">: </span><br><span style="font-size:10pt; color:#0070b9">Instauration d'une contribution différentielle sur les hauts revenus</span></a>
+            </h6>
+          </td>
+        </tr>
+      </tbody></table>
+      <p class="assnatFPFdebutartexte">
+        &nbsp;
+      </p>
+      <p class="assnatFPFdebutartexte">
+        &nbsp;
+      </p>
+      <ol class="assnatawlist8" style="margin:0pt; padding-left:0pt">
+        <li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+          <span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>I.- Le chapitre III du titre Ier de la première partie du livre Ier du code général des impôts est complété par une section 0I </span><span class="assnatEmphasis">bis</span><span> ainsi rédigée</span><span>&nbsp;</span><span>:</span>
+        </li>
+      </ol>
+      <ol start="2" class="assnatawlist3" style="margin:0pt; padding-left:0pt">
+        <li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+          <span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>«</span><span>&nbsp;</span><span>Section 0I </span><span class="assnatEmphasis">bis</span>
+        </li>
+        <li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+          <span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>«</span><span>&nbsp;</span><span>Contribution différentielle applicable à certains contribuables titulaires de hauts revenus</span>
+        </li>
+        <li class="assnatFPFprojetloiartexte" style="font-family:Arial; font-size:7pt; color:#0070b9">
+          <span style="width:19.79pt; font:7pt 'Times New Roman'; display:inline-block">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span>«</span><span>&nbsp;</span><span class="assnatEmphasis">Art. 224</span><span>.
           - I. – Il est institué une contribution à la charge des contribuables
           domiciliés fiscalement en France au sens de l’article 4 B dont le revenu
           du foyer fiscal tel que défini au II est supérieur à 250</span><span>&nbsp;</span><span>000</span><span>&nbsp;</span><span>€ pour les contribuables célibataires, veufs, séparés ou divorcés et à 500</span><span>&nbsp;</span><span>000</span><span>&nbsp;</span><span>€ pour les contribuables soumis à imposition commune.</span>
-				</li>
-			</ol>
-		`)
+        </li>
+      </ol>
+    `)
     expect(output).toBe(dedent`
       ARTICLE 3 :
       Instauration d'une contribution différentielle sur les hauts revenus

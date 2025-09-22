@@ -14,7 +14,12 @@
 
 <input bind:value={q} />
 <ul>
-  {#each await autocomplete(q) as { autocompletion, distance, id }}
-    <li>{id} {autocompletion} ({distance})</li>
-  {/each}
+  <svelte:boundary>
+    {#each await autocomplete(q) as { autocompletion, distance, id }}
+      <li>{id} {autocompletion} ({distance})</li>
+    {/each}
+    {#snippet pending()}
+      <p>loading...</p>
+    {/snippet}
+  </svelte:boundary>
 </ul>

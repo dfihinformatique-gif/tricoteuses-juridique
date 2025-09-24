@@ -202,6 +202,16 @@ describe("Textes français", () => {
       expect(context.remaining()).toBe("")
     })
 
+    test("décret du 31 août 1937", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteFrancais(context)).toStrictEqual({
+        date: "1937-08-31",
+        nature: "DECRET",
+        type: "texte",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
     test("LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027", ({
       task,
     }) => {

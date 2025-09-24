@@ -1,6 +1,8 @@
 import { assertNever } from "$lib/asserts.js"
 import {
+  divisionTypes,
   isTextAstAtomicReference,
+  portionTypes,
   type CompoundReferencesSeparator,
   type TextAstAtomicReference,
   type TextAstCompoundReference,
@@ -204,115 +206,132 @@ export const createEnumerationOrBoundedInterval1 = (
           }
           // `reference` is not modified.
         }
-      } else if (
-        reference.type !== "texte" &&
-        otherReference.type === "parent-enfant" &&
-        otherReference.parent.type === "texte"
-      ) {
-        // Create a Merged reference of type texte based on otherReference.
+      } else {
+        // Merge reference and otherReference.
 
-        // Since the new parent of reference is a text, remove every implicitText
-        // from reference and its descendants.
-        for (const descendant of iterAtomicReferences(reference)) {
-          if (descendant.type === "article") {
-            delete descendant.implicitText
+        const referenceHighestAtomicType =
+          getReferenceHighestAtomicType(reference)
+        const otherReferenceHighestAtomicType =
+          getReferenceHighestAtomicType(otherReference)
+        const bothReferencesHighestAtomicType = getHighestAtomicType(
+          referenceHighestAtomicType,
+          otherReferenceHighestAtomicType,
+        )
+        let mergeAtTheSameLevel: boolean
+        if (referenceHighestAtomicType === otherReferenceHighestAtomicType) {
+          mergeAtTheSameLevel = true
+        } else if (
+          bothReferencesHighestAtomicType === otherReferenceHighestAtomicType &&
+          otherReference.type === "parent-enfant"
+        ) {
+          // Create a Merged reference  based on otherReference.
+          mergeAtTheSameLevel = false
+
+          // Since the new parent of reference is the  parent in otherReference, remove every implicitText
+          // from reference and its descendants.
+          for (const descendant of iterAtomicReferences(reference)) {
+            if (descendant.type === "article") {
+              delete descendant.implicitText
+            }
           }
-        }
 
-        reference = {
-          ...otherReference,
-          child:
+          reference = {
+            ...otherReference,
+            child:
+              coordinator === "à"
+                ? {
+                    first: reference,
+                    last: otherReference.child,
+                    position: {
+                      start: reference.position.start,
+                      stop: otherReference.child.position.stop,
+                    },
+                    type: "bounded-interval",
+                  }
+                : {
+                    coordinator,
+                    left: reference,
+                    right: otherReference.child,
+                    position: {
+                      start: reference.position.start,
+                      stop: otherReference.child.position.stop,
+                    },
+                    type: "enumeration",
+                  },
+            position: {
+              start: reference.position.start,
+              stop: otherReference.position.stop,
+            },
+          }
+        } else if (
+          bothReferencesHighestAtomicType === referenceHighestAtomicType &&
+          reference.type === "parent-enfant"
+        ) {
+          // Create a Merged reference based on reference.
+          mergeAtTheSameLevel = false
+
+          // Since the new parent of otherReference is the parent in reference, remove every implicitText
+          // from otherReference and its descendants.
+          for (const descendant of iterAtomicReferences(otherReference)) {
+            if (descendant.type === "article") {
+              delete descendant.implicitText
+            }
+          }
+
+          reference = {
+            ...reference,
+            child:
+              coordinator === "à"
+                ? {
+                    first: reference.child,
+                    last: otherReference,
+                    position: {
+                      start: reference.child.position.start,
+                      stop: otherReference.position.stop,
+                    },
+                    type: "bounded-interval",
+                  }
+                : {
+                    coordinator,
+                    left: reference.child,
+                    right: otherReference,
+                    position: {
+                      start: reference.child.position.start,
+                      stop: otherReference.position.stop,
+                    },
+                    type: "enumeration",
+                  },
+            position: {
+              start: reference.position.start,
+              stop: otherReference.position.stop,
+            },
+          }
+        } else {
+          mergeAtTheSameLevel = true
+        }
+        if (mergeAtTheSameLevel) {
+          reference =
             coordinator === "à"
               ? {
                   first: reference,
-                  last: otherReference.child,
+                  last: otherReference,
                   position: {
                     start: reference.position.start,
-                    stop: otherReference.child.position.stop,
+                    stop: otherReference.position.stop,
                   },
                   type: "bounded-interval",
                 }
               : {
                   coordinator,
                   left: reference,
-                  right: otherReference.child,
                   position: {
                     start: reference.position.start,
-                    stop: otherReference.child.position.stop,
-                  },
-                  type: "enumeration",
-                },
-          position: {
-            start: reference.position.start,
-            stop: otherReference.position.stop,
-          },
-        }
-      } else if (
-        reference.type === "parent-enfant" &&
-        reference.parent.type === "texte" &&
-        otherReference.type !== "texte"
-      ) {
-        // Create a Merged reference of type texte based on reference.
-
-        // Since the new parent of otherReference is a text, remove every implicitText
-        // from otherReference and its descendants.
-        for (const descendant of iterAtomicReferences(otherReference)) {
-          if (descendant.type === "article") {
-            delete descendant.implicitText
-          }
-        }
-
-        reference = {
-          ...reference,
-          child:
-            coordinator === "à"
-              ? {
-                  first: reference.child,
-                  last: otherReference,
-                  position: {
-                    start: reference.child.position.start,
                     stop: otherReference.position.stop,
                   },
-                  type: "bounded-interval",
-                }
-              : {
-                  coordinator,
-                  left: reference.child,
                   right: otherReference,
-                  position: {
-                    start: reference.child.position.start,
-                    stop: otherReference.position.stop,
-                  },
                   type: "enumeration",
-                },
-          position: {
-            start: reference.position.start,
-            stop: otherReference.position.stop,
-          },
+                }
         }
-      } else {
-        // TODO: Handle other combinations of reference.type & otherReference.type.
-        reference =
-          coordinator === "à"
-            ? {
-                first: reference,
-                last: otherReference,
-                position: {
-                  start: reference.position.start,
-                  stop: otherReference.position.stop,
-                },
-                type: "bounded-interval",
-              }
-            : {
-                coordinator,
-                left: reference,
-                position: {
-                  start: reference.position.start,
-                  stop: otherReference.position.stop,
-                },
-                right: otherReference,
-                type: "enumeration",
-              }
       }
       remaining.splice(remainingIndex, 1)
     }
@@ -348,6 +367,73 @@ export const createParentChildTreeFromReferences = (
   }
   child.position = position
   return child
+}
+
+export const getHighestAtomicType = (
+  type1: TextAstAtomicReference["type"],
+  type2: TextAstAtomicReference["type"],
+): TextAstAtomicReference["type"] => {
+  for (const highestType of [
+    "texte",
+    ...divisionTypes,
+    "article",
+    ...portionTypes,
+    // "incomplete-header",
+  ] as Array<TextAstAtomicReference["type"]>) {
+    if ([type1, type2].includes(highestType)) {
+      return highestType
+    }
+  }
+  return "incomplete-header"
+}
+
+export const getReferenceHighestAtomicType = (
+  reference: TextAstReference,
+): TextAstAtomicReference["type"] => {
+  if (isTextAstAtomicReference(reference)) {
+    return reference.type
+  }
+  switch (reference.type) {
+    case "bounded-interval": {
+      return getHighestAtomicType(
+        getReferenceHighestAtomicType(reference.first),
+        getReferenceHighestAtomicType(reference.last),
+      )
+    }
+
+    case "counted-interval": {
+      return getReferenceHighestAtomicType(reference.first)
+    }
+
+    case "enumeration": {
+      return getHighestAtomicType(
+        getReferenceHighestAtomicType(reference.left),
+        getReferenceHighestAtomicType(reference.right),
+      )
+    }
+
+    case "exclusion": {
+      return getHighestAtomicType(
+        getReferenceHighestAtomicType(reference.left),
+        getReferenceHighestAtomicType(reference.right),
+      )
+    }
+
+    case "parent-enfant": {
+      return getHighestAtomicType(
+        getReferenceHighestAtomicType(reference.parent),
+        getReferenceHighestAtomicType(reference.child),
+      )
+    }
+
+    case "reference_et_action": {
+      return getReferenceHighestAtomicType(reference.reference)
+    }
+
+    default: {
+      assertNever("getReferenceHighestAtomicType reference.type", reference)
+    }
+  }
 }
 
 export function* iterAtomicFirstParentReferences<

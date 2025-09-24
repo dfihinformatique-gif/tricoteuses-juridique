@@ -1279,6 +1279,77 @@ describe("reference", () => {
     expect(context.text(result.position)).toBe(task.name)
   })
 
+  test("l'article 61 de la loi du 31 décembre 1937, l'article 57 de la loi du 31 décembre 1938", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstEnumeration
+    expect(result).toStrictEqual({
+      coordinator: ",",
+      left: {
+        child: {
+          num: "61",
+          position: {
+            start: 2,
+            stop: 12,
+          },
+          type: "article",
+        },
+        parent: {
+          date: "1937-12-31",
+          nature: "LOI",
+          position: {
+            start: 19,
+            stop: 42,
+          },
+          type: "texte",
+        },
+        position: {
+          start: 0,
+          stop: 42,
+        },
+        type: "parent-enfant",
+      },
+      position: {
+        start: 0,
+        stop: 86,
+      },
+      right: {
+        child: {
+          num: "57",
+          position: {
+            start: 46,
+            stop: 56,
+          },
+          type: "article",
+        },
+        parent: {
+          date: "1938-12-31",
+          nature: "LOI",
+          position: {
+            start: 63,
+            stop: 86,
+          },
+          type: "texte",
+        },
+        position: {
+          start: 44,
+          stop: 86,
+        },
+        type: "parent-enfant",
+      },
+      type: "enumeration",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe(
+      "l'article 61 de la loi du 31 décembre 1937",
+    )
+    expect(context.text(result.right.position)).toBe(
+      "l'article 57 de la loi du 31 décembre 1938",
+    )
+  })
+
   test("l'article 7 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstReference
@@ -1432,6 +1503,223 @@ describe("reference", () => {
         ).child.position,
       ),
     ).toBe("chapitre III")
+  })
+
+  test("le décret du 31 août 1937, l'article 61 de la loi du 31 décembre 1937, l'article 57 de la loi du 31 décembre 1938", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstEnumeration
+    expect(result).toStrictEqual({
+      coordinator: ",",
+      left: {
+        coordinator: ",",
+        left: {
+          date: "1937-08-31",
+          nature: "DECRET",
+          position: {
+            start: 0,
+            stop: 25,
+          },
+          type: "texte",
+        },
+        position: {
+          start: 0,
+          stop: 69,
+        },
+        right: {
+          child: {
+            num: "61",
+            position: {
+              start: 29,
+              stop: 39,
+            },
+            type: "article",
+          },
+          parent: {
+            date: "1937-12-31",
+            nature: "LOI",
+            position: {
+              start: 46,
+              stop: 69,
+            },
+            type: "texte",
+          },
+          position: {
+            start: 27,
+            stop: 69,
+          },
+          type: "parent-enfant",
+        },
+        type: "enumeration",
+      },
+      position: {
+        start: 0,
+        stop: 113,
+      },
+      right: {
+        child: {
+          num: "57",
+          position: {
+            start: 73,
+            stop: 83,
+          },
+          type: "article",
+        },
+        parent: {
+          date: "1938-12-31",
+          nature: "LOI",
+          position: {
+            start: 90,
+            stop: 113,
+          },
+          type: "texte",
+        },
+        position: {
+          start: 71,
+          stop: 113,
+        },
+        type: "parent-enfant",
+      },
+      type: "enumeration",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe(
+      "le décret du 31 août 1937, l'article 61 de la loi du 31 décembre 1937",
+    )
+    expect(context.text(result.right.position)).toBe(
+      "l'article 57 de la loi du 31 décembre 1938",
+    )
+    expect(
+      context.text((result.left as TextAstEnumeration).left.position),
+    ).toBe("le décret du 31 août 1937")
+    expect(
+      context.text((result.left as TextAstEnumeration).right.position),
+    ).toBe("l'article 61 de la loi du 31 décembre 1937")
+  })
+
+  test("le décret du 31 août 1937, l'article 61 de la loi du 31 décembre 1937, l'article 57 de la loi du 31 décembre 1938 et la loi du 18 mars 1944", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstEnumeration
+    expect(result).toStrictEqual({
+      coordinator: "et",
+      left: {
+        coordinator: ",",
+        left: {
+          coordinator: ",",
+          left: {
+            date: "1937-08-31",
+            nature: "DECRET",
+            position: {
+              start: 0,
+              stop: 25,
+            },
+            type: "texte",
+          },
+          position: {
+            start: 0,
+            stop: 69,
+          },
+          right: {
+            child: {
+              num: "61",
+              position: {
+                start: 29,
+                stop: 39,
+              },
+              type: "article",
+            },
+            parent: {
+              date: "1937-12-31",
+              nature: "LOI",
+              position: {
+                start: 46,
+                stop: 69,
+              },
+              type: "texte",
+            },
+            position: {
+              start: 27,
+              stop: 69,
+            },
+            type: "parent-enfant",
+          },
+          type: "enumeration",
+        },
+        position: {
+          start: 0,
+          stop: 113,
+        },
+        right: {
+          child: {
+            num: "57",
+            position: {
+              start: 73,
+              stop: 83,
+            },
+            type: "article",
+          },
+          parent: {
+            date: "1938-12-31",
+            nature: "LOI",
+            position: {
+              start: 90,
+              stop: 113,
+            },
+            type: "texte",
+          },
+          position: {
+            start: 71,
+            stop: 113,
+          },
+          type: "parent-enfant",
+        },
+        type: "enumeration",
+      },
+      position: {
+        start: 0,
+        stop: 139,
+      },
+      right: {
+        date: "1944-03-18",
+        nature: "LOI",
+        position: {
+          start: 117,
+          stop: 139,
+        },
+        type: "texte",
+      },
+      type: "enumeration",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+    expect(context.text(result.left.position)).toBe(
+      "le décret du 31 août 1937, l'article 61 de la loi du 31 décembre 1937, l'article 57 de la loi du 31 décembre 1938",
+    )
+    expect(context.text(result.right.position)).toBe("la loi du 18 mars 1944")
+    expect(
+      context.text((result.left as TextAstEnumeration).left.position),
+    ).toBe(
+      "le décret du 31 août 1937, l'article 61 de la loi du 31 décembre 1937",
+    )
+    expect(
+      context.text((result.left as TextAstEnumeration).right.position),
+    ).toBe("l'article 57 de la loi du 31 décembre 1938")
+    expect(
+      context.text(
+        ((result.left as TextAstEnumeration).left as TextAstEnumeration).left
+          .position,
+      ),
+    ).toBe("le décret du 31 août 1937")
+    expect(
+      context.text(
+        ((result.left as TextAstEnumeration).left as TextAstEnumeration).right
+          .position,
+      ),
+    ).toBe("l'article 61 de la loi du 31 décembre 1937")
   })
 
   test("Le livre III de la partie législative du code des impositions sur les biens et services", ({

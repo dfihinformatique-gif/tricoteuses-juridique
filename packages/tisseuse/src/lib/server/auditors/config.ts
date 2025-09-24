@@ -24,42 +24,22 @@ export function auditConfig(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  audit.attribute(
-    data,
+  for (const key of [
     "assembleeDb",
-    true,
-    errors,
-    remainingKeys,
-    auditDb,
-    auditRequire,
-  )
-  audit.attribute(
-    data,
     "legiAnomaliesDb",
-    true,
-    errors,
-    remainingKeys,
-    auditDb,
-    auditRequire,
-  )
-  audit.attribute(
-    data,
     "legiDb",
-    true,
-    errors,
-    remainingKeys,
-    auditDb,
-    auditRequire,
-  )
-  audit.attribute(
-    data,
     "tisseuseDb",
-    true,
-    errors,
-    remainingKeys,
-    auditDb,
-    auditRequire,
-  )
+  ]) {
+    audit.attribute(
+      data,
+      key,
+      true,
+      errors,
+      remainingKeys,
+      auditDb,
+      auditRequire,
+    )
+  }
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

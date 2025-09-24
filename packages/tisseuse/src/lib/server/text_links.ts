@@ -274,6 +274,7 @@ export async function* iterTextLinks(
   let currentArticleId: string | undefined = undefined
   let currentCodeId: string | undefined = undefined
   let currentConstitutionId: string | undefined = undefined
+  let currentDecreeId: string | undefined = undefined
   let currentLawId: string | undefined = undefined
   let currentSectionTaId: string | undefined = undefined
   let currentTextId: string | undefined = undefined
@@ -738,7 +739,6 @@ export async function* iterTextLinks(
       case "ARRETE":
       case "CIRCULAIRE":
       case "CONVENTION":
-      case "DECRET":
       case "DECRET_LOI":
       case "DIRECTIVE_EURO":
       case "REGLEMENTEUROPEEN": {
@@ -768,7 +768,7 @@ export async function* iterTextLinks(
       }
 
       case "CONSTITUTION": {
-        if (text.relative === 0 && currentCodeId !== undefined) {
+        if (text.relative === 0 && currentConstitutionId !== undefined) {
           currentTextId = currentConstitutionId
           break
         }
@@ -787,11 +787,31 @@ export async function* iterTextLinks(
         break
       }
 
+      case "DECRET": {
+        if (text.relative === 0 && currentDecreeId !== undefined) {
+          currentTextId = currentDecreeId
+          break
+        }
+
+        if (text.cid === undefined) {
+          if (logPartialReferences) {
+            console.log(
+              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+            )
+          }
+          currentTextId = undefined
+          break
+        }
+
+        currentTextId = currentDecreeId = text.cid
+        break
+      }
+
       case "LOI":
       case "LOI_CONSTIT":
       case "LOI_ORGANIQUE":
       case "ORDONNANCE": {
-        if (text.relative === 0 && currentCodeId !== undefined) {
+        if (text.relative === 0 && currentLawId !== undefined) {
           currentTextId = currentLawId
           break
         }
@@ -928,6 +948,7 @@ export async function* iterTextLinks(
   currentArticleId = undefined
   currentCodeId = undefined
   currentConstitutionId = undefined
+  currentDecreeId = undefined
   currentLawId = undefined
   currentSectionTaId = undefined
   currentTextId = undefined

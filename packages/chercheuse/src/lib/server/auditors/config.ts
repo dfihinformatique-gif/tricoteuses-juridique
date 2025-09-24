@@ -24,15 +24,17 @@ export function auditConfig(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
-  audit.attribute(
-    data,
-    "tisseuseDb",
-    true,
-    errors,
-    remainingKeys,
-    auditDb,
-    auditRequire,
-  )
+  for (const key of ["legiDb", "tisseuseDb"]) {
+    audit.attribute(
+      data,
+      key,
+      true,
+      errors,
+      remainingKeys,
+      auditDb,
+      auditRequire,
+    )
+  }
   audit.attribute(
     data,
     "title",

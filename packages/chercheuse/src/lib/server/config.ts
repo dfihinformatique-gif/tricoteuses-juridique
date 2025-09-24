@@ -3,6 +3,7 @@ import "dotenv/config"
 import { validateConfig } from "$lib/server/auditors/config.js"
 
 export interface Config {
+  legiDb: DatabaseConfig
   tisseuseDb: DatabaseConfig
   title: string
 }
@@ -16,6 +17,13 @@ export interface DatabaseConfig {
 }
 
 const [config, error] = validateConfig({
+  legiDb: {
+    host: process.env.LEGI_DB_HOST,
+    port: process.env.LEGI_DB_PORT,
+    database: process.env.LEGI_DB_NAME,
+    user: process.env.LEGI_DB_USER,
+    password: process.env.LEGI_DB_PASSWORD,
+  },
   tisseuseDb: {
     host: process.env.TISSEUSE_DB_HOST,
     port: process.env.TISSEUSE_DB_PORT,

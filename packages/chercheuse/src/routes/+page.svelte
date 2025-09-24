@@ -16,7 +16,7 @@
 <ul>
   <svelte:boundary>
     {#each await autocomplete(q) as { autocompletion, distance, id }}
-      <li>{id} {autocompletion} ({distance})</li>
+      <li><a href="/legifrance/textes/{id}">{autocompletion}</a></li>
     {/each}
     {#snippet pending()}
       <p>loading...</p>

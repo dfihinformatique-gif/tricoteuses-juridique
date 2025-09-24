@@ -7,6 +7,15 @@ export interface Version {
   number: number
 }
 
+export const legiDb = postgres({
+  database: config.legiDb.database,
+  host: config.legiDb.host,
+  password: config.legiDb.password,
+  port: config.legiDb.port,
+  user: config.legiDb.user,
+})
+export const legiVersionNumber = 17
+
 export const tisseuseDb = postgres({
   database: config.tisseuseDb.database,
   host: config.tisseuseDb.host,
@@ -15,6 +24,35 @@ export const tisseuseDb = postgres({
   user: config.tisseuseDb.user,
 })
 export const tisseuseVersionNumber = 1
+
+/**
+ * Check that Legi database exists and is up to date.
+ */
+export async function checkLegiDb(): Promise<void> {
+  assert(
+    (
+      await legiDb`SELECT EXISTS (
+        SELECT * FROM information_schema.tables WHERE table_name='version'
+      )`
+    )[0]?.exists,
+    'Legi database is not initialized. Run "npm run configure" to do it.',
+  )
+  const version = (await legiDb<Version[]>`SELECT * FROM version`)[0]
+  assert.notStrictEqual(
+    version,
+    undefined,
+    'Legi database has no version number. Run "npm run configure" to do it.',
+  )
+  assert(
+    version.number <= legiVersionNumber,
+    "Legi database format is too recent.",
+  )
+  assert.strictEqual(
+    version.number,
+    legiVersionNumber,
+    'Legi database must be upgraded. Run "npm run configure" to do it.',
+  )
+}
 
 /**
  * Check that Tisseuse database exists and is up to date.

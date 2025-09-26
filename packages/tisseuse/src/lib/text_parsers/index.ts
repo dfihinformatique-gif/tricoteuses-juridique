@@ -54,9 +54,21 @@ export function* iterReferences(
   const candidateRegExp = new RegExp(
     String.raw`
       (?:
-        ^                             # début de ligne
-        (?:                           # définition d'un article ou d'une division
-          art\.
+        ^ # début de ligne
+        (?:
+          # Référence à un texte
+          arrêtés?
+          |circulaires?
+          |code
+          |constitution
+          |décret-loi
+          |décrets?
+          # Note : "|livre des procédures fiscales" est traité par la définition de "livre" ci-dessous.
+          |loi
+          |ordonnance
+
+          # Définition d'un article ou d'une division
+          |art\.
           |chapitre
           |livre
           |paragraphe
@@ -71,7 +83,7 @@ export function* iterReferences(
         (?= )
       )
       |(?<=^|\P{Alphabetic})(?:
-        (?:«)                         # citation
+        (?:«) # citation
         |(?:au|le|du)(?:dit)?(?= )
         |(?:[àa] +)?la(?:dite)?(?= )
         |(?:[àa] +)?(?:l')

@@ -6,7 +6,6 @@ import {
   LegiTexteVersion,
 } from "@tricoteuses/legifrance"
 import assert from "node:assert"
-import fs from "fs-extra"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts.js"
@@ -14,18 +13,12 @@ import { legiDb } from "$lib/server/databases/index.js"
 import { iterTextLinks } from "$lib/server/text_links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import {
-  iterOriginalMergedPositionsFromTransformed,
-  type Transformation,
-} from "$lib/text_parsers/transformers.js"
-import {
-  readTransformation,
-  writeTransformation,
-} from "$lib/server/text_parsers/transformers.js"
+import { iterOriginalMergedPositionsFromTransformed } from "$lib/text_parsers/transformers.js"
 
 const today = new Date().toISOString().split("T")[0]
 
 async function addLinksToHtml(
+  id: string,
   inputHtml: string,
   {
     date,
@@ -71,73 +64,73 @@ async function addLinksToHtml(
 
       case "external_article": {
         const { articleId, position: articlePosition } = link
-        const result =
-          originalPositionsFromTransformedIterator.next(articlePosition)
-        if (result.done) {
-          console.error(
-            `In article ${id}, transformation of link to article ${articleId} position to HTML failed:`,
-            articlePosition,
-          )
-          process.exit(1)
+        if (articleId !== undefined) {
+          const result =
+            originalPositionsFromTransformedIterator.next(articlePosition)
+          if (result.done) {
+            throw new Error(
+              `In ${id}, transformation of link to article ${articleId} position to HTML failed: ${articlePosition}`,
+            )
+          }
+          const articleReverseTransformation = result.value
+          const original =
+            (articleReverseTransformation.innerPrefix ?? "") +
+            output.slice(
+              articleReverseTransformation.position.start + outputOffset,
+              articleReverseTransformation.position.stop + outputOffset,
+            ) +
+            (articleReverseTransformation.innerSuffix ?? "")
+          const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
+          output =
+            output.slice(
+              0,
+              articleReverseTransformation.position.start + outputOffset,
+            ) +
+            replacement +
+            output.slice(
+              articleReverseTransformation.position.stop + outputOffset,
+            )
+          outputOffset +=
+            replacement.length -
+            (articleReverseTransformation.position.stop -
+              articleReverseTransformation.position.start)
         }
-        const articleReverseTransformation = result.value
-        const original =
-          (articleReverseTransformation.innerPrefix ?? "") +
-          output.slice(
-            articleReverseTransformation.position.start + outputOffset,
-            articleReverseTransformation.position.stop + outputOffset,
-          ) +
-          (articleReverseTransformation.innerSuffix ?? "")
-        const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
-        output =
-          output.slice(
-            0,
-            articleReverseTransformation.position.start + outputOffset,
-          ) +
-          replacement +
-          output.slice(
-            articleReverseTransformation.position.stop + outputOffset,
-          )
-        outputOffset +=
-          replacement.length -
-          (articleReverseTransformation.position.stop -
-            articleReverseTransformation.position.start)
         break
       }
 
       case "external_division": {
         const { position: divisionPosition, sectionTaId } = link
-        const result =
-          originalPositionsFromTransformedIterator.next(divisionPosition)
-        if (result.done) {
-          console.error(
-            `In article ${id}, transformation of division position to HTML failed:`,
-            divisionPosition,
-          )
-          process.exit(1)
+        if (sectionTaId !== undefined) {
+          const result =
+            originalPositionsFromTransformedIterator.next(divisionPosition)
+          if (result.done) {
+            throw new Error(
+              `In ${id}, transformation of division position to HTML failed: ${divisionPosition}`,
+            )
+          }
+          const divisionReverseTransformation = result.value
+          const original =
+            (divisionReverseTransformation.innerPrefix ?? "") +
+            output.slice(
+              divisionReverseTransformation.position.start + outputOffset,
+              divisionReverseTransformation.position.stop + outputOffset,
+            ) +
+            (divisionReverseTransformation.innerSuffix ?? "")
+          const replacement = `${divisionReverseTransformation.outerPrefix ?? ""}<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseTransformation.outerSuffix ?? ""}`
+          output =
+            output.slice(
+              0,
+              divisionReverseTransformation.position.start + outputOffset,
+            ) +
+            replacement +
+            output.slice(
+              divisionReverseTransformation.position.stop + outputOffset,
+            )
+          outputOffset +=
+            replacement.length -
+            (divisionReverseTransformation.position.stop -
+              divisionReverseTransformation.position.start)
         }
-        const divisionReverseTransformation = result.value
-        const original =
-          (divisionReverseTransformation.innerPrefix ?? "") +
-          output.slice(
-            divisionReverseTransformation.position.start + outputOffset,
-            divisionReverseTransformation.position.stop + outputOffset,
-          ) +
-          (divisionReverseTransformation.innerSuffix ?? "")
-        const replacement = `${divisionReverseTransformation.outerPrefix ?? ""}<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseTransformation.outerSuffix ?? ""}`
-        output =
-          output.slice(
-            0,
-            divisionReverseTransformation.position.start + outputOffset,
-          ) +
-          replacement +
-          output.slice(
-            divisionReverseTransformation.position.stop + outputOffset,
-          )
-        outputOffset +=
-          replacement.length -
-          (divisionReverseTransformation.position.stop -
-            divisionReverseTransformation.position.start)
         break
       }
 
@@ -146,8 +139,8 @@ async function addLinksToHtml(
         if (text.cid === undefined) {
           if (text.relative !== 0) {
             // It is not "la présente loi".
-            throw new Error(
-              `In article ${id}, link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
+            console.error(
+              `In ${id}, link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
             )
           }
           continue
@@ -156,11 +149,9 @@ async function addLinksToHtml(
         const result =
           originalPositionsFromTransformedIterator.next(textPosition)
         if (result.done) {
-          console.error(
-            `In article ${id}, transformation of text position to HTML failed:`,
-            textPosition,
+          throw new Error(
+            `In ${id}, transformation of text position to HTML failed: ${textPosition}`,
           )
-          process.exit(1)
         }
         const textReverseTransformation = result.value
         const original =
@@ -190,11 +181,9 @@ async function addLinksToHtml(
         const result =
           originalPositionsFromTransformedIterator.next(articlePosition)
         if (result.done) {
-          console.error(
-            `In article ${id}, transformation of article position to HTML failed:`,
-            articlePosition,
+          throw new Error(
+            `In ${id}, transformation of article position to HTML failed: ${articlePosition}`,
           )
-          process.exit(1)
         }
         const articleReverseTransformation = result.value
         const original =
@@ -270,7 +259,7 @@ async function addLinksToLegifrance(
       ["visas", (texteVersion as LegiTexteVersion).VISAS?.CONTENU],
     ] as Array<[keyof typeof outputByFieldName, string | undefined]>) {
       if (input !== undefined) {
-        const output = await addLinksToHtml(input, {
+        const output = await addLinksToHtml(id, input, {
           date,
           defaultTextId: textCid,
           logIgnoredReferencesTypes,
@@ -345,7 +334,7 @@ async function addLinksToLegifrance(
         ["nota", (article as LegiArticle).NOTA?.CONTENU],
       ] as Array<[keyof typeof outputByFieldName, string | undefined]>) {
         if (input !== undefined) {
-          const output = await addLinksToHtml(input, {
+          const output = await addLinksToHtml(id, input, {
             date,
             defaultTextId: textCid,
             logIgnoredReferencesTypes,

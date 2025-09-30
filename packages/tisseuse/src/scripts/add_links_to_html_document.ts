@@ -103,73 +103,77 @@ async function addLinksToHtmlDocument(
 
         case "external_article": {
           const { articleId, position: articlePosition } = link
-          const result =
-            originalPositionsFromTransformedIterator.next(articlePosition)
-          if (result.done) {
-            console.error(
-              "Transformation of article position to HTML failed:",
-              articlePosition,
-            )
-            process.exit(1)
+          if (articleId !== undefined) {
+            const result =
+              originalPositionsFromTransformedIterator.next(articlePosition)
+            if (result.done) {
+              console.error(
+                "Transformation of article position to HTML failed:",
+                articlePosition,
+              )
+              process.exit(1)
+            }
+            const articleReverseTransformation = result.value
+            const original =
+              (articleReverseTransformation.innerPrefix ?? "") +
+              output.slice(
+                articleReverseTransformation.position.start + outputOffset,
+                articleReverseTransformation.position.stop + outputOffset,
+              ) +
+              (articleReverseTransformation.innerSuffix ?? "")
+            const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
+            output =
+              output.slice(
+                0,
+                articleReverseTransformation.position.start + outputOffset,
+              ) +
+              replacement +
+              output.slice(
+                articleReverseTransformation.position.stop + outputOffset,
+              )
+            outputOffset +=
+              replacement.length -
+              (articleReverseTransformation.position.stop -
+                articleReverseTransformation.position.start)
           }
-          const articleReverseTransformation = result.value
-          const original =
-            (articleReverseTransformation.innerPrefix ?? "") +
-            output.slice(
-              articleReverseTransformation.position.start + outputOffset,
-              articleReverseTransformation.position.stop + outputOffset,
-            ) +
-            (articleReverseTransformation.innerSuffix ?? "")
-          const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
-          output =
-            output.slice(
-              0,
-              articleReverseTransformation.position.start + outputOffset,
-            ) +
-            replacement +
-            output.slice(
-              articleReverseTransformation.position.stop + outputOffset,
-            )
-          outputOffset +=
-            replacement.length -
-            (articleReverseTransformation.position.stop -
-              articleReverseTransformation.position.start)
           break
         }
 
         case "external_division": {
           const { position: divisionPosition, sectionTaId } = link
-          const result =
-            originalPositionsFromTransformedIterator.next(divisionPosition)
-          if (result.done) {
-            console.error(
-              "Transformation of division position to HTML failed:",
-              divisionPosition,
-            )
-            process.exit(1)
+          if (sectionTaId !== undefined) {
+            const result =
+              originalPositionsFromTransformedIterator.next(divisionPosition)
+            if (result.done) {
+              console.error(
+                "Transformation of division position to HTML failed:",
+                divisionPosition,
+              )
+              process.exit(1)
+            }
+            const divisionReverseTransformation = result.value
+            const original =
+              (divisionReverseTransformation.innerPrefix ?? "") +
+              output.slice(
+                divisionReverseTransformation.position.start + outputOffset,
+                divisionReverseTransformation.position.stop + outputOffset,
+              ) +
+              (divisionReverseTransformation.innerSuffix ?? "")
+            const replacement = `${divisionReverseTransformation.outerPrefix ?? ""}<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseTransformation.outerSuffix ?? ""}`
+            output =
+              output.slice(
+                0,
+                divisionReverseTransformation.position.start + outputOffset,
+              ) +
+              replacement +
+              output.slice(
+                divisionReverseTransformation.position.stop + outputOffset,
+              )
+            outputOffset +=
+              replacement.length -
+              (divisionReverseTransformation.position.stop -
+                divisionReverseTransformation.position.start)
           }
-          const divisionReverseTransformation = result.value
-          const original =
-            (divisionReverseTransformation.innerPrefix ?? "") +
-            output.slice(
-              divisionReverseTransformation.position.start + outputOffset,
-              divisionReverseTransformation.position.stop + outputOffset,
-            ) +
-            (divisionReverseTransformation.innerSuffix ?? "")
-          const replacement = `${divisionReverseTransformation.outerPrefix ?? ""}<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseTransformation.outerSuffix ?? ""}`
-          output =
-            output.slice(
-              0,
-              divisionReverseTransformation.position.start + outputOffset,
-            ) +
-            replacement +
-            output.slice(
-              divisionReverseTransformation.position.stop + outputOffset,
-            )
-          outputOffset +=
-            replacement.length -
-            (divisionReverseTransformation.position.stop -
-              divisionReverseTransformation.position.start)
           break
         }
 

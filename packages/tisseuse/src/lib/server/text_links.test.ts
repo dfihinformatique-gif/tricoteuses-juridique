@@ -32,6 +32,48 @@ describe("iterTextLinks", () => {
           start: 3,
           stop: 87,
         },
+        reference: {
+          child: {
+            child: {
+              index: 3,
+              num: "III",
+              position: {
+                start: 3,
+                stop: 12,
+              },
+              type: "livre",
+            },
+            parent: {
+              num: "législative",
+              position: {
+                start: 19,
+                stop: 37,
+              },
+              type: "partie",
+            },
+            position: {
+              start: 3,
+              stop: 37,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            cid: "LEGITEXT000044595989",
+            nature: "CODE",
+            position: {
+              start: 41,
+              stop: 87,
+            },
+            title: "Code des impositions sur les biens et services",
+            titleRest: "des impositions sur les biens et services",
+            type: "texte",
+          },
+          position: {
+            start: 0,
+            stop: 87,
+          },
+          type: "parent-enfant",
+        },
         sectionTaId: "LEGISCTA000044604035",
         type: "external_division",
       },
@@ -65,6 +107,33 @@ describe("iterTextLinks", () => {
         position: {
           start: 3,
           stop: 62,
+        },
+        reference: {
+          child: {
+            index: 3,
+            num: "III",
+            position: {
+              start: 3,
+              stop: 12,
+            },
+            type: "livre",
+          },
+          parent: {
+            cid: "LEGITEXT000044595989",
+            nature: "CODE",
+            position: {
+              start: 16,
+              stop: 62,
+            },
+            title: "Code des impositions sur les biens et services",
+            titleRest: "des impositions sur les biens et services",
+            type: "texte",
+          },
+          position: {
+            start: 0,
+            stop: 62,
+          },
+          type: "parent-enfant",
         },
         sectionTaId: "LEGISCTA000044604035",
         type: "external_division",
@@ -100,6 +169,96 @@ describe("iterTextLinks", () => {
         start: 83,
         stop: 85,
       },
+      reference: {
+        child: {
+          coordinator: "et",
+          left: {
+            coordinator: ",",
+            left: {
+              num: "200 undecies",
+              position: {
+                start: 0,
+                stop: 24,
+              },
+              type: "article",
+            },
+            position: {
+              start: 0,
+              stop: 66,
+            },
+            right: {
+              first: {
+                num: "244 quater B",
+                position: {
+                  start: 39,
+                  stop: 51,
+                },
+                type: "article",
+              },
+              last: {
+                num: "244 quater W",
+                position: {
+                  start: 54,
+                  stop: 66,
+                },
+                type: "article",
+              },
+              position: {
+                start: 26,
+                stop: 66,
+              },
+              type: "bounded-interval",
+            },
+            type: "enumeration",
+          },
+          position: {
+            start: 0,
+            stop: 92,
+          },
+          right: {
+            coordinator: "et",
+            left: {
+              num: "27",
+              position: {
+                start: 83,
+                stop: 85,
+              },
+              type: "article",
+            },
+            position: {
+              start: 74,
+              stop: 92,
+            },
+            right: {
+              num: "151",
+              position: {
+                start: 89,
+                stop: 92,
+              },
+              type: "article",
+            },
+            type: "enumeration",
+          },
+          type: "enumeration",
+        },
+        parent: {
+          cid: "JORFTEXT000042753580",
+          date: "2020-12-29",
+          nature: "LOI",
+          num: "2020-1721",
+          position: {
+            start: 99,
+            stop: 135,
+          },
+          title: "LOI n° 2020-1721 du 29 décembre 2020 de finances pour 2021",
+          type: "texte",
+        },
+        position: {
+          start: 0,
+          stop: 135,
+        },
+        type: "parent-enfant",
+      },
       type: "external_article",
     })
     expect(context.text(link3.position)).toBe("27")
@@ -131,6 +290,27 @@ describe("iterTextLinks", () => {
         start: 5,
         stop: 31,
       },
+      reference: {
+        action: {
+          action: "MODIFICATION",
+        },
+        position: {
+          start: 5,
+          stop: 49,
+        },
+        reference: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 5,
+            stop: 31,
+          },
+          title: "Code général des impôts",
+          titleRest: "général des impôts",
+          type: "texte",
+        },
+        type: "reference_et_action",
+      },
       text: {
         cid: "LEGITEXT000006069577",
         nature: "CODE",
@@ -170,6 +350,83 @@ describe("iterTextLinks", () => {
       position: {
         start: 100,
         stop: 113,
+      },
+      reference: {
+        action: {
+          action: "MODIFICATION",
+          actionInContent: true,
+          originalCitations: [
+            {
+              content: [
+                {
+                  position: {
+                    start: 130,
+                    stop: 137,
+                  },
+                },
+              ],
+              position: {
+                start: 128,
+                stop: 139,
+              },
+              type: "citation",
+            },
+          ],
+        },
+        position: {
+          start: 57,
+          stop: 152,
+        },
+        reference: {
+          child: {
+            child: {
+              index: 1,
+              position: {
+                start: 62,
+                stop: 77,
+              },
+              type: "phrase",
+            },
+            parent: {
+              index: 2,
+              position: {
+                start: 81,
+                stop: 94,
+              },
+              type: "alinéa",
+            },
+            position: {
+              start: 62,
+              stop: 94,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            implicitText: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 8,
+                stop: 31,
+              },
+              title: "Code général des impôts",
+              titleRest: "général des impôts",
+              type: "texte",
+            },
+            num: "196 B",
+            position: {
+              start: 100,
+              stop: 113,
+            },
+            type: "article",
+          },
+          position: {
+            start: 57,
+            stop: 113,
+          },
+          type: "parent-enfant",
+        },
+        type: "reference_et_action",
       },
       type: "external_article",
     })
@@ -193,6 +450,27 @@ describe("iterTextLinks", () => {
         start: 5,
         stop: 31,
       },
+      reference: {
+        action: {
+          action: "MODIFICATION",
+        },
+        position: {
+          start: 5,
+          stop: 49,
+        },
+        reference: {
+          cid: "LEGITEXT000006069577",
+          nature: "CODE",
+          position: {
+            start: 5,
+            stop: 31,
+          },
+          title: "Code général des impôts",
+          titleRest: "général des impôts",
+          type: "texte",
+        },
+        type: "reference_et_action",
+      },
       text: {
         cid: "LEGITEXT000006069577",
         nature: "CODE",
@@ -233,6 +511,83 @@ describe("iterTextLinks", () => {
         start: 100,
         stop: 113,
       },
+      reference: {
+        action: {
+          action: "MODIFICATION",
+          actionInContent: true,
+          originalCitations: [
+            {
+              content: [
+                {
+                  position: {
+                    start: 130,
+                    stop: 137,
+                  },
+                },
+              ],
+              position: {
+                start: 128,
+                stop: 139,
+              },
+              type: "citation",
+            },
+          ],
+        },
+        position: {
+          start: 57,
+          stop: 152,
+        },
+        reference: {
+          child: {
+            child: {
+              index: 1,
+              position: {
+                start: 62,
+                stop: 77,
+              },
+              type: "phrase",
+            },
+            parent: {
+              index: 2,
+              position: {
+                start: 81,
+                stop: 94,
+              },
+              type: "alinéa",
+            },
+            position: {
+              start: 62,
+              stop: 94,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            implicitText: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 8,
+                stop: 31,
+              },
+              title: "Code général des impôts",
+              titleRest: "général des impôts",
+              type: "texte",
+            },
+            num: "196 B",
+            position: {
+              start: 100,
+              stop: 113,
+            },
+            type: "article",
+          },
+          position: {
+            start: 57,
+            stop: 113,
+          },
+          type: "parent-enfant",
+        },
+        type: "reference_et_action",
+      },
       type: "external_article",
     })
   })
@@ -253,6 +608,27 @@ describe("iterTextLinks", () => {
         position: {
           start: 5,
           stop: 31,
+        },
+        reference: {
+          action: {
+            action: "MODIFICATION",
+          },
+          position: {
+            start: 5,
+            stop: 49,
+          },
+          reference: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 5,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            titleRest: "général des impôts",
+            type: "texte",
+          },
+          type: "reference_et_action",
         },
         text: {
           cid: "LEGITEXT000006069577",
@@ -280,6 +656,63 @@ describe("iterTextLinks", () => {
         position: {
           start: 60,
           stop: 131,
+        },
+        reference: {
+          child: {
+            child: {
+              child: {
+                index: 2.002,
+                num: "II bis",
+                position: {
+                  start: 60,
+                  stop: 75,
+                },
+                type: "chapitre",
+              },
+              parent: {
+                index: 1,
+                num: "premier",
+                position: {
+                  start: 79,
+                  stop: 92,
+                },
+                type: "titre",
+              },
+              position: {
+                start: 60,
+                stop: 92,
+              },
+              type: "parent-enfant",
+            },
+            parent: {
+              index: 1,
+              num: "première",
+              position: {
+                start: 99,
+                stop: 114,
+              },
+              type: "partie",
+            },
+            position: {
+              start: 60,
+              stop: 114,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            index: 1,
+            num: "premier",
+            position: {
+              start: 118,
+              stop: 131,
+            },
+            type: "livre",
+          },
+          position: {
+            start: 57,
+            stop: 131,
+          },
+          type: "parent-enfant",
         },
         sectionTaId: "LEGISCTA000048779194",
         type: "external_division",
@@ -314,6 +747,14 @@ describe("iterTextLinks", () => {
           start: 0,
           stop: 20,
         },
+        reference: {
+          num: "223 VO bis",
+          position: {
+            start: 0,
+            stop: 20,
+          },
+          type: "article",
+        },
         type: "external_article",
       },
     ])
@@ -345,6 +786,91 @@ describe("iterTextLinks", () => {
           start: 7,
           stop: 94,
         },
+        reference: {
+          action: {
+            action: "CREATION",
+          },
+          position: {
+            start: 4,
+            stop: 107,
+          },
+          reference: {
+            child: {
+              child: {
+                child: {
+                  child: {
+                    index: 3,
+                    num: "III",
+                    position: {
+                      start: 7,
+                      stop: 19,
+                    },
+                    type: "chapitre",
+                  },
+                  parent: {
+                    index: 1,
+                    num: "Ier",
+                    position: {
+                      start: 23,
+                      stop: 32,
+                    },
+                    type: "titre",
+                  },
+                  position: {
+                    start: 7,
+                    stop: 32,
+                  },
+                  type: "parent-enfant",
+                },
+                parent: {
+                  index: 1,
+                  num: "première",
+                  position: {
+                    start: 39,
+                    stop: 54,
+                  },
+                  type: "partie",
+                },
+                position: {
+                  start: 7,
+                  stop: 54,
+                },
+                type: "parent-enfant",
+              },
+              parent: {
+                index: 1,
+                num: "Ier",
+                position: {
+                  start: 58,
+                  stop: 67,
+                },
+                type: "livre",
+              },
+              position: {
+                start: 7,
+                stop: 67,
+              },
+              type: "parent-enfant",
+            },
+            parent: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 71,
+                stop: 94,
+              },
+              title: "Code général des impôts",
+              titleRest: "général des impôts",
+              type: "texte",
+            },
+            position: {
+              start: 4,
+              stop: 94,
+            },
+            type: "parent-enfant",
+          },
+          type: "reference_et_action",
+        },
         sectionTaId: "LEGISCTA000006147020",
         type: "external_division",
       },
@@ -374,6 +900,27 @@ describe("iterTextLinks", () => {
           start: 5,
           stop: 31,
         },
+        reference: {
+          action: {
+            action: "MODIFICATION",
+          },
+          position: {
+            start: 5,
+            stop: 49,
+          },
+          reference: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 5,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            titleRest: "général des impôts",
+            type: "texte",
+          },
+          type: "reference_et_action",
+        },
         text: {
           cid: "LEGITEXT000006069577",
           nature: "CODE",
@@ -400,6 +947,63 @@ describe("iterTextLinks", () => {
         position: {
           start: 60,
           stop: 131,
+        },
+        reference: {
+          child: {
+            child: {
+              child: {
+                index: 2.002,
+                num: "II bis",
+                position: {
+                  start: 60,
+                  stop: 75,
+                },
+                type: "chapitre",
+              },
+              parent: {
+                index: 1,
+                num: "premier",
+                position: {
+                  start: 79,
+                  stop: 92,
+                },
+                type: "titre",
+              },
+              position: {
+                start: 60,
+                stop: 92,
+              },
+              type: "parent-enfant",
+            },
+            parent: {
+              index: 1,
+              num: "première",
+              position: {
+                start: 99,
+                stop: 114,
+              },
+              type: "partie",
+            },
+            position: {
+              start: 60,
+              stop: 114,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            index: 1,
+            num: "premier",
+            position: {
+              start: 118,
+              stop: 131,
+            },
+            type: "livre",
+          },
+          position: {
+            start: 57,
+            stop: 131,
+          },
+          type: "parent-enfant",
         },
         sectionTaId: "LEGISCTA000048779194",
         type: "external_division",
@@ -429,6 +1033,25 @@ describe("iterTextLinks", () => {
           start: 137,
           stop: 155,
         },
+        reference: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 8,
+              stop: 31,
+            },
+            title: "Code général des impôts",
+            titleRest: "général des impôts",
+            type: "texte",
+          },
+          num: "223 VK",
+          position: {
+            start: 137,
+            stop: 155,
+          },
+          type: "article",
+        },
         type: "external_article",
       },
       {
@@ -456,6 +1079,35 @@ describe("iterTextLinks", () => {
           start: 167,
           stop: 196,
         },
+        reference: {
+          action: {
+            action: "CREATION",
+          },
+          position: {
+            start: 167,
+            stop: 211,
+          },
+          reference: {
+            implicitText: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 8,
+                stop: 31,
+              },
+              title: "Code général des impôts",
+              titleRest: "général des impôts",
+              type: "texte",
+            },
+            num: "223 VO quaterdecies",
+            position: {
+              start: 167,
+              stop: 196,
+            },
+            type: "article",
+          },
+          type: "reference_et_action",
+        },
         type: "external_article",
       },
       {
@@ -482,6 +1134,41 @@ describe("iterTextLinks", () => {
         position: {
           start: 370,
           stop: 388,
+        },
+        reference: {
+          child: {
+            index: 3,
+            num: "3°",
+            position: {
+              start: 362,
+              stop: 364,
+            },
+            type: "item",
+          },
+          parent: {
+            implicitText: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 8,
+                stop: 31,
+              },
+              title: "Code général des impôts",
+              titleRest: "général des impôts",
+              type: "texte",
+            },
+            num: "223 VO bis",
+            position: {
+              start: 370,
+              stop: 388,
+            },
+            type: "article",
+          },
+          position: {
+            start: 359,
+            stop: 388,
+          },
+          type: "parent-enfant",
         },
         type: "external_article",
       },

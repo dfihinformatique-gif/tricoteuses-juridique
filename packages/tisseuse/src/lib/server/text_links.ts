@@ -52,14 +52,16 @@ export interface ArticleDefinition {
    * Same value as article.position, added for homogeneity
    */
   position: TextPosition
+  reference: TextAstReference
   textId: string
   type: "article_definition"
 }
 
 export interface ArticleExternalLink {
   article: TextAstArticle
-  articleId: string
+  articleId?: string
   position: TextPosition
+  reference: TextAstReference
   type: "external_article"
 }
 
@@ -67,6 +69,7 @@ export interface ArticleInternalLink {
   article: TextAstArticle
   definition: ArticleDefinition
   position: TextPosition
+  reference: TextAstReference
   type: "internal_article"
 }
 
@@ -74,10 +77,11 @@ export type ArticleLink = ArticleExternalLink | ArticleInternalLink
 
 // export interface DivisionDefinition {
 //   division: TextAstDivision
-// /**
-//  * Same value as division.position, added for homogeneity
-//  */
-// position: TextPosition
+//   /**
+//    * Same value as division.position, added for homogeneity
+//    */
+//   position: TextPosition
+//   reference: TextAstReference
 //   textId: string
 //   type: "division_definition"
 // }
@@ -85,7 +89,8 @@ export type ArticleLink = ArticleExternalLink | ArticleInternalLink
 export interface DivisionExternalLink {
   division: TextAstDivision
   position: TextPosition
-  sectionTaId: string
+  reference: TextAstReference
+  sectionTaId?: string
   type: "external_division"
 }
 
@@ -93,6 +98,7 @@ export interface DivisionExternalLink {
 //   division: TextAstDivision
 //   definition: DivisionDefinition
 //   position: TextPosition
+//   reference: TextAstReference
 //   type: "internal_division"
 // }
 
@@ -100,6 +106,7 @@ export type DivisionLink = DivisionExternalLink // | DivisionInternalLink
 
 export interface TextExternalLink {
   position: TextPosition
+  reference: TextAstReference
   text: TextAstText & TextAstPosition
   type: "external_text"
 }
@@ -283,6 +290,7 @@ export async function* iterTextLinks(
    * iterArticleLinks
    */
   async function* iterArticleLinks(
+    reference: TextAstReference,
     article: TextAstArticle,
     /**
      * Defined only when article is the unique descendant of a text and optionally its divisions.
@@ -318,6 +326,7 @@ export async function* iterTextLinks(
           article,
           definition: articleDefinition,
           position,
+          reference,
           type: "internal_article",
         }
         return
@@ -435,25 +444,24 @@ export async function* iterTextLinks(
       }
     }
 
-    if (currentArticleId !== undefined) {
-      const position =
-        ancestors === undefined
-          ? article.position!
-          : article.position!.start < ancestors[0].position!.start
-            ? {
-                start: article.position.start,
-                stop: ancestors[0].position.stop,
-              }
-            : {
-                start: ancestors[0].position.start,
-                stop: article.position.stop,
-              }
-      yield {
-        article,
-        articleId: currentArticleId,
-        position,
-        type: "external_article",
-      }
+    const position =
+      ancestors === undefined
+        ? article.position!
+        : article.position!.start < ancestors[0].position!.start
+          ? {
+              start: article.position.start,
+              stop: ancestors[0].position.stop,
+            }
+          : {
+              start: ancestors[0].position.start,
+              stop: article.position.stop,
+            }
+    yield {
+      article,
+      articleId: currentArticleId,
+      position,
+      reference,
+      type: "external_article",
     }
   }
 
@@ -461,6 +469,7 @@ export async function* iterTextLinks(
    * iterDivisionLinks
    */
   async function* iterDivisionLinks(
+    reference: TextAstReference,
     division: TextAstDivision,
     divisionChildReference?: TextAstParentChild,
     parentLiensSectionTa?:
@@ -640,6 +649,7 @@ export async function* iterTextLinks(
 
           case "article": {
             yield* iterArticleLinks(
+              reference,
               atomicReference,
               divisionDeepestDivisionsOrArticles.length === 1
                 ? [...(ancestors ?? []), division]
@@ -680,6 +690,7 @@ export async function* iterTextLinks(
             }
 
             yield* iterDivisionLinks(
+              reference,
               atomicReference,
               parentChildReference,
               subdivisionsLiensSectionTa,
@@ -704,26 +715,25 @@ export async function* iterTextLinks(
     }
     if (addedLinksCount === 0) {
       currentSectionTaId = divisionLienSectionTa?.["@id"]
-      if (currentSectionTaId !== undefined) {
-        const position =
-          ancestors === undefined
-            ? division.position!
-            : division.position!.start < ancestors[0].position!.start
-              ? {
-                  start: division.position.start,
-                  stop: ancestors[0].position.stop,
-                }
-              : {
-                  start: ancestors[0].position.start,
-                  stop: division.position.stop,
-                }
-        assert.notStrictEqual(position, undefined)
-        yield {
-          division,
-          position,
-          sectionTaId: currentSectionTaId,
-          type: "external_division",
-        }
+      const position =
+        ancestors === undefined
+          ? division.position!
+          : division.position!.start < ancestors[0].position!.start
+            ? {
+                start: division.position.start,
+                stop: ancestors[0].position.stop,
+              }
+            : {
+                start: ancestors[0].position.start,
+                stop: division.position.stop,
+              }
+      assert.notStrictEqual(position, undefined)
+      yield {
+        division,
+        position,
+        reference,
+        sectionTaId: currentSectionTaId,
+        type: "external_division",
       }
     }
   }
@@ -884,6 +894,7 @@ export async function* iterTextLinks(
               ] = {
                 article: atomicReference,
                 position: atomicReference.position,
+                reference,
                 textId: currentTextId,
                 type: "article_definition",
               }
@@ -986,7 +997,7 @@ export async function* iterTextLinks(
               yield articleDefinition
             }
           } else {
-            yield* iterArticleLinks(atomicReference)
+            yield* iterArticleLinks(reference, atomicReference)
           }
           break
         }
@@ -1011,7 +1022,11 @@ export async function* iterTextLinks(
             //   yield divisionDefinition
             // }
           } else {
-            yield* iterDivisionLinks(atomicReference, parentChildReference)
+            yield* iterDivisionLinks(
+              reference,
+              atomicReference,
+              parentChildReference,
+            )
           }
           break
         }
@@ -1058,6 +1073,7 @@ export async function* iterTextLinks(
 
                 case "article": {
                   yield* iterArticleLinks(
+                    reference,
                     atomicReferenceInText,
                     textDeepestDivisionsOrArticles.length === 1
                       ? [atomicReference] // text
@@ -1095,6 +1111,7 @@ export async function* iterTextLinks(
                     }
                   }
                   yield* iterDivisionLinks(
+                    reference,
                     atomicReferenceInText,
                     parentChildReferenceInText,
                     liensSectionTa,
@@ -1117,11 +1134,12 @@ export async function* iterTextLinks(
               }
             }
           }
-          if (addedLinksCount === 0 && currentTextId !== undefined) {
+          if (addedLinksCount === 0) {
             const position = atomicReference.position!
             assert.notStrictEqual(position, undefined)
             yield {
               position,
+              reference,
               text: atomicReference,
               type: "external_text",
             }

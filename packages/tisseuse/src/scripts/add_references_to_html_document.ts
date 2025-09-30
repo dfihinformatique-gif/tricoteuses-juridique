@@ -4,6 +4,7 @@
  * Useful for debugging.
  */
 
+import { escapeHtml } from "@tricoteuses/legifrance"
 import fs from "fs-extra"
 import sade from "sade"
 
@@ -11,7 +12,6 @@ import {
   readTransformation,
   writeTransformation,
 } from "$lib/server/text_parsers/transformers.js"
-import { escapeHtml } from "$lib/strings.js"
 import { iterIncludedReferences } from "$lib/text_parsers/helpers.js"
 import {
   iterCitationReferences,

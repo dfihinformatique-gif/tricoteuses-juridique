@@ -268,6 +268,8 @@ async function addLinksToLegifrance(
     // TODO: Improve date.
     const date = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
     assert.notStrictEqual(date, undefined)
+    assert.notStrictEqual(date, "2999-01-01")
+    assert.notStrictEqual(date, "2222-02-22")
     const outputByFieldName: {
       abro?: string
       nota?: string
@@ -384,7 +386,11 @@ async function addLinksToLegifrance(
   `.cursor(100)) {
     for (const { data: article, id } of articleRows) {
       // TODO: Improve date.
-      const date = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
+      // const date = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
+      const date = article.CONTEXTE.TEXTE["@date_publi"]!
+      assert.notStrictEqual(date, undefined)
+      assert.notStrictEqual(date, "2999-01-01")
+      assert.notStrictEqual(date, "2222-02-22")
       const outputByFieldName: {
         bloc_textuel?: string
         nota?: string

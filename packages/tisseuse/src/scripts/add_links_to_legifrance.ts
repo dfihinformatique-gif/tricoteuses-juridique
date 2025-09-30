@@ -6,6 +6,7 @@ import {
   LegiTexteVersion,
 } from "@tricoteuses/legifrance"
 import assert from "node:assert"
+import type { JSONValue } from "postgres"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts.js"
@@ -13,22 +14,26 @@ import { legiDb } from "$lib/server/databases/index.js"
 import { iterTextLinks } from "$lib/server/text_links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
+import { ExtractedLinkDb } from "$lib/text_parsers/text_links.js"
 import { iterOriginalMergedPositionsFromTransformed } from "$lib/text_parsers/transformers.js"
 
 const today = new Date().toISOString().split("T")[0]
 
 async function addLinksToHtml(
   id: string,
+  fieldName: string,
   inputHtml: string,
   {
     date,
     defaultTextId,
+    existingLinksKeys,
     logIgnoredReferencesTypes,
     logPartialReferences,
     logReferences,
   }: {
     date: string
     defaultTextId: string
+    existingLinksKeys: Set<string>
     logIgnoredReferencesTypes?: boolean
     logPartialReferences?: boolean
     logReferences?: boolean
@@ -44,6 +49,7 @@ async function addLinksToHtml(
   let output = inputHtml
   let outputOffset = 0
 
+  let index = -1
   for await (const link of iterTextLinks(context, {
     date,
     defaultTextId, // TODO: Replace with undefined,
@@ -51,6 +57,7 @@ async function addLinksToHtml(
     logPartialReferences,
     logReferences,
   })) {
+    index++
     switch (link.type) {
       case "article_definition": {
         // Example: LEGIARTI000006312473
@@ -64,12 +71,19 @@ async function addLinksToHtml(
 
       case "external_article": {
         const { articleId, position: articlePosition } = link
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: articleId ?? null,
+        })
         if (articleId !== undefined) {
           const result =
             originalPositionsFromTransformedIterator.next(articlePosition)
           if (result.done) {
             throw new Error(
-              `In ${id}, transformation of link to article ${articleId} position to HTML failed: ${articlePosition}`,
+              `In ${id} field ${fieldName}, transformation of link to article ${articleId} position to HTML failed: ${articlePosition}`,
             )
           }
           const articleReverseTransformation = result.value
@@ -100,12 +114,19 @@ async function addLinksToHtml(
 
       case "external_division": {
         const { position: divisionPosition, sectionTaId } = link
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: sectionTaId ?? null,
+        })
         if (sectionTaId !== undefined) {
           const result =
             originalPositionsFromTransformedIterator.next(divisionPosition)
           if (result.done) {
             throw new Error(
-              `In ${id}, transformation of division position to HTML failed: ${divisionPosition}`,
+              `In ${id} field ${fieldName}, transformation of division position to HTML failed: ${divisionPosition}`,
             )
           }
           const divisionReverseTransformation = result.value
@@ -136,11 +157,18 @@ async function addLinksToHtml(
 
       case "external_text": {
         const { text, position: textPosition } = link
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: text.cid ?? null,
+        })
         if (text.cid === undefined) {
           if (text.relative !== 0) {
             // It is not "la présente loi".
             console.error(
-              `In ${id}, link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
+              `In ${id} field ${fieldName}, link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
             )
           }
           continue
@@ -150,7 +178,7 @@ async function addLinksToHtml(
           originalPositionsFromTransformedIterator.next(textPosition)
         if (result.done) {
           throw new Error(
-            `In ${id}, transformation of text position to HTML failed: ${textPosition}`,
+            `In ${id} field ${fieldName}, transformation of text position to HTML failed: ${textPosition}`,
           )
         }
         const textReverseTransformation = result.value
@@ -182,7 +210,7 @@ async function addLinksToHtml(
           originalPositionsFromTransformedIterator.next(articlePosition)
         if (result.done) {
           throw new Error(
-            `In ${id}, transformation of article position to HTML failed: ${articlePosition}`,
+            `In ${id} field ${fieldName}, transformation of article position to HTML failed: ${articlePosition}`,
           )
         }
         const articleReverseTransformation = result.value
@@ -249,6 +277,23 @@ async function addLinksToLegifrance(
       tp?: string
       visas?: string
     } = {}
+    const existingLinksKeys = new Set(
+      (
+        await legiDb<
+          Array<{ field_name: string; index: number; source_id: string }>
+        >`
+          SELECT
+            field_name,
+            index,
+            source_id
+          FROM texte_lien_extrait
+          WHERE
+            source_id = ${id}
+        `
+      ).map(({ field_name, index, source_id }) =>
+        JSON.stringify([source_id, field_name, index]),
+      ),
+    )
     for (const [fieldName, input] of [
       ["abro", texteVersion.ABRO?.CONTENU],
       ["nota", (texteVersion as LegiTexteVersion).NOTA?.CONTENU],
@@ -259,9 +304,10 @@ async function addLinksToLegifrance(
       ["visas", (texteVersion as LegiTexteVersion).VISAS?.CONTENU],
     ] as Array<[keyof typeof outputByFieldName, string | undefined]>) {
       if (input !== undefined) {
-        const output = await addLinksToHtml(id, input, {
+        const output = await addLinksToHtml(id, fieldName, input, {
           date,
           defaultTextId: textCid,
+          existingLinksKeys,
           logIgnoredReferencesTypes,
           logPartialReferences,
           logReferences,
@@ -270,6 +316,20 @@ async function addLinksToLegifrance(
           outputByFieldName[fieldName] = output
         }
       }
+    }
+    for (const obsoleteLinkKey of existingLinksKeys) {
+      const [sourceId, fieldName, index] = JSON.parse(obsoleteLinkKey) as [
+        string,
+        string,
+        number,
+      ]
+      await legiDb`
+        DELETE FROM texte_lien_extrait
+        WHERE
+          field_name = ${fieldName}
+          AND index = ${index}
+          AND source_id = ${sourceId}
+      `
     }
     if (
       Object.values(outputByFieldName).every((output) => output === undefined)
@@ -329,14 +389,32 @@ async function addLinksToLegifrance(
         bloc_textuel?: string
         nota?: string
       } = {}
+      const existingLinksKeys = new Set(
+        (
+          await legiDb<
+            Array<{ field_name: string; index: number; source_id: string }>
+          >`
+            SELECT
+              field_name,
+              index,
+              source_id
+            FROM article_lien_extrait
+            WHERE
+              source_id = ${id}
+          `
+        ).map(({ field_name, index, source_id }) =>
+          JSON.stringify([source_id, field_name, index]),
+        ),
+      )
       for (const [fieldName, input] of [
         ["bloc_textuel", article.BLOC_TEXTUEL?.CONTENU],
         ["nota", (article as LegiArticle).NOTA?.CONTENU],
       ] as Array<[keyof typeof outputByFieldName, string | undefined]>) {
         if (input !== undefined) {
-          const output = await addLinksToHtml(id, input, {
+          const output = await addLinksToHtml(id, fieldName, input, {
             date,
             defaultTextId: textCid,
+            existingLinksKeys,
             logIgnoredReferencesTypes,
             logPartialReferences,
             logReferences,
@@ -345,6 +423,20 @@ async function addLinksToLegifrance(
             outputByFieldName[fieldName] = output
           }
         }
+      }
+      for (const obsoleteLinkKey of existingLinksKeys) {
+        const [sourceId, fieldName, index] = JSON.parse(obsoleteLinkKey) as [
+          string,
+          string,
+          number,
+        ]
+        await legiDb`
+          DELETE FROM article_lien_extrait
+          WHERE
+            field_name = ${fieldName}
+            AND index = ${index}
+            AND source_id = ${sourceId}
+        `
       }
       if (
         Object.values(outputByFieldName).every((output) => output === undefined)
@@ -376,6 +468,32 @@ async function addLinksToLegifrance(
     }
   }
   return 0
+}
+
+async function upsertExtractedLink(
+  existingLinksKeys: Set<string>,
+  { field_name, index, link, source_id, target_id }: ExtractedLinkDb,
+): Promise<void> {
+  existingLinksKeys.delete(JSON.stringify([source_id, field_name, index]))
+  await legiDb`
+    INSERT INTO ${legiDb(source_id.slice(4, 8) === "ARTI" ? "article_lien_extrait" : "texte_lien_extrait")} (
+      field_name,
+      index,
+      link,
+      source_id,
+      target_id
+    ) VALUES (
+      ${field_name},
+      ${index},
+      ${legiDb.json(link as unknown as JSONValue)},
+      ${source_id},
+      ${target_id}
+    )
+    ON CONFLICT (source_id, field_name, index)
+    DO UPDATE SET
+      link = excluded.link,
+      target_id = excluded.target_id
+  `
 }
 
 sade("add_links_to_legifrance <text_cid>", true)

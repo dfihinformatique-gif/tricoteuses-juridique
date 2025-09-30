@@ -1,12 +1,16 @@
 <script lang="ts">
   import { error } from "@sveltejs/kit"
+  import {
+    gitPathFromId,
+    organizationNameByTexteNature,
+    repositoryNameFromTitle,
+    type JorfTexteVersion,
+    type LegiTexteNature,
+    type LegiTexteVersion,
+  } from "@tricoteuses/legifrance"
 
   import Structure from "../../Structure.svelte"
   import { getTexteWithLinks } from "../../texte.remote.js"
-  import type {
-    JorfTexteVersion,
-    LegiTexteVersion,
-  } from "@tricoteuses/legifrance"
 
   let { params } = $props()
 
@@ -15,6 +19,10 @@
   )
   const { textelr, texteVersion } = $derived(texteWithLinks)
   const abro = $derived(texteWithLinks.abro ?? texteVersion?.ABRO?.CONTENU)
+  const metaCommun = $derived(texteVersion?.META.META_COMMUN)
+  const metaTexteVersion = $derived(
+    texteVersion?.META.META_SPEC.META_TEXTE_VERSION,
+  )
   const nota = $derived(
     texteWithLinks.nota ?? (texteVersion as LegiTexteVersion).NOTA?.CONTENU,
   )
@@ -77,3 +85,51 @@
     {@html tp}
   </section>
 {/if}
+
+<details>
+  <summary><h2>Autres formats</h2></summary>
+  <ul>
+    <li>
+      <a
+        href={new URL(
+          gitPathFromId(params.id, ".json"),
+          "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
+        ).toString()}>JSON dans git</a
+      >
+    </li>
+    <li>
+      <a
+        href={new URL(
+          gitPathFromId(params.id, ".json"),
+          "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
+        ).toString()}>Références JSON dans git</a
+      >
+    </li>
+    <li>
+      <a
+        href={new URL(
+          gitPathFromId(params.id, ".md"),
+          "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+        ).toString()}>Markdown dans git</a
+      >
+    </li>
+    {#if metaCommun !== undefined && metaTexteVersion !== undefined && ["CODE", "CONSTITUTION", "DECLARATION"].includes(metaCommun.NATURE ?? "")}
+      <li>
+        <a
+          href={new URL(
+            "README.md",
+            `https://git.tricoteuses.fr/${organizationNameByTexteNature[metaCommun.NATURE as LegiTexteNature]}/${repositoryNameFromTitle(metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE ?? metaCommun.ID)}/src/branch/main/`,
+          ).toString()}>Markdown chronologique dans git</a
+        >
+      </li>
+    {/if}
+    <li>
+      <a
+        href={metaCommun !== undefined && metaCommun.NATURE === "CODE"
+          ? `https://www.legifrance.gouv.fr/codes/texte_lc/${params.id}`
+          : `https://www.legifrance.gouv.fr/loda/id/${params.id}/`}
+        >Légifrance</a
+      >
+    </li>
+  </ul>
+</details>

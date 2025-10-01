@@ -480,7 +480,7 @@ function simplifyTextTitle(title: string): string {
 
 sade("extract_texts_infos", true)
   .describe(
-    "Extract names of codes, laws, etc and convert them to JSON structures use for links, search, etc",
+    "Extract names of codes, laws, etc and convert them to JSON structures used for links, search, etc",
   )
   .option("-a, --autocompletion", "Generate autocompletions SQL table")
   .option("-j, --json", "Generate texts infos JSON file")

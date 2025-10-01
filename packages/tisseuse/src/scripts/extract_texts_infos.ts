@@ -36,10 +36,10 @@ interface LegifranceTextDescription {
   titres: Set<string>
 }
 
-interface TextDescription {
-  legifrance?: LegifranceTextDescription
-  titresOfficieux?: string[]
-}
+// interface TextDescription {
+//   legifrance?: LegifranceTextDescription
+//   titresOfficieux?: string[]
+// }
 
 async function extractTextsInfos({
   autocompletion: generateAutocompletions,

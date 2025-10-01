@@ -4,7 +4,7 @@ import { espace } from "./typography.js"
 export const adjectifRelatifPluriel = alternatives(
   regExp("derni(er|ère)s", {
     flags: "i",
-    value: (match, context) => ({
+    value: (_match, context) => ({
       index: -1,
       num: context.text(),
     }),
@@ -15,7 +15,7 @@ export const adjectifRelatifPluriel = alternatives(
   }),
   regExp("premi(er|ère)s", {
     flags: "i",
-    value: (match, context) => ({
+    value: (_match, context) => ({
       index: 1,
       num: context.text(),
     }),
@@ -33,21 +33,21 @@ export const adjectifRelatifPluriel = alternatives(
 export const adjectifRelatifSingulier = alternatives(
   regExp("antépénultième", {
     flags: "i",
-    value: (match, context) => ({
+    value: (_match, context) => ({
       index: -3,
       num: context.text(),
     }),
   }),
   regExp("avant-derni(er|ère)", {
     flags: "i",
-    value: (match, context) => ({
+    value: (_match, context) => ({
       index: -2,
       num: context.text(),
     }),
   }),
   regExp("derni(er|ère)", {
     flags: "i",
-    value: (match, context) => ({
+    value: (_match, context) => ({
       index: -1,
       num: context.text(),
     }),
@@ -58,7 +58,7 @@ export const adjectifRelatifSingulier = alternatives(
   }),
   regExp("pénultième", {
     flags: "i",
-    value: (match, context) => ({
+    value: (_match, context) => ({
       index: -2,
       num: context.text(),
     }),
@@ -69,7 +69,7 @@ export const adjectifRelatifSingulier = alternatives(
   }),
   regExp("premi(er|ère)", {
     flags: "i",
-    value: (match, context) => ({
+    value: (_match, context) => ({
       index: 1,
       num: context.text(),
     }),

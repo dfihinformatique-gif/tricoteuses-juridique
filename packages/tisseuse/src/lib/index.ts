@@ -62,6 +62,7 @@ export {
   type TextAstTextIdentification,
   type TextAstTextInfos,
   type TextInfosByWordsTree,
+  type TextInfosByWordsTreeNode,
 } from "./text_parsers/ast.js"
 export {
   citation,

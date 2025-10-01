@@ -192,7 +192,11 @@ export interface TextAstTextInfos {
   cid: string | string[]
 }
 
-export type TextInfosByWordsTree = TextAstTextInfos & {
+export type TextInfosByWordsTree = TextAstTextInfos | TextInfosByWordsTreeNode
+
+export type TextInfosByWordsTreeNode = {
+  cid?: string | string[]
+} & {
   [word: string]: TextInfosByWordsTree
 }
 

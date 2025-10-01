@@ -35,12 +35,12 @@ const textInfosByCid =
     }
   ).textInfosByCid ?? {}
 const textCidByOtherTitleWordsTree =
-  (textTitlesInfos as { textCidByOtherTitleWordsTree?: TextAstTextInfos })
+  (textTitlesInfos as { textCidByOtherTitleWordsTree?: TextInfosByWordsTree })
     .textCidByOtherTitleWordsTree ?? {}
 const textCidByTitleRestWordsTree =
   (
-    textTitlesInfos as {
-      textCidByTitleRestWordsTree?: TextAstTextInfos
+    textTitlesInfos as unknown as {
+      textCidByTitleRestWordsTree?: TextInfosByWordsTree
     }
   ).textCidByTitleRestWordsTree ?? {}
 const textsCidsByNatureAndDate =

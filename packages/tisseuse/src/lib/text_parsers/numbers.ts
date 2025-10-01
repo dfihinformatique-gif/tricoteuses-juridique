@@ -19,14 +19,14 @@ export const eme = regExp("(èm)?e")
  */
 export const nombreAsTextAstNumber = alternatives(
   regExp("1er", {
-    value: (match, context) => ({
+    value: (_match, context) => ({
       position: context.position(),
       text: context.text(),
       value: 1,
     }),
   }),
   regExp("unique", {
-    value: (match, context) => ({
+    value: (_match, context) => ({
       position: context.position(),
       text: context.text(),
       value: 1,
@@ -67,14 +67,14 @@ export const nombreRomainOrdinal = alternatives(
 
 export const nombreRomainOu0iAsTextAstNumber = alternatives(
   regExp("0I", {
-    value: (match, context) => ({
+    value: (_match, context) => ({
       position: context.position(),
       text: context.text(),
       value: 0,
     }),
   }),
   regExp("Ier", {
-    value: (match, context) => ({
+    value: (_match, context) => ({
       position: context.position(),
       text: context.text(),
       value: 1,

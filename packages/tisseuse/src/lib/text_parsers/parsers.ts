@@ -6,6 +6,7 @@ import type {
   TextAstText,
   TextAstTextInfos,
   TextInfosByWordsTree,
+  TextInfosByWordsTreeNode,
 } from "./ast.js"
 import type { TextPosition } from "./positions.js"
 
@@ -469,7 +470,7 @@ export const wordsTree =
         // false positives.
         break
       }
-      const child = node[word]
+      const child = (node as TextInfosByWordsTreeNode)[word]
       if (child === undefined) {
         break
       }

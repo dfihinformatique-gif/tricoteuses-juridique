@@ -378,13 +378,13 @@ export function originalMergedPositionsFromTransformed(
   transformation: Transformation,
   transformedPositions: TextPosition[],
 ): FragmentReverseTransformation[] {
-  const originalMergedPositionsFromTransformedIterator =
+  const originalPositionsFromTransformedIterator =
     iterOriginalMergedPositionsFromTransformed(transformation)
   // Initialize iterator by sending a dummy value and ignoring the result.
-  originalMergedPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
+  originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
   return transformedPositions.map((transformedPosition) => {
     const result =
-      originalMergedPositionsFromTransformedIterator.next(transformedPosition)
+      originalPositionsFromTransformedIterator.next(transformedPosition)
     if (result.done) {
       throw new Error(
         `Reverse transformation of position failed: ${transformedPosition}`,

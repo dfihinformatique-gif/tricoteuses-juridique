@@ -1,18 +1,9 @@
 <script lang="ts">
+  import { urlPathFromId } from "$lib/urls.js"
+
   import { autocomplete } from "./autocompletion.remote.js"
 
   let q: string = $state("loi république numérique")
-
-  const urlPathFromId = (id: string): string | null =>
-    /^(JORF|LEGI)ARTI\d{12}$/.test(id)
-      ? `/legifrance/articles/${id}`
-      : /^JORFDOLE\d{12}$/.test(q)
-        ? `/legifrance/dossiers_legislatifs/${id}`
-        : /^(JORF|LEGI)SCTA\d{12}$/.test(id)
-          ? `/legifrance/sections/${id}`
-          : /^(JORF|LEGI)TEXT\d{12}$/.test(id)
-            ? `/legifrance/textes/${id}`
-            : null
 </script>
 
 <h1>Welcome to SvelteKit</h1>
@@ -29,7 +20,7 @@
     {#each await autocomplete(q) as { autocompletion, distance, id }}
       {@const urlPath = urlPathFromId(id)}
       <li>
-        {#if id === null}
+        {#if urlPath === null}
           {autocompletion}
         {:else}
           <a href={urlPath}>{autocompletion}</a>

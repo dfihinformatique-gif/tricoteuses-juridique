@@ -66,21 +66,19 @@ async function addReferencesToHtmlDocument(
       stop: 0,
     })
 
-    let output = inputHtml
+    let outputHtml = inputHtml
     let outputOffset = 0
 
     for await (const reference of iterReferences(context)) {
       const { position } = reference
       const result = originalPositionsFromTransformedIterator.next(position)
       if (result.done) {
-        console.error(
-          "Transformation of reference position to HTML failed:",
-          position,
+        throw new Error(
+          `Transformation of reference position to HTML failed: ${position}`,
         )
-        process.exit(1)
       }
       const referenceReverseTransformation = result.value
-      let fragment = output.slice(
+      let fragment = outputHtml.slice(
         referenceReverseTransformation.position.start + outputOffset,
         referenceReverseTransformation.position.stop + outputOffset,
       )
@@ -102,11 +100,9 @@ async function addReferencesToHtmlDocument(
                     citationReference.position,
                   )
                 if (result.done) {
-                  console.error(
-                    "Transformation of reference position in citation to HTML failed:",
-                    position,
+                  throw new Error(
+                    `Transformation of reference position in citation to HTML failed: ${position}`,
                   )
-                  process.exit(1)
                 }
                 const citationReferenceReverseTransformation = result.value
                 let fragmentInFragment = fragment.slice(
@@ -146,13 +142,13 @@ async function addReferencesToHtmlDocument(
         fragment +
         (referenceReverseTransformation.innerSuffix ?? "")
       const replacement = `${referenceReverseTransformation.outerPrefix ?? ""}<span style="background-color: #eae462" title="${escapeHtml(JSON.stringify(reference), true)}">${fragment}</span>${referenceReverseTransformation.outerSuffix ?? ""}`
-      output =
-        output.slice(
+      outputHtml =
+        outputHtml.slice(
           0,
           referenceReverseTransformation.position.start + outputOffset,
         ) +
         replacement +
-        output.slice(
+        outputHtml.slice(
           referenceReverseTransformation.position.stop + outputOffset,
         )
       outputOffset +=
@@ -161,7 +157,7 @@ async function addReferencesToHtmlDocument(
           referenceReverseTransformation.position.start)
     }
 
-    await fs.writeFile(outputDocumentPath, output, { encoding: "utf-8" })
+    await fs.writeFile(outputDocumentPath, outputHtml, { encoding: "utf-8" })
   }
   return 0
 }

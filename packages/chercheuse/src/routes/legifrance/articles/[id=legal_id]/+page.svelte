@@ -12,6 +12,7 @@
   } from "@tricoteuses/legifrance"
 
   import { getArticleWithLinks } from "../../article.remote.js"
+  import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
 
   let { params } = $props()
 
@@ -39,6 +40,10 @@
 {#if blocTextuel !== undefined}
   <section class="prose ml-4">
     {@html blocTextuel}
+  </section>
+
+  <section class="prose ml-4">
+    <HtmlFragmentWithReferences fragment={article.BLOC_TEXTUEL?.CONTENU!} />
   </section>
 {/if}
 

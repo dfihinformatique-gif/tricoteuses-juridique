@@ -1,7 +1,7 @@
 {
   "name": "@tricoteuses/tisseuse",
   "description": "Find links in/to French legislative documents",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "keywords": [
     "Assemblée nationale",
     "France",

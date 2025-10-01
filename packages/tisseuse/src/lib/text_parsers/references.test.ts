@@ -771,6 +771,37 @@ describe("reference", () => {
     expect(context.text(result.position)).toBe(task.name)
   })
 
+  test("au même premier alinéa de l'article L. 300-2", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        index: 1,
+        position: {
+          start: 3,
+          stop: 22,
+        },
+        relative: 0,
+        type: "alinéa",
+      },
+      parent: {
+        num: "L300-2",
+        position: {
+          start: 28,
+          stop: 44,
+        },
+        type: "article",
+      },
+      position: {
+        start: 0,
+        stop: 44,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("audit article 8-1 bis du présent code", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = reference(context) as TextAstParentChild

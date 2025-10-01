@@ -58,6 +58,37 @@ describe("auPortion", () => {
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
   })
+
+  test("au même premier alinéa", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = auPortion(context) as TextAstPortion
+    expect(result).toStrictEqual({
+      index: 1,
+      position: {
+        start: 0,
+        stop: 22,
+      },
+      relative: 0,
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("au premier alinéa", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = auPortion(context) as TextAstPortion
+    expect(result).toStrictEqual({
+      index: 1,
+      position: {
+        start: 0,
+        stop: 17,
+      },
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
 })
 
 describe("auxPortions", () => {
@@ -250,6 +281,22 @@ describe("unePortion", () => {
     expect(context.text(result.position)).toBe(task.name)
   })
 
+  test("même premier alinéa", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = unePortion(context) as TextAstPortion
+    expect(result).toStrictEqual({
+      index: 1,
+      position: {
+        start: 0,
+        stop: 19,
+      },
+      relative: 0,
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("nonante-et-neuvième alinéa", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = unePortion(context) as TextAstPortion
@@ -273,21 +320,6 @@ describe("unePortion", () => {
       position: {
         start: 0,
         stop: 17,
-      },
-      type: "alinéa",
-    })
-    expect(context.remaining()).toBe("")
-    expect(context.text(result.position)).toBe(task.name)
-  })
-
-  test("premier alinéa", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    const result = unePortion(context) as TextAstPortion
-    expect(result).toStrictEqual({
-      index: 1,
-      position: {
-        start: 0,
-        stop: 14,
       },
       type: "alinéa",
     })

@@ -114,6 +114,19 @@ export const numeroPortion = chain(
 export const unePortion = chain(
   [
     alternatives(
+      chain(
+        [
+          regExp("même", {
+            flags: "i",
+          }),
+          espace,
+          adjectifNumeralOrdinalLong,
+        ],
+        {
+          value: (results) =>
+            ({ index: results[2], relative: 0 }) as TextAstLocalization,
+        },
+      ),
       convert(adjectifNumeralOrdinalLong, {
         value: (result) => ({ index: result }) as TextAstLocalization,
       }),

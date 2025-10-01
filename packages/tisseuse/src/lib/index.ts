@@ -86,6 +86,11 @@ export {
   iterIncludedReferences,
 } from "./text_parsers/helpers.js"
 export {
+  getReferences,
+  iterCitationReferences,
+  iterReferences,
+} from "./text_parsers/index.js"
+export {
   adjectifNumeralOrdinalCourt,
   adverbeMultiplicatifLatin,
   nombreAsTextAstNumber,

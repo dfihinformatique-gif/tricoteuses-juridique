@@ -11,8 +11,10 @@
     type LegiTexteNature,
   } from "@tricoteuses/legifrance"
 
+  import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
   import { getArticleWithLinks } from "../../article.remote.js"
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
+  import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
 
   let { params } = $props()
 
@@ -33,8 +35,14 @@
   )
 </script>
 
-<h1>
-  Article {metaArticle.NUM} ({metaArticle.DATE_DEBUT}-{metaArticle.DATE_FIN})
+<ContexteTexteTitre {texte} />
+
+{#if texte.TM !== undefined}
+  <TmWithTitreSingleton tm={texte.TM} />
+{/if}
+
+<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
+  Article {metaArticle.NUM} ({metaArticle.DATE_DEBUT} - {metaArticle.DATE_FIN})
 </h1>
 
 {#if blocTextuel !== undefined}

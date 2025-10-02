@@ -70,7 +70,7 @@
   {/each}
 {/snippet}
 
-<h1>
+<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
   {#if structureTxt?.TM !== undefined && structureTxt.TM.length === 1 && structureTxt.TM[0].LIEN_TXT === undefined}
     {structureTxt.TM[0].TITRE_TM}
     <br />

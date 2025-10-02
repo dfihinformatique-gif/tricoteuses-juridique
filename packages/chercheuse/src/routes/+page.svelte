@@ -6,13 +6,9 @@
   let q: string = $state("loi république numérique")
 </script>
 
-<h1>Welcome to SvelteKit</h1>
-<p>
-  Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the
-  documentation
-</p>
-
-<h1>Autocompletions</h1>
+<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
+  Tricoteuses
+</h1>
 
 <input bind:value={q} />
 <ul>

@@ -42,7 +42,9 @@
   )
 </script>
 
-<h1>{texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}</h1>
+<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
+  {texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}
+</h1>
 
 {#if abro !== undefined}
   <section class="prose ml-4">

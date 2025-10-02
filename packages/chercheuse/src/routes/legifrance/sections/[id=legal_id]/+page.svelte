@@ -10,8 +10,10 @@
     slugify,
   } from "@tricoteuses/legifrance"
 
-  import Structure from "../../Structure.svelte"
+  import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
   import { getSectionTa } from "../../section_ta.remote.js"
+  import Structure from "../../Structure.svelte"
+  import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
 
   let { params } = $props()
 
@@ -24,7 +26,15 @@
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
 </script>
 
-<h1>{sectionTa.TITRE_TA}</h1>
+<ContexteTexteTitre {texte} />
+
+{#if texte.TM !== undefined}
+  <TmWithTitreSingleton tm={texte.TM} />
+{/if}
+
+<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
+  {sectionTa.TITRE_TA}
+</h1>
 
 {#if sectionTa.STRUCTURE_TA !== undefined}
   <Structure structure={sectionTa.STRUCTURE_TA} />

@@ -1,19 +1,22 @@
 <script lang="ts">
   import { error } from "@sveltejs/kit"
   import {
+    bestItemForDate,
     gitPathFromId,
     organizationNameByTexteNature,
     repositoryNameFromTitle,
-    bestItemForDate,
-    type LegiTexteNature,
-    walkContexteTexteTm,
     slugify,
+    walkContexteTexteTm,
+    type JorfSectionTaTm,
+    type LegiTexteNature,
+    type LegiSectionTaTm,
   } from "@tricoteuses/legifrance"
 
   import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
   import { getSectionTa } from "../../section_ta.remote.js"
   import Structure from "../../Structure.svelte"
   import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
+  import TmWithTitreArray from "../../TmWithTitreArray.svelte"
 
   let { params } = $props()
 
@@ -29,7 +32,11 @@
 <ContexteTexteTitre {texte} />
 
 {#if texte.TM !== undefined}
-  <TmWithTitreSingleton tm={texte.TM} />
+  {#if sectionTa.ID.startsWith("JORF")}
+    <TmWithTitreSingleton tm={texte.TM as JorfSectionTaTm} />
+  {:else}
+    <TmWithTitreArray {date} tm={texte.TM as LegiSectionTaTm} />
+  {/if}
 {/if}
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">

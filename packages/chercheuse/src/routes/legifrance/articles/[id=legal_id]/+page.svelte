@@ -7,7 +7,9 @@
     repositoryNameFromTitle,
     slugify,
     walkContexteTexteTm,
+    type JorfArticleTm,
     type LegiArticle,
+    type LegiArticleTm,
     type LegiTexteNature,
   } from "@tricoteuses/legifrance"
 
@@ -15,6 +17,7 @@
   import { getArticleWithLinks } from "../../article.remote.js"
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
   import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
+  import TmWithTitreArray from "../../TmWithTitreArray.svelte"
 
   let { params } = $props()
 
@@ -38,7 +41,11 @@
 <ContexteTexteTitre {texte} />
 
 {#if texte.TM !== undefined}
-  <TmWithTitreSingleton tm={texte.TM} />
+  {#if article.META.META_COMMUN.ORIGINE === "JORF"}
+    <TmWithTitreSingleton tm={texte.TM as JorfArticleTm} />
+  {:else}
+    <TmWithTitreArray {date} tm={texte.TM as LegiArticleTm} />
+  {/if}
 {/if}
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">

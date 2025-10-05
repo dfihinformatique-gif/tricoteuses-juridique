@@ -1,7 +1,7 @@
 import { auditEmptyToNull, auditTrimString, cleanAudit } from "@auditors/core"
 
 import { query } from "$app/server"
-import { standardSchemaV1 } from "$lib/auditors/standardschema"
+import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
 
 export const autocomplete = query(

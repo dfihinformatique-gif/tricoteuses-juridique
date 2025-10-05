@@ -8,12 +8,12 @@
 
   import { urlPathFromId } from "$lib/urls.js"
 
-  import { getJo } from "../../jo.remote.js"
+  import { queryJo } from "../../jo.remote.js"
 
   let { params } = $props()
 
   const jo = $derived(
-    (await getJo(params.id)) ?? error(404, "Journal officiel non trouvé"),
+    (await queryJo(params.id)) ?? error(404, "Journal officiel non trouvé"),
   )
   const metaCommun = $derived(jo.META.META_COMMUN)
   const metaConteneur = $derived(jo.META.META_SPEC.META_CONTENEUR)

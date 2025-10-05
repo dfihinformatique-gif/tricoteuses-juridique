@@ -7,10 +7,10 @@ import {
 import { auditLegalId, type Jo } from "@tricoteuses/legifrance"
 
 import { query } from "$app/server"
-import { standardSchemaV1 } from "$lib/auditors/standardschema"
-import { legiDb } from "$lib/server/databases/index.js"
+import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { getOrLoadJo, newLegalObjectCacheById } from "$lib/server/loaders.js"
 
-export const getJo = query(
+export const queryJo = query(
   standardSchemaV1<string>(
     cleanAudit,
     auditTrimString,
@@ -19,16 +19,5 @@ export const getJo = query(
     auditRequire,
   ),
   async (id): Promise<Jo | undefined> =>
-    (
-      await legiDb<
-        Array<{
-          data: Jo
-        }>
-      >`
-        SELECT
-          data
-        FROM jo
-        WHERE id = ${id}
-      `
-    )[0]?.data,
+    await getOrLoadJo(newLegalObjectCacheById(), id),
 )

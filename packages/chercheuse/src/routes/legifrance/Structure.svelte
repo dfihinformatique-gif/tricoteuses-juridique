@@ -21,8 +21,8 @@
 
   import type { ArticleWithLinks } from "$lib/articles.js"
 
-  import { getArticleWithLinks } from "./article.remote.js"
-  import { getSectionTa } from "./section_ta.remote.js"
+  import { queryArticleWithLinks } from "./article.remote.js"
+  import { querySectionTa } from "./section_ta.remote.js"
   import Structure from "./Structure.svelte"
 
   let {
@@ -62,7 +62,7 @@
       if (article === undefined) {
         articleWithLinksById.set(
           lienArticle["@id"],
-          await getArticleWithLinks(lienArticle["@id"]),
+          await queryArticleWithLinks(lienArticle["@id"]),
         )
       }
       openById.set(lienArticle["@id"], true)
@@ -83,7 +83,7 @@
       if (sectionTa === undefined) {
         sectionTaById.set(
           lienSectionTa["@id"],
-          await getSectionTa(lienSectionTa["@id"]),
+          await querySectionTa(lienSectionTa["@id"]),
         )
       }
       openById.set(lienSectionTa["@id"], true)

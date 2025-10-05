@@ -13,7 +13,7 @@
   } from "@tricoteuses/legifrance"
 
   import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
-  import { getSectionTa } from "../../section_ta.remote.js"
+  import { querySectionTa } from "../../section_ta.remote.js"
   import Structure from "../../Structure.svelte"
   import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
   import TmWithTitreArray from "../../TmWithTitreArray.svelte"
@@ -21,7 +21,7 @@
   let { params } = $props()
 
   const sectionTa = $derived(
-    (await getSectionTa(params.id)) ?? error(404, "Section TA non trouvée"),
+    (await querySectionTa(params.id)) ?? error(404, "Section TA non trouvée"),
   )
   const texte = $derived(sectionTa.CONTEXTE.TEXTE)
   // TOOD: Improve date detection:

@@ -1,7 +1,10 @@
 import {
   auditEmptyToNull,
+  auditInteger,
+  auditOptions,
   auditRequire,
   auditTrimString,
+  auditTuple,
   cleanAudit,
 } from "@auditors/core"
 import {
@@ -9,13 +12,18 @@ import {
   type JorfArticle,
   type LegiArticle,
 } from "@tricoteuses/legifrance"
+import { assertNever } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
 import type { ArticleWithLinks } from "$lib/articles.js"
-import { standardSchemaV1 } from "$lib/auditors/standardschema"
+import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { getSiblingArticleId } from "$lib/server/articles.js"
 import { legiDb } from "$lib/server/databases/index.js"
+import {
+  /* getOrLoadArticle, */ newLegalObjectCacheById,
+} from "$lib/server/loaders.js"
 
-// export const getArticle = query(
+// export const queryArticle = query(
 //   standardSchemaV1<string>(
 //     cleanAudit,
 //     auditTrimString,
@@ -24,21 +32,10 @@ import { legiDb } from "$lib/server/databases/index.js"
 //     auditRequire,
 //   ),
 //   async (id): Promise<JorfArticle | LegiArticle | undefined> =>
-//     (
-//       await legiDb<
-//         Array<{
-//           data: JorfArticle | LegiArticle
-//         }>
-//       >`
-//         SELECT
-//           data
-//         FROM article
-//         WHERE id = ${id}
-//       `
-//     )[0]?.data,
+//     await getOrLoadArticle(newLegalObjectCacheById(), id),
 // )
 
-// export const getArticleContenuAvecLiens = query(
+// export const queryArticleContenuAvecLiens = query(
 //   standardSchemaV1<string>(
 //     cleanAudit,
 //     auditTrimString,
@@ -68,7 +65,7 @@ import { legiDb } from "$lib/server/databases/index.js"
 //   },
 // )
 
-export const getArticleWithLinks = query(
+export const queryArticleWithLinks = query(
   standardSchemaV1<string>(
     cleanAudit,
     auditTrimString,
@@ -107,4 +104,22 @@ export const getArticleWithLinks = query(
           nota?: string
         },
     )[0],
+)
+
+/**
+ * TODO:
+ * - Handle date to filter articles outside date
+ * - Migrate everything except the query to @tricoteuses/legifrance.
+ */
+export const querySiblingArticleId = query(
+  standardSchemaV1<[string, -1 | 1]>(
+    cleanAudit,
+    auditTuple(
+      [auditTrimString, auditEmptyToNull, auditLegalId, auditRequire],
+      [auditInteger, auditOptions([-1, 1]), auditRequire],
+    ),
+    auditRequire,
+  ),
+  async ([id, offset]): Promise<string | undefined> =>
+    await getSiblingArticleId(newLegalObjectCacheById(), id, offset),
 )

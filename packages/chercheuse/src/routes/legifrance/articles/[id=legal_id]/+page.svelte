@@ -13,16 +13,23 @@
     type LegiTexteNature,
   } from "@tricoteuses/legifrance"
 
+  import { Button } from "$lib/components/ui/button/index.js"
+  import { urlPathFromId } from "$lib/urls"
+
+  import {
+    queryArticleWithLinks,
+    querySiblingArticleId,
+  } from "../../article.remote.js"
   import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
-  import { getArticleWithLinks } from "../../article.remote.js"
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
-  import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
   import TmWithTitreArray from "../../TmWithTitreArray.svelte"
+  import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
 
   let { params } = $props()
 
   const articleWithLinks = $derived(
-    (await getArticleWithLinks(params.id)) ?? error(404, "Article non trouvé"),
+    (await queryArticleWithLinks(params.id)) ??
+      error(404, "Article non trouvé"),
   )
   const { article } = $derived(articleWithLinks)
   const blocTextuel = $derived(
@@ -33,8 +40,12 @@
   const date = $derived(texte["@date_publi"]!)
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
   const metaArticle = $derived(article.META.META_SPEC.META_ARTICLE)
+  const nextArticleId = $derived(await querySiblingArticleId([params.id, +1]))
   const nota = $derived(
     articleWithLinks.nota ?? (article as LegiArticle).NOTA?.CONTENU,
+  )
+  const previousArticleId = $derived(
+    await querySiblingArticleId([params.id, -1]),
   )
 </script>
 
@@ -157,3 +168,20 @@
     </li>
   </ul>
 </details>
+
+<div class="flex justify-evenly">
+  <Button
+    disabled={previousArticleId === undefined}
+    href={previousArticleId === undefined
+      ? undefined
+      : urlPathFromId(previousArticleId)}
+    variant="outline">Précédent</Button
+  >
+  <Button
+    disabled={nextArticleId === undefined}
+    href={nextArticleId === undefined
+      ? undefined
+      : urlPathFromId(nextArticleId)}
+    variant="outline">Suivant</Button
+  >
+</div>

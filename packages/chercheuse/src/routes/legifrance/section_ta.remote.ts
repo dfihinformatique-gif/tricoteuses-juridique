@@ -11,10 +11,13 @@ import {
 } from "@tricoteuses/legifrance"
 
 import { query } from "$app/server"
-import { standardSchemaV1 } from "$lib/auditors/standardschema"
-import { legiDb } from "$lib/server/databases/index.js"
+import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import {
+  getOrLoadSectionTa,
+  newLegalObjectCacheById,
+} from "$lib/server/loaders.js"
 
-export const getSectionTa = query(
+export const querySectionTa = query(
   standardSchemaV1<string>(
     cleanAudit,
     auditTrimString,
@@ -23,16 +26,5 @@ export const getSectionTa = query(
     auditRequire,
   ),
   async (id): Promise<JorfSectionTa | LegiSectionTa | undefined> =>
-    (
-      await legiDb<
-        Array<{
-          data: JorfSectionTa | LegiSectionTa
-        }>
-      >`
-        SELECT
-          data
-        FROM section_ta
-        WHERE id = ${id}
-      `
-    )[0]?.data,
+    await getOrLoadSectionTa(newLegalObjectCacheById(), id),
 )

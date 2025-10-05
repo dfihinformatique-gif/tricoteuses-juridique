@@ -10,12 +10,12 @@
   } from "@tricoteuses/legifrance"
 
   import Structure from "../../Structure.svelte"
-  import { getTexteWithLinks } from "../../texte.remote.js"
+  import { queryTexteWithLinks } from "../../texte.remote.js"
 
   let { params } = $props()
 
   const texteWithLinks = $derived(
-    (await getTexteWithLinks(params.id)) ?? error(404, "Texte non trouvé"),
+    (await queryTexteWithLinks(params.id)) ?? error(404, "Texte non trouvé"),
   )
   const { textelr, texteVersion } = $derived(texteWithLinks)
   const abro = $derived(texteWithLinks.abro ?? texteVersion?.ABRO?.CONTENU)

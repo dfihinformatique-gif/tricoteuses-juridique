@@ -1,4 +1,5 @@
 <script lang="ts">
+  import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import { error } from "@sveltejs/kit"
   import {
     bestItemForDate,
@@ -15,6 +16,7 @@
   } from "@tricoteuses/legifrance"
 
   import { Button } from "$lib/components/ui/button/index.js"
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
   import { urlPathFromId } from "$lib/urls"
@@ -39,6 +41,7 @@
   const blocTextuel = $derived(
     articleWithLinks.blocTextuel ?? article.BLOC_TEXTUEL?.CONTENU,
   )
+  let blocTextuelDisplayMode: "links" | "references" = $state("links")
   const texte = $derived(article.CONTEXTE.TEXTE)
   // TOOD: Improve date detection:
   const date = $derived(texte["@date_publi"]!)
@@ -68,38 +71,59 @@
   Article {metaArticle.NUM}
 </h1>
 
-<div class="flex">
-  <Label for="versions">Versions</Label>
-  <Select.Root
-    onValueChange={(id: string) => goto(urlPathFromId(id)!)}
-    type="single"
-  >
-    <Select.Trigger id="versions"
-      >{params.id}
-      {metaArticle.DATE_DEBUT} - {metaArticle.DATE_FIN}
-      {(metaArticle as LegiArticleMetaArticle).ETAT}</Select.Trigger
+<div class="mx-auto flex w-1/2 justify-between">
+  <div class="flex space-x-1">
+    <Label for="versions">Versions</Label>
+    <Select.Root
+      onValueChange={(id: string) => goto(urlPathFromId(id)!)}
+      type="single"
     >
-    <Select.Content>
-      {#each versions as version}
-        {@const lienArticle = version.LIEN_ART}
-        <Select.Item value={lienArticle["@id"]}
-          >{lienArticle["@id"]}
-          {lienArticle["@debut"]} - {lienArticle["@fin"]}
-          {lienArticle["@etat"] ?? version["@etat"]}</Select.Item
-        >
-      {/each}
-    </Select.Content>
-  </Select.Root>
+      <Select.Trigger id="versions"
+        >{params.id}
+        {metaArticle.DATE_DEBUT} - {metaArticle.DATE_FIN}
+        {(metaArticle as LegiArticleMetaArticle).ETAT}</Select.Trigger
+      >
+      <Select.Content>
+        {#each versions as version}
+          {@const lienArticle = version.LIEN_ART}
+          <Select.Item value={lienArticle["@id"]}
+            >{lienArticle["@id"]}
+            {lienArticle["@debut"]} - {lienArticle["@fin"]}
+            {lienArticle["@etat"] ?? version["@etat"]}</Select.Item
+          >
+        {/each}
+      </Select.Content>
+    </Select.Root>
+  </div>
+  {#if blocTextuel !== undefined}
+    <DropdownMenu.Root>
+      <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
+      <DropdownMenu.Content>
+        <DropdownMenu.Group>
+          <DropdownMenu.Label>Affichage</DropdownMenu.Label>
+          <DropdownMenu.Separator />
+          <DropdownMenu.RadioGroup bind:value={blocTextuelDisplayMode}>
+            <DropdownMenu.RadioItem value="links">Liens</DropdownMenu.RadioItem>
+            <DropdownMenu.RadioItem value="references"
+              >Références sans liens</DropdownMenu.RadioItem
+            >
+          </DropdownMenu.RadioGroup>
+        </DropdownMenu.Group>
+      </DropdownMenu.Content>
+    </DropdownMenu.Root>
+  {/if}
 </div>
 
 {#if blocTextuel !== undefined}
-  <section class="prose ml-4">
-    {@html blocTextuel}
-  </section>
-
-  <section class="prose ml-4">
-    <HtmlFragmentWithReferences fragment={article.BLOC_TEXTUEL?.CONTENU!} />
-  </section>
+  {#if blocTextuelDisplayMode === "links"}
+    <section class="prose ml-4">
+      {@html blocTextuel}
+    </section>
+  {:else}
+    <section class="prose ml-4">
+      <HtmlFragmentWithReferences fragment={article.BLOC_TEXTUEL?.CONTENU!} />
+    </section>
+  {/if}
 {/if}
 
 {#if nota !== undefined}
@@ -198,7 +222,7 @@
   </ul>
 </details>
 
-<div class="flex justify-evenly">
+<div class="mx-auto flex w-1/2 justify-between">
   <Button
     disabled={previousArticleId === undefined}
     href={previousArticleId === undefined

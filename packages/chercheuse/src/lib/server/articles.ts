@@ -17,7 +17,7 @@ import {
   getOrLoadSectionTa,
   newLegalObjectCacheById,
   type LegalObjectCacheById,
-} from "./loaders"
+} from "./loaders.js"
 
 /**
  * TODO: Migrate to @tricoteuses/legifrance
@@ -118,6 +118,7 @@ export async function getSiblingArticleId(
   if (article === undefined) {
     return undefined
   }
+  const date = await getArticleDateSignature(article)
   const origine = article.META.META_COMMUN.ORIGINE
   const texte = article.CONTEXTE.TEXTE
   if (texte.TM === undefined) {
@@ -133,8 +134,6 @@ export async function getSiblingArticleId(
       break
     }
     case "LEGI": {
-      // TOOD: Improve date detection:
-      const date = texte["@date_publi"]!
       reverseSectionsTaIdBreadcrumb = (
         reverseTmsBreadcrumb as Array<LegiArticleTm | LegiSectionTaTm>
       ).map((tm) => bestItemForDate(tm.TITRE_TM, date)?.["@id"])

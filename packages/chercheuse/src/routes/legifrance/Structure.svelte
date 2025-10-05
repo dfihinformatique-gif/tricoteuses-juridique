@@ -20,14 +20,18 @@
   import { SvelteMap } from "svelte/reactivity"
 
   import type { ArticleWithLinks } from "$lib/articles.js"
+  import { urlPathFromId } from "$lib/urls"
 
   import { queryArticleWithLinks } from "./article.remote.js"
+  import HtmlFragmentWithReferences from "./HtmlFragmentWithReferences.svelte"
   import { querySectionTa } from "./section_ta.remote.js"
   import Structure from "./Structure.svelte"
 
   let {
+    displayMode,
     structure,
   }: {
+    displayMode: "links" | "references"
     structure:
       | JorfSectionTaStructure
       | JorfTextelrStructure
@@ -102,7 +106,7 @@
           "@fin"
         ]}
       </button>
-      <a href="/legifrance/articles/{lienArticle['@id']}">Voir à part</a>
+      <a href={urlPathFromId(lienArticle["@id"])}>Voir à part</a>
     </div>
     {#if articleWithLinks !== undefined && openById.get(lienArticle["@id"])}
       {@const { article } = articleWithLinks}
@@ -111,15 +115,31 @@
       {@const nota =
         articleWithLinks.nota ?? (article as LegiArticle).NOTA?.CONTENU}
       {#if blocTextuel !== undefined}
-        <section class="prose ml-4">
-          {@html blocTextuel}
-        </section>
+        {#if displayMode === "links"}
+          <section class="prose ml-4">
+            {@html blocTextuel}
+          </section>
+        {:else}
+          <section class="prose ml-4">
+            <HtmlFragmentWithReferences
+              fragment={article.BLOC_TEXTUEL?.CONTENU!}
+            />
+          </section>
+        {/if}
       {/if}
       {#if nota !== undefined}
         <h2>Nota</h2>
-        <section class="prose ml-4">
-          {@html nota}
-        </section>
+        {#if displayMode === "links"}
+          <section class="prose ml-4">
+            {@html nota}
+          </section>
+        {:else}
+          <section class="prose ml-4">
+            <HtmlFragmentWithReferences
+              fragment={(article as LegiArticle).NOTA?.CONTENU!}
+            />
+          </section>
+        {/if}
       {/if}
     {/if}
   {/each}
@@ -134,13 +154,13 @@
           "@fin"
         ]})
       </button>
-      <a href="/legifrance/sections/{lienSectionTa['@id']}">Voir à part</a>
+      <a href={urlPathFromId(lienSectionTa["@id"])}>Voir à part</a>
     </div>
     {#if sectionTa !== undefined && openById.get(lienSectionTa["@id"])}
       {@const structureTa = sectionTa.STRUCTURE_TA}
       {#if structureTa !== undefined}
         <section class="ml-4">
-          <Structure structure={structureTa} />
+          <Structure {displayMode} structure={structureTa} />
         </section>
       {/if}
     {/if}

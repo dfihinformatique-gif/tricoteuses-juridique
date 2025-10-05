@@ -1,4 +1,6 @@
 <script lang="ts">
+  import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
+  import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import { error } from "@sveltejs/kit"
   import {
     gitPathFromId,
@@ -6,7 +8,8 @@
     type JoTm,
   } from "@tricoteuses/legifrance"
 
-  import { urlPathFromId } from "$lib/urls.js"
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
+  import { urlPathFromId } from "$lib/urls"
 
   import { queryJo } from "../../jo.remote.js"
 
@@ -78,6 +81,53 @@
   {metaConteneur.TITRE}
 </h1>
 
+<div class="mx-auto flex w-1/2 justify-end">
+  <DropdownMenu.Root>
+    <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
+    <DropdownMenu.Content align="end">
+      <DropdownMenu.Group>
+        <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+        <DropdownMenu.Item>
+          <a
+            href={new URL(
+              gitPathFromId(params.id, ".md"),
+              "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+            ).toString()}>Markdown dans git</a
+          >
+          <ExternalLinkIcon />
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            href={new URL(
+              gitPathFromId(params.id, ".json"),
+              "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
+            ).toString()}>JSON dans git</a
+          >
+          <ExternalLinkIcon />
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            href={new URL(
+              gitPathFromId(params.id, ".json"),
+              "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
+            ).toString()}>Références JSON dans git</a
+          >
+          <ExternalLinkIcon />
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            href={metaConteneur.NUM === undefined
+              ? `https://www.legifrance.gouv.fr/jorf/jo/id/${params.id}`
+              : `https://www.legifrance.gouv.fr/jorf/jo/${metaConteneur.DATE_PUBLI.replaceAll("-", "/")}/${`0000${metaConteneur.NUM}`.slice(-4)}`}
+            >Légifrance</a
+          >
+          <ExternalLinkIcon />
+        </DropdownMenu.Item>
+      </DropdownMenu.Group>
+    </DropdownMenu.Content>
+  </DropdownMenu.Root>
+</div>
+
 {#if structureTxt?.LIEN_TXT !== undefined}
   {@render liensTxtView(structureTxt.LIEN_TXT, 0)}
 {/if}
@@ -94,42 +144,3 @@
     )}
   {/if}
 {/if}
-
-<details>
-  <summary><h2>Autres formats</h2></summary>
-
-  <ul>
-    <li>
-      <a
-        href={new URL(
-          gitPathFromId(params.id, ".json"),
-          "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
-        ).toString()}>JSON dans git</a
-      >
-    </li>
-    <li>
-      <a
-        href={new URL(
-          gitPathFromId(params.id, ".json"),
-          "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
-        ).toString()}>Références JSON dans git</a
-      >
-    </li>
-    <li>
-      <a
-        href={new URL(
-          gitPathFromId(params.id, ".md"),
-          "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-        ).toString()}>Markdown dans git</a
-      >
-    </li>
-    <li>
-      <a
-        href={metaConteneur.NUM === undefined
-          ? `https://www.legifrance.gouv.fr/jorf/jo/id/${params.id}`
-          : `https://www.legifrance.gouv.fr/jorf/jo/${metaConteneur.DATE_PUBLI.replaceAll("-", "/")}/${`0000${metaConteneur.NUM}`.slice(-4)}`}
-        >Légifrance</a
-      >
-    </li>
-  </ul>
-</details>

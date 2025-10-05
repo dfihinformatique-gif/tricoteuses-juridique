@@ -22,8 +22,12 @@ jobs:
       - name: Extract titles from texts
         run: npx tsx src/scripts/extract_texts_titles_infos.ts
         working-directory: packages/tisseuse/
-      - name: Launch every tricoteuses-juridique tests (tisseuse…)
+      - name: Launch Tisseuse tests
         run: npm test
+        working-directory: packages/tisseuse/
+      - name: Launch Chercheuse tests
+        run: npm test
+        working-directory: packages/chercheuse/
       - name: Extract texts infos (without generating anything)
         run: npx tsx src/scripts/extract_texts_infos.ts
         working-directory: packages/tisseuse/

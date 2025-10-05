@@ -9,11 +9,14 @@
     walkContexteTexteTm,
     type JorfArticleTm,
     type LegiArticle,
+    type LegiArticleMetaArticle,
     type LegiArticleTm,
     type LegiTexteNature,
   } from "@tricoteuses/legifrance"
 
   import { Button } from "$lib/components/ui/button/index.js"
+  import { Label } from "$lib/components/ui/label/index.js"
+  import * as Select from "$lib/components/ui/select/index.js"
   import { urlPathFromId } from "$lib/urls"
 
   import {
@@ -24,6 +27,7 @@
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
   import TmWithTitreArray from "../../TmWithTitreArray.svelte"
   import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
+  import { goto } from "$app/navigation"
 
   let { params } = $props()
 
@@ -47,6 +51,7 @@
   const previousArticleId = $derived(
     await querySiblingArticleId([params.id, -1]),
   )
+  const versions = $derived(article.VERSIONS.VERSION)
 </script>
 
 <ContexteTexteTitre {texte} />
@@ -60,8 +65,32 @@
 {/if}
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
-  Article {metaArticle.NUM} ({metaArticle.DATE_DEBUT} - {metaArticle.DATE_FIN})
+  Article {metaArticle.NUM}
 </h1>
+
+<div class="flex">
+  <Label for="versions">Versions</Label>
+  <Select.Root
+    onValueChange={(id: string) => goto(urlPathFromId(id)!)}
+    type="single"
+  >
+    <Select.Trigger id="versions"
+      >{params.id}
+      {metaArticle.DATE_DEBUT} - {metaArticle.DATE_FIN}
+      {(metaArticle as LegiArticleMetaArticle).ETAT}</Select.Trigger
+    >
+    <Select.Content>
+      {#each versions as version}
+        {@const lienArticle = version.LIEN_ART}
+        <Select.Item value={lienArticle["@id"]}
+          >{lienArticle["@id"]}
+          {lienArticle["@debut"]} - {lienArticle["@fin"]}
+          {lienArticle["@etat"] ?? version["@etat"]}</Select.Item
+        >
+      {/each}
+    </Select.Content>
+  </Select.Root>
+</div>
 
 {#if blocTextuel !== undefined}
   <section class="prose ml-4">

@@ -42,9 +42,6 @@
   const articleWithLinksById = $state(
     new SvelteMap<string, ArticleWithLinks | undefined>(),
   )
-  const articleContenuAvecLiensById = $state(
-    new SvelteMap<string, { blocTextuel: string } | undefined>(),
-  )
   let liensArticles = $derived(structure.LIEN_ART)
   let liensSectionsTa = $derived(structure.LIEN_SECTION_TA)
   const openById = $state(new SvelteMap<string, boolean>())

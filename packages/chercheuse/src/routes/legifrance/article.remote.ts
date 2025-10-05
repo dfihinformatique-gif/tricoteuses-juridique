@@ -12,16 +12,49 @@ import {
   type JorfArticle,
   type LegiArticle,
 } from "@tricoteuses/legifrance"
-import { assertNever } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
-import type { ArticleWithLinks } from "$lib/articles.js"
+import type { ArticlePageInfos, ArticleWithLinks } from "$lib/articles.js"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { getSiblingArticleId } from "$lib/server/articles.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import {
   /* getOrLoadArticle, */ newLegalObjectCacheById,
 } from "$lib/server/loaders.js"
+
+const getArticleWithLinks = async (
+  id: string,
+): Promise<ArticleWithLinks | undefined> =>
+  (
+    await legiDb<
+      Array<{
+        bloc_textuel: string | null
+        data: JorfArticle | LegiArticle
+        nota: string | null
+      }>
+    >`
+      SELECT
+        bloc_textuel,
+        data,
+        nota
+      FROM article
+      LEFT JOIN article_contenu_avec_liens ON article.id = article_contenu_avec_liens.id
+      WHERE article.id = ${id}
+    `
+  ).map(
+    ({ bloc_textuel: blocTextuel, data: article, nota }): ArticleWithLinks =>
+      Object.fromEntries(
+        Object.entries({
+          article,
+          blocTextuel,
+          nota,
+        }).filter((_key, value) => value !== null),
+      ) as {
+        article: JorfArticle | LegiArticle
+        blocTextuel?: string
+        nota?: string
+      },
+  )[0]
 
 // export const queryArticle = query(
 //   standardSchemaV1<string>(
@@ -65,6 +98,32 @@ import {
 //   },
 // )
 
+export const queryArticlePageInfos = query(
+  standardSchemaV1<string>(
+    cleanAudit,
+    auditTrimString,
+    auditEmptyToNull,
+    auditLegalId,
+    auditRequire,
+  ),
+  async (id): Promise<ArticlePageInfos | undefined> => {
+    const articleWithLinks = await getArticleWithLinks(id)
+    if (articleWithLinks === undefined) {
+      return undefined
+    }
+    const legalObjectCacheById = newLegalObjectCacheById()
+    return {
+      ...articleWithLinks,
+      nextArticleId: await getSiblingArticleId(legalObjectCacheById, id, 1),
+      previousArticleId: await getSiblingArticleId(
+        legalObjectCacheById,
+        id,
+        -1,
+      ),
+    }
+  },
+)
+
 export const queryArticleWithLinks = query(
   standardSchemaV1<string>(
     cleanAudit,
@@ -74,52 +133,5 @@ export const queryArticleWithLinks = query(
     auditRequire,
   ),
   async (id): Promise<ArticleWithLinks | undefined> =>
-    (
-      await legiDb<
-        Array<{
-          bloc_textuel: string | null
-          data: JorfArticle | LegiArticle
-          nota: string | null
-        }>
-      >`
-        SELECT
-          bloc_textuel,
-          data,
-          nota
-        FROM article
-        LEFT JOIN article_contenu_avec_liens ON article.id = article_contenu_avec_liens.id
-        WHERE article.id = ${id}
-      `
-    ).map(
-      ({ bloc_textuel: blocTextuel, data: article, nota }): ArticleWithLinks =>
-        Object.fromEntries(
-          Object.entries({
-            article,
-            blocTextuel,
-            nota,
-          }).filter((_key, value) => value !== null),
-        ) as {
-          article: JorfArticle | LegiArticle
-          blocTextuel?: string
-          nota?: string
-        },
-    )[0],
-)
-
-/**
- * TODO:
- * - Handle date to filter articles outside date
- * - Migrate everything except the query to @tricoteuses/legifrance.
- */
-export const querySiblingArticleId = query(
-  standardSchemaV1<[string, -1 | 1]>(
-    cleanAudit,
-    auditTuple(
-      [auditTrimString, auditEmptyToNull, auditLegalId, auditRequire],
-      [auditInteger, auditOptions([-1, 1]), auditRequire],
-    ),
-    auditRequire,
-  ),
-  async ([id, offset]): Promise<string | undefined> =>
-    await getSiblingArticleId(newLegalObjectCacheById(), id, offset),
+    await getArticleWithLinks(id),
 )

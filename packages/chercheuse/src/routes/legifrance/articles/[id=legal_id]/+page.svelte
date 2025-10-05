@@ -21,12 +21,9 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
-  import { urlPathFromId } from "$lib/urls"
+  import { urlPathFromId } from "$lib/urls.js"
 
-  import {
-    queryArticleWithLinks,
-    querySiblingArticleId,
-  } from "../../article.remote.js"
+  import { queryArticlePageInfos } from "../../article.remote.js"
   import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
   import TmWithTitreArray from "../../TmWithTitreArray.svelte"
@@ -34,13 +31,14 @@
 
   let { params } = $props()
 
-  const articleWithLinks = $derived(
-    (await queryArticleWithLinks(params.id)) ??
+  const articlePageInfos = $derived(
+    (await queryArticlePageInfos(params.id)) ??
       error(404, "Article non trouvé"),
   )
-  const { article } = $derived(articleWithLinks)
+  const { article, nextArticleId, previousArticleId } =
+    $derived(articlePageInfos)
   const blocTextuel = $derived(
-    articleWithLinks.blocTextuel ?? article.BLOC_TEXTUEL?.CONTENU,
+    articlePageInfos.blocTextuel ?? article.BLOC_TEXTUEL?.CONTENU,
   )
   const texte = $derived(article.CONTEXTE.TEXTE)
   // TOOD: Improve date detection:
@@ -48,12 +46,8 @@
   let displayMode: "links" | "references" = $state("links")
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
   const metaArticle = $derived(article.META.META_SPEC.META_ARTICLE)
-  const nextArticleId = $derived(await querySiblingArticleId([params.id, +1]))
   const nota = $derived(
-    articleWithLinks.nota ?? (article as LegiArticle).NOTA?.CONTENU,
-  )
-  const previousArticleId = $derived(
-    await querySiblingArticleId([params.id, -1]),
+    articlePageInfos.nota ?? (article as LegiArticle).NOTA?.CONTENU,
   )
   const versions = $derived(article.VERSIONS.VERSION)
 </script>

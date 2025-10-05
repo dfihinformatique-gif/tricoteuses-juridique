@@ -1,3 +1,4 @@
+export { assertNever } from "./asserts.js"
 export { formatLongDate } from "./dates.js"
 export { jsonReplacer } from "./json.js"
 export {

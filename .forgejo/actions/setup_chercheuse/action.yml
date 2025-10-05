@@ -1,0 +1,42 @@
+name: Setup Tricoteuses Tisseuse
+description: Install Tricoteuses Tisseuse & create its environment
+inputs:
+  ASSEMBLEE_DB_PASSWORD:
+    description: "Password of Assemblée PostgreSQL database"
+    required: true
+  LEGI_ANOMALIES_DB_PASSWORD:
+    description: "Password of Légifrance Anomalies PostgreSQL database"
+    required: true
+  LEGI_DB_PASSWORD:
+    description: "Password of Légifrance PostgreSQL database"
+    required: true
+  TISSEUSE_DB_PASSWORD:
+    description: "Password of Tisseuse PostgreSQL database"
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Install tricoteuses-juridique
+      run: npm install
+      shell: bash
+    - name: Set Tricoteuses Chercheuse environment
+      run: |
+        cat > .env << EOF
+        # Légifrance PostgreSQL database configuration
+        LEGI_DB_NAME="legi"
+        LEGI_DB_HOST="${{ vars.LEGI_DB_HOST }}"
+        LEGI_DB_PORT=${{ vars.LEGI_DB_PORT }}
+        LEGI_DB_USER="legi"
+        LEGI_DB_PASSWORD="${{ inputs.LEGI_DB_PASSWORD }}"
+
+        # Tisseuse PostgreSQL database configuration
+        TISSEUSE_DB_NAME="tisseuse"
+        TISSEUSE_DB_HOST="${{ vars.TISSEUSE_DB_HOST }}"
+        TISSEUSE_DB_PORT=${{ vars.TISSEUSE_DB_PORT }}
+        TISSEUSE_DB_USER="tisseuse"
+        TISSEUSE_DB_PASSWORD="${{ inputs.TISSEUSE_DB_PASSWORD }}"
+
+        TITLE="Recherche Tricoteuses (action)"
+        EOF
+      shell: bash
+      working-directory: packages/chercheuse/

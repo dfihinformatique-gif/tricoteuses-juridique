@@ -22,6 +22,11 @@ jobs:
       - name: Extract titles from texts
         run: npx tsx src/scripts/extract_texts_titles_infos.ts
         working-directory: packages/tisseuse/
+      - name: Setup Tricoteuses Chercheuse
+        uses: ./.forgejo/actions/setup_chercheuse
+        with:
+          LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"
+          TISSEUSE_DB_PASSWORD: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
       - name: Launch Chercheuse & Tisseuse tests
         run: npm test
       - name: Extract texts infos (without generating anything)

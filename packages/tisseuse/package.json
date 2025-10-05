@@ -45,7 +45,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint .",
     "prepare": "npm run build",
-    "test": "vitest"
+    "test": "npm run test:unit -- --run",
+    "test:unit": "vitest"
   },
   "devDependencies": {
     "@auditors/core": "^0.7.4",

@@ -15,7 +15,6 @@
   } from "@tricoteuses/legifrance"
 
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
-  import { urlPathFromId } from "$lib/urls"
 
   import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
   import { querySectionTa } from "../../section_ta.remote.js"

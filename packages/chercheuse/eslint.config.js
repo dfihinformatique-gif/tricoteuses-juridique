@@ -1,6 +1,6 @@
 import prettier from "eslint-config-prettier"
-import { fileURLToPath } from "node:url"
-import { includeIgnoreFile } from "@eslint/compat"
+// import { fileURLToPath } from "node:url"
+// import { includeIgnoreFile } from "@eslint/compat"
 import js from "@eslint/js"
 import svelte from "eslint-plugin-svelte"
 import { defineConfig } from "eslint/config"
@@ -8,10 +8,21 @@ import globals from "globals"
 import ts from "typescript-eslint"
 import svelteConfig from "./svelte.config.js"
 
-const gitignorePath = fileURLToPath(new URL("./.gitignore", import.meta.url))
+// const gitignorePath = fileURLToPath(new URL("./.gitignore", import.meta.url))
 
 export default defineConfig(
-  includeIgnoreFile(gitignorePath),
+  // Doesn't work because .gitignore is in a parent directory:
+  // includeIgnoreFile(gitignorePath),
+  {
+    name: "Ignore .gitignore patterns & shadcn-svelte files",
+    ignores: [
+      ".svelte-kit",
+      "build",
+      "components.json",
+      "src/lib/components/ui/",
+      "src/lib/utils.ts",
+    ],
+  },
   js.configs.recommended,
   ...ts.configs.recommended,
   ...svelte.configs.recommended,

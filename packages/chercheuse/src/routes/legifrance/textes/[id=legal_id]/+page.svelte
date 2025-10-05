@@ -189,6 +189,18 @@
   {/if}
 {/if}
 
+{#if visas !== undefined}
+  {#if displayMode === "links"}
+    <section class="prose ml-4">
+      {@html visas}
+    </section>
+  {:else}
+    <section class="prose ml-4">
+      <HtmlFragmentWithReferences fragment={texteVersion!.VISAS!.CONTENU!} />
+    </section>
+  {/if}
+{/if}
+
 {#if textelr?.STRUCT !== undefined}
   <Structure {displayMode} structure={textelr.STRUCT} />
 {/if}

@@ -15,7 +15,7 @@ import { assertNever } from "@tricoteuses/tisseuse"
 import {
   getOrLoadArticle,
   getOrLoadSectionTa,
-  newLegalObjectCacheById,
+  // newLegalObjectCacheById,
   type LegalObjectCacheById,
 } from "./loaders.js"
 
@@ -24,9 +24,9 @@ import {
  */
 export async function getArticleDateSignature(
   article: JorfArticle | LegiArticle,
-  legalObjectCacheById: LegalObjectCacheById = newLegalObjectCacheById(),
+  // legalObjectCacheById: LegalObjectCacheById = newLegalObjectCacheById(),
 ): Promise<string> {
-  let dateSignature = article.CONTEXTE.TEXTE["@date_signature"]
+  const dateSignature = article.CONTEXTE.TEXTE["@date_signature"]
   if (dateSignature === undefined) {
     throw new Error("TODO")
   }

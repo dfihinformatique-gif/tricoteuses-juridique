@@ -1,10 +1,7 @@
 import {
   auditEmptyToNull,
-  auditInteger,
-  auditOptions,
   auditRequire,
   auditTrimString,
-  auditTuple,
   cleanAudit,
 } from "@auditors/core"
 import {

@@ -18,7 +18,7 @@
   const jo = $derived(
     (await queryJo(params.id)) ?? error(404, "Journal officiel non trouvé"),
   )
-  const metaCommun = $derived(jo.META.META_COMMUN)
+  // const metaCommun = $derived(jo.META.META_COMMUN)
   const metaConteneur = $derived(jo.META.META_SPEC.META_CONTENEUR)
   const structureTxt = $derived(jo.STRUCTURE_TXT)
 

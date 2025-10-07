@@ -204,7 +204,7 @@
     </section>
   {:else}
     <section class="prose ml-4">
-      <HtmlFragmentWithReferences fragment={article.BLOC_TEXTUEL?.CONTENU!} />
+      <HtmlFragmentWithReferences fragment={article.BLOC_TEXTUEL!.CONTENU} />
     </section>
   {/if}
 {/if}
@@ -218,7 +218,7 @@
   {:else}
     <section class="prose ml-4">
       <HtmlFragmentWithReferences
-        fragment={(article as LegiArticle).NOTA?.CONTENU!}
+        fragment={(article as LegiArticle).NOTA!.CONTENU}
       />
     </section>
   {/if}

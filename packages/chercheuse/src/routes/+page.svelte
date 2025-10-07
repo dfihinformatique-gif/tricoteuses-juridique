@@ -17,7 +17,7 @@
   <Command.List>
     <Command.Empty>No results found.</Command.Empty>
     <Command.Group>
-      {#each suggestions as { autocompletion, distance, id }}
+      {#each suggestions as { autocompletion, id } (`${id}_${autocompletion}`)}
         {@const urlPath = urlPathFromId(id)}
         <Command.Item>
           {#if urlPath === null}

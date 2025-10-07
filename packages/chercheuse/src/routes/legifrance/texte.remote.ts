@@ -125,7 +125,7 @@ export const queryTexteWithLinks = query(
       Object.entries({
         textelr,
         ...(texteVersionWithLinks ?? {}),
-      }).filter(([_key, value]) => value !== null),
+      }).filter(([, value]) => value !== null),
     )
   },
 )

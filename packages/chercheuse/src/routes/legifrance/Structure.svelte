@@ -39,15 +39,17 @@
       | LegiTextelrStructure
   } = $props()
 
-  const articleWithLinksById = $state(
-    new SvelteMap<string, ArticleWithLinks | undefined>(),
-  )
+  const articleWithLinksById = new SvelteMap<
+    string,
+    ArticleWithLinks | undefined
+  >()
   let liensArticles = $derived(structure.LIEN_ART)
   let liensSectionsTa = $derived(structure.LIEN_SECTION_TA)
-  const openById = $state(new SvelteMap<string, boolean>())
-  const sectionTaById = $state(
-    new SvelteMap<string, JorfSectionTa | LegiSectionTa | undefined>(),
-  )
+  const openById = new SvelteMap<string, boolean>()
+  const sectionTaById = new SvelteMap<
+    string,
+    JorfSectionTa | LegiSectionTa | undefined
+  >()
 
   const toggleArticle = async (
     lienArticle:
@@ -119,7 +121,7 @@
         {:else}
           <section class="prose ml-4">
             <HtmlFragmentWithReferences
-              fragment={article.BLOC_TEXTUEL?.CONTENU!}
+              fragment={article.BLOC_TEXTUEL!.CONTENU}
             />
           </section>
         {/if}
@@ -133,7 +135,7 @@
         {:else}
           <section class="prose ml-4">
             <HtmlFragmentWithReferences
-              fragment={(article as LegiArticle).NOTA?.CONTENU!}
+              fragment={(article as LegiArticle).NOTA!.CONTENU}
             />
           </section>
         {/if}

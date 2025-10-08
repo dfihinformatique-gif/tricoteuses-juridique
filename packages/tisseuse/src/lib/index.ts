@@ -184,3 +184,4 @@ export {
   numero,
   virguleOuEspace,
 } from "./text_parsers/typography.js"
+export { cleanTexteTitle } from "./textes.js"

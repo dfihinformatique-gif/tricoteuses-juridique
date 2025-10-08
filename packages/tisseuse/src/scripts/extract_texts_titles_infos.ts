@@ -14,6 +14,7 @@ import {
   simplifyUnicodeCharacters,
 } from "$lib/text_parsers/simplifiers.js"
 import { chainTransformers } from "$lib/text_parsers/transformers.js"
+import { cleanTexteTitle } from "$lib/textes.js"
 
 type TextCidByWordsTree = {
   cid?: string | string[]
@@ -26,12 +27,7 @@ function addTextCidToWordsTree(
   title: string,
   cid: string,
 ): void {
-  const words = simplifyTextTitle(
-    title
-      .replace(/ \(\d+\)$/, "")
-      .replace(/\.$/, "")
-      .replace(/[\n,()]/g, " "),
-  )
+  const words = simplifyTextTitle(cleanTexteTitle(title))
     .split(" ")
     .map((word) =>
       /^[IVX]+$/gi.test(word)
@@ -53,10 +49,7 @@ function addTextCidToWordsTree(
 
 async function extractTextsNames(): Promise<number> {
   const textCidByOtherTitleWordsTree: TextCidByWordsTree = {}
-  const textCidByTitleRestWordsTree: Record<
-    string,
-    TextCidByWordsTree
-  > = {}
+  const textCidByTitleRestWordsTree: Record<string, TextCidByWordsTree> = {}
   const textInfosByCid: Record<
     string,
     {
@@ -98,11 +91,7 @@ async function extractTextsNames(): Promise<number> {
         console.warn(`Ignoring ${nature} ${id} without title.`)
         continue
       }
-      const title = rawTitle
-        .replace(/\n/g, " ")
-        .replace(/ {2,}/g, " ")
-        .replace(/ \(\d+\)\.?$/, "")
-        .replace(/\.$/, "")
+      const title = cleanTexteTitle(rawTitle)
 
       textInfosByCid[cid] = {
         nature,
@@ -162,10 +151,7 @@ async function extractTextsNames(): Promise<number> {
           ;((textsCidsByNatureAndNum[nature] ??= {})[titleParsing.num] ??=
             []).push(cid)
         }
-        if (
-          titleParsing.titleRest === undefined &&
-          nature !== "CONSTITUTION"
-        ) {
+        if (titleParsing.titleRest === undefined && nature !== "CONSTITUTION") {
           throw new Error(
             `Unable to extract title without date, nature & num from ${nature} n° ${num} du ${dateSignature} (${cid}): ${titleToParse}`,
           )

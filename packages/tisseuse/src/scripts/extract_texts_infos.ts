@@ -18,6 +18,7 @@ import {
 } from "$lib/text_parsers/simplifiers.js"
 import { definitionTexteFrancais } from "$lib/text_parsers/texts.js"
 import { chainTransformers } from "$lib/text_parsers/transformers.js"
+import { cleanTexteTitle } from "$lib/textes.js"
 
 interface AnalyseTitre {
   date?: string
@@ -163,11 +164,7 @@ async function extractTextsInfos({
         if (rawTitle === undefined) {
           continue
         }
-        const title = rawTitle
-          .replace(/\n/g, " ")
-          .replace(/ {2,}/g, " ")
-          .replace(/ \(\d+\)\.?$/, "")
-          .replace(/\.$/, "")
+        const title = cleanTexteTitle(rawTitle)
 
         if (["code", "loi", "ordonnance"].includes(title.toLowerCase())) {
           // Example: JORFTEXT000000569621

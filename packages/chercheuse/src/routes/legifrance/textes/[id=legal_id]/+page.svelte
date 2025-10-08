@@ -15,6 +15,7 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
+  import { cleanHtmlContenu } from "$lib/strings"
   import { urlPathFromId } from "$lib/urls"
 
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
@@ -150,11 +151,11 @@
 
 {#if abro !== undefined}
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html abro}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(abro)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences fragment={texteVersion!.ABRO!.CONTENU!} />
     </section>
   {/if}
@@ -162,11 +163,11 @@
 
 {#if notice !== undefined}
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html notice}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(notice)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as JorfTexteVersion).NOTICE!.CONTENU!}
       />
@@ -177,11 +178,11 @@
 {#if sm !== undefined}
   <h2>Résumé</h2>
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html sm}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(sm)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as JorfTexteVersion).SM!.CONTENU!}
       />
@@ -191,11 +192,11 @@
 
 {#if visas !== undefined}
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html visas}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(visas)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences fragment={texteVersion!.VISAS!.CONTENU!} />
     </section>
   {/if}
@@ -207,11 +208,11 @@
 
 {#if signataires !== undefined}
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html signataires}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(signataires)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as LegiTexteVersion).SIGNATAIRES!.CONTENU!}
       />
@@ -222,11 +223,11 @@
 {#if nota !== undefined}
   <h2>Nota</h2>
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html nota}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(nota)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as LegiTexteVersion).NOTA!.CONTENU!}
       />
@@ -236,11 +237,11 @@
 
 {#if tp !== undefined}
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html tp}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(tp)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences fragment={texteVersion!.TP!.CONTENU!} />
     </section>
   {/if}

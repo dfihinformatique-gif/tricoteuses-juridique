@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { escapeHtml } from "@tricoteuses/legifrance"
+  import { cleanHtmlContenu } from "$lib/strings"
   import {
     iterCitationReferences,
     iterIncludedReferences,
@@ -8,6 +8,8 @@
     simplifyHtml,
     TextParserContext,
   } from "@tricoteuses/tisseuse"
+
+  import { escapeHtml } from "@tricoteuses/legifrance"
 
   const {
     fragment,
@@ -132,4 +134,4 @@
   )
 </script>
 
-{@html fragmentWithReferences}
+{@html cleanHtmlContenu(fragmentWithReferences)}

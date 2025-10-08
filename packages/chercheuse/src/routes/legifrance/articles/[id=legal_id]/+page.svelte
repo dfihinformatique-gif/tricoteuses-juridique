@@ -21,6 +21,7 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
+  import { cleanHtmlContenu } from "$lib/strings.js"
   import { urlPathFromId } from "$lib/urls.js"
 
   import { queryArticlePageInfos } from "../../article.remote.js"
@@ -52,7 +53,7 @@
   const versions = $derived(article.VERSIONS.VERSION)
 </script>
 
-<ContexteTexteTitre {texte} />
+<ContexteTexteTitre {date} {texte} />
 
 {#if texte.TM !== undefined}
   {#if article.META.META_COMMUN.ORIGINE === "JORF"}
@@ -199,11 +200,11 @@
 
 {#if blocTextuel !== undefined}
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html blocTextuel}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(blocTextuel)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences fragment={article.BLOC_TEXTUEL!.CONTENU} />
     </section>
   {/if}
@@ -212,11 +213,11 @@
 {#if nota !== undefined}
   <h2>Nota</h2>
   {#if displayMode === "links"}
-    <section class="prose ml-4">
-      {@html nota}
+    <section class="prose prose-links ml-4">
+      {@html cleanHtmlContenu(nota)}
     </section>
   {:else}
-    <section class="prose ml-4">
+    <section class="prose prose-links ml-4">
       <HtmlFragmentWithReferences
         fragment={(article as LegiArticle).NOTA!.CONTENU}
       />

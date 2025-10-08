@@ -34,7 +34,7 @@
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
 </script>
 
-<ContexteTexteTitre {texte} />
+<ContexteTexteTitre {date} {texte} />
 
 {#if texte.TM !== undefined}
   {#if sectionTa.ID.startsWith("JORF")}

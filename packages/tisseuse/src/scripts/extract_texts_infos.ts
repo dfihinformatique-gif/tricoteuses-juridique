@@ -360,7 +360,7 @@ async function extractTextsInfos({
                   nature: titleParsing.nature,
                   num: titleParsing.num,
                   resteDuTitre: titleParsing.titleRest,
-                }).filter(([_key, value]) => value !== undefined),
+                }).filter(([, value]) => value !== undefined),
               ) as AnalyseTitre,
             )
           } else {
@@ -452,7 +452,7 @@ async function extractTextsInfos({
       "texts_infos.json",
       [...legifranceTextDescriptionByCid.entries()]
         .sort(([cid1], [cid2]) => cid1.localeCompare(cid2))
-        .map(([_cid, legifranceTextDescription]) => ({
+        .map(([, legifranceTextDescription]) => ({
           legifrance: {
             ...legifranceTextDescription,
             titres: [...legifranceTextDescription.titres].sort(),

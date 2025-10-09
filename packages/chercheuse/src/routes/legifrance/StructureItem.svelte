@@ -32,34 +32,34 @@
           <Item.Title class="text-base">
             {#if open}
               <ChevronDownIcon
-                class="pointer-events-none mr-1 size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200"
+                class="pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200"
               />
             {:else}
               <ChevronRightIcon
-                class="pointer-events-none mr-1 size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200"
+                class="pointer-events-none size-4 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200"
               />
             {/if}
             {@render heading()}
+            {#if pathname !== null}
+              <Item.Actions>
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger
+                    ><EllipsisVerticalIcon
+                      class="pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                    /></DropdownMenu.Trigger
+                  >
+                  <DropdownMenu.Content align="end">
+                    <DropdownMenu.Group>
+                      <DropdownMenu.Item>
+                        <a class="h-full w-full" href={pathname}>Voir à part</a>
+                      </DropdownMenu.Item>
+                    </DropdownMenu.Group>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Root>
+              </Item.Actions>
+            {/if}
           </Item.Title>
         </Item.Content>
-        {#if pathname !== null}
-          <Item.Actions>
-            <DropdownMenu.Root>
-              <DropdownMenu.Trigger
-                ><EllipsisVerticalIcon
-                  class="pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200"
-                /></DropdownMenu.Trigger
-              >
-              <DropdownMenu.Content align="end">
-                <DropdownMenu.Group>
-                  <DropdownMenu.Item>
-                    <a class="h-full w-full" href={pathname}>Voir à part</a>
-                  </DropdownMenu.Item>
-                </DropdownMenu.Group>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          </Item.Actions>
-        {/if}
       </Item.Root>
     {/snippet}
   </Collapsible.Trigger>

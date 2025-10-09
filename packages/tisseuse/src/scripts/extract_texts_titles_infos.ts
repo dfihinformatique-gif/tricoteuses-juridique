@@ -27,7 +27,7 @@ function addTextCidToWordsTree(
   title: string,
   cid: string,
 ): void {
-  const words = simplifyTextTitle(cleanTexteTitle(title))
+  const words = simplifyTextTitle(cleanTexteTitle(title).replace(/[,()]/g, " "))
     .split(" ")
     .map((word) =>
       /^[IVX]+$/gi.test(word)

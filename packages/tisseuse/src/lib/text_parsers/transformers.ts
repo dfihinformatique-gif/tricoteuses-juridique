@@ -1,12 +1,5 @@
+import { FragmentReverseTransformation } from "./ast.js"
 import type { TextPosition } from "./positions.js"
-
-export interface FragmentReverseTransformation {
-  innerPrefix?: string
-  innerSuffix?: string
-  outerPrefix?: string
-  outerSuffix?: string
-  position: TextPosition
-}
 
 export interface SourceMapSegment {
   inputIndex: number
@@ -535,3 +528,26 @@ function originalSplitPositionsFromTransformedUsingSourceMap(
   }
   return originalPositions
 }
+
+export const reverseTransformedInnerFragment = <
+  StringOrUndefined extends string | undefined,
+>(
+  originalText: string,
+  originalTransformation: FragmentReverseTransformation | undefined,
+): StringOrUndefined =>
+  originalTransformation === undefined
+    ? (originalText as StringOrUndefined)
+    : (((originalTransformation.innerPrefix ?? "") +
+        originalText.slice(
+          originalTransformation.position.start,
+          originalTransformation.position.stop,
+        ) +
+        (originalTransformation.innerSuffix ?? "")) as StringOrUndefined)
+
+export const reverseTransformedReplacement = (
+  originalTransformation: FragmentReverseTransformation,
+  replacement: string,
+): string =>
+  (originalTransformation.innerPrefix ?? "") +
+  replacement +
+  (originalTransformation.innerSuffix ?? "")

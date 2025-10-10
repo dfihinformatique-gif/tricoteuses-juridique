@@ -9,6 +9,14 @@ export type DivisionType = (typeof divisionTypes)[number]
 
 export type EuropeanLawNature = (typeof europeanLawNatures)[number]
 
+export interface FragmentReverseTransformation {
+  innerPrefix?: string
+  innerSuffix?: string
+  outerPrefix?: string
+  outerSuffix?: string
+  position: TextPosition
+}
+
 export type FrenchLawNature = (typeof frenchLawNatures)[number]
 
 export type InternationalLawNature = (typeof internationalLawNatures)[number]
@@ -152,6 +160,7 @@ export type TextAstPortion = {
   TextAstPosition
 
 export interface TextAstPosition {
+  originalTransformation?: FragmentReverseTransformation
   position: TextPosition
 }
 

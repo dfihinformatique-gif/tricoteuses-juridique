@@ -379,6 +379,8 @@ export function originalMergedPositionsFromTransformed(
  *
  * Each position is split to ensure that it doesn't contain any HTML element.
  *
+ * The positions must be sorted in ascending order.
+ *
  * Use this function for diffs.
  */
 export function originalSplitPositionsFromTransformed(

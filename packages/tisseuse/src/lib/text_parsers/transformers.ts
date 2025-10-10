@@ -1,5 +1,3 @@
-import { assertNever } from "$lib/asserts.js"
-
 import type { TextPosition } from "./positions.js"
 
 export interface FragmentReverseTransformation {
@@ -84,7 +82,14 @@ function* iterTransformationLeafs(
 }
 
 /**
- * Caution: This iterator fails when successive original positions overlap.
+ * Generator that converts transformed (e.g. simplified) positions to original
+ * (e.g. HTML) positions
+ *
+ * When a position is included in fragments of HTML elements, the elements are
+ * either split (for spans) or the position is enlarged to include the whole
+ * elements (for blocks).
+ *
+ * Use this generator to insert HTML elements (links, spans, etc).
  */
 export function* iterOriginalMergedPositionsFromTransformed(
   transformation: Transformation,
@@ -128,9 +133,6 @@ export function* iterOriginalMergedPositionsFromTransformed(
   }
 }
 
-/**
- * Caution: This iterator fails when successive original positions overlap.
- */
 function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
   transformation: TransformationLeaf,
 ): Generator<
@@ -138,9 +140,6 @@ function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
   void,
   FragmentReverseTransformation | undefined
 > {
-  let startSegmentIndex: number | undefined = undefined
-  let state: "looking_for_start_segment" | "looking_for_stop_segment" =
-    "looking_for_start_segment"
   let fragmentReverseTransformation = yield {
     position: { start: 0, stop: 0 },
   }
@@ -156,223 +155,203 @@ function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
       outputLength: 0,
     },
   ]
-  for (const [segmentIndex, segment] of sourceMap.entries()) {
-    for (let changeSegment = false; !changeSegment; ) {
-      if (fragmentReverseTransformation === undefined) {
-        return
+  let startSegmentIndex = 0
+  let startSegment = sourceMap[startSegmentIndex]
+  while (true) {
+    if (fragmentReverseTransformation === undefined) {
+      return
+    }
+    let { position: transformedPosition } = fragmentReverseTransformation
+    let innerPrefix: string | undefined = undefined
+    let innerSuffix: string | undefined = undefined
+    let outerPrefix: string | undefined = undefined
+    let outerSuffix: string | undefined = undefined
+    while (
+      startSegment.outputIndex + startSegment.outputLength >
+      transformedPosition.start
+    ) {
+      startSegmentIndex--
+      startSegment = sourceMap[startSegmentIndex]
+    }
+    for (let nextSegmentIndex = startSegmentIndex + 1; ; nextSegmentIndex++) {
+      const nextSegment = sourceMap[nextSegmentIndex]
+      if (
+        nextSegment.outputIndex + nextSegment.outputLength >
+        transformedPosition.start
+      ) {
+        break
       }
-      let { position: transformedPosition } = fragmentReverseTransformation
-      let innerPrefix: string | undefined = undefined
-      let innerSuffix: string | undefined = undefined
-      let outerPrefix: string | undefined = undefined
-      let outerSuffix: string | undefined = undefined
-      switch (state) {
-        case "looking_for_start_segment": {
-          const nextSegment = sourceMap[segmentIndex + 1]
-          if (
-            nextSegment !== undefined &&
-            nextSegment.outputIndex + nextSegment.outputLength <=
-              transformedPosition.start
-          ) {
-            changeSegment = true
-          } else {
-            startSegmentIndex = segmentIndex
-            state = "looking_for_stop_segment"
-          }
-          break
-        }
+      startSegmentIndex = nextSegmentIndex
+      startSegment = nextSegment
+    }
 
-        case "looking_for_stop_segment": {
-          if (segment.outputIndex < transformedPosition.stop) {
-            changeSegment = true
-          } else {
-            const startSegment = sourceMap[startSegmentIndex!]
-            const stopSegmentIndex = segmentIndex
-            const stopSegment = segment
+    let stopSegmentIndex = startSegmentIndex
+    let stopSegment = startSegment
+    while (stopSegment.outputIndex < transformedPosition.stop) {
+      stopSegmentIndex++
+      stopSegment = sourceMap[stopSegmentIndex]
+    }
 
-            // If opening or closing segments are missing, include them.
-            let firstIncludedSegmentIndex =
-              transformedPosition.start <
-              startSegment.outputIndex + startSegment.outputLength
-                ? startSegmentIndex!
-                : startSegmentIndex! + 1
-            let lastIncludedSegmentIndex =
-              transformedPosition.stop > stopSegment.outputIndex
-                ? stopSegmentIndex
-                : stopSegmentIndex - 1
-            for (let areaExtended = true; areaExtended; ) {
-              areaExtended = false
-              innerPrefix = undefined
-              innerSuffix = undefined
-              outerPrefix = undefined
-              outerSuffix = undefined
-              for (
-                let includedSegmentIndex = firstIncludedSegmentIndex;
-                includedSegmentIndex <= lastIncludedSegmentIndex;
-                includedSegmentIndex++
-              ) {
-                const matchingSegmentIndex =
-                  sourceMap[includedSegmentIndex].matchingSegmentIndex
-                if (matchingSegmentIndex !== undefined) {
-                  // Note: Add 1 to matchingSegmentIndex, because of empty segment
-                  // inserted at start of source map.
-                  if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
-                    let tagAddedToFragment = false
-                    const openingSegment = sourceMap[matchingSegmentIndex + 1]
-                    if (
-                      openingSegment.openingTag !== undefined &&
-                      openingSegment.outputIndex + openingSegment.outputLength <
-                        transformedPosition.start
-                    ) {
-                      const tagMatch =
-                        openingSegment.openingTag.match(tagRegExp)
-                      if (tagMatch !== null) {
-                        const tagName = tagMatch[1]
-                        const tagNameUpperCase = tagName.toUpperCase()
-                        if (
-                          [
-                            "B",
-                            "EM",
-                            "I",
-                            "SPAN",
-                            "STRONG",
-                            "SUB",
-                            "SUP",
-                          ].includes(tagNameUpperCase)
-                        ) {
-                          // Split the span into 2 identical spans.
-                          outerPrefix = `${outerPrefix ?? ""}</${tagName}>`
-                          innerPrefix = `${openingSegment.openingTag}${innerPrefix ?? ""}`
-                          tagAddedToFragment = true
-                        }
-                      }
-                    }
-                    if (!tagAddedToFragment) {
-                      // Extend transformedPosition to include added opening segment.
-
-                      // If an included element was split, undo the split.
-                      innerPrefix = undefined
-                      outerPrefix = undefined
-
-                      firstIncludedSegmentIndex = matchingSegmentIndex + 1
-                      const firstIncludedSegment =
-                        sourceMap[firstIncludedSegmentIndex]
-                      transformedPosition = {
-                        start: firstIncludedSegment.outputIndex,
-                        stop: transformedPosition.stop,
-                      }
-                      areaExtended = true
-                      break
-                    }
-                  }
-                  if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
-                    let tagAddedToFragment = false
-                    const openingSegment = sourceMap[includedSegmentIndex]
-                    const closingSegment = sourceMap[matchingSegmentIndex + 1]
-                    if (
-                      openingSegment.openingTag !== undefined &&
-                      transformedPosition.stop < closingSegment.outputIndex
-                    ) {
-                      const tagMatch =
-                        openingSegment.openingTag.match(tagRegExp)
-                      if (tagMatch !== null) {
-                        const tagName = tagMatch[1]
-                        const tagNameUpperCase = tagName.toUpperCase()
-                        if (
-                          [
-                            "B",
-                            "EM",
-                            "I",
-                            "SPAN",
-                            "STRONG",
-                            "SUB",
-                            "SUP",
-                          ].includes(tagNameUpperCase)
-                        ) {
-                          // Split the span into 2 identical spans.
-                          innerSuffix = `${innerSuffix ?? ""}</${tagName}>`
-                          outerSuffix = `${openingSegment.openingTag}${outerSuffix ?? ""}`
-                          tagAddedToFragment = true
-                        }
-                      }
-                    }
-                    if (!tagAddedToFragment) {
-                      // Extend transformedPosition to include added closing segment.
-
-                      // If an included element was split, undo the split.
-                      innerSuffix = undefined
-                      outerSuffix = undefined
-
-                      lastIncludedSegmentIndex = matchingSegmentIndex + 1
-                      const lastIncludedSegment =
-                        sourceMap[lastIncludedSegmentIndex]
-                      transformedPosition = {
-                        start: transformedPosition.start,
-                        stop:
-                          lastIncludedSegment.outputIndex +
-                          lastIncludedSegment.outputLength,
-                      }
-                      areaExtended = true
-                      break
-                    }
-                  }
+    // If opening or closing segments are missing, include them.
+    let firstIncludedSegmentIndex =
+      transformedPosition.start <
+      startSegment.outputIndex + startSegment.outputLength
+        ? startSegmentIndex!
+        : startSegmentIndex! + 1
+    let lastIncludedSegmentIndex =
+      transformedPosition.stop > stopSegment.outputIndex
+        ? stopSegmentIndex
+        : stopSegmentIndex - 1
+    for (let areaExtended = true; areaExtended; ) {
+      areaExtended = false
+      innerPrefix = undefined
+      innerSuffix = undefined
+      outerPrefix = undefined
+      outerSuffix = undefined
+      for (
+        let includedSegmentIndex = firstIncludedSegmentIndex;
+        includedSegmentIndex <= lastIncludedSegmentIndex;
+        includedSegmentIndex++
+      ) {
+        const matchingSegmentIndex =
+          sourceMap[includedSegmentIndex].matchingSegmentIndex
+        if (matchingSegmentIndex !== undefined) {
+          // Note: Add 1 to matchingSegmentIndex, because of empty segment
+          // inserted at start of source map.
+          if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
+            let tagAddedToFragment = false
+            const openingSegment = sourceMap[matchingSegmentIndex + 1]
+            if (
+              openingSegment.openingTag !== undefined &&
+              openingSegment.outputIndex + openingSegment.outputLength <
+                transformedPosition.start
+            ) {
+              const tagMatch = openingSegment.openingTag.match(tagRegExp)
+              if (tagMatch !== null) {
+                const tagName = tagMatch[1]
+                const tagNameUpperCase = tagName.toUpperCase()
+                if (
+                  ["B", "EM", "I", "SPAN", "STRONG", "SUB", "SUP"].includes(
+                    tagNameUpperCase,
+                  )
+                ) {
+                  // Split the span into 2 identical spans.
+                  outerPrefix = `${outerPrefix ?? ""}</${tagName}>`
+                  innerPrefix = `${openingSegment.openingTag}${innerPrefix ?? ""}`
+                  tagAddedToFragment = true
                 }
               }
             }
+            if (!tagAddedToFragment) {
+              // Extend transformedPosition to include added opening segment.
 
-            const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
-            const originalStart =
-              segmentBefore.inputIndex +
-              segmentBefore.inputLength +
-              transformedPosition.start -
-              (segmentBefore.outputIndex + segmentBefore.outputLength)
+              // If an included element was split, undo the split.
+              innerPrefix = undefined
+              outerPrefix = undefined
 
-            const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
-            const originalStop =
-              lastIncludedSegment.inputIndex +
-              lastIncludedSegment.inputLength +
-              transformedPosition.stop -
-              (lastIncludedSegment.outputIndex +
-                lastIncludedSegment.outputLength)
-
-            fragmentReverseTransformation = yield Object.fromEntries(
-              Object.entries({
-                innerPrefix:
-                  `${innerPrefix ?? ""}${fragmentReverseTransformation.innerPrefix ?? ""}` ||
-                  undefined,
-                innerSuffix:
-                  `${fragmentReverseTransformation.innerSuffix ?? ""}${innerSuffix ?? ""}` ||
-                  undefined,
-                outerPrefix:
-                  `${fragmentReverseTransformation.outerPrefix ?? ""}${outerPrefix ?? ""}` ||
-                  undefined,
-                outerSuffix:
-                  `${outerSuffix ?? ""}${fragmentReverseTransformation.outerSuffix ?? ""}` ||
-                  undefined,
-                position: {
-                  start: originalStart,
-                  stop: originalStop,
-                },
-              }).filter(([, value]) => value !== undefined),
-            ) as unknown as FragmentReverseTransformation
-            state = "looking_for_start_segment"
+              firstIncludedSegmentIndex = matchingSegmentIndex + 1
+              const firstIncludedSegment = sourceMap[firstIncludedSegmentIndex]
+              transformedPosition = {
+                start: firstIncludedSegment.outputIndex,
+                stop: transformedPosition.stop,
+              }
+              areaExtended = true
+              break
+            }
           }
-          break
-        }
+          if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
+            let tagAddedToFragment = false
+            const openingSegment = sourceMap[includedSegmentIndex]
+            const closingSegment = sourceMap[matchingSegmentIndex + 1]
+            if (
+              openingSegment.openingTag !== undefined &&
+              transformedPosition.stop < closingSegment.outputIndex
+            ) {
+              const tagMatch = openingSegment.openingTag.match(tagRegExp)
+              if (tagMatch !== null) {
+                const tagName = tagMatch[1]
+                const tagNameUpperCase = tagName.toUpperCase()
+                if (
+                  ["B", "EM", "I", "SPAN", "STRONG", "SUB", "SUP"].includes(
+                    tagNameUpperCase,
+                  )
+                ) {
+                  // Split the span into 2 identical spans.
+                  innerSuffix = `${innerSuffix ?? ""}</${tagName}>`
+                  outerSuffix = `${openingSegment.openingTag}${outerSuffix ?? ""}`
+                  tagAddedToFragment = true
+                }
+              }
+            }
+            if (!tagAddedToFragment) {
+              // Extend transformedPosition to include added closing segment.
 
-        default: {
-          assertNever(
-            "iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf.state",
-            state,
-          )
+              // If an included element was split, undo the split.
+              innerSuffix = undefined
+              outerSuffix = undefined
+
+              lastIncludedSegmentIndex = matchingSegmentIndex + 1
+              const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
+              transformedPosition = {
+                start: transformedPosition.start,
+                stop:
+                  lastIncludedSegment.outputIndex +
+                  lastIncludedSegment.outputLength,
+              }
+              areaExtended = true
+              break
+            }
+          }
         }
       }
     }
+
+    const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
+    const originalStart =
+      segmentBefore.inputIndex +
+      segmentBefore.inputLength +
+      transformedPosition.start -
+      (segmentBefore.outputIndex + segmentBefore.outputLength)
+
+    const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
+    const originalStop =
+      lastIncludedSegment.inputIndex +
+      lastIncludedSegment.inputLength +
+      transformedPosition.stop -
+      (lastIncludedSegment.outputIndex + lastIncludedSegment.outputLength)
+
+    fragmentReverseTransformation = yield Object.fromEntries(
+      Object.entries({
+        innerPrefix:
+          `${innerPrefix ?? ""}${fragmentReverseTransformation.innerPrefix ?? ""}` ||
+          undefined,
+        innerSuffix:
+          `${fragmentReverseTransformation.innerSuffix ?? ""}${innerSuffix ?? ""}` ||
+          undefined,
+        outerPrefix:
+          `${fragmentReverseTransformation.outerPrefix ?? ""}${outerPrefix ?? ""}` ||
+          undefined,
+        outerSuffix:
+          `${outerSuffix ?? ""}${fragmentReverseTransformation.outerSuffix ?? ""}` ||
+          undefined,
+        position: {
+          start: originalStart,
+          stop: originalStop,
+        },
+      }).filter(([, value]) => value !== undefined),
+    ) as unknown as FragmentReverseTransformation
   }
 }
 
 /**
- * Caution: This iterator fails when successive original positions overlap.
+ * Converts an array of transformed (e.g. simplified) positions to an array
+ *  of original (e.g. HTML) positions
+ *
+ * When a position is included in fragments of HTML elements, the elements are
+ * either split (for spans) or the position is enlarged to include the whole
+ * elements (for blocks).
+ *
+ * Use this function to insert HTML elements (links, spans, etc).
  */
 export function originalMergedPositionsFromTransformed(
   transformation: Transformation,
@@ -395,8 +374,12 @@ export function originalMergedPositionsFromTransformed(
 }
 
 /**
- * Note: The original positions are split when they overlap.
- * So, there may be more original positions than transformed positions.
+ * Converts an array of transformed (e.g. simplified) positions to an array
+ *  of original (e.g. HTML) positions
+ *
+ * Each position is split to ensure that it doesn't contain any HTML element.
+ *
+ * Use this function for diffs.
  */
 export function originalSplitPositionsFromTransformed(
   transformation: Transformation,

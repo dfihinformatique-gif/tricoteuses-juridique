@@ -10,7 +10,7 @@ import {
   type TextAstParentChild,
   type TextAstReference,
 } from "./ast.js"
-import type { TextPosition } from "./positions.js"
+import type { FragmentPosition } from "./fragments.js"
 
 const priorityByCoordinator: Record<CompoundReferencesSeparator, number> = {
   ",": 1,
@@ -121,7 +121,7 @@ export const addChildLeftToLastChild = (
 export const createEnumerationOrBoundedInterval = (
   reference: TextAstReference,
   remaining: Array<[CompoundReferencesSeparator, TextAstReference]>,
-  position: TextPosition,
+  position: FragmentPosition,
 ): TextAstReference => {
   // Parameter `remaining` is an array of the form
   // [[coordinator1, ref1], ...., [coordinatorN, refN]]
@@ -143,7 +143,7 @@ export const createEnumerationOrBoundedInterval = (
 export const createEnumerationOrBoundedInterval1 = (
   reference: TextAstReference,
   remaining: Array<[CompoundReferencesSeparator, TextAstReference]>,
-  position: TextPosition,
+  position: FragmentPosition,
   remainingIndex: number,
 ): TextAstReference => {
   // Parameter `remaining` is an array of the form
@@ -342,7 +342,7 @@ export const createEnumerationOrBoundedInterval1 = (
 export const createParentChildTreeFromReferences = (
   child: TextAstReference,
   ancestors: TextAstAtomicReference[],
-  position: TextPosition,
+  position: FragmentPosition,
 ): TextAstReference => {
   for (const parent of ancestors) {
     if (parent.type === "texte") {

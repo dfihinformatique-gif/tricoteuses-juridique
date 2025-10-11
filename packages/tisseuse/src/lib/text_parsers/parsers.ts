@@ -8,7 +8,7 @@ import type {
   TextInfosByWordsTree,
   TextInfosByWordsTreeNode,
 } from "./ast.js"
-import type { TextPosition } from "./positions.js"
+import type { FragmentPosition } from "./fragments.js"
 
 export type TextInfosConverter = (
   infos: TextAstTextInfos,
@@ -39,7 +39,7 @@ export class TextParserContext {
     public offset = 0,
   ) {}
 
-  position(): TextPosition {
+  position(): FragmentPosition {
     return {
       start: this.offset,
       stop: this.offset + this.length,
@@ -50,7 +50,7 @@ export class TextParserContext {
     return this.input.slice(this.offset)
   }
 
-  text(position?: TextPosition): string {
+  text(position?: FragmentPosition): string {
     return position === undefined
       ? this.input.slice(this.offset, this.offset + this.length)
       : this.input.slice(position.start, position.stop)

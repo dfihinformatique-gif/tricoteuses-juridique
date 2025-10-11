@@ -5,7 +5,7 @@ import {
   TextAstReference,
   TextAstText,
 } from "./ast.js"
-import { TextPosition } from "./positions.js"
+import { FragmentPosition } from "./fragments.js"
 
 export type DefinitionOrLink =
   | ArticleDefinition
@@ -19,7 +19,7 @@ export interface ArticleDefinition {
   /**
    * Same value as article.position, added for homogeneity
    */
-  position: TextPosition
+  position: FragmentPosition
   reference: TextAstReference
   textId: string
   type: "article_definition"
@@ -28,7 +28,7 @@ export interface ArticleDefinition {
 export interface ArticleExternalLink {
   article: TextAstArticle
   articleId?: string
-  position: TextPosition
+  position: FragmentPosition
   reference: TextAstReference
   type: "external_article"
 }
@@ -36,7 +36,7 @@ export interface ArticleExternalLink {
 export interface ArticleInternalLink {
   article: TextAstArticle
   definition: ArticleDefinition
-  position: TextPosition
+  position: FragmentPosition
   reference: TextAstReference
   type: "internal_article"
 }
@@ -48,7 +48,7 @@ export type ArticleLink = ArticleExternalLink | ArticleInternalLink
 //   /**
 //    * Same value as division.position, added for homogeneity
 //    */
-//   position: TextPosition
+//   position: FragmentPosition
 //   reference: TextAstReference
 //   textId: string
 //   type: "division_definition"
@@ -56,7 +56,7 @@ export type ArticleLink = ArticleExternalLink | ArticleInternalLink
 
 export interface DivisionExternalLink {
   division: TextAstDivision
-  position: TextPosition
+  position: FragmentPosition
   reference: TextAstReference
   sectionTaId?: string
   type: "external_division"
@@ -65,7 +65,7 @@ export interface DivisionExternalLink {
 // export interface DivisionInternalLink {
 //   division: TextAstDivision
 //   definition: DivisionDefinition
-//   position: TextPosition
+//   position: FragmentPosition
 //   reference: TextAstReference
 //   type: "internal_division"
 // }
@@ -81,7 +81,7 @@ export interface ExtractedLinkDb {
 }
 
 export interface TextExternalLink {
-  position: TextPosition
+  position: FragmentPosition
   reference: TextAstReference
   text: TextAstText & TextAstPosition
   type: "external_text"

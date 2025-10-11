@@ -34,7 +34,6 @@ export {
   type CompoundReferencesSeparator,
   type DivisionType,
   type EuropeanLawNature,
-  type FragmentReverseTransformation,
   type FrenchLawNature,
   type InternationalLawNature,
   type LawNature,
@@ -80,6 +79,10 @@ export {
   natureDivisionSingulier,
   numeroDivision,
 } from "./text_parsers/divisions.js"
+export type {
+  FragmentPosition,
+  FragmentReverseTransformation,
+} from "./text_parsers/fragments.js"
 export {
   addChildLeftToLastChild,
   createEnumerationOrBoundedInterval,
@@ -121,7 +124,6 @@ export {
   portions,
   unePortion,
 } from "./text_parsers/portions.js"
-export type { TextPosition } from "./text_parsers/positions.js"
 export {
   ditPluriel,
   ditSingulier,

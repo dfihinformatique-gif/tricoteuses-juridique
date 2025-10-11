@@ -1,5 +1,7 @@
-import { FragmentReverseTransformation } from "./ast.js"
-import type { TextPosition } from "./positions.js"
+import type {
+  FragmentPosition,
+  FragmentReverseTransformation,
+} from "./fragments.js"
 
 export interface SourceMapSegment {
   inputIndex: number
@@ -86,7 +88,11 @@ function* iterTransformationLeafs(
  */
 export function* iterOriginalMergedPositionsFromTransformed(
   transformation: Transformation,
-): Generator<FragmentReverseTransformation, void, TextPosition | undefined> {
+): Generator<
+  FragmentReverseTransformation,
+  void,
+  FragmentPosition | undefined
+> {
   const transformationLeafs = [
     ...iterTransformationLeafs(transformation),
   ].reverse()
@@ -348,7 +354,7 @@ function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
  */
 export function originalMergedPositionsFromTransformed(
   transformation: Transformation,
-  transformedPositions: TextPosition[],
+  transformedPositions: FragmentPosition[],
 ): FragmentReverseTransformation[] {
   const originalPositionsFromTransformedIterator =
     iterOriginalMergedPositionsFromTransformed(transformation)
@@ -378,8 +384,8 @@ export function originalMergedPositionsFromTransformed(
  */
 export function originalSplitPositionsFromTransformed(
   transformation: Transformation,
-  positions: TextPosition[],
-): TextPosition[] {
+  positions: FragmentPosition[],
+): FragmentPosition[] {
   for (const { sourceMap } of [
     ...iterTransformationLeafs(transformation),
   ].reverse()) {
@@ -397,9 +403,9 @@ export function originalSplitPositionsFromTransformed(
  */
 function originalSplitPositionsFromTransformedUsingSourceMap(
   sourceMap: SourceMapSegment[],
-  transformedPositions: TextPosition[],
-): TextPosition[] {
-  const originalPositions: TextPosition[] = []
+  transformedPositions: FragmentPosition[],
+): FragmentPosition[] {
+  const originalPositions: FragmentPosition[] = []
   // Insert empty segment at start & end.
   sourceMap = [
     { inputIndex: 0, inputLength: 0, outputIndex: 0, outputLength: 0 },

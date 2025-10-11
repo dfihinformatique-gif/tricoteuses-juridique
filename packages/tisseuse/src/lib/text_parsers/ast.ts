@@ -1,6 +1,9 @@
 import { assertNever } from "$lib/asserts.js"
 
-import type { TextPosition } from "./positions.js"
+import type {
+  FragmentPosition,
+  FragmentReverseTransformation,
+} from "./fragments.js"
 
 export type CompoundReferencesSeparator =
   (typeof compoundReferencesSeparators)[number]
@@ -8,14 +11,6 @@ export type CompoundReferencesSeparator =
 export type DivisionType = (typeof divisionTypes)[number]
 
 export type EuropeanLawNature = (typeof europeanLawNatures)[number]
-
-export interface FragmentReverseTransformation {
-  innerPrefix?: string
-  innerSuffix?: string
-  outerPrefix?: string
-  outerSuffix?: string
-  position: TextPosition
-}
 
 export type FrenchLawNature = (typeof frenchLawNatures)[number]
 
@@ -161,7 +156,7 @@ export type TextAstPortion = {
 
 export interface TextAstPosition {
   originalTransformation?: FragmentReverseTransformation
-  position: TextPosition
+  position: FragmentPosition
 }
 
 export type TextAstReference =

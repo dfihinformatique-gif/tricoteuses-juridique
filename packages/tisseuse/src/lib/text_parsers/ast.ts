@@ -74,6 +74,7 @@ export type TextAstBoundedInterval = {
 
 export type TextAstCitation = {
   content: TextAstPosition[]
+  references?: TextAstReference[]
   type: "citation"
 } & TextAstPosition
 

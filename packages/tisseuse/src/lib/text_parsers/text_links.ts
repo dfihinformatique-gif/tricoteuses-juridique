@@ -5,7 +5,7 @@ import {
   TextAstReference,
   TextAstText,
 } from "./ast.js"
-import { FragmentPosition } from "./fragments.js"
+import { FragmentPosition, FragmentReverseTransformation } from "./fragments.js"
 
 export type DefinitionOrLink =
   | ArticleDefinition
@@ -16,6 +16,13 @@ export type DefinitionOrLink =
 
 export interface ArticleDefinition {
   article: TextAstArticle
+  /**
+   * Same value as article.originalTransformation, added for homogeneity
+   *
+   * Only defined when a transformation was used to convert input text
+   * simplified text.
+   */
+  originalTransformation?: FragmentReverseTransformation
   /**
    * Same value as article.position, added for homogeneity
    */
@@ -28,6 +35,11 @@ export interface ArticleDefinition {
 export interface ArticleExternalLink {
   article: TextAstArticle
   articleId?: string
+  /**
+   * Only defined when a transformation was used to convert input text
+   * simplified text.
+   */
+  originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
   reference: TextAstReference
   type: "external_article"
@@ -36,6 +48,11 @@ export interface ArticleExternalLink {
 export interface ArticleInternalLink {
   article: TextAstArticle
   definition: ArticleDefinition
+  /**
+   * Only defined when a transformation was used to convert input text
+   * simplified text.
+   */
+  originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
   reference: TextAstReference
   type: "internal_article"
@@ -56,6 +73,11 @@ export type ArticleLink = ArticleExternalLink | ArticleInternalLink
 
 export interface DivisionExternalLink {
   division: TextAstDivision
+  /**
+   * Only defined when a transformation was used to convert input text
+   * simplified text.
+   */
+  originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
   reference: TextAstReference
   sectionTaId?: string
@@ -65,6 +87,11 @@ export interface DivisionExternalLink {
 // export interface DivisionInternalLink {
 //   division: TextAstDivision
 //   definition: DivisionDefinition
+//   /**
+//    * Only defined when a transformation was used to convert input text
+//    * simplified text.
+//    */
+//   originalTransformation?: FragmentReverseTransformation
 //   position: FragmentPosition
 //   reference: TextAstReference
 //   type: "internal_division"
@@ -81,6 +108,11 @@ export interface ExtractedLinkDb {
 }
 
 export interface TextExternalLink {
+  /**
+   * Only defined when a transformation was used to convert input text
+   * simplified text.
+   */
+  originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
   reference: TextAstReference
   text: TextAstText & TextAstPosition

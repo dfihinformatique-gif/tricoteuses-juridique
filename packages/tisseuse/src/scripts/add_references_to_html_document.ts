@@ -13,14 +13,12 @@ import {
   writeTransformation,
 } from "$lib/server/text_parsers/transformers.js"
 import { iterIncludedReferences } from "$lib/text_parsers/helpers.js"
-import {
-  iterCitationReferences,
-  iterReferences,
-} from "$lib/text_parsers/index.js"
+import { parseReferencesWithOriginalTransformations } from "$lib/text_parsers/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
-  iterOriginalMergedPositionsFromTransformed,
+  reverseTransformedInnerFragment,
+  reverseTransformedReplacement,
   type Transformation,
 } from "$lib/text_parsers/transformers.js"
 
@@ -49,88 +47,67 @@ async function addReferencesToHtmlDocument(
   if (outputDocumentPath !== undefined) {
     const inputText = transformation.output
     const context = new TextParserContext(inputText)
-
-    // Since iterators that transform text positions to HTML can't go backward,
-    // create 2 iterators:
-    // - 1 for references
-    // - 1 for refences in citations inside references
-    const originalPositionsFromTransformedIterator =
-      iterOriginalMergedPositionsFromTransformed(transformation)
-    // Initialize iterator by sending a dummy value and ignoring the result.
-    originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
-    const originalPositionsFromTransformedIteratorInCitations =
-      iterOriginalMergedPositionsFromTransformed(transformation)
-    // Initialize iterator by sending a dummy value and ignoring the result.
-    originalPositionsFromTransformedIteratorInCitations.next({
-      start: 0,
-      stop: 0,
-    })
-
     let outputHtml = inputHtml
     let outputOffset = 0
-
-    for await (const reference of iterReferences(context)) {
-      const { position } = reference
-      const result = originalPositionsFromTransformedIterator.next(position)
-      if (result.done) {
+    for await (const reference of parseReferencesWithOriginalTransformations(
+      context,
+      transformation,
+    )) {
+      const { originalTransformation } = reference
+      if (originalTransformation === undefined) {
         throw new Error(
-          `Transformation of reference position to HTML failed: ${position}`,
+          `Missing originalTransformation attribute in reference: ${reference}`,
         )
       }
-      const referenceReverseTransformation = result.value
       let fragment = outputHtml.slice(
-        referenceReverseTransformation.position.start + outputOffset,
-        referenceReverseTransformation.position.stop + outputOffset,
+        originalTransformation.position.start + outputOffset,
+        originalTransformation.position.stop + outputOffset,
       )
 
       // If fragment contains references in citations, first add HTML markers for these
       // references in the fragment.
-      let fragmentOffset = -referenceReverseTransformation.position.start
+      let fragmentOffset = -originalTransformation.position.start
       for (const includedReference of iterIncludedReferences(reference)) {
         if (includedReference.type === "reference_et_action") {
           const { originalCitations } = includedReference.action
           if (originalCitations !== undefined) {
             for (const citation of originalCitations) {
-              for (const citationReference of iterCitationReferences(
-                context,
-                citation,
-              )) {
-                const result =
-                  originalPositionsFromTransformedIteratorInCitations.next(
-                    citationReference.position,
+              if (citation.references !== undefined) {
+                for (const citationReference of citation.references) {
+                  const {
+                    originalTransformation:
+                      citationReferenceOriginalTransformation,
+                  } = citationReference
+                  if (citationReferenceOriginalTransformation === undefined) {
+                    throw new Error(
+                      `Missing originalTransformation attribute in citation reference: ${citationReference}`,
+                    )
+                  }
+                  const fragmentInFragment = reverseTransformedInnerFragment(
+                    fragment,
+                    citationReferenceOriginalTransformation,
+                    fragmentOffset,
                   )
-                if (result.done) {
-                  throw new Error(
-                    `Transformation of reference position in citation to HTML failed: ${position}`,
+                  const replacement = reverseTransformedReplacement(
+                    citationReferenceOriginalTransformation,
+                    `<span style="background-color: #00ff00" title="${escapeHtml(JSON.stringify(citationReference), true)}">${fragmentInFragment}</span>`,
                   )
+                  fragment =
+                    fragment.slice(
+                      0,
+                      citationReferenceOriginalTransformation.position.start +
+                        fragmentOffset,
+                    ) +
+                    replacement +
+                    fragment.slice(
+                      citationReferenceOriginalTransformation.position.stop +
+                        fragmentOffset,
+                    )
+                  fragmentOffset +=
+                    replacement.length -
+                    (citationReferenceOriginalTransformation.position.stop -
+                      citationReferenceOriginalTransformation.position.start)
                 }
-                const citationReferenceReverseTransformation = result.value
-                let fragmentInFragment = fragment.slice(
-                  citationReferenceReverseTransformation.position.start +
-                    fragmentOffset,
-                  citationReferenceReverseTransformation.position.stop +
-                    fragmentOffset,
-                )
-                fragmentInFragment =
-                  (citationReferenceReverseTransformation.innerPrefix ?? "") +
-                  fragmentInFragment +
-                  (citationReferenceReverseTransformation.innerSuffix ?? "")
-                const replacement = `${citationReferenceReverseTransformation.outerPrefix ?? ""}<span style="background-color: #00ff00" title="${escapeHtml(JSON.stringify(citationReference), true)}">${fragmentInFragment}</span>${citationReferenceReverseTransformation.outerSuffix ?? ""}`
-                fragment =
-                  fragment.slice(
-                    0,
-                    citationReferenceReverseTransformation.position.start +
-                      fragmentOffset,
-                  ) +
-                  replacement +
-                  fragment.slice(
-                    citationReferenceReverseTransformation.position.stop +
-                      fragmentOffset,
-                  )
-                fragmentOffset +=
-                  replacement.length -
-                  (citationReferenceReverseTransformation.position.stop -
-                    citationReferenceReverseTransformation.position.start)
               }
             }
           }
@@ -138,23 +115,24 @@ async function addReferencesToHtmlDocument(
       }
 
       fragment =
-        (referenceReverseTransformation.innerPrefix ?? "") +
+        (originalTransformation.innerPrefix ?? "") +
         fragment +
-        (referenceReverseTransformation.innerSuffix ?? "")
-      const replacement = `${referenceReverseTransformation.outerPrefix ?? ""}<span style="background-color: #eae462" title="${escapeHtml(JSON.stringify(reference), true)}">${fragment}</span>${referenceReverseTransformation.outerSuffix ?? ""}`
+        (originalTransformation.innerSuffix ?? "")
+      const replacement = reverseTransformedReplacement(
+        originalTransformation,
+        `<span style="background-color: #eae462" title="${escapeHtml(JSON.stringify(reference), true)}">${fragment}</span>`,
+      )
       outputHtml =
         outputHtml.slice(
           0,
-          referenceReverseTransformation.position.start + outputOffset,
+          originalTransformation.position.start + outputOffset,
         ) +
         replacement +
-        outputHtml.slice(
-          referenceReverseTransformation.position.stop + outputOffset,
-        )
+        outputHtml.slice(originalTransformation.position.stop + outputOffset)
       outputOffset +=
         replacement.length -
-        (referenceReverseTransformation.position.stop -
-          referenceReverseTransformation.position.start)
+        (originalTransformation.position.stop -
+          originalTransformation.position.start)
     }
 
     await fs.writeFile(outputDocumentPath, outputHtml, { encoding: "utf-8" })

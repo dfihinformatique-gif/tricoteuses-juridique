@@ -7,21 +7,20 @@ import type {
   TextAstPosition,
   TextAstText,
 } from "./ast.js"
-import { iterIncludedReferences } from "./helpers.js"
-import { getReferences } from "./index.js"
+import {
+  getParsedReferences,
+  getParsedReferencesWithOriginalTransformations,
+} from "./index.js"
 import { TextParserContext } from "./parsers.js"
 import { simplifyHtml } from "./simplifiers.js"
-import {
-  iterOriginalMergedPositionsFromTransformed,
-  reverseTransformedInnerFragment,
-} from "./transformers.js"
+import { reverseTransformedInnerFragment } from "./transformers.js"
 
-describe("getReferences", () => {
+describe("getParsedReferences", () => {
   test("à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020", ({
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -35,7 +34,7 @@ describe("getReferences", () => {
 
   test("À l'avant-dernier alinéa de l'article 193", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -47,7 +46,7 @@ describe("getReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -95,7 +94,7 @@ describe("getReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -127,7 +126,7 @@ describe("getReferences", () => {
 
   test("au I de l'article 7 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -145,7 +144,7 @@ describe("getReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -193,7 +192,7 @@ describe("getReferences", () => {
 
   test("au premier alinéa du I et au II du présent article", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -223,7 +222,7 @@ describe("getReferences", () => {
 
   test("au second alinéa du 4", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -235,7 +234,7 @@ describe("getReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -309,13 +308,13 @@ describe("getReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references).toStrictEqual([])
   })
 
   test("l'article 3 de la convention", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -325,7 +324,7 @@ describe("getReferences", () => {
 
   test("l'article 7 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -339,7 +338,7 @@ describe("getReferences", () => {
       A. - A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé par le montant : « 6 807 € » ;
     `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(2)
     expect(references).toStrictEqual([
       {
@@ -453,7 +452,7 @@ describe("getReferences", () => {
 
   test("les articles 111-1 et 111-2 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -473,7 +472,7 @@ describe("getReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(2)
     expect(context.text(references[0].position)).toBe(
       "les articles 135-7 et 135-9 bis de la loi n°94-839 du 9 janvier 1994",
@@ -485,7 +484,7 @@ describe("getReferences", () => {
 
   test("les articles 7 et 9 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -501,7 +500,7 @@ describe("getReferences", () => {
 
   test("les I et II de l'article 111-1 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -530,384 +529,14 @@ describe("getReferences", () => {
   })
 })
 
-describe("getReferences + originalMergedPositionsFromTransformed", () => {
-  test("<span>au <i>I</i> de l'article 7 du <b>code pénal</b></span>", ({
-    task,
-  }) => {
-    const html = task.name
-    const transformation = simplifyHtml({ removeAWithHref: true })(html)
-    const text = transformation.output
-    expect(text).toBe("au I de l'article 7 du code pénal")
-
-    const context = new TextParserContext(text)
-    const references = getReferences(context)
-    expect(references.length).toBe(1)
-    const reference = references[0] as TextAstParentChild
-    expect(reference).toStrictEqual({
-      child: {
-        child: {
-          index: 1,
-          num: "I",
-          position: {
-            start: 3,
-            stop: 4,
-          },
-          type: "item",
-        },
-        parent: {
-          num: "7",
-          position: {
-            start: 10,
-            stop: 19,
-          },
-          type: "article",
-        },
-        position: {
-          start: 3,
-          stop: 19,
-        },
-        type: "parent-enfant",
-      },
-      parent: {
-        cid: "LEGITEXT000006070719",
-        nature: "CODE",
-        position: {
-          start: 23,
-          stop: 33,
-        },
-        title: "Code pénal",
-        titleRest: "pénal",
-        type: "texte",
-      },
-      position: {
-        start: 0,
-        stop: 33,
-      },
-      type: "parent-enfant",
-    })
-    expect(context.text(reference.position)).toBe(
-      "au I de l'article 7 du code pénal",
-    )
-    expect(context.text(reference.parent.position)).toBe("code pénal")
-    expect(context.text(reference.child.position)).toBe("I de l'article 7")
-    expect(
-      context.text((reference.child as TextAstParentChild).parent.position),
-    ).toBe("article 7")
-    expect(
-      context.text((reference.child as TextAstParentChild).child.position),
-    ).toBe("I")
-
-    const originalPositionsFromTransformedIterator =
-      iterOriginalMergedPositionsFromTransformed(transformation)
-    // Initialize iterator by sending a dummy value and ignoring the result.
-    originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
-    for (const includedReference of iterIncludedReferences(reference)) {
-      if (includedReference.position !== undefined) {
-        const result = originalPositionsFromTransformedIterator.next(
-          includedReference.position,
-        )
-        expect(result.done).not.toBe(true)
-        includedReference.originalTransformation = result.value
-      }
-    }
-    expect(reference).toStrictEqual({
-      child: {
-        child: {
-          index: 1,
-          num: "I",
-          originalTransformation: {
-            position: {
-              start: 12,
-              stop: 13,
-            },
-          },
-          position: {
-            start: 3,
-            stop: 4,
-          },
-          type: "item",
-        },
-        originalTransformation: {
-          position: {
-            start: 9,
-            stop: 32,
-          },
-        },
-        parent: {
-          num: "7",
-          originalTransformation: {
-            position: {
-              start: 23,
-              stop: 32,
-            },
-          },
-          position: {
-            start: 10,
-            stop: 19,
-          },
-          type: "article",
-        },
-        position: {
-          start: 3,
-          stop: 19,
-        },
-        type: "parent-enfant",
-      },
-      originalTransformation: {
-        position: {
-          start: 6,
-          stop: 53,
-        },
-      },
-      parent: {
-        cid: "LEGITEXT000006070719",
-        nature: "CODE",
-        originalTransformation: {
-          position: {
-            start: 39,
-            stop: 49,
-          },
-        },
-        position: {
-          start: 23,
-          stop: 33,
-        },
-        title: "Code pénal",
-        titleRest: "pénal",
-        type: "texte",
-      },
-      position: {
-        start: 0,
-        stop: 33,
-      },
-      type: "parent-enfant",
-    })
-    expect(
-      reverseTransformedInnerFragment(html, reference.originalTransformation),
-    ).toBe("au <i>I</i> de l'article 7 du <b>code pénal</b>")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        reference.parent.originalTransformation,
-      ),
-    ).toBe("code pénal")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        reference.child.originalTransformation,
-      ),
-    ).toBe("<i>I</i> de l'article 7")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        (reference.child as TextAstParentChild).parent.originalTransformation,
-      ),
-    ).toBe("article 7")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        (reference.child as TextAstParentChild).child.originalTransformation,
-      ),
-    ).toBe("I")
-  })
-
-  test("<span>au <i>I de l'a</i>rticle <b>7 du code</b> pénal</span>", ({
-    task,
-  }) => {
-    const html = task.name
-    const transformation = simplifyHtml({ removeAWithHref: true })(html)
-    const text = transformation.output
-    expect(text).toBe("au I de l'article 7 du code pénal")
-
-    const context = new TextParserContext(text)
-    const references = getReferences(context)
-    expect(references.length).toBe(1)
-    const reference = references[0] as TextAstParentChild
-    expect(reference).toStrictEqual({
-      child: {
-        child: {
-          index: 1,
-          num: "I",
-          position: {
-            start: 3,
-            stop: 4,
-          },
-          type: "item",
-        },
-        parent: {
-          num: "7",
-          position: {
-            start: 10,
-            stop: 19,
-          },
-          type: "article",
-        },
-        position: {
-          start: 3,
-          stop: 19,
-        },
-        type: "parent-enfant",
-      },
-      parent: {
-        cid: "LEGITEXT000006070719",
-        nature: "CODE",
-        position: {
-          start: 23,
-          stop: 33,
-        },
-        title: "Code pénal",
-        titleRest: "pénal",
-        type: "texte",
-      },
-      position: {
-        start: 0,
-        stop: 33,
-      },
-      type: "parent-enfant",
-    })
-    expect(context.text(reference.position)).toBe(
-      "au I de l'article 7 du code pénal",
-    )
-    expect(context.text(reference.parent.position)).toBe("code pénal")
-    expect(context.text(reference.child.position)).toBe("I de l'article 7")
-    expect(
-      context.text((reference.child as TextAstParentChild).parent.position),
-    ).toBe("article 7")
-    expect(
-      context.text((reference.child as TextAstParentChild).child.position),
-    ).toBe("I")
-
-    const originalPositionsFromTransformedIterator =
-      iterOriginalMergedPositionsFromTransformed(transformation)
-    // Initialize iterator by sending a dummy value and ignoring the result.
-    originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
-    for (const includedReference of iterIncludedReferences(reference)) {
-      if (includedReference.position !== undefined) {
-        const result = originalPositionsFromTransformedIterator.next(
-          includedReference.position,
-        )
-        expect(result.done).not.toBe(true)
-        includedReference.originalTransformation = result.value
-      }
-    }
-    expect(reference).toStrictEqual({
-      child: {
-        child: {
-          index: 1,
-          num: "I",
-          originalTransformation: {
-            position: {
-              start: 12,
-              stop: 13,
-            },
-          },
-          position: {
-            start: 3,
-            stop: 4,
-          },
-          type: "item",
-        },
-        originalTransformation: {
-          innerSuffix: "</b>",
-          outerSuffix: "<b>",
-          position: {
-            start: 9,
-            stop: 35,
-          },
-        },
-        parent: {
-          num: "7",
-          originalTransformation: {
-            innerPrefix: "<i>",
-            innerSuffix: "</b>",
-            outerPrefix: "</i>",
-            outerSuffix: "<b>",
-            position: {
-              start: 19,
-              stop: 35,
-            },
-          },
-          position: {
-            start: 10,
-            stop: 19,
-          },
-          type: "article",
-        },
-        position: {
-          start: 3,
-          stop: 19,
-        },
-        type: "parent-enfant",
-      },
-      originalTransformation: {
-        position: {
-          start: 6,
-          stop: 53,
-        },
-      },
-      parent: {
-        cid: "LEGITEXT000006070719",
-        nature: "CODE",
-        originalTransformation: {
-          innerPrefix: "<b>",
-          outerPrefix: "</b>",
-          position: {
-            start: 39,
-            stop: 53,
-          },
-        },
-        position: {
-          start: 23,
-          stop: 33,
-        },
-        title: "Code pénal",
-        titleRest: "pénal",
-        type: "texte",
-      },
-      position: {
-        start: 0,
-        stop: 33,
-      },
-      type: "parent-enfant",
-    })
-    expect(
-      reverseTransformedInnerFragment(html, reference.originalTransformation),
-    ).toBe("au <i>I de l'a</i>rticle <b>7 du code</b> pénal")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        reference.parent.originalTransformation,
-      ),
-    ).toBe("<b>code</b> pénal")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        reference.child.originalTransformation,
-      ),
-    ).toBe("<i>I de l'a</i>rticle <b>7</b>")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        (reference.child as TextAstParentChild).parent.originalTransformation,
-      ),
-    ).toBe("<i>a</i>rticle <b>7</b>")
-    expect(
-      reverseTransformedInnerFragment(
-        html,
-        (reference.child as TextAstParentChild).child.originalTransformation,
-      ),
-    ).toBe("I")
-  })
-})
-
-describe("getReferences, test spécifiques", () => {
+describe("getParsedReferences, test spécifiques", () => {
   test("Définition d'un nouvel article", () => {
     const input = dedent`
       22° Après l'article 223 WA quinquies, il est inséré un article 223 WA quinquies A ainsi rédigé :
       « Art. 223 WA quinquies A. - Les charges de personnel et les actifs corporels d'une entité soumise à un régime de dividendes déductibles mentionnée au I de l'article 223 WR bis ou détenue dans les conditions du V du même article, sont réduits proportionnellement au bénéfice exclu du calcul du bénéfice qualifié de l'entité conformément aux II et III de l'article 223 WR bis. » ;
     `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references).toStrictEqual([
       {
         action: {
@@ -1052,7 +681,7 @@ describe("getReferences, test spécifiques", () => {
       « Art. L. 321-2. - Pour l'application du présent titre, les cinq territoires mentionnés à l'article L. 112-4 sont regardés comme un territoire de taxation unique. »
     `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references).toStrictEqual([
       {
         action: {
@@ -1233,14 +862,14 @@ describe("getReferences, test spécifiques", () => {
     expect(context.text(references[9].position)).toBe("à l'article L. 112-4")
   })
 
-  test("Gestion des offsets dans iterReferences", () => {
+  test("Gestion des offsets dans parseReferences", () => {
     const input = dedent`
       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       l'article 47 de la Constitution.
       l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012 et par la loi de finances de l'année ;
     `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(2)
     expect(context.text(references[0].position)).toBe(
       "l'article 47 de la Constitution",
@@ -1259,7 +888,7 @@ describe("getReferences, test spécifiques", () => {
       « Art. 223 VO quindecies. - Sur option exercée par l'entité constitutive déclarante, et par dérogation au 3° de l'article 223 VO bis, les plus ou moins-values sur participations sont incluses dans le résultat qualifié d'une entité constitutive.
     `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references).toStrictEqual([
       {
         action: {
@@ -1445,7 +1074,7 @@ describe("getReferences, test spécifiques", () => {
       « En cas de renonciation, une nouvelle option ne peut pas être exercée au titre des cinq exercices suivant le dernier exercice d'application de l'option. La renonciation ne peut porter sur des participations pour lesquelles une perte ou une moins-value a été prise en compte dans le résultat qualifié. » ;
            `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references).toStrictEqual([
       {
         definition: true,
@@ -1526,7 +1155,7 @@ describe("getReferences, test spécifiques", () => {
   test("Référence de type parent-child dans citation simple", async () => {
     const input = "« aux deux derniers alinéas de l'article 223 WA ter »"
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references).toStrictEqual([
       {
         child: {
@@ -1572,7 +1201,7 @@ describe("getReferences, test spécifiques", () => {
       « III bis. - Par dérogation au I du présent article, le taux prévu à l'article 278 [...] »
     `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references).toStrictEqual([
       {
         child: {
@@ -1617,7 +1246,7 @@ describe("getReferences, test spécifiques", () => {
       l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012 et par la loi de finances de l'année ;
     `
     const context = new TextParserContext(input)
-    const references = getReferences(context)
+    const references = getParsedReferences(context)
     expect(references.length).toBe(2)
     expect(context.text(references[0].position)).toBe(
       "l'article 47 de la Constitution",
@@ -1653,5 +1282,247 @@ describe("getReferences, test spécifiques", () => {
       },
       type: "parent-enfant",
     })
+  })
+})
+
+describe("getParsedReferencesWithOriginalTransformations", () => {
+  test("<span>au <i>I</i> de l'article 7 du <b>code pénal</b></span>", ({
+    task,
+  }) => {
+    const html = task.name
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
+    expect(text).toBe("au I de l'article 7 du code pénal")
+
+    const context = new TextParserContext(text)
+    const references = getParsedReferencesWithOriginalTransformations(
+      context,
+      transformation,
+    )
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(reference).toStrictEqual({
+      child: {
+        child: {
+          index: 1,
+          num: "I",
+          originalTransformation: {
+            position: {
+              start: 12,
+              stop: 13,
+            },
+          },
+          position: {
+            start: 3,
+            stop: 4,
+          },
+          type: "item",
+        },
+        originalTransformation: {
+          position: {
+            start: 9,
+            stop: 32,
+          },
+        },
+        parent: {
+          num: "7",
+          originalTransformation: {
+            position: {
+              start: 23,
+              stop: 32,
+            },
+          },
+          position: {
+            start: 10,
+            stop: 19,
+          },
+          type: "article",
+        },
+        position: {
+          start: 3,
+          stop: 19,
+        },
+        type: "parent-enfant",
+      },
+      originalTransformation: {
+        position: {
+          start: 6,
+          stop: 53,
+        },
+      },
+      parent: {
+        cid: "LEGITEXT000006070719",
+        nature: "CODE",
+        originalTransformation: {
+          position: {
+            start: 39,
+            stop: 49,
+          },
+        },
+        position: {
+          start: 23,
+          stop: 33,
+        },
+        title: "Code pénal",
+        titleRest: "pénal",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 33,
+      },
+      type: "parent-enfant",
+    })
+    expect(
+      reverseTransformedInnerFragment(html, reference.originalTransformation),
+    ).toBe("au <i>I</i> de l'article 7 du <b>code pénal</b>")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        reference.parent.originalTransformation,
+      ),
+    ).toBe("code pénal")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        reference.child.originalTransformation,
+      ),
+    ).toBe("<i>I</i> de l'article 7")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        (reference.child as TextAstParentChild).parent.originalTransformation,
+      ),
+    ).toBe("article 7")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        (reference.child as TextAstParentChild).child.originalTransformation,
+      ),
+    ).toBe("I")
+  })
+
+  test("<span>au <i>I de l'a</i>rticle <b>7 du code</b> pénal</span>", ({
+    task,
+  }) => {
+    const html = task.name
+    const transformation = simplifyHtml({ removeAWithHref: true })(html)
+    const text = transformation.output
+    expect(text).toBe("au I de l'article 7 du code pénal")
+
+    const context = new TextParserContext(text)
+    const references = getParsedReferencesWithOriginalTransformations(
+      context,
+      transformation,
+    )
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(reference).toStrictEqual({
+      child: {
+        child: {
+          index: 1,
+          num: "I",
+          originalTransformation: {
+            position: {
+              start: 12,
+              stop: 13,
+            },
+          },
+          position: {
+            start: 3,
+            stop: 4,
+          },
+          type: "item",
+        },
+        originalTransformation: {
+          innerSuffix: "</b>",
+          outerSuffix: "<b>",
+          position: {
+            start: 9,
+            stop: 35,
+          },
+        },
+        parent: {
+          num: "7",
+          originalTransformation: {
+            innerPrefix: "<i>",
+            innerSuffix: "</b>",
+            outerPrefix: "</i>",
+            outerSuffix: "<b>",
+            position: {
+              start: 19,
+              stop: 35,
+            },
+          },
+          position: {
+            start: 10,
+            stop: 19,
+          },
+          type: "article",
+        },
+        position: {
+          start: 3,
+          stop: 19,
+        },
+        type: "parent-enfant",
+      },
+      originalTransformation: {
+        position: {
+          start: 6,
+          stop: 53,
+        },
+      },
+      parent: {
+        cid: "LEGITEXT000006070719",
+        nature: "CODE",
+        originalTransformation: {
+          innerPrefix: "<b>",
+          outerPrefix: "</b>",
+          position: {
+            start: 39,
+            stop: 53,
+          },
+        },
+        position: {
+          start: 23,
+          stop: 33,
+        },
+        title: "Code pénal",
+        titleRest: "pénal",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 33,
+      },
+      type: "parent-enfant",
+    })
+    expect(
+      reverseTransformedInnerFragment(html, reference.originalTransformation),
+    ).toBe("au <i>I de l'a</i>rticle <b>7 du code</b> pénal")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        reference.parent.originalTransformation,
+      ),
+    ).toBe("<b>code</b> pénal")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        reference.child.originalTransformation,
+      ),
+    ).toBe("<i>I de l'a</i>rticle <b>7</b>")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        (reference.child as TextAstParentChild).parent.originalTransformation,
+      ),
+    ).toBe("<i>a</i>rticle <b>7</b>")
+    expect(
+      reverseTransformedInnerFragment(
+        html,
+        (reference.child as TextAstParentChild).child.originalTransformation,
+      ),
+    ).toBe("I")
   })
 })

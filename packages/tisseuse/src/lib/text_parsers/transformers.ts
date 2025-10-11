@@ -540,13 +540,14 @@ export const reverseTransformedInnerFragment = <
 >(
   originalText: string,
   originalTransformation: FragmentReverseTransformation | undefined,
+  offset = 0,
 ): StringOrUndefined =>
   originalTransformation === undefined
     ? (originalText as StringOrUndefined)
     : (((originalTransformation.innerPrefix ?? "") +
         originalText.slice(
-          originalTransformation.position.start,
-          originalTransformation.position.stop,
+          originalTransformation.position.start + offset,
+          originalTransformation.position.stop + offset,
         ) +
         (originalTransformation.innerSuffix ?? "")) as StringOrUndefined)
 

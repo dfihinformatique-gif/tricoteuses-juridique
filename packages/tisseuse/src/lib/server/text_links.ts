@@ -33,8 +33,8 @@ import {
   type TextAstText,
 } from "$lib/text_parsers/ast.js"
 import {
-  iterCitationReferences,
-  iterReferences,
+  parseReferences,
+  parseReferencesWithOriginalTransformations,
 } from "$lib/text_parsers/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import type {
@@ -42,7 +42,9 @@ import type {
   ArticleLink,
   DefinitionOrLink,
   DivisionLink,
+  TextLink,
 } from "$lib/text_parsers/text_links.js"
+import { Transformation } from "$lib/text_parsers/transformers.js"
 
 function* iterAtomicOrParentChildReferences(
   context: TextParserContext,
@@ -72,11 +74,13 @@ function* iterAtomicOrParentChildReferences(
       const { originalCitations } = reference.action
       if (originalCitations !== undefined) {
         for (const citation of originalCitations) {
-          for (const citationReference of iterCitationReferences(
-            context,
-            citation,
-          )) {
-            yield* iterAtomicOrParentChildReferences(context, citationReference)
+          if (citation.references !== undefined) {
+            for (const citationReference of citation.references) {
+              yield* iterAtomicOrParentChildReferences(
+                context,
+                citationReference,
+              )
+            }
           }
         }
       }
@@ -142,11 +146,13 @@ function* iterDeepestDivisionsOrArticles(
         const { originalCitations } = reference.action
         if (originalCitations !== undefined) {
           for (const citation of originalCitations) {
-            for (const citationReference of iterCitationReferences(
-              context,
-              citation,
-            )) {
-              yield* iterDeepestDivisionsOrArticles(context, citationReference)
+            if (citation.references !== undefined) {
+              for (const citationReference of citation.references) {
+                yield* iterDeepestDivisionsOrArticles(
+                  context,
+                  citationReference,
+                )
+              }
             }
           }
         }
@@ -195,12 +201,14 @@ export async function* iterTextLinks(
     logIgnoredReferencesTypes,
     logPartialReferences,
     logReferences,
+    transformation,
   }: {
     date: string
     defaultTextId?: string
     logIgnoredReferencesTypes?: boolean
     logPartialReferences?: boolean
     logReferences?: boolean
+    transformation?: Transformation
   },
 ): AsyncGenerator<DefinitionOrLink, void> {
   assert.notStrictEqual(date, undefined, "Date option is required")
@@ -240,26 +248,50 @@ export async function* iterTextLinks(
       const articleDefinition =
         articleDefinitionByNumByTextId[currentTextId]?.[article.num]
       if (articleDefinition !== undefined) {
-        const position =
-          ancestors === undefined
-            ? article.position!
-            : article.position!.start < ancestors[0].position!.start
-              ? {
-                  start: article.position.start,
-                  stop: ancestors[0].position.stop,
-                }
-              : {
-                  start: ancestors[0].position.start,
-                  stop: article.position.stop,
-                }
-
-        yield {
-          article,
-          definition: articleDefinition,
-          position,
-          reference,
-          type: "internal_article",
-        }
+        yield Object.fromEntries(
+          Object.entries({
+            article,
+            definition: articleDefinition,
+            originalTransformation:
+              article.originalTransformation === undefined
+                ? undefined
+                : ancestors === undefined
+                  ? article.originalTransformation
+                  : {
+                      ...article.originalTransformation,
+                      position:
+                        article.originalTransformation.position.start <
+                        ancestors[0].originalTransformation!.position.start
+                          ? {
+                              start:
+                                article.originalTransformation.position.start,
+                              stop: ancestors[0].originalTransformation!
+                                .position.stop,
+                            }
+                          : {
+                              start:
+                                ancestors[0].originalTransformation!.position
+                                  .start,
+                              stop: article.originalTransformation.position
+                                .stop,
+                            },
+                    },
+            position:
+              ancestors === undefined
+                ? article.position!
+                : article.position!.start < ancestors[0].position!.start
+                  ? {
+                      start: article.position.start,
+                      stop: ancestors[0].position.stop,
+                    }
+                  : {
+                      start: ancestors[0].position.start,
+                      stop: article.position.stop,
+                    },
+            reference,
+            type: "internal_article",
+          }).filter(([, value]) => value !== undefined),
+        ) as unknown as ArticleLink
         return
       }
     }
@@ -375,25 +407,47 @@ export async function* iterTextLinks(
       }
     }
 
-    const position =
-      ancestors === undefined
-        ? article.position!
-        : article.position!.start < ancestors[0].position!.start
-          ? {
-              start: article.position.start,
-              stop: ancestors[0].position.stop,
-            }
-          : {
-              start: ancestors[0].position.start,
-              stop: article.position.stop,
-            }
-    yield {
-      article,
-      articleId: currentArticleId,
-      position,
-      reference,
-      type: "external_article",
-    }
+    yield Object.fromEntries(
+      Object.entries({
+        article,
+        articleId: currentArticleId,
+        originalTransformation:
+          article.originalTransformation === undefined
+            ? undefined
+            : ancestors === undefined
+              ? article.originalTransformation
+              : {
+                  ...article.originalTransformation,
+                  position:
+                    article.originalTransformation.position.start <
+                    ancestors[0].originalTransformation!.position.start
+                      ? {
+                          start: article.originalTransformation.position.start,
+                          stop: ancestors[0].originalTransformation!.position
+                            .stop,
+                        }
+                      : {
+                          start:
+                            ancestors[0].originalTransformation!.position.start,
+                          stop: article.originalTransformation.position.stop,
+                        },
+                },
+        position:
+          ancestors === undefined
+            ? article.position!
+            : article.position!.start < ancestors[0].position!.start
+              ? {
+                  start: article.position.start,
+                  stop: ancestors[0].position.stop,
+                }
+              : {
+                  start: ancestors[0].position.start,
+                  stop: article.position.stop,
+                },
+        reference,
+        type: "external_article",
+      }).filter(([, value]) => value !== undefined),
+    ) as unknown as ArticleLink
   }
 
   /**
@@ -520,25 +574,51 @@ export async function* iterTextLinks(
             .split(/\s+/)
             .map((fragment: string) => fragment.trim())
             .filter((fragment: string) => fragment !== "")
-          const insertedDivision: TextAstDivision = {
-            num: sectionTaNameSplit[1],
-            position: {
-              // Position start - stop = 0 ⇒ invisible
-              start: division.position.stop,
-              stop: division.position.stop,
-            },
-            type: sectionTaNameSplit[0] as DivisionType,
-          }
-          divisionChildReference = {
-            child: divisionChildReference ?? division,
-            parent: insertedDivision,
-            position: {
-              // Position start - stop = 0 ⇒ invisible
-              start: division.position.stop,
-              stop: division.position.stop,
-            },
-            type: "parent-enfant",
-          }
+          const insertedDivision = Object.fromEntries(
+            Object.entries({
+              num: sectionTaNameSplit[1],
+              originalTransformation:
+                division.originalTransformation === undefined
+                  ? undefined
+                  : {
+                      ...division.originalTransformation,
+                      position: {
+                        // Position start - stop = 0 ⇒ invisible
+                        start: division.originalTransformation.position.stop,
+                        stop: division.originalTransformation.position.stop,
+                      },
+                    },
+              position: {
+                // Position start - stop = 0 ⇒ invisible
+                start: division.position.stop,
+                stop: division.position.stop,
+              },
+              type: sectionTaNameSplit[0] as DivisionType,
+            }).filter(([, value]) => value !== undefined),
+          ) as unknown as TextAstDivision
+          divisionChildReference = Object.fromEntries(
+            Object.entries({
+              child: divisionChildReference ?? division,
+              parent: insertedDivision,
+              originalTransformation:
+                division.originalTransformation === undefined
+                  ? undefined
+                  : {
+                      ...division.originalTransformation,
+                      position: {
+                        // Position start - stop = 0 ⇒ invisible
+                        start: division.originalTransformation.position.stop,
+                        stop: division.originalTransformation.position.stop,
+                      },
+                    },
+              position: {
+                // Position start - stop = 0 ⇒ invisible
+                start: division.position.stop,
+                stop: division.position.stop,
+              },
+              type: "parent-enfant",
+            }).filter(([, value]) => value !== undefined),
+          ) as unknown as TextAstParentChild
           division = insertedDivision
         }
       }
@@ -646,26 +726,49 @@ export async function* iterTextLinks(
     }
     if (addedLinksCount === 0) {
       currentSectionTaId = divisionLienSectionTa?.["@id"]
-      const position =
-        ancestors === undefined
-          ? division.position!
-          : division.position!.start < ancestors[0].position!.start
-            ? {
-                start: division.position.start,
-                stop: ancestors[0].position.stop,
-              }
-            : {
-                start: ancestors[0].position.start,
-                stop: division.position.stop,
-              }
-      assert.notStrictEqual(position, undefined)
-      yield {
-        division,
-        position,
-        reference,
-        sectionTaId: currentSectionTaId,
-        type: "external_division",
-      }
+      yield Object.fromEntries(
+        Object.entries({
+          division,
+          originalTransformation:
+            division.originalTransformation === undefined
+              ? undefined
+              : {
+                  ...division.originalTransformation,
+                  position:
+                    ancestors === undefined
+                      ? division.originalTransformation.position
+                      : division.originalTransformation.position.start <
+                          ancestors[0].originalTransformation!.position.start
+                        ? {
+                            start:
+                              division.originalTransformation.position.start,
+                            stop: ancestors[0].originalTransformation!.position
+                              .stop,
+                          }
+                        : {
+                            start:
+                              ancestors[0].originalTransformation!.position
+                                .start,
+                            stop: division.originalTransformation.position.stop,
+                          },
+                },
+          position:
+            ancestors === undefined
+              ? division.position!
+              : division.position!.start < ancestors[0].position!.start
+                ? {
+                    start: division.position.start,
+                    stop: ancestors[0].position.stop,
+                  }
+                : {
+                    start: ancestors[0].position.start,
+                    stop: division.position.stop,
+                  },
+          reference,
+          sectionTaId: currentSectionTaId,
+          type: "external_division",
+        }).filter(([, value]) => value !== undefined),
+      ) as unknown as DivisionLink
     }
   }
 
@@ -785,7 +888,9 @@ export async function* iterTextLinks(
   //
 
   const references: TextAstReference[] = []
-  for (const reference of iterReferences(context)) {
+  for (const reference of transformation === undefined
+    ? parseReferences(context)
+    : parseReferencesWithOriginalTransformations(context, transformation)) {
     if (logReferences) {
       console.log(
         `In "${context.input.slice(reference.position.start, reference.position.stop)}": \nReference "${context.text(reference.position)}": ${JSON.stringify(reference, null, 2)}`,
@@ -822,13 +927,17 @@ export async function* iterTextLinks(
             } else {
               ;(articleDefinitionByNumByTextId[currentTextId] ??= {})[
                 atomicReference.num!
-              ] = {
-                article: atomicReference,
-                position: atomicReference.position,
-                reference,
-                textId: currentTextId,
-                type: "article_definition",
-              }
+              ] = Object.fromEntries(
+                Object.entries({
+                  article: atomicReference,
+                  originalTransformation:
+                    atomicReference.originalTransformation,
+                  position: atomicReference.position,
+                  reference,
+                  textId: currentTextId,
+                  type: "article_definition",
+                }).filter(([, value]) => value !== undefined),
+              ) as unknown as ArticleDefinition
             }
           }
           break
@@ -1068,12 +1177,15 @@ export async function* iterTextLinks(
           if (addedLinksCount === 0) {
             const position = atomicReference.position!
             assert.notStrictEqual(position, undefined)
-            yield {
-              position,
-              reference,
-              text: atomicReference,
-              type: "external_text",
-            }
+            yield Object.fromEntries(
+              Object.entries({
+                originalTransformation: atomicReference.originalTransformation,
+                position,
+                reference,
+                text: atomicReference,
+                type: "external_text",
+              }).filter(([, value]) => value !== undefined),
+            ) as unknown as TextLink
           }
           break
         }

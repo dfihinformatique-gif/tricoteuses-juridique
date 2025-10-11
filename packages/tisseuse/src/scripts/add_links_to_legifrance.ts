@@ -14,8 +14,11 @@ import { legiDb } from "$lib/server/databases/index.js"
 import { iterTextLinks } from "$lib/server/text_links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import { ExtractedLinkDb } from "$lib/text_parsers/text_links.js"
-import { iterOriginalMergedPositionsFromTransformed } from "$lib/text_parsers/transformers.js"
+import type { ExtractedLinkDb } from "$lib/text_parsers/text_links.js"
+import {
+  reverseTransformedInnerFragment,
+  reverseTransformedReplacement,
+} from "$lib/text_parsers/transformers.js"
 
 const today = new Date().toISOString().split("T")[0]
 
@@ -42,10 +45,6 @@ async function addLinksToHtml(
   const transformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
   const inputText = transformation.output
   const context = new TextParserContext(inputText)
-  const originalPositionsFromTransformedIterator =
-    iterOriginalMergedPositionsFromTransformed(transformation)
-  // Initialize iterator by sending a dummy value and ignoring the result.
-  originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
   let output = inputHtml
   let outputOffset = 0
 
@@ -56,6 +55,7 @@ async function addLinksToHtml(
     logIgnoredReferencesTypes,
     logPartialReferences,
     logReferences,
+    transformation,
   })) {
     index++
     switch (link.type) {
@@ -70,7 +70,10 @@ async function addLinksToHtml(
       }
 
       case "external_article": {
-        const { articleId, position: articlePosition } = link
+        const {
+          articleId,
+          originalTransformation: articleOriginalTransformation,
+        } = link
         await upsertExtractedLink(existingLinksKeys, {
           field_name: fieldName,
           index,
@@ -79,41 +82,42 @@ async function addLinksToHtml(
           target_id: articleId ?? null,
         })
         if (articleId !== undefined) {
-          const result =
-            originalPositionsFromTransformedIterator.next(articlePosition)
-          if (result.done) {
+          if (articleOriginalTransformation === undefined) {
             throw new Error(
-              `In ${id} field ${fieldName}, transformation of link to article ${articleId} position to HTML failed: ${articlePosition}`,
+              `Missing originalTransformation attribute in external article link: ${link}`,
             )
           }
-          const articleReverseTransformation = result.value
-          const original =
-            (articleReverseTransformation.innerPrefix ?? "") +
-            output.slice(
-              articleReverseTransformation.position.start + outputOffset,
-              articleReverseTransformation.position.stop + outputOffset,
-            ) +
-            (articleReverseTransformation.innerSuffix ?? "")
-          const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
+          const original = reverseTransformedInnerFragment(
+            output,
+            articleOriginalTransformation,
+            outputOffset,
+          )
+          const replacement = reverseTransformedReplacement(
+            articleOriginalTransformation,
+            `<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>`,
+          )
           output =
             output.slice(
               0,
-              articleReverseTransformation.position.start + outputOffset,
+              articleOriginalTransformation.position.start + outputOffset,
             ) +
             replacement +
             output.slice(
-              articleReverseTransformation.position.stop + outputOffset,
+              articleOriginalTransformation.position.stop + outputOffset,
             )
           outputOffset +=
             replacement.length -
-            (articleReverseTransformation.position.stop -
-              articleReverseTransformation.position.start)
+            (articleOriginalTransformation.position.stop -
+              articleOriginalTransformation.position.start)
         }
         break
       }
 
       case "external_division": {
-        const { position: divisionPosition, sectionTaId } = link
+        const {
+          originalTransformation: divisionOriginalTransformation,
+          sectionTaId,
+        } = link
         await upsertExtractedLink(existingLinksKeys, {
           field_name: fieldName,
           index,
@@ -122,41 +126,40 @@ async function addLinksToHtml(
           target_id: sectionTaId ?? null,
         })
         if (sectionTaId !== undefined) {
-          const result =
-            originalPositionsFromTransformedIterator.next(divisionPosition)
-          if (result.done) {
+          if (divisionOriginalTransformation === undefined) {
             throw new Error(
-              `In ${id} field ${fieldName}, transformation of division position to HTML failed: ${divisionPosition}`,
+              `Missing originalTransformation attribute in external division link: ${link}`,
             )
           }
-          const divisionReverseTransformation = result.value
-          const original =
-            (divisionReverseTransformation.innerPrefix ?? "") +
-            output.slice(
-              divisionReverseTransformation.position.start + outputOffset,
-              divisionReverseTransformation.position.stop + outputOffset,
-            ) +
-            (divisionReverseTransformation.innerSuffix ?? "")
-          const replacement = `${divisionReverseTransformation.outerPrefix ?? ""}<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>${divisionReverseTransformation.outerSuffix ?? ""}`
+          const original = reverseTransformedInnerFragment(
+            output,
+            divisionOriginalTransformation,
+            outputOffset,
+          )
+          const replacement = reverseTransformedReplacement(
+            divisionOriginalTransformation,
+            `<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>`,
+          )
           output =
             output.slice(
               0,
-              divisionReverseTransformation.position.start + outputOffset,
+              divisionOriginalTransformation.position.start + outputOffset,
             ) +
             replacement +
             output.slice(
-              divisionReverseTransformation.position.stop + outputOffset,
+              divisionOriginalTransformation.position.stop + outputOffset,
             )
           outputOffset +=
             replacement.length -
-            (divisionReverseTransformation.position.stop -
-              divisionReverseTransformation.position.start)
+            (divisionOriginalTransformation.position.stop -
+              divisionOriginalTransformation.position.start)
         }
         break
       }
 
       case "external_text": {
-        const { text, position: textPosition } = link
+        const { originalTransformation: texteOriginalTransformation, text } =
+          link
         await upsertExtractedLink(existingLinksKeys, {
           field_name: fieldName,
           index,
@@ -174,67 +177,66 @@ async function addLinksToHtml(
           continue
         }
 
-        const result =
-          originalPositionsFromTransformedIterator.next(textPosition)
-        if (result.done) {
+        if (texteOriginalTransformation === undefined) {
           throw new Error(
-            `In ${id} field ${fieldName}, transformation of text position to HTML failed: ${textPosition}`,
+            `Missing originalTransformation attribute in external text link: ${link}`,
           )
         }
-        const textReverseTransformation = result.value
-        const original =
-          (textReverseTransformation.innerPrefix ?? "") +
-          output.slice(
-            textReverseTransformation.position.start + outputOffset,
-            textReverseTransformation.position.stop + outputOffset,
-          ) +
-          (textReverseTransformation.innerSuffix ?? "")
-        const replacement = `${textReverseTransformation.outerPrefix ?? ""}<a class="lien_texte_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>${textReverseTransformation.outerSuffix ?? ""}`
+        const original = reverseTransformedInnerFragment(
+          output,
+          texteOriginalTransformation,
+          outputOffset,
+        )
+        const replacement = reverseTransformedReplacement(
+          texteOriginalTransformation,
+          `<a class="lien_texte_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>`,
+        )
         output =
           output.slice(
             0,
-            textReverseTransformation.position.start + outputOffset,
+            texteOriginalTransformation.position.start + outputOffset,
           ) +
           replacement +
-          output.slice(textReverseTransformation.position.stop + outputOffset)
+          output.slice(texteOriginalTransformation.position.stop + outputOffset)
         outputOffset +=
           replacement.length -
-          (textReverseTransformation.position.stop -
-            textReverseTransformation.position.start)
+          (texteOriginalTransformation.position.stop -
+            texteOriginalTransformation.position.start)
         break
       }
 
       case "internal_article": {
-        const { definition, position: articlePosition } = link
-        const result =
-          originalPositionsFromTransformedIterator.next(articlePosition)
-        if (result.done) {
+        const {
+          definition,
+          originalTransformation: articleOriginalTransformation,
+        } = link
+        if (articleOriginalTransformation === undefined) {
           throw new Error(
-            `In ${id} field ${fieldName}, transformation of article position to HTML failed: ${articlePosition}`,
+            `Missing originalTransformation attribute in internal article link: ${link}`,
           )
         }
-        const articleReverseTransformation = result.value
-        const original =
-          (articleReverseTransformation.innerPrefix ?? "") +
-          output.slice(
-            articleReverseTransformation.position.start + outputOffset,
-            articleReverseTransformation.position.stop + outputOffset,
-          ) +
-          (articleReverseTransformation.innerSuffix ?? "")
-        const replacement = `${articleReverseTransformation.outerPrefix ?? ""}<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!}" style="background-color: #eae462">${original}</a>${articleReverseTransformation.outerSuffix ?? ""}`
+        const original = reverseTransformedInnerFragment(
+          output,
+          articleOriginalTransformation,
+          outputOffset,
+        )
+        const replacement = reverseTransformedReplacement(
+          articleOriginalTransformation,
+          `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!}" style="background-color: #eae462">${original}</a>`,
+        )
         output =
           output.slice(
             0,
-            articleReverseTransformation.position.start + outputOffset,
+            articleOriginalTransformation.position.start + outputOffset,
           ) +
           replacement +
           output.slice(
-            articleReverseTransformation.position.stop + outputOffset,
+            articleOriginalTransformation.position.stop + outputOffset,
           )
         outputOffset +=
           replacement.length -
-          (articleReverseTransformation.position.stop -
-            articleReverseTransformation.position.start)
+          (articleOriginalTransformation.position.stop -
+            articleOriginalTransformation.position.start)
         break
       }
 

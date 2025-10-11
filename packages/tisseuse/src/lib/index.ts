@@ -92,9 +92,11 @@ export {
   iterIncludedReferences,
 } from "./text_parsers/helpers.js"
 export {
-  getReferences,
-  iterCitationReferences,
-  iterReferences,
+  getParsedReferences,
+  getParsedReferencesWithOriginalTransformations,
+  parseCitationReferences,
+  parseReferences,
+  parseReferencesWithOriginalTransformations,
 } from "./text_parsers/index.js"
 export {
   adjectifNumeralOrdinalCourt,
@@ -172,6 +174,7 @@ export {
   originalMergedPositionsFromTransformed,
   originalSplitPositionsFromTransformed,
   reverseTransformedInnerFragment,
+  reverseTransformedReplacement,
   type SourceMapSegment,
   type Transformation,
   type TransformationLeaf,

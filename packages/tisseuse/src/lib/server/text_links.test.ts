@@ -3,6 +3,11 @@ import { describe, expect, test } from "vitest"
 
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
+import type {
+  ArticleExternalLink,
+  DivisionExternalLink,
+} from "$lib/text_parsers/text_links.js"
+import { reverseTransformedInnerFragment } from "$lib/text_parsers/transformers.js"
 
 import { iterTextLinks } from "./text_links.js"
 
@@ -1182,5 +1187,305 @@ describe("iterTextLinks", () => {
       "l'article 223 VO quaterdecies",
     )
     expect(context.text(links[4].position)).toBe("article 223 VO bis")
+  })
+})
+
+describe("iterTextLinks with transformation", () => {
+  test("Paragraphe HTML avec 3 liens dont 1 dans une citation", async () => {
+    const inputHtml = dedent`
+      <p>
+        Le livre III du code des relations entre le public et l'administration est ainsi modifié : <br/>
+        1° L'article L. 311-9 est complété par un 4° ainsi rédigé : <br/>
+        « 4° Par publication des informations en ligne, à moins que les documents ne soient communicables qu'à l'intéressé en application de l'article L. 311-6. »
+      </p>
+    `
+    const transformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = transformation.output
+    const context = new TextParserContext(inputText)
+    const links = await Array.fromAsync(
+      iterTextLinks(context, {
+        date: "2016-10-07",
+        transformation,
+      }),
+    )
+    expect(links).toStrictEqual([
+      {
+        division: {
+          index: 3,
+          num: "III",
+          originalTransformation: {
+            position: {
+              start: 9,
+              stop: 18,
+            },
+          },
+          position: {
+            start: 3,
+            stop: 12,
+          },
+          type: "livre",
+        },
+        originalTransformation: {
+          position: {
+            start: 9,
+            stop: 76,
+          },
+        },
+        position: {
+          start: 3,
+          stop: 70,
+        },
+        reference: {
+          action: {
+            action: "MODIFICATION",
+          },
+          originalTransformation: {
+            position: {
+              start: 6,
+              stop: 94,
+            },
+          },
+          position: {
+            start: 0,
+            stop: 88,
+          },
+          reference: {
+            child: {
+              index: 3,
+              num: "III",
+              originalTransformation: {
+                position: {
+                  start: 9,
+                  stop: 18,
+                },
+              },
+              position: {
+                start: 3,
+                stop: 12,
+              },
+              type: "livre",
+            },
+            originalTransformation: {
+              position: {
+                start: 6,
+                stop: 76,
+              },
+            },
+            parent: {
+              cid: "LEGITEXT000031366350",
+              nature: "CODE",
+              originalTransformation: {
+                position: {
+                  start: 22,
+                  stop: 76,
+                },
+              },
+              position: {
+                start: 16,
+                stop: 70,
+              },
+              title: "Code des relations entre le public et l'administration",
+              titleRest: "des relations entre le public et l'administration",
+              type: "texte",
+            },
+            position: {
+              start: 0,
+              stop: 70,
+            },
+            type: "parent-enfant",
+          },
+          type: "reference_et_action",
+        },
+        sectionTaId: "LEGISCTA000031367685",
+        type: "external_division",
+      },
+      {
+        article: {
+          implicitText: {
+            cid: "LEGITEXT000031366350",
+            nature: "CODE",
+            originalTransformation: {
+              position: {
+                start: 22,
+                stop: 76,
+              },
+            },
+            position: {
+              start: 16,
+              stop: 70,
+            },
+            title: "Code des relations entre le public et l'administration",
+            titleRest: "des relations entre le public et l'administration",
+            type: "texte",
+          },
+          num: "L311-9",
+          originalTransformation: {
+            position: {
+              start: 108,
+              stop: 126,
+            },
+          },
+          position: {
+            start: 94,
+            stop: 112,
+          },
+          type: "article",
+        },
+        articleId: "LEGIARTI000031367727",
+        originalTransformation: {
+          position: {
+            start: 108,
+            stop: 126,
+          },
+        },
+        position: {
+          start: 94,
+          stop: 112,
+        },
+        reference: {
+          action: {
+            action: "CREATION",
+          },
+          originalTransformation: {
+            position: {
+              start: 108,
+              stop: 139,
+            },
+          },
+          position: {
+            start: 94,
+            stop: 125,
+          },
+          reference: {
+            implicitText: {
+              cid: "LEGITEXT000031366350",
+              nature: "CODE",
+              originalTransformation: {
+                position: {
+                  start: 22,
+                  stop: 76,
+                },
+              },
+              position: {
+                start: 16,
+                stop: 70,
+              },
+              title: "Code des relations entre le public et l'administration",
+              titleRest: "des relations entre le public et l'administration",
+              type: "texte",
+            },
+            num: "L311-9",
+            originalTransformation: {
+              position: {
+                start: 108,
+                stop: 126,
+              },
+            },
+            position: {
+              start: 94,
+              stop: 112,
+            },
+            type: "article",
+          },
+          type: "reference_et_action",
+        },
+        type: "external_article",
+      },
+      {
+        article: {
+          num: "L311-6",
+          originalTransformation: {
+            position: {
+              start: 306,
+              stop: 324,
+            },
+          },
+          position: {
+            start: 284,
+            stop: 302,
+          },
+          type: "article",
+        },
+        articleId: "LEGIARTI000031367716",
+        originalTransformation: {
+          position: {
+            start: 306,
+            stop: 324,
+          },
+        },
+        position: {
+          start: 284,
+          stop: 302,
+        },
+        reference: {
+          num: "L311-6",
+          originalTransformation: {
+            position: {
+              start: 306,
+              stop: 324,
+            },
+          },
+          position: {
+            start: 284,
+            stop: 302,
+          },
+          type: "article",
+        },
+        type: "external_article",
+      },
+    ])
+    expect(links.length).toBe(3)
+    {
+      const link = links[0] as DivisionExternalLink
+      expect(
+        reverseTransformedInnerFragment(inputHtml, link.originalTransformation),
+      ).toBe(
+        "livre III du code des relations entre le public et l'administration",
+      )
+      expect(
+        reverseTransformedInnerFragment(
+          inputHtml,
+          link.division.originalTransformation,
+        ),
+      ).toBe("livre III")
+      expect(
+        reverseTransformedInnerFragment(
+          inputHtml,
+          link.reference.originalTransformation,
+        ),
+      ).toBe(
+        "Le livre III du code des relations entre le public et l'administration est ainsi modifié",
+      )
+    }
+    {
+      const link = links[1] as ArticleExternalLink
+      expect(
+        reverseTransformedInnerFragment(inputHtml, link.originalTransformation),
+      ).toBe("L'article L. 311-9")
+      expect(
+        reverseTransformedInnerFragment(
+          inputHtml,
+          link.article.originalTransformation,
+        ),
+      ).toBe("L'article L. 311-9")
+      expect(
+        reverseTransformedInnerFragment(
+          inputHtml,
+          link.reference.originalTransformation,
+        ),
+      ).toBe("L'article L. 311-9 est complété")
+    }
+    {
+      const link = links[2] as ArticleExternalLink
+      expect(
+        reverseTransformedInnerFragment(inputHtml, link.originalTransformation),
+      ).toBe("l'article L. 311-6")
+      expect(
+        reverseTransformedInnerFragment(
+          inputHtml,
+          link.article.originalTransformation,
+        ),
+      ).toBe("l'article L. 311-6")
+    }
   })
 })

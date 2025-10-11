@@ -515,35 +515,46 @@ export function* iterAtomicReferences(
 
 export function* iterIncludedReferences(
   reference: TextAstReference,
+  { citations }: { citations?: boolean } = {},
 ): Generator<TextAstReference, void> {
   yield reference
   switch (reference.type) {
     case "bounded-interval": {
-      yield* iterIncludedReferences(reference.first)
-      yield* iterIncludedReferences(reference.last)
+      yield* iterIncludedReferences(reference.first, { citations })
+      yield* iterIncludedReferences(reference.last, { citations })
       break
     }
 
     case "counted-interval": {
-      yield* iterIncludedReferences(reference.first)
+      yield* iterIncludedReferences(reference.first, { citations })
       break
     }
 
     case "enumeration":
     case "exclusion": {
-      yield* iterIncludedReferences(reference.left)
-      yield* iterIncludedReferences(reference.right)
+      yield* iterIncludedReferences(reference.left, { citations })
+      yield* iterIncludedReferences(reference.right, { citations })
       break
     }
 
     case "parent-enfant": {
-      yield* iterIncludedReferences(reference.parent)
-      yield* iterIncludedReferences(reference.child)
+      yield* iterIncludedReferences(reference.parent, { citations })
+      yield* iterIncludedReferences(reference.child, { citations })
       break
     }
 
     case "reference_et_action": {
-      yield* iterIncludedReferences(reference.reference)
+      yield* iterIncludedReferences(reference.reference, { citations })
+      const { originalCitations } = reference.action
+      if (citations && originalCitations !== undefined) {
+        for (const originalCitation of originalCitations) {
+          if (originalCitation.references !== undefined) {
+            for (const citationReference of originalCitation.references) {
+              yield citationReference
+            }
+          }
+        }
+      }
       break
     }
 

@@ -5,15 +5,13 @@ import {
   type LegiArticle,
   type LegiSectionTa,
 } from "@tricoteuses/legifrance"
-import type { JSONValue } from "postgres"
-
-import { legiDb } from "$lib/server/databases/index.js"
+import type { JSONValue, Sql } from "postgres"
 
 export type LegalObjectCacheById = Map<string, JSONValue>
 
 export async function getOrLoadArticle<
   ArticleType extends JorfArticle | LegiArticle,
->(legalObjectCacheById: LegalObjectCacheById, id: string) {
+>(legiDb: Sql, legalObjectCacheById: LegalObjectCacheById, id: string) {
   let article = legalObjectCacheById.get(id) as ArticleType | undefined | null
   if (article === undefined) {
     article = (
@@ -34,6 +32,7 @@ export async function getOrLoadArticle<
 }
 
 export async function getOrLoadJo<JoType extends Jo>(
+  legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   id: string,
 ) {
@@ -58,7 +57,7 @@ export async function getOrLoadJo<JoType extends Jo>(
 
 export async function getOrLoadSectionTa<
   SectionTaType extends JorfSectionTa | LegiSectionTa,
->(legalObjectCacheById: LegalObjectCacheById, id: string) {
+>(legiDb: Sql, legalObjectCacheById: LegalObjectCacheById, id: string) {
   let sectionTa = legalObjectCacheById.get(id) as
     | SectionTaType
     | undefined

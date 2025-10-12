@@ -9,15 +9,16 @@ import {
   type JorfArticle,
   type LegiArticle,
 } from "@tricoteuses/legifrance"
+import {
+  // getOrLoadArticle,
+  getSiblingArticleId,
+  newLegalObjectCacheById,
+} from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
 import type { ArticlePageInfos, ArticleWithLinks } from "$lib/articles.js"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
-import { getSiblingArticleId } from "$lib/server/articles.js"
 import { legiDb } from "$lib/server/databases/index.js"
-import {
-  /* getOrLoadArticle, */ newLegalObjectCacheById,
-} from "$lib/server/loaders.js"
 
 const getArticleWithLinks = async (
   id: string,
@@ -62,7 +63,7 @@ const getArticleWithLinks = async (
 //     auditRequire,
 //   ),
 //   async (id): Promise<JorfArticle | LegiArticle | undefined> =>
-//     await getOrLoadArticle(newLegalObjectCacheById(), id),
+//     await getOrLoadArticle(legiDb, newLegalObjectCacheById(), id),
 // )
 
 // export const queryArticleContenuAvecLiens = query(
@@ -111,8 +112,14 @@ export const queryArticlePageInfos = query(
     const legalObjectCacheById = newLegalObjectCacheById()
     return {
       ...articleWithLinks,
-      nextArticleId: await getSiblingArticleId(legalObjectCacheById, id, 1),
+      nextArticleId: await getSiblingArticleId(
+        legiDb,
+        legalObjectCacheById,
+        id,
+        1,
+      ),
       previousArticleId: await getSiblingArticleId(
+        legiDb,
         legalObjectCacheById,
         id,
         -1,

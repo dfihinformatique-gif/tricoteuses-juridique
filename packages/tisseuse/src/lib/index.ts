@@ -1,6 +1,14 @@
+export { getArticleDateSignature, getSiblingArticleId } from "./articles.js"
 export { assertNever } from "./asserts.js"
 export { formatLongDate } from "./dates.js"
 export { jsonReplacer } from "./json.js"
+export {
+  newLegalObjectCacheById,
+  getOrLoadArticle,
+  getOrLoadJo,
+  getOrLoadSectionTa,
+  type LegalObjectCacheById,
+} from "./loaders.js"
 export {
   iterCardinalNumeralFormsFromNumber,
   iterLatinMultiplicativeAdverbsFromNumber,

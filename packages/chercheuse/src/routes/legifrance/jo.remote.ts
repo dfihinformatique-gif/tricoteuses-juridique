@@ -5,10 +5,12 @@ import {
   cleanAudit,
 } from "@auditors/core"
 import { auditLegalId, type Jo } from "@tricoteuses/legifrance"
+import { getOrLoadJo, newLegalObjectCacheById } from "@tricoteuses/tisseuse"
+
+import { legiDb } from "$lib/server/databases/index.js"
 
 import { query } from "$app/server"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
-import { getOrLoadJo, newLegalObjectCacheById } from "$lib/server/loaders.js"
 
 export const queryJo = query(
   standardSchemaV1<string>(
@@ -19,5 +21,5 @@ export const queryJo = query(
     auditRequire,
   ),
   async (id): Promise<Jo | undefined> =>
-    await getOrLoadJo(newLegalObjectCacheById(), id),
+    await getOrLoadJo(legiDb, newLegalObjectCacheById(), id),
 )

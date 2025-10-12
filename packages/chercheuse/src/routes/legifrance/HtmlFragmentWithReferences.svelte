@@ -2,7 +2,6 @@
   import { cleanHtmlContenu } from "$lib/strings"
   import {
     iterIncludedReferences,
-    iterOriginalMergedPositionsFromTransformed,
     parseReferencesWithOriginalTransformations,
     reverseTransformedInnerFragment,
     reverseTransformedReplacement,

@@ -11,6 +11,7 @@ import {
   type LegiSectionTaTm,
 } from "@tricoteuses/legifrance"
 import { assertNever } from "@tricoteuses/tisseuse"
+import type { Sql } from "postgres"
 
 import {
   getOrLoadArticle,
@@ -34,6 +35,7 @@ export async function getArticleDateSignature(
 }
 
 async function getSectionTaState(
+  legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   sectionTaId: string,
   sectionTaStateById: Record<
@@ -57,6 +59,7 @@ async function getSectionTaState(
   let sectionTaState = sectionTaStateById[sectionTaId]
   if (sectionTaState === undefined) {
     const sectionTa = await getOrLoadSectionTa(
+      legiDb,
       legalObjectCacheById,
       sectionTaId,
     )
@@ -110,11 +113,12 @@ async function getSectionTaState(
  * - Migrate everything except the query to @tricoteuses/legifrance.
  */
 export async function getSiblingArticleId(
+  legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   id: string,
   offset: -1 | 1,
 ): Promise<string | undefined> {
-  const article = await getOrLoadArticle(legalObjectCacheById, id)
+  const article = await getOrLoadArticle(legiDb, legalObjectCacheById, id)
   if (article === undefined) {
     return undefined
   }
@@ -145,6 +149,7 @@ export async function getSiblingArticleId(
   }
   // TODO: Filter sibling article by date.
   return await (offset === -1 ? moveToPreviousArticleId : moveToNextArticleId)(
+    legiDb,
     legalObjectCacheById,
     id,
     reverseSectionsTaIdBreadcrumb,
@@ -152,10 +157,15 @@ export async function getSiblingArticleId(
 }
 
 async function moveToFirstArticleId(
+  legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   sectionTaId: string,
 ): Promise<string | undefined> {
-  const sectionTa = await getOrLoadSectionTa(legalObjectCacheById, sectionTaId)
+  const sectionTa = await getOrLoadSectionTa(
+    legiDb,
+    legalObjectCacheById,
+    sectionTaId,
+  )
   if (sectionTa === undefined) {
     return undefined
   }
@@ -171,6 +181,7 @@ async function moveToFirstArticleId(
   if (liensSectionsTa !== undefined) {
     for (const lienSectionTa of liensSectionsTa) {
       const firstArticleId = await moveToFirstArticleId(
+        legiDb,
         legalObjectCacheById,
         lienSectionTa["@id"],
       )
@@ -183,10 +194,15 @@ async function moveToFirstArticleId(
 }
 
 async function moveToLastArticleId(
+  legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   sectionTaId: string,
 ): Promise<string | undefined> {
-  const sectionTa = await getOrLoadSectionTa(legalObjectCacheById, sectionTaId)
+  const sectionTa = await getOrLoadSectionTa(
+    legiDb,
+    legalObjectCacheById,
+    sectionTaId,
+  )
   if (sectionTa === undefined) {
     return undefined
   }
@@ -198,6 +214,7 @@ async function moveToLastArticleId(
   if (liensSectionsTa !== undefined) {
     for (const lienSectionTa of liensSectionsTa.toReversed()) {
       const lastArticleId = await moveToLastArticleId(
+        legiDb,
         legalObjectCacheById,
         lienSectionTa["@id"],
       )
@@ -210,6 +227,7 @@ async function moveToLastArticleId(
 }
 
 async function moveToNextArticleId(
+  legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   articleId: string,
   reverseSectionsTaIdBreadcrumb: Array<string | undefined>,
@@ -229,6 +247,7 @@ async function moveToNextArticleId(
     return undefined
   }
   const sectionTaState = await getSectionTaState(
+    legiDb,
     legalObjectCacheById,
     sectionTaId,
     sectionTaStateById,
@@ -247,6 +266,7 @@ async function moveToNextArticleId(
         if (liensSectionsTa !== undefined) {
           for (const lienSectionTa of liensSectionsTa) {
             const firstArticleId = await moveToFirstArticleId(
+              legiDb,
               legalObjectCacheById,
               lienSectionTa["@id"],
             )
@@ -256,6 +276,7 @@ async function moveToNextArticleId(
           }
         }
         return await moveToNextArticleId(
+          legiDb,
           legalObjectCacheById,
           articleId,
           reverseSectionsTaIdBreadcrumb,
@@ -275,6 +296,7 @@ async function moveToNextArticleId(
         sectionTaIndex++
       ) {
         const firstArticleId = await moveToFirstArticleId(
+          legiDb,
           legalObjectCacheById,
           liensSectionsTa[sectionTaIndex]["@id"],
         )
@@ -283,6 +305,7 @@ async function moveToNextArticleId(
         }
       }
       return await moveToNextArticleId(
+        legiDb,
         legalObjectCacheById,
         articleId,
         reverseSectionsTaIdBreadcrumb,
@@ -299,6 +322,7 @@ async function moveToNextArticleId(
 }
 
 async function moveToPreviousArticleId(
+  legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   articleId: string,
   reverseSectionsTaIdBreadcrumb: Array<string | undefined>,
@@ -318,6 +342,7 @@ async function moveToPreviousArticleId(
     return undefined
   }
   const sectionTaState = await getSectionTaState(
+    legiDb,
     legalObjectCacheById,
     sectionTaId,
     sectionTaStateById,
@@ -333,6 +358,7 @@ async function moveToPreviousArticleId(
     case "LIEN_ART": {
       if (index === 0) {
         return await moveToPreviousArticleId(
+          legiDb,
           legalObjectCacheById,
           articleId,
           reverseSectionsTaIdBreadcrumb,
@@ -351,6 +377,7 @@ async function moveToPreviousArticleId(
         sectionTaIndex--
       ) {
         const lastArticleId = await moveToLastArticleId(
+          legiDb,
           legalObjectCacheById,
           structureTa.LIEN_SECTION_TA![sectionTaIndex]["@id"],
         )
@@ -363,6 +390,7 @@ async function moveToPreviousArticleId(
         sectionTaState.area = "LIEN_ART"
         sectionTaState.index = liensArticles.length
         return await moveToPreviousArticleId(
+          legiDb,
           legalObjectCacheById,
           articleId,
           reverseSectionsTaIdBreadcrumb,
@@ -371,6 +399,7 @@ async function moveToPreviousArticleId(
         )
       }
       return await moveToPreviousArticleId(
+        legiDb,
         legalObjectCacheById,
         articleId,
         reverseSectionsTaIdBreadcrumb,

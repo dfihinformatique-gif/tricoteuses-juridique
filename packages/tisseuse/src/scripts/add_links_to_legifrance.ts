@@ -11,10 +11,12 @@ import sade from "sade"
 
 import { assertNever } from "$lib/asserts.js"
 import { legiDb } from "$lib/server/databases/index.js"
-import { iterTextLinks } from "$lib/server/text_links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import type { ExtractedLinkDb } from "$lib/text_parsers/text_links.js"
+import {
+  iterTextLinks,
+  type ExtractedLinkDb,
+} from "$lib/text_parsers/text_links.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
@@ -49,9 +51,11 @@ async function addLinksToHtml(
   let outputOffset = 0
 
   let index = -1
-  for await (const link of iterTextLinks(context, {
+  for await (const link of iterTextLinks({
+    context,
     date,
     defaultTextId, // TODO: Replace with undefined,
+    legiDb,
     logIgnoredReferencesTypes,
     logPartialReferences,
     logReferences,

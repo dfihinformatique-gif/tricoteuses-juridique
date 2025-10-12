@@ -3,13 +3,14 @@ import fs from "fs-extra"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts.js"
-import { iterTextLinks } from "$lib/server/text_links.js"
+import { legiDb } from "$lib/server/databases/index.js"
 import {
   readTransformation,
   writeTransformation,
 } from "$lib/server/text_parsers/transformers.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
+import { iterTextLinks } from "$lib/text_parsers/text_links.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
@@ -54,9 +55,11 @@ async function addLinksToHtmlDocument(
     let output = inputHtml
     let outputOffset = 0
 
-    for await (const link of iterTextLinks(context, {
+    for await (const link of iterTextLinks({
+      context,
       date,
       defaultTextId,
+      legiDb,
       logIgnoredReferencesTypes,
       logPartialReferences,
       logReferences,

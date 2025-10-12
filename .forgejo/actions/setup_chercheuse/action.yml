@@ -16,9 +16,10 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install tricoteuses-juridique
+    - name: Install Tricoteuses Chercheuse
       run: npm install
       shell: bash
+      working-directory: packages/chercheuse/
     - name: Set Tricoteuses Chercheuse environment
       run: |
         cat > .env << EOF

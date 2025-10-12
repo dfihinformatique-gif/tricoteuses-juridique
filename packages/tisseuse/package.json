@@ -46,7 +46,7 @@
     "configure": "tsx src/scripts/configure.ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint .",
-    "prepare": "npm run build",
+    "prepack": "npm run build",
     "test": "npm run test:unit -- --run",
     "test:unit": "vitest"
   },

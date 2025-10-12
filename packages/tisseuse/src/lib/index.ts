@@ -156,6 +156,19 @@ export {
   simplifyUnicodeCharacters,
 } from "./text_parsers/simplifiers.js"
 export {
+  iterTextLinks,
+  type ArticleDefinition,
+  type ArticleExternalLink,
+  type ArticleInternalLink,
+  type ArticleLink,
+  type DefinitionOrLink,
+  type DivisionExternalLink,
+  type DivisionLink,
+  type ExtractedLinkDb,
+  type TextExternalLink,
+  type TextLink,
+} from "./text_parsers/text_links.js"
+export {
   definitionTexteFrancais,
   identificationTexteEuropeen,
   natureTexteFrancais,

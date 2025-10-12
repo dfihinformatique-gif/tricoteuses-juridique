@@ -14,7 +14,7 @@ import { legiDb } from "$lib/server/databases/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
-  iterTextLinks,
+  parseTextLinks,
   type ExtractedLinkDb,
 } from "$lib/text_parsers/text_links.js"
 import {
@@ -51,14 +51,17 @@ async function addLinksToHtml(
   let outputOffset = 0
 
   let index = -1
-  for await (const link of iterTextLinks({
+  for await (const link of parseTextLinks({
     context,
     date,
-    defaultTextId, // TODO: Replace with undefined,
     legiDb,
     logIgnoredReferencesTypes,
     logPartialReferences,
     logReferences,
+    state: {
+      defaultTextId, // TODO: Replace with undefined,
+    },
+
     transformation,
   })) {
     index++

@@ -10,7 +10,7 @@ import {
 } from "$lib/server/text_parsers/transformers.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import { iterTextLinks } from "$lib/text_parsers/text_links.js"
+import { parseTextLinks } from "$lib/text_parsers/text_links.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
@@ -55,14 +55,14 @@ async function addLinksToHtmlDocument(
     let output = inputHtml
     let outputOffset = 0
 
-    for await (const link of iterTextLinks({
+    for await (const link of parseTextLinks({
       context,
       date,
-      defaultTextId,
       legiDb,
       logIgnoredReferencesTypes,
       logPartialReferences,
       logReferences,
+      state: { defaultTextId },
       transformation,
     })) {
       switch (link.type) {

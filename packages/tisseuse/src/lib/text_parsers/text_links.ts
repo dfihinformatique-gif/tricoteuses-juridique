@@ -154,6 +154,17 @@ export interface TextExternalLink {
 
 export type TextLink = TextExternalLink // No internal link yet
 
+export interface TextLinksParserState {
+  articleId?: string
+  codeId?: string
+  constitutionId?: string
+  decreeId?: string
+  defaultTextId?: string
+  lawId?: string
+  sectionTaId?: string
+  textId?: string
+}
+
 function* iterAtomicOrParentChildReferences(
   context: TextParserContext,
   reference: TextAstReference,
@@ -301,36 +312,35 @@ function* iterDivisionTypesAndNumbers(
   }
 }
 
-export async function* iterTextLinks({
+export async function* parseTextLinks({
   context,
   date,
-  defaultTextId,
   legiDb,
   logIgnoredReferencesTypes,
   logPartialReferences,
   logReferences,
+  state: inputState,
   transformation,
 }: {
   context: TextParserContext
   date: string
-  defaultTextId?: string
   legiDb: Sql
   logIgnoredReferencesTypes?: boolean
   logPartialReferences?: boolean
   logReferences?: boolean
+  /**
+   * When given, state is modified by this generator, so that the callers
+   * always has the latest state version (and can reuse it for the next article,
+   * for example).
+   */
+  state?: TextLinksParserState
   transformation?: Transformation
 }): AsyncGenerator<DefinitionOrLink, void> {
   const articleDefinitionByNumByTextId: Record<
     string,
     Record<string, ArticleDefinition>
   > = {}
-  let currentArticleId: string | undefined = undefined
-  let currentCodeId: string | undefined = undefined
-  let currentConstitutionId: string | undefined = undefined
-  let currentDecreeId: string | undefined = undefined
-  let currentLawId: string | undefined = undefined
-  let currentSectionTaId: string | undefined = undefined
-  let currentTextId: string | undefined = undefined
+  let state = inputState === undefined ? {} : structuredClone(inputState)
 
   /**
    * iterArticleLinks
@@ -345,15 +355,15 @@ export async function* iterTextLinks({
       | Array<TextAstDivision | (TextAstText & TextAstPosition)>
       | undefined = undefined,
   ): AsyncGenerator<ArticleLink, void> {
-    if (article.relative === 0 && currentArticleId !== undefined) {
+    if (article.relative === 0 && state.articleId !== undefined) {
       // "le même article", "le présent article", etc
       // Do nothing.
       return
     }
 
-    if (currentTextId !== undefined && article.num !== undefined) {
+    if (state.textId !== undefined && article.num !== undefined) {
       const articleDefinition =
-        articleDefinitionByNumByTextId[currentTextId]?.[article.num]
+        articleDefinitionByNumByTextId[state.textId]?.[article.num]
       if (articleDefinition !== undefined) {
         yield Object.fromEntries(
           Object.entries({
@@ -407,7 +417,7 @@ export async function* iterTextLinks({
       data: JorfArticle | LegiArticle
       id: string
     }> = []
-    if (currentTextId !== undefined) {
+    if (state.textId !== undefined) {
       articlesInfos = [
         ...(await legiDb<
           {
@@ -418,15 +428,15 @@ export async function* iterTextLinks({
           SELECT data, id
           FROM article
           WHERE
-            data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${currentTextId}
+            data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.textId}
             AND data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM' = ${article.num ?? null}
         `),
       ]
     }
     if (
       articlesInfos.length === 0 &&
-      defaultTextId !== undefined &&
-      defaultTextId !== currentTextId
+      state.defaultTextId !== undefined &&
+      state.defaultTextId !== state.textId
     ) {
       articlesInfos = [
         ...(await legiDb<
@@ -438,7 +448,7 @@ export async function* iterTextLinks({
           SELECT data, id
           FROM article
           WHERE
-            data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${defaultTextId}
+            data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.defaultTextId}
             AND data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM' = ${article.num ?? null}
         `),
       ]
@@ -476,40 +486,40 @@ export async function* iterTextLinks({
     }
     if (articlesInfos.length === 0) {
       console.warn(
-        `In "${context.input.slice(article.position.start, article.position.stop)}": Unknown article ${article.num ?? null} of text ${currentTextId} for reference ${JSON.stringify(article, null, 2)}`,
+        `In "${context.input.slice(article.position.start, article.position.stop)}": Unknown article ${article.num ?? null} of text ${state.textId} for reference ${JSON.stringify(article, null, 2)}`,
       )
-      currentArticleId = undefined
+      delete state.articleId
     } else if (articlesInfos.length === 1) {
-      currentArticleId = articlesInfos[0].id
+      state.articleId = articlesInfos[0].id
     } else {
       let filteredArticlesInfos = articlesInfos.filter(({ data }) => {
         const metaArticle = data.META.META_SPEC.META_ARTICLE
         return metaArticle.DATE_DEBUT <= date && metaArticle.DATE_FIN > date
       })
       if (filteredArticlesInfos.length === 1) {
-        currentArticleId = filteredArticlesInfos[0].id
+        state.articleId = filteredArticlesInfos[0].id
       } else {
         if (filteredArticlesInfos.length !== 0) {
           articlesInfos = filteredArticlesInfos
         }
         filteredArticlesInfos = articlesInfos.filter(
           ({ id }) =>
-            !currentTextId?.startsWith("JORF") || id.startsWith("JORF"),
+            !state.textId?.startsWith("JORF") || id.startsWith("JORF"),
         )
         if (filteredArticlesInfos.length === 1) {
-          currentArticleId = filteredArticlesInfos[0].id
+          state.articleId = filteredArticlesInfos[0].id
         } else {
           if (filteredArticlesInfos.length !== 0) {
             articlesInfos = filteredArticlesInfos
           }
           console.warn(
-            `In "${context.input.slice(article.position.start, article.position.stop)}": Unable to filter article ${article.num ?? null} of text ${currentTextId ?? null} among IDs ${JSON.stringify(
+            `In "${context.input.slice(article.position.start, article.position.stop)}": Unable to filter article ${article.num ?? null} of text ${state.textId ?? null} among IDs ${JSON.stringify(
               articlesInfos.map(({ id }) => id),
               null,
               2,
             )} for reference ${JSON.stringify(article, null, 2)}`,
           )
-          currentArticleId = undefined
+          delete state.articleId
         }
       }
     }
@@ -517,7 +527,7 @@ export async function* iterTextLinks({
     yield Object.fromEntries(
       Object.entries({
         article,
-        articleId: currentArticleId,
+        articleId: state.articleId,
         originalTransformation:
           article.originalTransformation === undefined
             ? undefined
@@ -577,7 +587,7 @@ export async function* iterTextLinks({
       | Array<TextAstDivision | (TextAstText & TextAstPosition)>
       | undefined = undefined,
   ): AsyncGenerator<ArticleLink | DivisionLink, void> {
-    if (division.relative === 0 && currentSectionTaId !== undefined) {
+    if (division.relative === 0 && state.sectionTaId !== undefined) {
       // "le même chapitre", "la présente section", etc
       // Do nothing.
       return
@@ -590,12 +600,12 @@ export async function* iterTextLinks({
       | LegiSectionTaLienSectionTa
       | LegiTextelrLienSectionTa
       | undefined = undefined
-    if (parentLiensSectionTa === undefined && currentTextId !== undefined) {
+    if (parentLiensSectionTa === undefined && state.textId !== undefined) {
       const textelr = (
         await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
           SELECT data
           FROM textelr
-          WHERE id = ${currentTextId}
+          WHERE id = ${state.textId}
         `
       )[0]?.data
       if (textelr !== undefined) {
@@ -830,7 +840,7 @@ export async function* iterTextLinks({
       }
     }
     if (addedLinksCount === 0) {
-      currentSectionTaId = divisionLienSectionTa?.["@id"]
+      state.sectionTaId = divisionLienSectionTa?.["@id"]
       yield Object.fromEntries(
         Object.entries({
           division,
@@ -870,7 +880,7 @@ export async function* iterTextLinks({
                     stop: division.position.stop,
                   },
           reference,
-          sectionTaId: currentSectionTaId,
+          sectionTaId: state.sectionTaId,
           type: "external_division",
         }).filter(([, value]) => value !== undefined),
       ) as unknown as DivisionLink
@@ -878,9 +888,9 @@ export async function* iterTextLinks({
   }
 
   /**
-   * updateCurrentTextId
+   * updateStateTextId
    */
-  function updateCurrentTextId(
+  function updateStateTextId(
     reference: TextAstReference,
     text: TextAstText,
   ): void {
@@ -892,13 +902,13 @@ export async function* iterTextLinks({
       case "DIRECTIVE_EURO":
       case "REGLEMENTEUROPEEN": {
         // TODO
-        currentTextId = undefined
+        delete state.textId
         break
       }
 
       case "CODE": {
-        if (text.relative === 0 && currentCodeId !== undefined) {
-          currentTextId = currentCodeId
+        if (text.relative === 0 && state.codeId !== undefined) {
+          state.textId = state.codeId
           break
         }
 
@@ -908,17 +918,17 @@ export async function* iterTextLinks({
               `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
             )
           }
-          currentTextId = undefined
+          delete state.textId
           break
         }
 
-        currentTextId = currentCodeId = text.cid
+        state.textId = state.codeId = text.cid
         break
       }
 
       case "CONSTITUTION": {
-        if (text.relative === 0 && currentConstitutionId !== undefined) {
-          currentTextId = currentConstitutionId
+        if (text.relative === 0 && state.constitutionId !== undefined) {
+          state.textId = state.constitutionId
           break
         }
 
@@ -928,17 +938,17 @@ export async function* iterTextLinks({
               `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
             )
           }
-          currentTextId = undefined
+          delete state.textId
           break
         }
 
-        currentTextId = currentConstitutionId = text.cid
+        state.textId = state.constitutionId = text.cid
         break
       }
 
       case "DECRET": {
-        if (text.relative === 0 && currentDecreeId !== undefined) {
-          currentTextId = currentDecreeId
+        if (text.relative === 0 && state.decreeId !== undefined) {
+          state.textId = state.decreeId
           break
         }
 
@@ -948,11 +958,11 @@ export async function* iterTextLinks({
               `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
             )
           }
-          currentTextId = undefined
+          delete state.textId
           break
         }
 
-        currentTextId = currentDecreeId = text.cid
+        state.textId = state.decreeId = text.cid
         break
       }
 
@@ -960,8 +970,8 @@ export async function* iterTextLinks({
       case "LOI_CONSTIT":
       case "LOI_ORGANIQUE":
       case "ORDONNANCE": {
-        if (text.relative === 0 && currentLawId !== undefined) {
-          currentTextId = currentLawId
+        if (text.relative === 0 && state.lawId !== undefined) {
+          state.textId = state.lawId
           break
         }
 
@@ -971,11 +981,11 @@ export async function* iterTextLinks({
               `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
             )
           }
-          currentTextId = undefined
+          delete state.textId
           break
         }
 
-        currentTextId = currentLawId = text.cid
+        state.textId = state.lawId = text.cid
         break
       }
 
@@ -1021,14 +1031,14 @@ export async function* iterTextLinks({
 
         case "article": {
           if (atomicReference.definition) {
-            if (currentTextId === undefined) {
+            if (state.textId === undefined) {
               if (logPartialReferences) {
                 console.log(
-                  `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing currentTextId for article definition`,
+                  `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing state.textId for article definition`,
                 )
               }
             } else {
-              ;(articleDefinitionByNumByTextId[currentTextId] ??= {})[
+              ;(articleDefinitionByNumByTextId[state.textId] ??= {})[
                 atomicReference.num!
               ] = Object.fromEntries(
                 Object.entries({
@@ -1037,7 +1047,7 @@ export async function* iterTextLinks({
                     atomicReference.originalTransformation,
                   position: atomicReference.position,
                   reference,
-                  textId: currentTextId,
+                  textId: state.textId,
                   type: "article_definition",
                 }).filter(([, value]) => value !== undefined),
               ) as unknown as ArticleDefinition
@@ -1057,19 +1067,19 @@ export async function* iterTextLinks({
         case "sous-titre":
         case "titre": {
           if (atomicReference.definition) {
-            if (currentTextId === undefined) {
+            if (state.textId === undefined) {
               if (logPartialReferences) {
                 console.log(
-                  `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing currentTextId for division definition`,
+                  `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing state.textId for division definition`,
                 )
               }
             } else {
               // TODO: Needs to use a sequenece of nums instead and each of the num cas have differenet syntaxes!
-              // ;(divisionDefinitionByNumByTextId[currentTextId] ??= {})[
+              // ;(divisionDefinitionByNumByTextId[state.textId] ??= {})[
               //   atomicReference.num!
               // ] = {
               //   division: atomicReference,
-              //   textId: currentTextId,
+              //   textId: state.textId,
               //   type: "division_definition",
               // }
             }
@@ -1078,7 +1088,7 @@ export async function* iterTextLinks({
         }
 
         case "texte": {
-          updateCurrentTextId(reference, atomicReference)
+          updateStateTextId(reference, atomicReference)
           break
         }
 
@@ -1099,13 +1109,8 @@ export async function* iterTextLinks({
   // SECOND STEP: Create links.
   //
 
-  currentArticleId = undefined
-  currentCodeId = undefined
-  currentConstitutionId = undefined
-  currentDecreeId = undefined
-  currentLawId = undefined
-  currentSectionTaId = undefined
-  currentTextId = undefined
+  // Reset state
+  state = inputState === undefined ? {} : inputState
   for (const reference of references) {
     for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
       context,
@@ -1129,9 +1134,9 @@ export async function* iterTextLinks({
         }
 
         case "article": {
-          if (atomicReference.definition && currentTextId !== undefined) {
+          if (atomicReference.definition && state.textId !== undefined) {
             const articleDefinition =
-              articleDefinitionByNumByTextId[currentTextId]?.[
+              articleDefinitionByNumByTextId[state.textId]?.[
                 atomicReference.num!
               ]
             if (articleDefinition !== undefined) {
@@ -1153,10 +1158,10 @@ export async function* iterTextLinks({
         case "sous-sous-paragraphe":
         case "sous-titre":
         case "titre": {
-          if (atomicReference.definition && currentTextId !== undefined) {
+          if (atomicReference.definition && state.textId !== undefined) {
             // TODO
             // const divisionDefinition =
-            //   divisionDefinitionByNumByTextId[currentTextId]?.[
+            //   divisionDefinitionByNumByTextId[state.textId]?.[
             //     atomicReference.num!
             //   ]
             // if (divisionDefinition !== undefined) {
@@ -1173,7 +1178,7 @@ export async function* iterTextLinks({
         }
 
         case "texte": {
-          updateCurrentTextId(reference, atomicReference)
+          updateStateTextId(reference, atomicReference)
 
           const textDeepestDivisionsOrArticles =
             parentChildReference === undefined
@@ -1234,12 +1239,12 @@ export async function* iterTextLinks({
                     | JorfTextelrLienSectionTa[]
                     | LegiTextelrLienSectionTa[]
                     | undefined = undefined
-                  if (currentTextId !== undefined) {
+                  if (state.textId !== undefined) {
                     textelr = (
                       await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
                       SELECT data
                       FROM textelr
-                      WHERE id = ${currentTextId}
+                      WHERE id = ${state.textId}
                     `
                     )[0]?.data
                     if (textelr !== undefined) {

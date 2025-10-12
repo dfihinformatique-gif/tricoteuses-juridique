@@ -164,7 +164,7 @@ export {
   simplifyUnicodeCharacters,
 } from "./text_parsers/simplifiers.js"
 export {
-  iterTextLinks,
+  parseTextLinks,
   type ArticleDefinition,
   type ArticleExternalLink,
   type ArticleInternalLink,
@@ -175,6 +175,7 @@ export {
   type ExtractedLinkDb,
   type TextExternalLink,
   type TextLink,
+  type TextLinksParserState,
 } from "./text_parsers/text_links.js"
 export {
   definitionTexteFrancais,

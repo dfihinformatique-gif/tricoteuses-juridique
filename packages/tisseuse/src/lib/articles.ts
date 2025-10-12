@@ -10,9 +10,9 @@ import {
   type LegiSectionTa,
   type LegiSectionTaTm,
 } from "@tricoteuses/legifrance"
-import { assertNever } from "@tricoteuses/tisseuse"
 import type { Sql } from "postgres"
 
+import { assertNever } from "./asserts.js"
 import {
   getOrLoadArticle,
   getOrLoadSectionTa,

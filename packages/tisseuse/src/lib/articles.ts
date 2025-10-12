@@ -23,10 +23,22 @@ import {
 /**
  * TODO: Migrate to @tricoteuses/legifrance
  */
-export async function getArticleDateSignature(
+export function getArticleDateSignature(
   article: JorfArticle | LegiArticle,
   // legalObjectCacheById: LegalObjectCacheById = newLegalObjectCacheById(),
-): Promise<string> {
+): string {
+  const dateDebut = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
+  if (
+    dateDebut !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(dateDebut)
+  ) {
+    // When article.META.META_SPEC.META_ARTICLE.DATE_DEBUT is valid, use it as an
+    // approximation of date_signature.
+    // Note: this date is a wrong approximation when VIGUEUR_DIFF, etc.
+    return dateDebut
+  }
+  // Note: article.CONTEXTE.TEXTE["@date_signature"] is always the date_signature of
+  // the first JORF text, so it is not the good date signature for LEGI articles.
   const dateSignature = article.CONTEXTE.TEXTE["@date_signature"]
   if (dateSignature === undefined) {
     throw new Error("TODO")
@@ -122,7 +134,7 @@ export async function getSiblingArticleId(
   if (article === undefined) {
     return undefined
   }
-  const date = await getArticleDateSignature(article)
+  const date = getArticleDateSignature(article)
   const origine = article.META.META_COMMUN.ORIGINE
   const texte = article.CONTEXTE.TEXTE
   if (texte.TM === undefined) {
@@ -152,6 +164,8 @@ export async function getSiblingArticleId(
     legiDb,
     legalObjectCacheById,
     id,
+    date,
+    article.META.META_SPEC.META_ARTICLE.NUM,
     reverseSectionsTaIdBreadcrumb,
   )
 }
@@ -230,6 +244,8 @@ async function moveToNextArticleId(
   legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   articleId: string,
+  articleDate: string,
+  articleNum: string | undefined,
   reverseSectionsTaIdBreadcrumb: Array<string | undefined>,
   tmIndex = 0,
   sectionTaStateById: Record<
@@ -261,31 +277,51 @@ async function moveToNextArticleId(
   const structureTa = sectionTa.STRUCTURE_TA!
   switch (area) {
     case "LIEN_ART": {
-      if (index === structureTa.LIEN_ART!.length - 1) {
-        const liensSectionsTa = structureTa.LIEN_SECTION_TA
-        if (liensSectionsTa !== undefined) {
-          for (const lienSectionTa of liensSectionsTa) {
-            const firstArticleId = await moveToFirstArticleId(
-              legiDb,
-              legalObjectCacheById,
-              lienSectionTa["@id"],
-            )
-            if (firstArticleId !== undefined) {
-              return firstArticleId
-            }
+      const liensArticles = structureTa.LIEN_ART!
+      for (
+        let nextIndex = index + 1;
+        nextIndex < liensArticles.length;
+        nextIndex++
+      ) {
+        const lienNextArticle = liensArticles[nextIndex]
+        if (lienNextArticle["@num"] !== articleNum) {
+          const nextArticle = await getOrLoadArticle(
+            legiDb,
+            legalObjectCacheById,
+            lienNextArticle["@id"],
+          )
+          if (
+            nextArticle !== undefined &&
+            getArticleDateSignature(nextArticle) <= articleDate
+          ) {
+            return lienNextArticle["@id"]
           }
         }
-        return await moveToNextArticleId(
-          legiDb,
-          legalObjectCacheById,
-          articleId,
-          reverseSectionsTaIdBreadcrumb,
-          tmIndex + 1,
-          sectionTaStateById,
-          sectionTaId,
-        )
       }
-      return structureTa.LIEN_ART![index + 1]["@id"]
+      const liensSectionsTa = structureTa.LIEN_SECTION_TA
+      if (liensSectionsTa !== undefined) {
+        for (const lienSectionTa of liensSectionsTa) {
+          const firstArticleId = await moveToFirstArticleId(
+            legiDb,
+            legalObjectCacheById,
+            lienSectionTa["@id"],
+          )
+          if (firstArticleId !== undefined) {
+            return firstArticleId
+          }
+        }
+      }
+      return await moveToNextArticleId(
+        legiDb,
+        legalObjectCacheById,
+        articleId,
+        articleDate,
+        articleNum,
+        reverseSectionsTaIdBreadcrumb,
+        tmIndex + 1,
+        sectionTaStateById,
+        sectionTaId,
+      )
     }
 
     case "LIEN_SECTION_TA": {
@@ -308,6 +344,8 @@ async function moveToNextArticleId(
         legiDb,
         legalObjectCacheById,
         articleId,
+        articleDate,
+        articleNum,
         reverseSectionsTaIdBreadcrumb,
         tmIndex + 1,
         sectionTaStateById,
@@ -325,6 +363,8 @@ async function moveToPreviousArticleId(
   legiDb: Sql,
   legalObjectCacheById: LegalObjectCacheById,
   articleId: string,
+  articleDate: string,
+  articleNum: string | undefined,
   reverseSectionsTaIdBreadcrumb: Array<string | undefined>,
   tmIndex = 0,
   sectionTaStateById: Record<
@@ -356,18 +396,34 @@ async function moveToPreviousArticleId(
   const structureTa = sectionTa.STRUCTURE_TA!
   switch (area) {
     case "LIEN_ART": {
-      if (index === 0) {
-        return await moveToPreviousArticleId(
-          legiDb,
-          legalObjectCacheById,
-          articleId,
-          reverseSectionsTaIdBreadcrumb,
-          tmIndex + 1,
-          sectionTaStateById,
-          sectionTaId,
-        )
+      const liensArticles = structureTa.LIEN_ART!
+      for (let previousIndex = index - 1; previousIndex >= 0; previousIndex--) {
+        const lienPreviousArticle = liensArticles[previousIndex]
+        if (lienPreviousArticle["@num"] !== articleNum) {
+          const previousArticle = await getOrLoadArticle(
+            legiDb,
+            legalObjectCacheById,
+            lienPreviousArticle["@id"],
+          )
+          if (
+            previousArticle !== undefined &&
+            getArticleDateSignature(previousArticle) <= articleDate
+          ) {
+            return lienPreviousArticle["@id"]
+          }
+        }
       }
-      return structureTa.LIEN_ART![index - 1]["@id"]
+      return await moveToPreviousArticleId(
+        legiDb,
+        legalObjectCacheById,
+        articleId,
+        articleDate,
+        articleNum,
+        reverseSectionsTaIdBreadcrumb,
+        tmIndex + 1,
+        sectionTaStateById,
+        sectionTaId,
+      )
     }
 
     case "LIEN_SECTION_TA": {
@@ -393,6 +449,8 @@ async function moveToPreviousArticleId(
           legiDb,
           legalObjectCacheById,
           articleId,
+          articleDate,
+          articleNum,
           reverseSectionsTaIdBreadcrumb,
           tmIndex,
           sectionTaStateById,
@@ -402,6 +460,8 @@ async function moveToPreviousArticleId(
         legiDb,
         legalObjectCacheById,
         articleId,
+        articleDate,
+        articleNum,
         reverseSectionsTaIdBreadcrumb,
         tmIndex + 1,
         sectionTaStateById,

@@ -32,7 +32,7 @@ export const legiDb = postgres({
   port: config.legiDb.port,
   user: config.legiDb.user,
 })
-export const legiVersionNumber = 16
+export const legiVersionNumber = 19
 
 export const tisseuseDb = postgres({
   database: config.tisseuseDb.database,

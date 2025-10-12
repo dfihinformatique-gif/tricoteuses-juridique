@@ -13,7 +13,7 @@ describe("getArticleDateSignature", async () => {
       "JORFARTI000033203048",
     )
     expect(article).not.toBe(undefined)
-    expect(await getArticleDateSignature(article!)).toBe("2016-10-07")
+    expect(getArticleDateSignature(article!)).toBe("2016-10-07")
   })
 
   test("getArticleDateSignature(LEGIARTI000033205152)", async () => {
@@ -23,7 +23,7 @@ describe("getArticleDateSignature", async () => {
       "LEGIARTI000033205152",
     )
     expect(article).not.toBe(undefined)
-    expect(await getArticleDateSignature(article!)).toBe("2016-10-07")
+    expect(getArticleDateSignature(article!)).toBe("2016-10-07")
   })
 })
 

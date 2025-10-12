@@ -1,9 +1,8 @@
-import { describe, expect, test } from "vitest"
-
 import {
   iterLatinMultiplicativeAdverbsFromNumber,
   romanNumeralFromNumber,
-} from "$lib/numbers.js"
+} from "@tricoteuses/legifrance"
+import { describe, expect, test } from "vitest"
 
 import { type TextAstNumber } from "./ast.js"
 import {

@@ -1,4 +1,4 @@
-import { romanNumeralFromNumber } from "$lib/numbers.js"
+import { romanNumeralFromNumber } from "@tricoteuses/legifrance"
 
 import type { TextAstTextIdentification } from "./ast.js"
 import { nombreRomainCardinal } from "./numbers.js"

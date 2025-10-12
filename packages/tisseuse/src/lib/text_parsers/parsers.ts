@@ -1,4 +1,4 @@
-import { numberFromRomanNumeral } from "$lib/numbers.js"
+import { numberFromRomanNumeral } from "@tricoteuses/legifrance"
 
 import type {
   TextAst,

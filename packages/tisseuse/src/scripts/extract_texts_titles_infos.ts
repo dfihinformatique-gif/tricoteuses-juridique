@@ -1,9 +1,11 @@
-import type { LegiTexteVersion } from "@tricoteuses/legifrance"
+import {
+  numberFromRomanNumeral,
+  type LegiTexteVersion,
+} from "@tricoteuses/legifrance"
 import fs from "fs-extra"
 import sade from "sade"
 
 import { jsonReplacer } from "$lib/json.js"
-import { numberFromRomanNumeral } from "$lib/numbers.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import type { TextAstText } from "$lib/text_parsers/ast.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"

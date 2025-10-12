@@ -74,7 +74,7 @@ async function addLinksToHtmlDocument(
           } = link
           if (articleOriginalTransformation === undefined) {
             throw new Error(
-              `Missing originalTransformation attribute in article definition: ${link}`,
+              `Missing originalTransformation attribute in article definition: ${JSON.stringify(link, null, 2)}`,
             )
           }
           const original = reverseTransformedInnerFragment(
@@ -110,7 +110,7 @@ async function addLinksToHtmlDocument(
           if (articleId !== undefined) {
             if (articleOriginalTransformation === undefined) {
               throw new Error(
-                `Missing originalTransformation attribute in external article link: ${link}`,
+                `Missing originalTransformation attribute in external article link: ${JSON.stringify(link, null, 2)}`,
               )
             }
             const original = reverseTransformedInnerFragment(
@@ -147,7 +147,7 @@ async function addLinksToHtmlDocument(
           if (sectionTaId !== undefined) {
             if (divisionOriginalTransformation === undefined) {
               throw new Error(
-                `Missing originalTransformation attribute in external division link: ${link}`,
+                `Missing originalTransformation attribute in external division link: ${JSON.stringify(link, null, 2)}`,
               )
             }
             const original = reverseTransformedInnerFragment(
@@ -191,7 +191,7 @@ async function addLinksToHtmlDocument(
 
           if (texteOriginalTransformation === undefined) {
             throw new Error(
-              `Missing originalTransformation attribute in external text link: ${link}`,
+              `Missing originalTransformation attribute in external text link: ${JSON.stringify(link, null, 2)}`,
             )
           }
           const original = reverseTransformedInnerFragment(
@@ -226,7 +226,7 @@ async function addLinksToHtmlDocument(
           } = link
           if (articleOriginalTransformation === undefined) {
             throw new Error(
-              `Missing originalTransformation attribute in internal article link: ${link}`,
+              `Missing originalTransformation attribute in internal article link: ${JSON.stringify(link, null, 2)}`,
             )
           }
           const original = reverseTransformedInnerFragment(

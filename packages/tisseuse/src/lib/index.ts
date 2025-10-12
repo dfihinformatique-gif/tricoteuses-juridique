@@ -9,14 +9,6 @@ export {
   getOrLoadSectionTa,
   type LegalObjectCacheById,
 } from "./loaders.js"
-export {
-  iterCardinalNumeralFormsFromNumber,
-  iterLatinMultiplicativeAdverbsFromNumber,
-  iterOrdinalNumeralFormsFromNumber,
-  numberFromRomanNumeral,
-  ordinalNumeralFromNumber,
-  romanNumeralFromNumber,
-} from "./numbers.js"
 export { action } from "./text_parsers/actions.js"
 export {
   article,

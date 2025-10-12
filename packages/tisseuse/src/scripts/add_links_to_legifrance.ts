@@ -4,17 +4,20 @@ import {
   JorfTexteVersion,
   LegiArticle,
   LegiTexteVersion,
+  sortArticlesNumbers,
 } from "@tricoteuses/legifrance"
 import assert from "node:assert"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
+import { getArticleDateSignature } from "$lib/articles.js"
 import { assertNever } from "$lib/asserts.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
   parseTextLinks,
+  TextLinksParserState,
   type ExtractedLinkDb,
 } from "$lib/text_parsers/text_links.js"
 import {
@@ -24,26 +27,27 @@ import {
 
 const today = new Date().toISOString().split("T")[0]
 
-async function addLinksToHtml(
-  id: string,
-  fieldName: string,
-  inputHtml: string,
-  {
-    date,
-    defaultTextId,
-    existingLinksKeys,
-    logIgnoredReferencesTypes,
-    logPartialReferences,
-    logReferences,
-  }: {
-    date: string
-    defaultTextId: string
-    existingLinksKeys: Set<string>
-    logIgnoredReferencesTypes?: boolean
-    logPartialReferences?: boolean
-    logReferences?: boolean
-  },
-): Promise<string> {
+async function addLinksToHtml({
+  date,
+  existingLinksKeys,
+  fieldName,
+  id,
+  inputHtml,
+  logIgnoredReferencesTypes,
+  logPartialReferences,
+  logReferences,
+  state,
+}: {
+  date: string
+  existingLinksKeys: Set<string>
+  fieldName: string
+  id: string
+  inputHtml: string
+  logIgnoredReferencesTypes?: boolean
+  logPartialReferences?: boolean
+  logReferences?: boolean
+  state: TextLinksParserState
+}): Promise<string> {
   const transformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
   const inputText = transformation.output
   const context = new TextParserContext(inputText)
@@ -58,10 +62,7 @@ async function addLinksToHtml(
     logIgnoredReferencesTypes,
     logPartialReferences,
     logReferences,
-    state: {
-      defaultTextId, // TODO: Replace with undefined,
-    },
-
+    state,
     transformation,
   })) {
     index++
@@ -91,7 +92,7 @@ async function addLinksToHtml(
         if (articleId !== undefined) {
           if (articleOriginalTransformation === undefined) {
             throw new Error(
-              `Missing originalTransformation attribute in external article link: ${link}`,
+              `Missing originalTransformation attribute in external article link: ${JSON.stringify(link, null, 2)}`,
             )
           }
           const original = reverseTransformedInnerFragment(
@@ -135,7 +136,7 @@ async function addLinksToHtml(
         if (sectionTaId !== undefined) {
           if (divisionOriginalTransformation === undefined) {
             throw new Error(
-              `Missing originalTransformation attribute in external division link: ${link}`,
+              `Missing originalTransformation attribute in external division link: ${JSON.stringify(link, null, 2)}`,
             )
           }
           const original = reverseTransformedInnerFragment(
@@ -186,7 +187,7 @@ async function addLinksToHtml(
 
         if (texteOriginalTransformation === undefined) {
           throw new Error(
-            `Missing originalTransformation attribute in external text link: ${link}`,
+            `Missing originalTransformation attribute in external text link: ${JSON.stringify(link, null, 2)}`,
           )
         }
         const original = reverseTransformedInnerFragment(
@@ -219,7 +220,7 @@ async function addLinksToHtml(
         } = link
         if (articleOriginalTransformation === undefined) {
           throw new Error(
-            `Missing originalTransformation attribute in internal article link: ${link}`,
+            `Missing originalTransformation attribute in internal article link: ${JSON.stringify(link, null, 2)}`,
           )
         }
         const original = reverseTransformedInnerFragment(
@@ -315,13 +316,18 @@ async function addLinksToLegifrance(
       ["visas", (texteVersion as LegiTexteVersion).VISAS?.CONTENU],
     ] as Array<[keyof typeof outputByFieldName, string | undefined]>) {
       if (input !== undefined) {
-        const output = await addLinksToHtml(id, fieldName, input, {
+        const output = await addLinksToHtml({
           date,
-          defaultTextId: textCid,
           existingLinksKeys,
+          fieldName,
+          id,
+          inputHtml: input,
           logIgnoredReferencesTypes,
           logPartialReferences,
           logReferences,
+          state: {
+            defaultTextId: textCid,
+          },
         })
         if (output !== input) {
           outputByFieldName[fieldName] = output
@@ -386,20 +392,118 @@ async function addLinksToLegifrance(
     }
   }
 
+  const articlesByNum = new Map<
+    string | undefined,
+    Array<JorfArticle | LegiArticle>
+  >()
   for await (const articleRows of legiDb<
     Array<{ data: JorfArticle | LegiArticle; id: string }>
   >`
-    SELECT data, id
+    SELECT data
     FROM article
     WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${textCid}
   `.cursor(100)) {
-    for (const { data: article, id } of articleRows) {
+    for (const { data: article } of articleRows) {
+      const num = article.META.META_SPEC.META_ARTICLE.NUM
+      let articles = articlesByNum.get(num)
+      if (articles === undefined) {
+        articles = []
+        articlesByNum.set(num, articles)
+      }
+      articles.push(article)
+    }
+  }
+  const articlesSortedByDateSortedByNum = articlesByNum
+    .keys()
+    .toArray()
+    .sort((num1, num2) => sortArticlesNumbers(num1 ?? "", num2 ?? ""))
+    .map((num) =>
+      articlesByNum.get(num)!.sort((article1, article2) => {
+        const date1 = getArticleDateSignature(article1)
+        const date2 = getArticleDateSignature(article2)
+        if (date1 !== date2) {
+          return date1.localeCompare(date2)
+        }
+        const metaCommun1 = article1.META.META_COMMUN
+        const metaCommun2 = article2.META.META_COMMUN
+        const nature1 = metaCommun1.ORIGINE
+        const nature2 = metaCommun2.ORIGINE
+        if (nature1 === "JORF" && nature2 !== "JORF") {
+          // Put JORF article after LEGI article with the same date,
+          // because we assume that the LEGI article is an "article
+          // de versement" that must be hidden.
+          return 1
+        }
+        if (nature1 !== "JORF" && nature2 === "JORF") {
+          // Put JORF article after LEGI article with the same date,
+          // because we assume that the LEGI article is an "article
+          // de versement" that must be hidden.
+          return -1
+        }
+
+        // Assume that in VERSIONS.VERSION, articles are sorted by date
+        // (except for the JORF one that is always last).
+        const id1 = metaCommun1.ID
+        const id2 = metaCommun2.ID
+        if (id1 === id2) {
+          return 0
+        }
+        const version1Index = article1.VERSIONS.VERSION.findIndex(
+          (version) => version.LIEN_ART["@id"] === id1,
+        )
+        assert.notStrictEqual(version1Index, -1)
+        if (
+          nature1 === "JORF" &&
+          version1Index === article1.VERSIONS.VERSION.length - 1
+        ) {
+          return -1
+        }
+        const version2Index = article2.VERSIONS.VERSION.findIndex(
+          (version) => version.LIEN_ART["@id"] === id2,
+        )
+        assert.notStrictEqual(version2Index, -1)
+        if (
+          nature2 === "JORF" &&
+          version2Index === article2.VERSIONS.VERSION.length - 1
+        ) {
+          return -1
+        }
+        return version1Index - version2Index
+      }),
+    )
+
+  const defaultArticleContext: TextLinksParserState = {
+    defaultTextId: textCid,
+  }
+  for (const [
+    numIndex,
+    articlesSortedByDate,
+  ] of articlesSortedByDateSortedByNum.entries()) {
+    for (const article of articlesSortedByDate) {
+      const id = article.META.META_COMMUN.ID
       // TODO: Improve date.
-      // const date = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
-      const date = article.CONTEXTE.TEXTE["@date_publi"]!
+      const date = getArticleDateSignature(article)
       assert.notStrictEqual(date, undefined)
       assert.notStrictEqual(date, "2999-01-01")
       assert.notStrictEqual(date, "2222-02-22")
+      const previousArticle = getPreviousArticle(
+        articlesSortedByDateSortedByNum,
+        numIndex,
+        date,
+      )
+      const articleBlocTextuelContext =
+        previousArticle === undefined
+          ? structuredClone(defaultArticleContext)
+          : ((
+              await legiDb<
+                Array<{ next_article_context: TextLinksParserState }>
+              >`
+                SELECT next_article_context
+                FROM article_contenu_avec_liens
+                WHERE id = ${previousArticle.META.META_COMMUN.ID}
+              `
+            )[0]?.next_article_context ??
+            structuredClone(defaultArticleContext))
       const outputByFieldName: {
         bloc_textuel?: string
         nota?: string
@@ -421,24 +525,43 @@ async function addLinksToLegifrance(
           JSON.stringify([source_id, field_name, index]),
         ),
       )
-      for (const [fieldName, input] of [
-        ["bloc_textuel", article.BLOC_TEXTUEL?.CONTENU],
-        ["nota", (article as LegiArticle).NOTA?.CONTENU],
-      ] as Array<[keyof typeof outputByFieldName, string | undefined]>) {
-        if (input !== undefined) {
-          const output = await addLinksToHtml(id, fieldName, input, {
-            date,
-            defaultTextId: textCid,
-            existingLinksKeys,
-            logIgnoredReferencesTypes,
-            logPartialReferences,
-            logReferences,
-          })
-          if (output !== input) {
-            outputByFieldName[fieldName] = output
-          }
+
+      const blocTextuelContenu = article.BLOC_TEXTUEL?.CONTENU
+      if (blocTextuelContenu !== undefined) {
+        const output = await addLinksToHtml({
+          date,
+          existingLinksKeys,
+          fieldName: "bloc_textuel",
+          id,
+          inputHtml: blocTextuelContenu,
+          logIgnoredReferencesTypes,
+          logPartialReferences,
+          logReferences,
+          state: articleBlocTextuelContext,
+        })
+        if (output !== blocTextuelContenu) {
+          outputByFieldName.bloc_textuel = output
         }
       }
+
+      const notaContenu = (article as LegiArticle).NOTA?.CONTENU
+      if (notaContenu !== undefined) {
+        const output = await addLinksToHtml({
+          date,
+          existingLinksKeys,
+          fieldName: "bloc_textuel",
+          id,
+          inputHtml: notaContenu,
+          logIgnoredReferencesTypes,
+          logPartialReferences,
+          logReferences,
+          state: structuredClone(defaultArticleContext),
+        })
+        if (output !== notaContenu) {
+          outputByFieldName.nota = output
+        }
+      }
+
       for (const obsoleteLinkKey of existingLinksKeys) {
         const [sourceId, fieldName, index] = JSON.parse(obsoleteLinkKey) as [
           string,
@@ -466,23 +589,47 @@ async function addLinksToLegifrance(
             id,
             bloc_textuel,
             date_extraction_liens,
+            next_article_context,
             nota
           ) VALUES (
             ${id},
             ${outputByFieldName.bloc_textuel ?? null},
             ${today},
+            ${legiDb.json((articleBlocTextuelContext as unknown as JSONValue) ?? null)},
             ${outputByFieldName.nota ?? null}
           )
           ON CONFLICT (id)
           DO UPDATE SET
             bloc_textuel = excluded.bloc_textuel,
             date_extraction_liens = excluded.date_extraction_liens,
+            next_article_context = excluded.next_article_context,
             nota = excluded.nota
         `
       }
     }
   }
   return 0
+}
+
+function getPreviousArticle(
+  articlesSortedByDateSortedByNum: (JorfArticle | LegiArticle)[][],
+  numIndex: number,
+  date: string,
+): JorfArticle | LegiArticle | undefined {
+  for (
+    let previousNumIndex = numIndex - 1;
+    previousNumIndex >= 0;
+    previousNumIndex--
+  ) {
+    const articlesSortedByDate =
+      articlesSortedByDateSortedByNum[previousNumIndex]
+    for (const article of articlesSortedByDate.toReversed()) {
+      if (getArticleDateSignature(article) <= date) {
+        return article
+      }
+    }
+  }
+  return undefined
 }
 
 async function upsertExtractedLink(

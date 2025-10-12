@@ -550,7 +550,7 @@ export function* iterIncludedReferences(
         for (const originalCitation of originalCitations) {
           if (originalCitation.references !== undefined) {
             for (const citationReference of originalCitation.references) {
-              yield citationReference
+              yield* iterIncludedReferences(citationReference, { citations })
             }
           }
         }

@@ -1,23 +1,21 @@
-import type {
-  JorfArticle,
-  JorfSectionTa,
-  JorfSectionTaLienSectionTa,
-  JorfTextelr,
-  JorfTextelrLienSectionTa,
-  LegiArticle,
-  LegiSectionTa,
-  LegiSectionTaLienSectionTa,
-  LegiTextelr,
-  LegiTextelrLienSectionTa,
-} from "@tricoteuses/legifrance"
-import type { Sql } from "postgres"
-
-import { assertNever } from "$lib/asserts.js"
 import {
   iterCardinalNumeralFormsFromNumber,
   iterLatinMultiplicativeAdverbsFromNumber,
   iterOrdinalNumeralFormsFromNumber,
-} from "$lib/numbers.js"
+  type JorfArticle,
+  type JorfSectionTa,
+  type JorfSectionTaLienSectionTa,
+  type JorfTextelr,
+  type JorfTextelrLienSectionTa,
+  type LegiArticle,
+  type LegiSectionTa,
+  type LegiSectionTaLienSectionTa,
+  type LegiTextelr,
+  type LegiTextelrLienSectionTa,
+} from "@tricoteuses/legifrance"
+import type { Sql } from "postgres"
+
+import { assertNever } from "$lib/asserts.js"
 
 import {
   divisionTypes,

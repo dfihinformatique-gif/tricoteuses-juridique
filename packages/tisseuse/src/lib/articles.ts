@@ -40,10 +40,35 @@ export function getArticleDateSignature(
   // Note: article.CONTEXTE.TEXTE["@date_signature"] is always the date_signature of
   // the first JORF text, so it is not the good date signature for LEGI articles.
   const dateSignature = article.CONTEXTE.TEXTE["@date_signature"]
-  if (dateSignature === undefined) {
-    throw new Error("TODO")
+  if (
+    dateSignature !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(dateSignature)
+  ) {
+    return dateSignature
   }
-  return dateSignature
+  // Occurs for example:
+  // * for LEGIARTI000037943822 (MODIFIE_MORT_NE) with a dateDebut of "2222-02-22".
+  // * for LEGIARTI000048157126 (MODIFIE) with a dateDebut of "2999-01-01".
+  // When there is no valid dateDebut, try to use  dateFin as a proxy of dateDebut
+  // that is itself a proxy of dateFin.
+  const dateFin = article.META.META_SPEC.META_ARTICLE.DATE_FIN
+  if (
+    dateFin !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(dateFin)
+  ) {
+    return dateFin
+  }
+  if (dateDebut === "2222-02-22") {
+    // Occurs, for example, for LEGIARTI000051214570.
+    // There is no valid date for this article.
+    // => return dateDebut to avoid failing.
+    return dateDebut
+  }
+  // Since, currently, we don't handle events in LIENS.LIEN, no valid date
+  // is found.
+  throw new Error(
+    `Missing date signature in text ${article.META.META_COMMUN.ID}`,
+  )
 }
 
 async function getSectionTaState(

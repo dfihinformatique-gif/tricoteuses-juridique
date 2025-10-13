@@ -24,6 +24,7 @@ import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
 } from "$lib/text_parsers/transformers.js"
+import { getTexteVersionDateSignature } from "$lib/textes"
 
 const today = new Date().toISOString().split("T")[0]
 
@@ -276,10 +277,7 @@ async function addLinksToLegifrance(
     WHERE data -> 'META' -> 'META_SPEC' -> 'META_TEXTE_CHRONICLE' ->> 'CID' = ${textCid}
   `) {
     // TODO: Improve date.
-    const date = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
-    assert.notStrictEqual(date, undefined)
-    assert.notStrictEqual(date, "2999-01-01")
-    assert.notStrictEqual(date, "2222-02-22")
+    const date = getTexteVersionDateSignature(texteVersion)
     const outputByFieldName: {
       abro?: string
       nota?: string
@@ -431,13 +429,15 @@ async function addLinksToLegifrance(
         if (nature1 === "JORF" && nature2 !== "JORF") {
           // Put JORF article after LEGI article with the same date,
           // because we assume that the LEGI article is an "article
-          // de versement" that must be hidden.
+          // de versement" that must be hidden when looking for the
+          // most recent article created before a given date.
           return 1
         }
         if (nature1 !== "JORF" && nature2 === "JORF") {
           // Put JORF article after LEGI article with the same date,
           // because we assume that the LEGI article is an "article
-          // de versement" that must be hidden.
+          // de versement" that must be hidden when looking for the
+          // most recent article created before a given date.
           return -1
         }
 
@@ -452,16 +452,34 @@ async function addLinksToLegifrance(
           (version) => version.LIEN_ART["@id"] === id1,
         )
         assert.notStrictEqual(version1Index, -1)
+        const version1 = article1.VERSIONS.VERSION[version1Index]
+        const version2Index = article2.VERSIONS.VERSION.findIndex(
+          (version) => version.LIEN_ART["@id"] === id2,
+        )
+        assert.notStrictEqual(version2Index, -1)
+        const version2 = article2.VERSIONS.VERSION[version2Index]
+        if (
+          version1["@etat"] === "MODIFIE_MORT_NE" &&
+          version2["@etat"] !== "MODIFIE_MORT_NE"
+        ) {
+          // A MODIFIE_MORT_NE article is put first to be hidden when looking for the most recent
+          // article created before a given date.
+          return -1
+        }
+        if (
+          version1["@etat"] !== "MODIFIE_MORT_NE" &&
+          version2["@etat"] === "MODIFIE_MORT_NE"
+        ) {
+          // A MODIFIE_MORT_NE article is put first to be hidden when looking for the most recent
+          // article created before a given date.
+          return 1
+        }
         if (
           nature1 === "JORF" &&
           version1Index === article1.VERSIONS.VERSION.length - 1
         ) {
           return -1
         }
-        const version2Index = article2.VERSIONS.VERSION.findIndex(
-          (version) => version.LIEN_ART["@id"] === id2,
-        )
-        assert.notStrictEqual(version2Index, -1)
         if (
           nature2 === "JORF" &&
           version2Index === article2.VERSIONS.VERSION.length - 1
@@ -483,9 +501,6 @@ async function addLinksToLegifrance(
       const id = article.META.META_COMMUN.ID
       // TODO: Improve date.
       const date = getArticleDateSignature(article)
-      assert.notStrictEqual(date, undefined)
-      assert.notStrictEqual(date, "2999-01-01")
-      assert.notStrictEqual(date, "2222-02-22")
       const previousArticle = getPreviousArticle(
         articlesSortedByDateSortedByNum,
         numIndex,

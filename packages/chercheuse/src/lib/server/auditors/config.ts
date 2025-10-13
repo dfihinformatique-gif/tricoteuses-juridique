@@ -1,8 +1,12 @@
 import {
+  auditBoolean,
   auditEmptyToNull,
   auditInteger,
   auditRequire,
+  auditSetNullish,
+  auditStringToBoolean,
   auditStringToNumber,
+  auditSwitch,
   auditTest,
   auditTrimString,
   cleanAudit,
@@ -24,6 +28,15 @@ export function auditConfig(
   const errors: { [key: string]: unknown } = {}
   const remainingKeys = new Set(Object.keys(data))
 
+  audit.attribute(
+    data,
+    "allowRobots",
+    true,
+    errors,
+    remainingKeys,
+    auditSwitch([auditTrimString, auditStringToBoolean], auditBoolean),
+    auditSetNullish(false),
+  )
   for (const key of ["legiDb", "tisseuseDb"]) {
     audit.attribute(
       data,

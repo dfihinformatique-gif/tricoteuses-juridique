@@ -3,6 +3,7 @@ import "dotenv/config"
 import { validateConfig } from "$lib/server/auditors/config.js"
 
 export interface Config {
+  allowRobots: boolean
   legiDb: DatabaseConfig
   tisseuseDb: DatabaseConfig
   title: string
@@ -17,6 +18,7 @@ export interface DatabaseConfig {
 }
 
 const [config, error] = validateConfig({
+  allowRobots: process.env.ALLOW_ROBOTS,
   legiDb: {
     host: process.env.LEGI_DB_HOST,
     port: process.env.LEGI_DB_PORT,

@@ -215,7 +215,9 @@ async function addLinksToHtmlDocument(
           if (text.cid === undefined) {
             if (text.relative !== 0) {
               // It is not "la présente loi".
-              throw new Error(
+              // Note: Don't throw an exception because it occurs for all kinds of non handled texts (conventions,
+              // décrets, etc).
+              console.error(
                 `Link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
               )
             }

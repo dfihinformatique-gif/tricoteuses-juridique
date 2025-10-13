@@ -6,6 +6,7 @@ import {
   LegiTexteVersion,
   sortArticlesNumbers,
 } from "@tricoteuses/legifrance"
+import fs from "fs-extra"
 import assert from "node:assert"
 import type { JSONValue } from "postgres"
 import sade from "sade"
@@ -257,18 +258,65 @@ async function addLinksToHtml({
   return output
 }
 
-async function addLinksToLegifrance(
-  textCid: string,
-  {
-    "log-ignored": logIgnoredReferencesTypes,
-    "log-partial": logPartialReferences,
-    "log-references": logReferences,
-  }: {
-    "log-ignored"?: boolean
-    "log-partial"?: boolean
-    "log-references"?: boolean
-  },
-): Promise<number> {
+async function addLinksToLegifrance({
+  cid: textCid,
+  "cid-list": cidListFilePath,
+  "log-ignored": logIgnoredReferencesTypes,
+  "log-partial": logPartialReferences,
+  "log-references": logReferences,
+}: {
+  cid?: string
+  "cid-list"?: string
+  "log-ignored"?: boolean
+  "log-partial"?: boolean
+  "log-references"?: boolean
+}): Promise<number> {
+  if (textCid !== undefined) {
+    try {
+      await addLinksToLegifranceText({
+        textCid,
+        logIgnoredReferencesTypes,
+        logPartialReferences,
+        logReferences: logReferences,
+      })
+    } catch (e) {
+      console.error(`An error occured while adding links to ${textCid}:`)
+      throw e
+    }
+  }
+
+  if (cidListFilePath !== undefined) {
+    const countByCid = (await fs.readJson(cidListFilePath, {
+      encoding: "utf-8",
+    })) as Record<string, number>
+    for (const textCid of Object.keys(countByCid)) {
+      try {
+        await addLinksToLegifranceText({
+          textCid,
+          logIgnoredReferencesTypes,
+          logPartialReferences,
+          logReferences: logReferences,
+        })
+      } catch (e) {
+        console.error(`An error occured while adding links to ${textCid}:`)
+        throw e
+      }
+    }
+  }
+  return 0
+}
+
+async function addLinksToLegifranceText({
+  textCid,
+  logIgnoredReferencesTypes,
+  logPartialReferences,
+  logReferences: logReferences,
+}: {
+  textCid: string
+  logIgnoredReferencesTypes?: boolean
+  logPartialReferences?: boolean
+  logReferences?: boolean
+}): Promise<number> {
   for (const { data: texteVersion, id } of await legiDb<
     Array<{ data: JorfTexteVersion | LegiTexteVersion; id: string }>
   >`
@@ -673,12 +721,17 @@ async function upsertExtractedLink(
   `
 }
 
-sade("add_links_to_legifrance <text_cid>", true)
+sade("add_links_to_legifrance", true)
   .describe("Add links to Légifrance texts and articles")
+  .option("-c, --text-cid", "Common ID of a Légifrance text")
   .option("-I, --log-ignored", "Log ignored references types")
+  .option(
+    "-l, --cid-list",
+    "File containing a list of Common IDs of Légifrance texts",
+  )
   .option("-P, --log-partial", "Log incomplete references")
   .option("-R, --log-references", "Log parsed references")
-  .action(async (textCid, options) => {
-    process.exit(await addLinksToLegifrance(textCid, options))
+  .action(async (options) => {
+    process.exit(await addLinksToLegifrance(options))
   })
   .parse(process.argv)

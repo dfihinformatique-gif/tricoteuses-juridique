@@ -3,6 +3,11 @@ import fs from "fs-extra"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts.js"
+import {
+  getOrLoadArticle,
+  getOrLoadSectionTa,
+  newLegalObjectCacheById,
+} from "$lib/loaders.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import {
   readTransformation,
@@ -27,6 +32,7 @@ async function addLinksToHtmlDocument(
     "log-ignored": logIgnoredReferencesTypes,
     "log-partial": logPartialReferences,
     "log-references": logReferences,
+    referred: referredLegifranceTextsInfosFilePath,
     "use-transformations": transformationsInputDir,
   }: {
     date: string
@@ -36,6 +42,7 @@ async function addLinksToHtmlDocument(
     "log-ignored"?: boolean
     "log-partial"?: boolean
     "log-references"?: boolean
+    referred?: string
     "use-transformations"?: string
   },
 ): Promise<number> {
@@ -52,8 +59,10 @@ async function addLinksToHtmlDocument(
   if (outputDocumentPath !== undefined) {
     const inputText = transformation.output
     const context = new TextParserContext(inputText)
+    const legalObjectCacheById = newLegalObjectCacheById()
     let output = inputHtml
     let outputOffset = 0
+    const referredLegifranceTextCountByCid: Record<string, number> = {}
 
     for await (const link of parseTextLinks({
       context,
@@ -135,6 +144,18 @@ async function addLinksToHtmlDocument(
               replacement.length -
               (articleOriginalTransformation.position.stop -
                 articleOriginalTransformation.position.start)
+            if (referredLegifranceTextsInfosFilePath !== undefined) {
+              const article = await getOrLoadArticle(
+                legiDb,
+                legalObjectCacheById,
+                articleId,
+              )
+              const textCid = article?.CONTEXTE.TEXTE["@cid"]
+              if (textCid !== undefined) {
+                referredLegifranceTextCountByCid[textCid] =
+                  (referredLegifranceTextCountByCid[textCid] ?? 0) + 1
+              }
+            }
           }
           break
         }
@@ -172,6 +193,18 @@ async function addLinksToHtmlDocument(
               replacement.length -
               (divisionOriginalTransformation.position.stop -
                 divisionOriginalTransformation.position.start)
+            if (referredLegifranceTextsInfosFilePath !== undefined) {
+              const sectionTa = await getOrLoadSectionTa(
+                legiDb,
+                legalObjectCacheById,
+                sectionTaId,
+              )
+              const textCid = sectionTa?.CONTEXTE.TEXTE["@cid"]
+              if (textCid !== undefined) {
+                referredLegifranceTextCountByCid[textCid] =
+                  (referredLegifranceTextCountByCid[textCid] ?? 0) + 1
+              }
+            }
           }
           break
         }
@@ -216,6 +249,10 @@ async function addLinksToHtmlDocument(
             replacement.length -
             (texteOriginalTransformation.position.stop -
               texteOriginalTransformation.position.start)
+          if (referredLegifranceTextsInfosFilePath !== undefined) {
+            referredLegifranceTextCountByCid[text.cid] =
+              (referredLegifranceTextCountByCid[text.cid] ?? 0) + 1
+          }
           break
         }
 
@@ -261,6 +298,13 @@ async function addLinksToHtmlDocument(
     }
 
     await fs.writeFile(outputDocumentPath, output, { encoding: "utf-8" })
+    if (referredLegifranceTextsInfosFilePath !== undefined) {
+      await fs.writeJson(
+        referredLegifranceTextsInfosFilePath,
+        referredLegifranceTextCountByCid,
+        { encoding: "utf-8", spaces: 2 },
+      )
+    }
   }
   return 0
 }
@@ -279,6 +323,7 @@ sade("add_links_to_html_document <input_document>", true)
   )
   .option("-P, --log-partial", "Log incomplete references")
   .option("-R, --log-references", "Log parsed references")
+  .option("-r, --referred", "Save IDs of Legifrance texts to given file")
   .option(
     "-t, --generate-transformations",
     "Store HTML to text transformations to given dir",

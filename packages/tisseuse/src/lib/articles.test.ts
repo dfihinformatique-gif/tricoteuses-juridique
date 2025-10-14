@@ -25,6 +25,16 @@ describe("getArticleDateSignature", async () => {
     expect(article).not.toBe(undefined)
     expect(getArticleDateSignature(article!)).toBe("2016-10-07")
   })
+
+  test("getArticleDateSignature(LEGIARTI000048665041)", async () => {
+    const article = await getOrLoadArticle(
+      legiDb,
+      newLegalObjectCacheById(),
+      "LEGIARTI000048665041",
+    )
+    expect(article).not.toBe(undefined)
+    expect(getArticleDateSignature(article!)).toBe("2015-01-01")
+  })
 })
 
 describe("getSiblingArticleId", async () => {

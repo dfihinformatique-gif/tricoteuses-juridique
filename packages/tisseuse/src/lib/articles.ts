@@ -27,6 +27,8 @@ export function getArticleDateSignature(
   article: JorfArticle | LegiArticle,
   // legalObjectCacheById: LegalObjectCacheById = newLegalObjectCacheById(),
 ): string {
+  // TODO: For non-JORF articles, use links to retrieve article or text that creates or
+  // modify this article and use their date.
   const dateDebut = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
   if (
     dateDebut !== undefined &&
@@ -39,12 +41,36 @@ export function getArticleDateSignature(
   }
   // Note: article.CONTEXTE.TEXTE["@date_signature"] is always the date_signature of
   // the first JORF text, so it is not the good date signature for LEGI articles.
-  const dateSignature = article.CONTEXTE.TEXTE["@date_signature"]
+  const contexteTexte = article.CONTEXTE.TEXTE
+  const dateSignature = contexteTexte["@date_signature"]
   if (
     dateSignature !== undefined &&
     !["2222-02-22", "2999-01-01"].includes(dateSignature)
   ) {
     return dateSignature
+  }
+  // Assume that the latest date of the parent sections TA is a good proxy ot the
+  // creation date of the article.
+  const titresTextes = contexteTexte.TITRE_TXT
+  const parentsCreationDates = [
+    ...(titresTextes === undefined
+      ? []
+      : (Array.isArray(titresTextes) ? titresTextes : [titresTextes]).map(
+          (titreTexte) => titreTexte["@debut"],
+        )),
+    ...(contexteTexte.TM === undefined
+      ? []
+      : walkContexteTexteTm(contexteTexte.TM)
+          .map((tm) =>
+            (Array.isArray(tm.TITRE_TM) ? tm.TITRE_TM : [tm.TITRE_TM]).map(
+              (titreTm) => titreTm["@debut"],
+            ),
+          )
+          .toArray()
+          .flat()),
+  ].filter((date) => !["2222-02-22", "2999-01-01"].includes(date))
+  if (parentsCreationDates.length > 0) {
+    return parentsCreationDates.sort().at(-1)!
   }
   // Occurs for example:
   // * for LEGIARTI000037943822 (MODIFIE_MORT_NE) with a dateDebut of "2222-02-22".

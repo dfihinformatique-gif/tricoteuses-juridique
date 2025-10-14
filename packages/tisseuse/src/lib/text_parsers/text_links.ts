@@ -215,7 +215,7 @@ function* iterDeepestDivisionsOrArticles(
   reference: TextAstReference,
 ): Generator<TextAstArticle | TextAstDivision> {
   if (reference.type === "texte") {
-    throw new Error(
+    console.error(
       `iterDeepestDivisionsOrArticles must not be called with a text:\n${JSON.stringify(reference, null, 2)}`,
     )
   } else if (isTextAstDivision(reference) || reference.type === "article") {

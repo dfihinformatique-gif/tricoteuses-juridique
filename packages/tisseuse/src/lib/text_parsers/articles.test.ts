@@ -441,6 +441,36 @@ describe("definitionArticle", () => {
 })
 
 describe("designationArticle", () => {
+  test("5, alinéa 3", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = designationArticle(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      child: {
+        index: 3,
+        position: {
+          start: 3,
+          stop: 11,
+        },
+        type: "alinéa",
+      },
+      parent: {
+        num: "5",
+        position: {
+          start: 0,
+          stop: 1,
+        },
+        type: "article",
+      },
+      position: {
+        start: 0,
+        stop: 11,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("L 325-5-1", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = designationArticle(context) as TextAstArticle

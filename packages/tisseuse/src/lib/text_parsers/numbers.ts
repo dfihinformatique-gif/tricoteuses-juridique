@@ -127,7 +127,7 @@ export const adjectifNumeralCardinalUnite = alternatives(
   regExp("neu[fv]", { flags: "i", value: 9 }),
 )
 
-export const adjectifNumeralCardinal = chain(
+export const adjectifNumeralCardinalLong = chain(
   [
     variable(
       "centaines",
@@ -166,10 +166,17 @@ export const adjectifNumeralCardinal = chain(
   },
 )
 
+export const adjectifNumeralCardinal = alternatives(
+  regExp("1(er|ère)", { flags: "i", value: 1 }),
+  regExp("premi(er|ère)", { flags: "i", value: 1 }),
+  nombreCardinal,
+  adjectifNumeralCardinalLong,
+)
+
 export const adjectifNumeralOrdinalLong = alternatives(
   regExp("premi(er|ère)", { flags: "i", value: 1 }),
   regExp("seconde?", { flags: "i", value: 2 }),
-  chain([adjectifNumeralCardinal, regExp("ième", { flags: "i" })], {
+  chain([adjectifNumeralCardinalLong, regExp("ième", { flags: "i" })], {
     value: (results) => results[0],
   }),
 )

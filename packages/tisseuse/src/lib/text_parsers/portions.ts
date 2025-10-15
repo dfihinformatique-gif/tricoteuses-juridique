@@ -13,6 +13,7 @@ import {
 } from "./helpers.js"
 import {
   adjectifNumeralCardinal,
+  adjectifNumeralCardinalLong,
   adjectifNumeralOrdinalLong,
   adverbeMultiplicatifLatin,
   nombreCardinal,
@@ -45,6 +46,7 @@ import {
   espaceOuRien,
   lettreAsciiMinuscule,
   nonLettre,
+  virgule,
 } from "./typography.js"
 
 export const naturePortionSingulier = alternatives(
@@ -108,49 +110,78 @@ export const numeroPortion = chain(
 )
 
 /**
- * Portion désignée soit par un adjectif relatif soit par un ordinal écrit en lettres,
- * par exemple « même alinéa » ou « troisième phrase »
+ * Portion désignée !
+ * - soit par un adjectif relatif (par exemple « même alinéa)
+ * - soit par un nombre ordinal écrit en lettres (par exemple « troisième phrase »)
+ * - soit par un npmbre cardinal (par exemple « alinéa 3 »)
  */
-export const unePortion = chain(
-  [
-    alternatives(
-      chain(
+export const unePortion = alternatives(
+  chain(
+    [
+      optional(
         [
           regExp("même", {
             flags: "i",
           }),
           espace,
-          adjectifNumeralOrdinalLong,
         ],
-        {
-          value: (results) =>
-            ({ index: results[2], relative: 0 }) as TextAstLocalization,
-        },
+        { default: null },
       ),
-      convert(adjectifNumeralOrdinalLong, {
+      naturePortionSingulier,
+      espace,
+      convert(adjectifNumeralCardinal, {
         value: (result) => ({ index: result }) as TextAstLocalization,
       }),
-      convert(adjectifRelatifSingulier, {
-        value: (result) => result as TextAstLocalization,
+    ],
+    {
+      value: (results, context) => ({
+        ...(results[3] as TextAstPortion),
+        position: context.position(),
+        type: results[1] as PortionType,
       }),
-    ),
-    espace,
-    naturePortionSingulier,
-  ],
-  {
-    value: (results, context) => ({
-      ...(results[0] as TextAstPortion),
-      position: context.position(),
-      type: results[2] as PortionType,
-    }),
-  },
+    },
+  ),
+  chain(
+    [
+      alternatives(
+        chain(
+          [
+            regExp("même", {
+              flags: "i",
+            }),
+            espace,
+            adjectifNumeralOrdinalLong,
+          ],
+          {
+            value: (results) =>
+              ({ index: results[2], relative: 0 }) as TextAstLocalization,
+          },
+        ),
+        convert(adjectifNumeralOrdinalLong, {
+          value: (result) => ({ index: result }) as TextAstLocalization,
+        }),
+        convert(adjectifRelatifSingulier, {
+          value: (result) => result as TextAstLocalization,
+        }),
+      ),
+      espace,
+      naturePortionSingulier,
+    ],
+    {
+      value: (results, context) => ({
+        ...(results[0] as TextAstPortion),
+        position: context.position(),
+        type: results[2] as PortionType,
+      }),
+    },
+  ),
 )
 
 export const numeroPortionOuUnePortion = alternatives(unePortion, numeroPortion)
 
 export const plusieursPortions = chain(
   [
-    adjectifNumeralCardinal,
+    adjectifNumeralCardinalLong,
     espace,
     convert(adjectifRelatifPluriel, {
       value: (result) => result as TextAstLocalization,
@@ -257,22 +288,27 @@ export const listePortions = alternatives(
   listeQuelquesPortions,
 )
 
-export const portionsEntreParentheses = chain(
-  [
-    espace,
-    regExp(String.raw`\(`),
-    espaceOuRien,
-    listePortion,
-    espaceOuRien,
-    regExp(String.raw`\)`),
-  ],
-  { value: (results) => results[3] },
+export const portionsEntreParenthesesOuVirgules = alternatives(
+  chain(
+    [
+      espace,
+      regExp(String.raw`\(`),
+      espaceOuRien,
+      listePortion,
+      espaceOuRien,
+      regExp(String.raw`\)`),
+    ],
+    { value: (results) => results[3] },
+  ),
+  chain([virgule, listePortion, regExp(",|$")], {
+    value: (results) => results[1],
+  }),
 )
 
 export const localisationPortion = alternatives(
   chain([liaisonSingulier, listePortion], { value: (results) => results[1] }),
   chain([liaisonPluriel, listePortions], { value: (results) => results[1] }),
-  portionsEntreParentheses,
+  portionsEntreParenthesesOuVirgules,
 )
 
 export const portion = chain(

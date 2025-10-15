@@ -7,6 +7,7 @@ import {
   auxPortions,
   numeroPortion,
   portions,
+  portionsEntreParenthesesOuVirgules,
   unePortion,
 } from "./portions.js"
 
@@ -246,6 +247,89 @@ describe("portions", () => {
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
+  })
+})
+
+describe("portionsEntreParenthesesOuVirgules", () => {
+  test(" (alinéa 3)", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = portionsEntreParenthesesOuVirgules(
+      context,
+    ) as TextAstCountedInterval
+    expect(result).toStrictEqual({
+      index: 3,
+      position: {
+        start: 2,
+        stop: 10,
+      },
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("alinéa 3")
+  })
+  test(", alinéa 3", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = portionsEntreParenthesesOuVirgules(
+      context,
+    ) as TextAstCountedInterval
+    expect(result).toStrictEqual({
+      index: 3,
+      position: {
+        start: 2,
+        stop: 10,
+      },
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("alinéa 3")
+  })
+  test(", alinéa 3,", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = portionsEntreParenthesesOuVirgules(
+      context,
+    ) as TextAstCountedInterval
+    expect(result).toStrictEqual({
+      index: 3,
+      position: {
+        start: 2,
+        stop: 10,
+      },
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("alinéa 3")
+  })
+  test(" (troisième alinéa)", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = portionsEntreParenthesesOuVirgules(
+      context,
+    ) as TextAstCountedInterval
+    expect(result).toStrictEqual({
+      index: 3,
+      position: {
+        start: 2,
+        stop: 18,
+      },
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("troisième alinéa")
+  })
+  test(", troisième alinéa,", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = portionsEntreParenthesesOuVirgules(
+      context,
+    ) as TextAstCountedInterval
+    expect(result).toStrictEqual({
+      index: 3,
+      position: {
+        start: 2,
+        stop: 18,
+      },
+      type: "alinéa",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe("troisième alinéa")
   })
 })
 

@@ -21,7 +21,7 @@ import {
   regExp,
   repeat,
 } from "./parsers.js"
-import { portionsEntreParentheses } from "./portions.js"
+import { portionsEntreParenthesesOuVirgules } from "./portions.js"
 import { ditPluriel, ditSingulier } from "./prepositions.js"
 import {
   adjectifRelatifPluriel,
@@ -172,7 +172,7 @@ export const designationArticle = alternatives(
           type: "article",
         }),
       }),
-      optional(portionsEntreParentheses, { default: null }),
+      optional(portionsEntreParenthesesOuVirgules, { default: null }),
     ],
     {
       value: (results, context) => {

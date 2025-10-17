@@ -16,11 +16,11 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Install Tricoteuses Chercheuse
+    - name: Install Tricoteuses Exploratrice
       run: npm install
       shell: bash
-      working-directory: packages/chercheuse/
-    - name: Set Tricoteuses Chercheuse environment
+      working-directory: packages/exploratrice/
+    - name: Set Tricoteuses Exploratrice environment
       run: |
         cat > .env << EOF
         # Légifrance PostgreSQL database configuration
@@ -40,4 +40,4 @@ runs:
         TITLE="Recherche Tricoteuses (action)"
         EOF
       shell: bash
-      working-directory: packages/chercheuse/
+      working-directory: packages/exploratrice/

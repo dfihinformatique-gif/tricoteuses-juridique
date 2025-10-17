@@ -4,8 +4,8 @@ node_modules/
 /packages/*/*.env
 !/packages/*/example.env
 
-/packages/chercheuse/.svelte-kit
-/packages/chercheuse/build
+/packages/exploratrice/.svelte-kit
+/packages/exploratrice/build
 
 packages/tisseuse/dist
 # Ensure that text_titles_infos.json remains empty:

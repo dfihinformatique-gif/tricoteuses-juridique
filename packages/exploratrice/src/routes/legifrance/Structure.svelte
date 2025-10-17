@@ -20,11 +20,10 @@
   import { SvelteMap } from "svelte/reactivity"
 
   import type { ArticleWithLinks } from "$lib/articles.js"
-  import { cleanHtmlContenu } from "$lib/strings.js"
   import { urlPathFromId } from "$lib/urls"
 
   import { queryArticleWithLinks } from "./article.remote.js"
-  import HtmlFragmentWithReferences from "./HtmlFragmentWithReferences.svelte"
+  import ArticleBody from "./ArticleBody.svelte"
   import { querySectionTa } from "./section_ta.remote.js"
   import Structure from "./Structure.svelte"
   import StructureItem from "./StructureItem.svelte"
@@ -102,38 +101,7 @@
       {/snippet}
 
       {#if articleWithLinks !== undefined}
-        {@const { article } = articleWithLinks}
-        {@const blocTextuel =
-          articleWithLinks.blocTextuel ?? article.BLOC_TEXTUEL?.CONTENU}
-        {@const nota =
-          articleWithLinks.nota ?? (article as LegiArticle).NOTA?.CONTENU}
-        {#if blocTextuel !== undefined}
-          {#if displayMode === "links"}
-            <section class="prose prose-links ml-4">
-              {@html cleanHtmlContenu(blocTextuel)}
-            </section>
-          {:else}
-            <section class="prose prose-links ml-4">
-              <HtmlFragmentWithReferences
-                fragment={article.BLOC_TEXTUEL!.CONTENU}
-              />
-            </section>
-          {/if}
-        {/if}
-        {#if nota !== undefined}
-          <h2>Nota</h2>
-          {#if displayMode === "links"}
-            <section class="prose prose-links ml-4">
-              {@html cleanHtmlContenu(nota)}
-            </section>
-          {:else}
-            <section class="prose prose-links ml-4">
-              <HtmlFragmentWithReferences
-                fragment={(article as LegiArticle).NOTA!.CONTENU}
-              />
-            </section>
-          {/if}
-        {/if}
+        <ArticleBody {articleWithLinks} {displayMode} />
       {/if}
     </StructureItem>
   {/each}

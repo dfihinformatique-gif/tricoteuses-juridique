@@ -10,7 +10,6 @@
     slugify,
     walkContexteTexteTm,
     type JorfArticleTm,
-    type LegiArticle,
     type LegiArticleMetaArticle,
     type LegiArticleTm,
     type LegiTexteNature,
@@ -29,6 +28,7 @@
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
   import TmWithTitreArray from "../../TmWithTitreArray.svelte"
   import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
+  import ArticleBody from "../../ArticleBody.svelte"
 
   let { params } = $props()
 
@@ -38,18 +38,12 @@
   )
   const { article, nextArticleId, previousArticleId } =
     $derived(articlePageInfos)
-  const blocTextuel = $derived(
-    articlePageInfos.blocTextuel ?? article.BLOC_TEXTUEL?.CONTENU,
-  )
   const texte = $derived(article.CONTEXTE.TEXTE)
   // TOOD: Improve date detection:
   const date = $derived(texte["@date_publi"]!)
   let displayMode: "links" | "references" = $state("links")
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
   const metaArticle = $derived(article.META.META_SPEC.META_ARTICLE)
-  const nota = $derived(
-    articlePageInfos.nota ?? (article as LegiArticle).NOTA?.CONTENU,
-  )
   const versions = $derived(article.VERSIONS.VERSION)
 </script>
 
@@ -198,32 +192,7 @@
   </DropdownMenu.Root>
 </div>
 
-{#if blocTextuel !== undefined}
-  {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(blocTextuel)}
-    </section>
-  {:else}
-    <section class="prose prose-links ml-4">
-      <HtmlFragmentWithReferences fragment={article.BLOC_TEXTUEL!.CONTENU} />
-    </section>
-  {/if}
-{/if}
-
-{#if nota !== undefined}
-  <h2>Nota</h2>
-  {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(nota)}
-    </section>
-  {:else}
-    <section class="prose prose-links ml-4">
-      <HtmlFragmentWithReferences
-        fragment={(article as LegiArticle).NOTA!.CONTENU}
-      />
-    </section>
-  {/if}
-{/if}
+<ArticleBody articleWithLinks={articlePageInfos} {displayMode} />
 
 <div class="mx-auto mt-8 flex w-1/2 justify-between">
   <Button

@@ -5,7 +5,10 @@ import {
   cleanAudit,
 } from "@auditors/core"
 import { auditLegalId, type Jo } from "@tricoteuses/legifrance"
-import { getOrLoadJo, newLegalObjectCacheById } from "@tricoteuses/tisseuse"
+import {
+  getOrLoadJo,
+  newLegalObjectCacheByIdByCategorieTag,
+} from "@tricoteuses/tisseuse"
 
 import { legiDb } from "$lib/server/databases/index.js"
 
@@ -21,5 +24,5 @@ export const queryJo = query(
     auditRequire,
   ),
   async (id): Promise<Jo | undefined> =>
-    await getOrLoadJo(legiDb, newLegalObjectCacheById(), id),
+    await getOrLoadJo(legiDb, newLegalObjectCacheByIdByCategorieTag(), id),
 )

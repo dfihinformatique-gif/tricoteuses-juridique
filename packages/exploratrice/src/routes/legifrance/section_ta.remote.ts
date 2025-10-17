@@ -11,7 +11,7 @@ import {
 } from "@tricoteuses/legifrance"
 import {
   getOrLoadSectionTa,
-  newLegalObjectCacheById,
+  newLegalObjectCacheByIdByCategorieTag,
 } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
@@ -27,5 +27,9 @@ export const querySectionTa = query(
     auditRequire,
   ),
   async (id): Promise<JorfSectionTa | LegiSectionTa | undefined> =>
-    await getOrLoadSectionTa(legiDb, newLegalObjectCacheById(), id),
+    await getOrLoadSectionTa(
+      legiDb,
+      newLegalObjectCacheByIdByCategorieTag(),
+      id,
+    ),
 )

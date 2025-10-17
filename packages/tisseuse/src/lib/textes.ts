@@ -17,7 +17,7 @@ export const cleanTexteTitle = <StringOrUndefined extends string | undefined>(
  */
 export function getTexteVersionDateSignature(
   texteVersion: JorfTexteVersion | LegiTexteVersion,
-  // legalObjectCacheById: LegalObjectCacheById = newLegalObjectCacheById(),
+  // legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag = newLegalObjectCacheByIdByCategorieTag(),
 ): string {
   const dateSignature =
     texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE

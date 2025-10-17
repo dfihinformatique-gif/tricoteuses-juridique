@@ -3,11 +3,13 @@ export { assertNever } from "./asserts.js"
 export { formatLongDate } from "./dates.js"
 export { jsonReplacer } from "./json.js"
 export {
-  newLegalObjectCacheById,
+  newLegalObjectCacheByIdByCategorieTag,
   getOrLoadArticle,
   getOrLoadJo,
   getOrLoadSectionTa,
-  type LegalObjectCacheById,
+  getOrLoadTextelr,
+  getOrLoadTexteVersion,
+  type LegalObjectCacheByIdByCategorieTag,
 } from "./loaders.js"
 export { action } from "./text_parsers/actions.js"
 export {

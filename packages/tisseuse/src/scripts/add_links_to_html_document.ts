@@ -6,7 +6,7 @@ import { assertNever } from "$lib/asserts.js"
 import {
   getOrLoadArticle,
   getOrLoadSectionTa,
-  newLegalObjectCacheById,
+  newLegalObjectCacheByIdByCategorieTag,
 } from "$lib/loaders.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import {
@@ -59,7 +59,8 @@ async function addLinksToHtmlDocument(
   if (outputDocumentPath !== undefined) {
     const inputText = transformation.output
     const context = new TextParserContext(inputText)
-    const legalObjectCacheById = newLegalObjectCacheById()
+    const legalObjectCacheByIdByCategorieTag =
+      newLegalObjectCacheByIdByCategorieTag()
     let output = inputHtml
     let outputOffset = 0
     const referredLegifranceTextCountByCid: Record<string, number> = {}
@@ -147,7 +148,7 @@ async function addLinksToHtmlDocument(
             if (referredLegifranceTextsInfosFilePath !== undefined) {
               const article = await getOrLoadArticle(
                 legiDb,
-                legalObjectCacheById,
+                legalObjectCacheByIdByCategorieTag,
                 articleId,
               )
               const textCid = article?.CONTEXTE.TEXTE["@cid"]
@@ -196,7 +197,7 @@ async function addLinksToHtmlDocument(
             if (referredLegifranceTextsInfosFilePath !== undefined) {
               const sectionTa = await getOrLoadSectionTa(
                 legiDb,
-                legalObjectCacheById,
+                legalObjectCacheByIdByCategorieTag,
                 sectionTaId,
               )
               const textCid = sectionTa?.CONTEXTE.TEXTE["@cid"]

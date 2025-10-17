@@ -12,7 +12,7 @@ import {
 import {
   // getOrLoadArticle,
   getSiblingArticleId,
-  newLegalObjectCacheById,
+  newLegalObjectCacheByIdByCategorieTag,
 } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
@@ -63,7 +63,7 @@ const getArticleWithLinks = async (
 //     auditRequire,
 //   ),
 //   async (id): Promise<JorfArticle | LegiArticle | undefined> =>
-//     await getOrLoadArticle(legiDb, newLegalObjectCacheById(), id),
+//     await getOrLoadArticle(legiDb, newLegalObjectCacheByIdByCategorieTag(), id),
 // )
 
 // export const queryArticleContenuAvecLiens = query(
@@ -109,18 +109,19 @@ export const queryArticlePageInfos = query(
     if (articleWithLinks === undefined) {
       return undefined
     }
-    const legalObjectCacheById = newLegalObjectCacheById()
+    const legalObjectCacheByIdByCategorieTag =
+      newLegalObjectCacheByIdByCategorieTag()
     return {
       ...articleWithLinks,
       nextArticleId: await getSiblingArticleId(
         legiDb,
-        legalObjectCacheById,
+        legalObjectCacheByIdByCategorieTag,
         id,
         1,
       ),
       previousArticleId: await getSiblingArticleId(
         legiDb,
-        legalObjectCacheById,
+        legalObjectCacheByIdByCategorieTag,
         id,
         -1,
       ),

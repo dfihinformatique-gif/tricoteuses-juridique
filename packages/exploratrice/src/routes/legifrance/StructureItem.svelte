@@ -1,12 +1,11 @@
 <script lang="ts">
   import ChevronDownIcon from "@lucide/svelte/icons/chevron-down"
   import ChevronRightIcon from "@lucide/svelte/icons/chevron-right"
-  import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
+  import EyeIcon from "@lucide/svelte/icons/eye"
   import { Collapsible, type WithoutChild } from "bits-ui"
   import type { Snippet } from "svelte"
 
   import type { Pathname } from "$app/types"
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as Item from "$lib/components/ui/item/index.js"
 
   type Props = WithoutChild<Collapsible.RootProps> & {
@@ -42,20 +41,11 @@
             {@render heading()}
             {#if pathname !== null}
               <Item.Actions>
-                <DropdownMenu.Root>
-                  <DropdownMenu.Trigger
-                    ><EllipsisVerticalIcon
-                      class="pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200"
-                    /></DropdownMenu.Trigger
-                  >
-                  <DropdownMenu.Content align="end">
-                    <DropdownMenu.Group>
-                      <DropdownMenu.Item>
-                        <a class="h-full w-full" href={pathname}>Voir à part</a>
-                      </DropdownMenu.Item>
-                    </DropdownMenu.Group>
-                  </DropdownMenu.Content>
-                </DropdownMenu.Root>
+                <a class="h-full w-full" href={pathname} title="Voir à part"
+                  ><EyeIcon
+                    class="pointer-events-none size-4 shrink-0 text-muted-foreground transition-transform duration-200"
+                  /></a
+                >
               </Item.Actions>
             {/if}
           </Item.Title>

@@ -1,15 +1,23 @@
-export { getArticleDateSignature, getSiblingArticleId } from "./articles.js"
+export {
+  getArticleDateSignature,
+  getOrLoadArticleSiblingId,
+} from "./articles.js"
 export { assertNever } from "./asserts.js"
 export { formatLongDate } from "./dates.js"
 export { jsonReplacer } from "./json.js"
 export {
+  extendLoadedArticle,
   newLegalObjectCacheByIdByCategorieTag,
   getOrLoadArticle,
   getOrLoadJo,
   getOrLoadSectionTa,
+  getOrLoadSectionsTa,
   getOrLoadTextelr,
   getOrLoadTexteVersion,
+  type ArticleExtension,
+  type JorfArticleExtended,
   type LegalObjectCacheByIdByCategorieTag,
+  type LegiArticleExtended,
 } from "./loaders.js"
 export { action } from "./text_parsers/actions.js"
 export {

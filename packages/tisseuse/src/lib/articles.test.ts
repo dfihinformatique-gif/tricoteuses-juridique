@@ -2,7 +2,10 @@ import { describe, expect, test } from "vitest"
 
 import { legiDb } from "$lib/server/databases/index.js"
 
-import { getArticleDateSignature, getSiblingArticleId } from "./articles.js"
+import {
+  getArticleDateSignature,
+  getOrLoadArticleSiblingId,
+} from "./articles.js"
 import {
   getOrLoadArticle,
   newLegalObjectCacheByIdByCategorieTag,
@@ -40,10 +43,10 @@ describe("getArticleDateSignature", async () => {
   })
 })
 
-describe("getSiblingArticleId", async () => {
-  test("getSiblingArticleId(JORFARTI000033203048, 1)", async () => {
+describe("getOrLoadArticleSiblingId", async () => {
+  test("getOrLoadArticleSiblingId(JORFARTI000033203048, 1)", async () => {
     expect(
-      await getSiblingArticleId(
+      await getOrLoadArticleSiblingId(
         legiDb,
         newLegalObjectCacheByIdByCategorieTag(),
         "JORFARTI000033203048",
@@ -52,9 +55,9 @@ describe("getSiblingArticleId", async () => {
     ).toBe("JORFARTI000033203062")
   })
 
-  test("getSiblingArticleId(JORFARTI000033203048, -1)", async () => {
+  test("getOrLoadArticleSiblingId(JORFARTI000033203048, -1)", async () => {
     expect(
-      await getSiblingArticleId(
+      await getOrLoadArticleSiblingId(
         legiDb,
         newLegalObjectCacheByIdByCategorieTag(),
         "JORFARTI000033203048",

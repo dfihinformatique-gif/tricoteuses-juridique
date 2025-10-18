@@ -13,6 +13,11 @@ import sade from "sade"
 
 import { getArticleDateSignature } from "$lib/articles.js"
 import { assertNever } from "$lib/asserts.js"
+import {
+  extendLoadedArticle,
+  JorfArticleExtended,
+  LegiArticleExtended,
+} from "$lib/loaders.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
@@ -25,7 +30,7 @@ import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
 } from "$lib/text_parsers/transformers.js"
-import { getTexteVersionDateSignature } from "$lib/textes"
+import { getTexteVersionDateSignature } from "$lib/textes.js"
 
 const today = new Date().toISOString().split("T")[0]
 
@@ -440,21 +445,21 @@ async function addLinksToLegifranceText({
 
   const articlesByNum = new Map<
     string | undefined,
-    Array<JorfArticle | LegiArticle>
+    Array<JorfArticleExtended | LegiArticleExtended>
   >()
   for await (const articleRows of legiDb<
-    Array<{ data: JorfArticle | LegiArticle; id: string }>
+    Array<{ data: JorfArticle | LegiArticle; num: string | null }>
   >`
-    SELECT data
+    SELECT data, num
     FROM article
     WHERE data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${textCid}
   `.cursor(100)) {
-    for (const { data: article } of articleRows) {
-      const num = article.META.META_SPEC.META_ARTICLE.NUM
-      let articles = articlesByNum.get(num)
+    for (const articleRow of articleRows) {
+      const article = extendLoadedArticle(articleRow)
+      let articles = articlesByNum.get(article.num)
       if (articles === undefined) {
         articles = []
-        articlesByNum.set(num, articles)
+        articlesByNum.set(article.num, articles)
       }
       articles.push(article)
     }

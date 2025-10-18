@@ -43,7 +43,7 @@ export const autocomplete = query(
             >`
               SELECT
                 id,
-                data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM' AS num,
+                num,
                 data -> 'CONTEXTE' -> 'TEXTE' -> 'TITRE_TXT' -> 0 ->> '@c_titre_court' AS titre_court_texte,
                 data -> 'CONTEXTE' -> 'TEXTE' -> 'TITRE_TXT' -> 0 ->> E'#text' AS titre_texte
               FROM article

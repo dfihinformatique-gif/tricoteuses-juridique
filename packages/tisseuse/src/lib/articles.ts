@@ -97,6 +97,61 @@ export function getArticleDateSignature(
   )
 }
 
+/**
+ * TODO:
+ * - Handle date to filter articles outside date
+ * - Migrate everything @tricoteuses/legifrance.
+ */
+export async function getOrLoadArticleSiblingId(
+  legiDb: Sql,
+  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  id: string,
+  offset: -1 | 1,
+): Promise<string | undefined> {
+  const article = await getOrLoadArticle(
+    legiDb,
+    legalObjectCacheByIdByCategorieTag,
+    id,
+  )
+  if (article === undefined) {
+    return undefined
+  }
+  const date = getArticleDateSignature(article)
+  const origine = article.META.META_COMMUN.ORIGINE
+  const texte = article.CONTEXTE.TEXTE
+  if (texte.TM === undefined) {
+    return undefined
+  }
+  const reverseTmsBreadcrumb = walkContexteTexteTm(texte.TM).toArray().reverse()
+  let reverseSectionsTaIdBreadcrumb: Array<string | undefined>
+  switch (origine) {
+    case "JORF": {
+      reverseSectionsTaIdBreadcrumb = (
+        reverseTmsBreadcrumb as Array<JorfArticleTm | JorfSectionTaTm>
+      ).map((tm) => tm.TITRE_TM["@id"])
+      break
+    }
+    case "LEGI": {
+      reverseSectionsTaIdBreadcrumb = (
+        reverseTmsBreadcrumb as Array<LegiArticleTm | LegiSectionTaTm>
+      ).map((tm) => bestItemForDate(tm.TITRE_TM, date)?.["@id"])
+      break
+    }
+    default: {
+      assertNever("getOrLoadArticleSiblingId origine", origine)
+    }
+  }
+  // TODO: Filter sibling article by date.
+  return await (offset === -1 ? moveToPreviousArticleId : moveToNextArticleId)(
+    legiDb,
+    legalObjectCacheByIdByCategorieTag,
+    id,
+    date,
+    article.num,
+    reverseSectionsTaIdBreadcrumb,
+  )
+}
+
 async function getSectionTaState(
   legiDb: Sql,
   legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
@@ -168,61 +223,6 @@ async function getSectionTaState(
     }
   }
   return sectionTaState
-}
-
-/**
- * TODO:
- * - Handle date to filter articles outside date
- * - Migrate everything except the query to @tricoteuses/legifrance.
- */
-export async function getSiblingArticleId(
-  legiDb: Sql,
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
-  id: string,
-  offset: -1 | 1,
-): Promise<string | undefined> {
-  const article = await getOrLoadArticle(
-    legiDb,
-    legalObjectCacheByIdByCategorieTag,
-    id,
-  )
-  if (article === undefined) {
-    return undefined
-  }
-  const date = getArticleDateSignature(article)
-  const origine = article.META.META_COMMUN.ORIGINE
-  const texte = article.CONTEXTE.TEXTE
-  if (texte.TM === undefined) {
-    return undefined
-  }
-  const reverseTmsBreadcrumb = walkContexteTexteTm(texte.TM).toArray().reverse()
-  let reverseSectionsTaIdBreadcrumb: Array<string | undefined>
-  switch (origine) {
-    case "JORF": {
-      reverseSectionsTaIdBreadcrumb = (
-        reverseTmsBreadcrumb as Array<JorfArticleTm | JorfSectionTaTm>
-      ).map((tm) => tm.TITRE_TM["@id"])
-      break
-    }
-    case "LEGI": {
-      reverseSectionsTaIdBreadcrumb = (
-        reverseTmsBreadcrumb as Array<LegiArticleTm | LegiSectionTaTm>
-      ).map((tm) => bestItemForDate(tm.TITRE_TM, date)?.["@id"])
-      break
-    }
-    default: {
-      assertNever("getSiblingArticleId origine", origine)
-    }
-  }
-  // TODO: Filter sibling article by date.
-  return await (offset === -1 ? moveToPreviousArticleId : moveToNextArticleId)(
-    legiDb,
-    legalObjectCacheByIdByCategorieTag,
-    id,
-    date,
-    article.META.META_SPEC.META_ARTICLE.NUM,
-    reverseSectionsTaIdBreadcrumb,
-  )
 }
 
 async function moveToFirstArticleId(

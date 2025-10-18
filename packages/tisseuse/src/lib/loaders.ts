@@ -13,10 +13,33 @@ import type {
 } from "@tricoteuses/legifrance"
 import type { JSONValue, Sql } from "postgres"
 
+export interface ArticleExtension {
+  num?: string
+}
+
+export type JorfArticleExtended = JorfArticle & ArticleExtension
+
 export type LegalObjectCacheByIdByCategorieTag = Map<
   JorfCategorieTag | LegiCategorieTag,
   Map<string, JSONValue>
 >
+
+export type LegiArticleExtended = LegiArticle & ArticleExtension
+
+export function extendLoadedArticle<
+  ArticleType extends JorfArticle | LegiArticle,
+>({
+  data: article,
+  num,
+}: {
+  data: ArticleType
+  num: string | null
+}): ArticleType & ArticleExtension {
+  if (num !== null) {
+    ;(article as ArticleType & ArticleExtension).num = num
+  }
+  return article
+}
 
 export async function getOrLoadArticle<
   ArticleType extends JorfArticle | LegiArticle,
@@ -24,7 +47,7 @@ export async function getOrLoadArticle<
   legiDb: Sql,
   legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
   id: string,
-) {
+): Promise<(ArticleType & ArticleExtension) | undefined> {
   let legalObjectCacheById = legalObjectCacheByIdByCategorieTag.get("ARTICLE")
   if (legalObjectCacheById === undefined) {
     legalObjectCacheById = new Map()
@@ -36,14 +59,14 @@ export async function getOrLoadArticle<
       await legiDb<
         Array<{
           data: ArticleType
+          num: string | null
         }>
       >`
-        SELECT
-          data
+        SELECT data, num
         FROM article
         WHERE id = ${id}
       `
-    )[0]?.data
+    ).map(extendLoadedArticle)[0]
     legalObjectCacheById.set(id, (article as unknown as JSONValue) ?? null)
   }
   return article ?? undefined
@@ -53,7 +76,7 @@ export async function getOrLoadJo<JoType extends Jo>(
   legiDb: Sql,
   legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
   id: string,
-) {
+): Promise<JoType | undefined> {
   let legalObjectCacheById = legalObjectCacheByIdByCategorieTag.get("JO")
   if (legalObjectCacheById === undefined) {
     legalObjectCacheById = new Map()
@@ -84,7 +107,7 @@ export async function getOrLoadSectionTa<
   legiDb: Sql,
   legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
   id: string,
-) {
+): Promise<SectionTaType | undefined> {
   let legalObjectCacheById =
     legalObjectCacheByIdByCategorieTag.get("SECTION_TA")
   if (legalObjectCacheById === undefined) {
@@ -113,13 +136,60 @@ export async function getOrLoadSectionTa<
   return sectionTa ?? undefined
 }
 
+export async function getOrLoadSectionsTa<
+  SectionTaType extends JorfSectionTa | LegiSectionTa,
+>(
+  legiDb: Sql,
+  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  ids: string[],
+): Promise<SectionTaType[]> {
+  let legalObjectCacheById =
+    legalObjectCacheByIdByCategorieTag.get("SECTION_TA")
+  if (legalObjectCacheById === undefined) {
+    legalObjectCacheById = new Map()
+    legalObjectCacheByIdByCategorieTag.set("SECTION_TA", legalObjectCacheById)
+  }
+  const idsToLoad = new Set(ids)
+  const sectionsTa: SectionTaType[] = []
+  for (const id of idsToLoad) {
+    const sectionTa = legalObjectCacheById.get(id) as unknown as
+      | SectionTaType
+      | undefined
+      | null
+    if (sectionTa !== undefined) {
+      idsToLoad.delete(id)
+      if (sectionTa !== null) {
+        sectionsTa.push(sectionTa)
+      }
+    }
+  }
+  if (idsToLoad.size > 0) {
+    for (const sectionTa of (
+      await legiDb<
+        Array<{
+          data: SectionTaType
+        }>
+      >`
+        SELECT
+          data
+        FROM section_ta
+        WHERE id IN ${legiDb([...idsToLoad])}
+      `
+    ).map(({ data }) => data)) {
+      legalObjectCacheById.set(sectionTa.ID, sectionTa as unknown as JSONValue)
+      sectionsTa.push(sectionTa)
+    }
+  }
+  return sectionsTa
+}
+
 export async function getOrLoadTextelr<
   TextelrType extends JorfTextelr | LegiTextelr,
 >(
   legiDb: Sql,
   legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
   id: string,
-) {
+): Promise<TextelrType | undefined> {
   let legalObjectCacheById = legalObjectCacheByIdByCategorieTag.get("TEXTELR")
   if (legalObjectCacheById === undefined) {
     legalObjectCacheById = new Map()
@@ -150,7 +220,7 @@ export async function getOrLoadTexteVersion<
   legiDb: Sql,
   legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
   id: string,
-) {
+): Promise<TexteVersionType | undefined> {
   let legalObjectCacheById =
     legalObjectCacheByIdByCategorieTag.get("TEXTE_VERSION")
   if (legalObjectCacheById === undefined) {

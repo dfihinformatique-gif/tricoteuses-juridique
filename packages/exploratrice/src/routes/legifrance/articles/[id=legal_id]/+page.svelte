@@ -36,7 +36,7 @@
     (await queryArticlePageInfos(params.id)) ??
       error(404, "Article non trouvé"),
   )
-  const { article, nextArticleId, previousArticleId } =
+  const { article, mergedVersions, nextArticleId, previousArticleId } =
     $derived(articlePageInfos)
   const texte = $derived(article.CONTEXTE.TEXTE)
   // TOOD: Improve date detection:
@@ -44,7 +44,6 @@
   let displayMode: "links" | "references" = $state("links")
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
   const metaArticle = $derived(article.META.META_SPEC.META_ARTICLE)
-  const versions = $derived(article.VERSIONS.VERSION)
 </script>
 
 <ContexteTexteTitre {date} {texte} />
@@ -58,7 +57,7 @@
 {/if}
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
-  Article {metaArticle.NUM}
+  Article {article.num}
 </h1>
 
 <div class="mx-auto flex w-1/2 justify-between">
@@ -74,7 +73,7 @@
         {(metaArticle as LegiArticleMetaArticle).ETAT}</Select.Trigger
       >
       <Select.Content>
-        {#each versions as version}
+        {#each mergedVersions as version}
           {@const lien = version.LIEN_ART}
           <Select.Item value={lien["@id"]}
             >{lien["@id"]}
@@ -138,7 +137,7 @@
                     return sectionTaSlug
                   }),
                   (() => {
-                    const articleTitle = `Article ${metaArticle.NUM ?? params.id}`
+                    const articleTitle = `Article ${article.num ?? params.id}`
                     let articleSlug = slugify(articleTitle, "_")
                     if (articleSlug.length > 252) {
                       articleSlug = articleSlug.slice(0, 251)

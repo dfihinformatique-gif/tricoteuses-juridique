@@ -427,7 +427,7 @@ export async function* parseTextLinks({
           FROM article
           WHERE
             data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.textId}
-            AND data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM' = ${article.num ?? null}
+            AND num = ${article.num ?? null}
         `),
       ]
     }
@@ -447,7 +447,7 @@ export async function* parseTextLinks({
           FROM article
           WHERE
             data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.defaultTextId}
-            AND data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM' = ${article.num ?? null}
+            AND num = ${article.num ?? null}
         `),
       ]
     }
@@ -463,7 +463,7 @@ export async function* parseTextLinks({
           SELECT data, id
           FROM article
           WHERE
-            data -> 'META' -> 'META_SPEC' -> 'META_ARTICLE' ->> 'NUM' = ${article.num}
+            num = ${article.num}
           LIMIT 100
         `),
       ]

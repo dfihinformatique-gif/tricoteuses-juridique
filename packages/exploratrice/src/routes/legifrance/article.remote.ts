@@ -7,52 +7,73 @@ import {
 import {
   auditLegalId,
   type JorfArticle,
+  type JorfArticleVersion,
   type LegiArticle,
+  type LegiArticleVersion,
 } from "@tricoteuses/legifrance"
 import {
-  // getOrLoadArticle,
-  getSiblingArticleId,
+  extendLoadedArticle,
+  getOrLoadArticleSiblingId,
+  getOrLoadTextelr,
   newLegalObjectCacheByIdByCategorieTag,
+  type JorfArticleExtended,
+  type LegalObjectCacheByIdByCategorieTag,
+  type LegiArticleExtended,
 } from "@tricoteuses/tisseuse"
+import type { JSONValue } from "postgres"
 
 import { query } from "$app/server"
 import type { ArticlePageInfos, ArticleWithLinks } from "$lib/articles.js"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
-const getArticleWithLinks = async (
+const loadArticleWithLinks = async (
+  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
   id: string,
-): Promise<ArticleWithLinks | undefined> =>
-  (
+): Promise<ArticleWithLinks | undefined> => {
+  const articleWithLinks = (
     await legiDb<
       Array<{
         bloc_textuel: string | null
         data: JorfArticle | LegiArticle
         nota: string | null
+        num: string | null
       }>
     >`
       SELECT
         bloc_textuel,
         data,
-        nota
+        nota,
+        num
       FROM article
       LEFT JOIN article_contenu_avec_liens ON article.id = article_contenu_avec_liens.id
       WHERE article.id = ${id}
     `
   ).map(
-    ({ bloc_textuel: blocTextuel, data: article, nota }): ArticleWithLinks =>
+    ({ bloc_textuel: blocTextuel, data, nota, num }): ArticleWithLinks =>
       Object.fromEntries(
         Object.entries({
-          article,
+          article: extendLoadedArticle({ data, num }),
           blocTextuel,
           nota,
         }).filter((_key, value) => value !== null),
       ) as {
-        article: JorfArticle | LegiArticle
+        article: JorfArticleExtended | LegiArticleExtended
         blocTextuel?: string
         nota?: string
       },
   )[0]
+  let legalObjectCacheById = legalObjectCacheByIdByCategorieTag.get("ARTICLE")
+  if (legalObjectCacheById === undefined) {
+    legalObjectCacheById = new Map()
+    legalObjectCacheByIdByCategorieTag.set("ARTICLE", legalObjectCacheById)
+  }
+  legalObjectCacheById.set(
+    id,
+    (articleWithLinks?.article as unknown as JSONValue) ?? null,
+  )
+  return articleWithLinks
+}
 
 // export const queryArticle = query(
 //   standardSchemaV1<string>(
@@ -105,21 +126,79 @@ export const queryArticlePageInfos = query(
     auditRequire,
   ),
   async (id): Promise<ArticlePageInfos | undefined> => {
-    const articleWithLinks = await getArticleWithLinks(id)
+    const legalObjectCacheByIdByCategorieTag =
+      newLegalObjectCacheByIdByCategorieTag()
+    const articleWithLinks = await loadArticleWithLinks(
+      legalObjectCacheByIdByCategorieTag,
+      id,
+    )
     if (articleWithLinks === undefined) {
       return undefined
     }
-    const legalObjectCacheByIdByCategorieTag =
-      newLegalObjectCacheByIdByCategorieTag()
+    const { article } = articleWithLinks
+    const texteCid = article.CONTEXTE.TEXTE["@cid"]
+    const textelr =
+      texteCid === undefined
+        ? undefined
+        : await getOrLoadTextelr(
+            legiDb,
+            legalObjectCacheByIdByCategorieTag,
+            texteCid,
+          )
+    const detachedArticlesVersions =
+      textelr === undefined
+        ? []
+        : (
+            await legiDb<
+              Array<{
+                versions: Array<JorfArticleVersion | LegiArticleVersion>
+              }>
+            >`
+              SELECT data -> 'VERSIONS' -> 'VERSION' as versions
+              FROM article
+              WHERE
+                data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' IN ${legiDb(
+                  textelr.VERSIONS.VERSION.map(
+                    (version) => version.LIEN_TXT["@id"],
+                  ),
+                )}
+                AND num = ${article.num ?? null}
+                AND id NOT IN ${legiDb(
+                  article.VERSIONS.VERSION.map(
+                    (version) => version.LIEN_ART["@id"],
+                  ),
+                )}
+            `
+          )
+            .map(({ versions }) => versions)
+            .flat()
+            .reduce(
+              (versions, version) => {
+                if (
+                  versions.find(
+                    (otherVersion) =>
+                      otherVersion.LIEN_ART["@id"] === version.LIEN_ART["@id"],
+                  ) === undefined
+                ) {
+                  versions.push(version)
+                }
+                return versions
+              },
+              [] as Array<JorfArticleVersion | LegiArticleVersion>,
+            )
     return {
       ...articleWithLinks,
-      nextArticleId: await getSiblingArticleId(
+      mergedVersions: [
+        ...article.VERSIONS.VERSION,
+        ...detachedArticlesVersions,
+      ],
+      nextArticleId: await getOrLoadArticleSiblingId(
         legiDb,
         legalObjectCacheByIdByCategorieTag,
         id,
         1,
       ),
-      previousArticleId: await getSiblingArticleId(
+      previousArticleId: await getOrLoadArticleSiblingId(
         legiDb,
         legalObjectCacheByIdByCategorieTag,
         id,
@@ -138,5 +217,5 @@ export const queryArticleWithLinks = query(
     auditRequire,
   ),
   async (id): Promise<ArticleWithLinks | undefined> =>
-    await getArticleWithLinks(id),
+    await loadArticleWithLinks(newLegalObjectCacheByIdByCategorieTag(), id),
 )

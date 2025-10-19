@@ -1,7 +1,6 @@
 <script lang="ts">
   import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
-  import { error } from "@sveltejs/kit"
   import {
     gitPathFromId,
     type JoLienTxt,
@@ -15,9 +14,7 @@
 
   let { params } = $props()
 
-  const jo = $derived(
-    (await queryJo(params.id)) ?? error(404, "Journal officiel non trouvé"),
-  )
+  const jo = $derived(await queryJo(params.id))
   // const metaCommun = $derived(jo.META.META_COMMUN)
   const metaConteneur = $derived(jo.META.META_SPEC.META_CONTENEUR)
   const structureTxt = $derived(jo.STRUCTURE_TXT)

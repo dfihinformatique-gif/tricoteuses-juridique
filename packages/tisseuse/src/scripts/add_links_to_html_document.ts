@@ -3,11 +3,11 @@ import fs from "fs-extra"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts.js"
+import { newLegifranceObjectCache } from "$lib/cache.js"
 import {
   getOrLoadArticle,
   getOrLoadSectionTa,
-  newLegalObjectCacheByIdByCategorieTag,
-} from "$lib/loaders.js"
+} from "$lib/loaders/legifrance.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import {
   readTransformation,
@@ -59,8 +59,7 @@ async function addLinksToHtmlDocument(
   if (outputDocumentPath !== undefined) {
     const inputText = transformation.output
     const context = new TextParserContext(inputText)
-    const legalObjectCacheByIdByCategorieTag =
-      newLegalObjectCacheByIdByCategorieTag()
+    const legifranceObjectCache = newLegifranceObjectCache()
     let output = inputHtml
     let outputOffset = 0
     const referredLegifranceTextCountByCid: Record<string, number> = {}
@@ -148,7 +147,7 @@ async function addLinksToHtmlDocument(
             if (referredLegifranceTextsInfosFilePath !== undefined) {
               const article = await getOrLoadArticle(
                 legiDb,
-                legalObjectCacheByIdByCategorieTag,
+                legifranceObjectCache,
                 articleId,
               )
               const textCid = article?.CONTEXTE.TEXTE["@cid"]
@@ -197,7 +196,7 @@ async function addLinksToHtmlDocument(
             if (referredLegifranceTextsInfosFilePath !== undefined) {
               const sectionTa = await getOrLoadSectionTa(
                 legiDb,
-                legalObjectCacheByIdByCategorieTag,
+                legifranceObjectCache,
                 sectionTaId,
               )
               const textCid = sectionTa?.CONTEXTE.TEXTE["@cid"]

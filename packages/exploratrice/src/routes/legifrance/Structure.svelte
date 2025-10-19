@@ -19,11 +19,11 @@
   } from "@tricoteuses/legifrance"
   import { SvelteMap } from "svelte/reactivity"
 
-  import type { ArticleWithLinks } from "$lib/articles.js"
   import { urlPathFromId } from "$lib/urls"
 
   import { queryArticleWithLinks } from "./article.remote.js"
   import ArticleBody from "./ArticleBody.svelte"
+  import type { ArticleWithLinks } from "./articles.js"
   import { querySectionTa } from "./section_ta.remote.js"
   import Structure from "./Structure.svelte"
   import StructureItem from "./StructureItem.svelte"

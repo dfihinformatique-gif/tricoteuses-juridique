@@ -17,7 +17,7 @@ import {
   extendLoadedArticle,
   JorfArticleExtended,
   LegiArticleExtended,
-} from "$lib/loaders.js"
+} from "$lib/loaders/legifrance.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"

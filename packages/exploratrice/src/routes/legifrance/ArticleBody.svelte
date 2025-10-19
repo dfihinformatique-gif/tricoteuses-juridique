@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { LegiArticle } from "@tricoteuses/legifrance"
 
-  import type { ArticleWithLinks } from "$lib/articles"
-  import { cleanHtmlContenu } from "$lib/strings"
+  import { cleanHtmlContenu } from "$lib/strings.js"
 
+  import type { ArticleWithLinks } from "./articles.js"
   import HtmlFragmentWithReferences from "./HtmlFragmentWithReferences.svelte"
 
   let {

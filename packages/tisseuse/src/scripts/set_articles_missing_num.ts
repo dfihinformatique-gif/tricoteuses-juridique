@@ -9,18 +9,17 @@ import {
 } from "@tricoteuses/legifrance"
 import sade from "sade"
 
+import { newLegifranceObjectCache } from "$lib/cache.js"
 import {
   getOrLoadSectionsTa,
   getOrLoadTextelr,
-  newLegalObjectCacheByIdByCategorieTag,
-} from "$lib/loaders.js"
+} from "$lib/loaders/legifrance.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
 export async function getArticleNum(
   article: JorfArticle | LegiArticle,
 ): Promise<string | undefined> {
-  const legalObjectCacheByIdByCategorieTag =
-    newLegalObjectCacheByIdByCategorieTag()
+  const legifranceObjectCache = newLegifranceObjectCache()
   const articleContexteTexte = article.CONTEXTE.TEXTE
   const articleId = article.META.META_COMMUN.ID
   let articleNum = article.META.META_SPEC.META_ARTICLE.NUM
@@ -29,11 +28,7 @@ export async function getArticleNum(
     const textelr =
       texteCid === undefined
         ? undefined
-        : await getOrLoadTextelr(
-            legiDb,
-            legalObjectCacheByIdByCategorieTag,
-            texteCid,
-          )
+        : await getOrLoadTextelr(legiDb, legifranceObjectCache, texteCid)
     if (articleContexteTexte.TM === undefined) {
       const lienArticle = textelr?.STRUCT?.LIEN_ART?.find(
         (lienArticle) => lienArticle["@id"] === articleId,
@@ -50,7 +45,7 @@ export async function getArticleNum(
         : [articleLastTm.TITRE_TM["@id"]]
       const sectionsTa = await getOrLoadSectionsTa(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         sectionsTaIds,
       )
       const articlesNums = new Set(

@@ -13,19 +13,15 @@ import {
 import type { Sql } from "postgres"
 
 import { assertNever } from "./asserts.js"
-import {
-  getOrLoadArticle,
-  getOrLoadSectionTa,
-  // newLegalObjectCacheByIdByCategorieTag,
-  type LegalObjectCacheByIdByCategorieTag,
-} from "./loaders.js"
+import { LegifranceObjectCache } from "./cache.js"
+import { getOrLoadArticle, getOrLoadSectionTa } from "./loaders/legifrance.js"
 
 /**
  * TODO: Migrate to @tricoteuses/legifrance
  */
 export function getArticleDateSignature(
   article: JorfArticle | LegiArticle,
-  // legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag = newLegalObjectCacheByIdByCategorieTag(),
+  // legifranceObjectCache: LegifranceObjectCache = newLegifranceObjectCache(),
 ): string {
   // TODO: For non-JORF articles, use links to retrieve article or text that creates or
   // modify this article and use their date.
@@ -104,15 +100,11 @@ export function getArticleDateSignature(
  */
 export async function getOrLoadArticleSiblingId(
   legiDb: Sql,
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  legifranceObjectCache: LegifranceObjectCache,
   id: string,
   offset: -1 | 1,
 ): Promise<string | undefined> {
-  const article = await getOrLoadArticle(
-    legiDb,
-    legalObjectCacheByIdByCategorieTag,
-    id,
-  )
+  const article = await getOrLoadArticle(legiDb, legifranceObjectCache, id)
   if (article === undefined) {
     return undefined
   }
@@ -144,7 +136,7 @@ export async function getOrLoadArticleSiblingId(
   // TODO: Filter sibling article by date.
   return await (offset === -1 ? moveToPreviousArticleId : moveToNextArticleId)(
     legiDb,
-    legalObjectCacheByIdByCategorieTag,
+    legifranceObjectCache,
     id,
     date,
     article.num,
@@ -154,7 +146,7 @@ export async function getOrLoadArticleSiblingId(
 
 async function getSectionTaState(
   legiDb: Sql,
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  legifranceObjectCache: LegifranceObjectCache,
   sectionTaId: string,
   sectionTaStateById: Record<
     string,
@@ -178,7 +170,7 @@ async function getSectionTaState(
   if (sectionTaState === undefined) {
     const sectionTa = await getOrLoadSectionTa(
       legiDb,
-      legalObjectCacheByIdByCategorieTag,
+      legifranceObjectCache,
       sectionTaId,
     )
     if (sectionTa === undefined) {
@@ -227,12 +219,12 @@ async function getSectionTaState(
 
 async function moveToFirstArticleId(
   legiDb: Sql,
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  legifranceObjectCache: LegifranceObjectCache,
   sectionTaId: string,
 ): Promise<string | undefined> {
   const sectionTa = await getOrLoadSectionTa(
     legiDb,
-    legalObjectCacheByIdByCategorieTag,
+    legifranceObjectCache,
     sectionTaId,
   )
   if (sectionTa === undefined) {
@@ -251,7 +243,7 @@ async function moveToFirstArticleId(
     for (const lienSectionTa of liensSectionsTa) {
       const firstArticleId = await moveToFirstArticleId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         lienSectionTa["@id"],
       )
       if (firstArticleId !== undefined) {
@@ -264,12 +256,12 @@ async function moveToFirstArticleId(
 
 async function moveToLastArticleId(
   legiDb: Sql,
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  legifranceObjectCache: LegifranceObjectCache,
   sectionTaId: string,
 ): Promise<string | undefined> {
   const sectionTa = await getOrLoadSectionTa(
     legiDb,
-    legalObjectCacheByIdByCategorieTag,
+    legifranceObjectCache,
     sectionTaId,
   )
   if (sectionTa === undefined) {
@@ -284,7 +276,7 @@ async function moveToLastArticleId(
     for (const lienSectionTa of liensSectionsTa.toReversed()) {
       const lastArticleId = await moveToLastArticleId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         lienSectionTa["@id"],
       )
       if (lastArticleId !== undefined) {
@@ -297,7 +289,7 @@ async function moveToLastArticleId(
 
 async function moveToNextArticleId(
   legiDb: Sql,
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  legifranceObjectCache: LegifranceObjectCache,
   articleId: string,
   articleDate: string,
   articleNum: string | undefined,
@@ -319,7 +311,7 @@ async function moveToNextArticleId(
   }
   const sectionTaState = await getSectionTaState(
     legiDb,
-    legalObjectCacheByIdByCategorieTag,
+    legifranceObjectCache,
     sectionTaId,
     sectionTaStateById,
     articleId,
@@ -342,7 +334,7 @@ async function moveToNextArticleId(
         if (lienNextArticle["@num"] !== articleNum) {
           const nextArticle = await getOrLoadArticle(
             legiDb,
-            legalObjectCacheByIdByCategorieTag,
+            legifranceObjectCache,
             lienNextArticle["@id"],
           )
           if (
@@ -358,7 +350,7 @@ async function moveToNextArticleId(
         for (const lienSectionTa of liensSectionsTa) {
           const firstArticleId = await moveToFirstArticleId(
             legiDb,
-            legalObjectCacheByIdByCategorieTag,
+            legifranceObjectCache,
             lienSectionTa["@id"],
           )
           if (firstArticleId !== undefined) {
@@ -368,7 +360,7 @@ async function moveToNextArticleId(
       }
       return await moveToNextArticleId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         articleId,
         articleDate,
         articleNum,
@@ -388,7 +380,7 @@ async function moveToNextArticleId(
       ) {
         const firstArticleId = await moveToFirstArticleId(
           legiDb,
-          legalObjectCacheByIdByCategorieTag,
+          legifranceObjectCache,
           liensSectionsTa[sectionTaIndex]["@id"],
         )
         if (firstArticleId !== undefined) {
@@ -397,7 +389,7 @@ async function moveToNextArticleId(
       }
       return await moveToNextArticleId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         articleId,
         articleDate,
         articleNum,
@@ -416,7 +408,7 @@ async function moveToNextArticleId(
 
 async function moveToPreviousArticleId(
   legiDb: Sql,
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  legifranceObjectCache: LegifranceObjectCache,
   articleId: string,
   articleDate: string,
   articleNum: string | undefined,
@@ -438,7 +430,7 @@ async function moveToPreviousArticleId(
   }
   const sectionTaState = await getSectionTaState(
     legiDb,
-    legalObjectCacheByIdByCategorieTag,
+    legifranceObjectCache,
     sectionTaId,
     sectionTaStateById,
     articleId,
@@ -457,7 +449,7 @@ async function moveToPreviousArticleId(
         if (lienPreviousArticle["@num"] !== articleNum) {
           const previousArticle = await getOrLoadArticle(
             legiDb,
-            legalObjectCacheByIdByCategorieTag,
+            legifranceObjectCache,
             lienPreviousArticle["@id"],
           )
           if (
@@ -470,7 +462,7 @@ async function moveToPreviousArticleId(
       }
       return await moveToPreviousArticleId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         articleId,
         articleDate,
         articleNum,
@@ -489,7 +481,7 @@ async function moveToPreviousArticleId(
       ) {
         const lastArticleId = await moveToLastArticleId(
           legiDb,
-          legalObjectCacheByIdByCategorieTag,
+          legifranceObjectCache,
           structureTa.LIEN_SECTION_TA![sectionTaIndex]["@id"],
         )
         if (lastArticleId !== undefined) {
@@ -502,7 +494,7 @@ async function moveToPreviousArticleId(
         sectionTaState.index = liensArticles.length
         return await moveToPreviousArticleId(
           legiDb,
-          legalObjectCacheByIdByCategorieTag,
+          legifranceObjectCache,
           articleId,
           articleDate,
           articleNum,
@@ -513,7 +505,7 @@ async function moveToPreviousArticleId(
       }
       return await moveToPreviousArticleId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         articleId,
         articleDate,
         articleNum,

@@ -1,7 +1,6 @@
 <script lang="ts">
   import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
-  import { error } from "@sveltejs/kit"
   import {
     bestItemForDate,
     gitPathFromId,
@@ -20,22 +19,17 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
-  import { cleanHtmlContenu } from "$lib/strings.js"
   import { urlPathFromId } from "$lib/urls.js"
 
   import { queryArticlePageInfos } from "../../article.remote.js"
   import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
-  import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
   import TmWithTitreArray from "../../TmWithTitreArray.svelte"
   import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
   import ArticleBody from "../../ArticleBody.svelte"
 
   let { params } = $props()
 
-  const articlePageInfos = $derived(
-    (await queryArticlePageInfos(params.id)) ??
-      error(404, "Article non trouvé"),
-  )
+  const articlePageInfos = $derived(await queryArticlePageInfos(params.id))
   const { article, mergedVersions, nextArticleId, previousArticleId } =
     $derived(articlePageInfos)
   const texte = $derived(article.CONTEXTE.TEXTE)

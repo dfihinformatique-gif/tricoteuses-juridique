@@ -4,6 +4,7 @@ import {
   auditTrimString,
   cleanAudit,
 } from "@auditors/core"
+import { error } from "@sveltejs/kit"
 import {
   auditLegalId,
   type JorfSectionTa,
@@ -11,7 +12,7 @@ import {
 } from "@tricoteuses/legifrance"
 import {
   getOrLoadSectionTa,
-  newLegalObjectCacheByIdByCategorieTag,
+  newLegifranceObjectCache,
 } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
@@ -27,9 +28,6 @@ export const querySectionTa = query(
     auditRequire,
   ),
   async (id): Promise<JorfSectionTa | LegiSectionTa | undefined> =>
-    await getOrLoadSectionTa(
-      legiDb,
-      newLegalObjectCacheByIdByCategorieTag(),
-      id,
-    ),
+    (await getOrLoadSectionTa(legiDb, newLegifranceObjectCache(), id)) ??
+    error(404),
 )

@@ -4,6 +4,7 @@ import {
   auditTrimString,
   cleanAudit,
 } from "@auditors/core"
+import { error } from "@sveltejs/kit"
 import {
   auditLegalId,
   type JorfArticle,
@@ -15,20 +16,21 @@ import {
   extendLoadedArticle,
   getOrLoadArticleSiblingId,
   getOrLoadTextelr,
-  newLegalObjectCacheByIdByCategorieTag,
+  newLegifranceObjectCache,
   type JorfArticleExtended,
-  type LegalObjectCacheByIdByCategorieTag,
+  type LegifranceObjectCache,
   type LegiArticleExtended,
 } from "@tricoteuses/tisseuse"
 import type { JSONValue } from "postgres"
 
 import { query } from "$app/server"
-import type { ArticlePageInfos, ArticleWithLinks } from "$lib/articles.js"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
+import type { ArticlePageInfos, ArticleWithLinks } from "./articles.js"
+
 const loadArticleWithLinks = async (
-  legalObjectCacheByIdByCategorieTag: LegalObjectCacheByIdByCategorieTag,
+  legifranceObjectCache: LegifranceObjectCache,
   id: string,
 ): Promise<ArticleWithLinks | undefined> => {
   const articleWithLinks = (
@@ -63,12 +65,12 @@ const loadArticleWithLinks = async (
         nota?: string
       },
   )[0]
-  let legalObjectCacheById = legalObjectCacheByIdByCategorieTag.get("ARTICLE")
-  if (legalObjectCacheById === undefined) {
-    legalObjectCacheById = new Map()
-    legalObjectCacheByIdByCategorieTag.set("ARTICLE", legalObjectCacheById)
+  let articleCache = legifranceObjectCache.get("ARTICLE")
+  if (articleCache === undefined) {
+    articleCache = new Map()
+    legifranceObjectCache.set("ARTICLE", articleCache)
   }
-  legalObjectCacheById.set(
+  articleCache.set(
     id,
     (articleWithLinks?.article as unknown as JSONValue) ?? null,
   )
@@ -84,7 +86,7 @@ const loadArticleWithLinks = async (
 //     auditRequire,
 //   ),
 //   async (id): Promise<JorfArticle | LegiArticle | undefined> =>
-//     await getOrLoadArticle(legiDb, newLegalObjectCacheByIdByCategorieTag(), id),
+//     await getOrLoadArticle(legiDb, newLegifranceObjectCache(), id),
 // )
 
 // export const queryArticleContenuAvecLiens = query(
@@ -95,7 +97,7 @@ const loadArticleWithLinks = async (
 //     auditLegalId,
 //     auditRequire,
 //   ),
-//   async (id): Promise<{ blocTextuel?: string; nota?: string } | undefined> => {
+//   async (id): Promise<{ blocTextuel?: string; nota?: string }> => {
 //     const contenuAvecLiens = (
 //       await legiDb<
 //         Array<{
@@ -125,26 +127,21 @@ export const queryArticlePageInfos = query(
     auditLegalId,
     auditRequire,
   ),
-  async (id): Promise<ArticlePageInfos | undefined> => {
-    const legalObjectCacheByIdByCategorieTag =
-      newLegalObjectCacheByIdByCategorieTag()
+  async (id): Promise<ArticlePageInfos> => {
+    const legifranceObjectCache = newLegifranceObjectCache()
     const articleWithLinks = await loadArticleWithLinks(
-      legalObjectCacheByIdByCategorieTag,
+      legifranceObjectCache,
       id,
     )
     if (articleWithLinks === undefined) {
-      return undefined
+      throw error(404)
     }
     const { article } = articleWithLinks
     const texteCid = article.CONTEXTE.TEXTE["@cid"]
     const textelr =
       texteCid === undefined
         ? undefined
-        : await getOrLoadTextelr(
-            legiDb,
-            legalObjectCacheByIdByCategorieTag,
-            texteCid,
-          )
+        : await getOrLoadTextelr(legiDb, legifranceObjectCache, texteCid)
     const detachedArticlesVersions =
       textelr === undefined
         ? []
@@ -194,13 +191,13 @@ export const queryArticlePageInfos = query(
       ],
       nextArticleId: await getOrLoadArticleSiblingId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         id,
         1,
       ),
       previousArticleId: await getOrLoadArticleSiblingId(
         legiDb,
-        legalObjectCacheByIdByCategorieTag,
+        legifranceObjectCache,
         id,
         -1,
       ),
@@ -217,5 +214,5 @@ export const queryArticleWithLinks = query(
     auditRequire,
   ),
   async (id): Promise<ArticleWithLinks | undefined> =>
-    await loadArticleWithLinks(newLegalObjectCacheByIdByCategorieTag(), id),
+    (await loadArticleWithLinks(newLegifranceObjectCache(), id)) ?? error(404),
 )

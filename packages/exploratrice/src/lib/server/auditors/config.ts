@@ -37,7 +37,7 @@ export function auditConfig(
     auditSwitch([auditTrimString, auditStringToBoolean], auditBoolean),
     auditSetNullish(false),
   )
-  for (const key of ["legiDb", "tisseuseDb"]) {
+  for (const key of ["assembleeDb", "legiDb", "tisseuseDb"]) {
     audit.attribute(
       data,
       key,
@@ -48,16 +48,18 @@ export function auditConfig(
       auditRequire,
     )
   }
-  audit.attribute(
-    data,
-    "title",
-    true,
-    errors,
-    remainingKeys,
-    auditTrimString,
-    auditEmptyToNull,
-    auditRequire,
-  )
+  for (const key of ["assembleeDocumentsDir", "title"]) {
+    audit.attribute(
+      data,
+      key,
+      true,
+      errors,
+      remainingKeys,
+      auditTrimString,
+      auditEmptyToNull,
+      auditRequire,
+    )
+  }
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

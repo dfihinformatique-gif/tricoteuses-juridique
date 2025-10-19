@@ -1,7 +1,6 @@
 <script lang="ts">
   import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
-  import { error } from "@sveltejs/kit"
   import {
     bestItemForDate,
     gitPathFromId,
@@ -25,9 +24,7 @@
   let { params } = $props()
 
   let displayMode: "links" | "references" = $state("links")
-  const sectionTa = $derived(
-    (await querySectionTa(params.id)) ?? error(404, "Section TA non trouvée"),
-  )
+  const sectionTa = $derived(await querySectionTa(params.id))
   const texte = $derived(sectionTa.CONTEXTE.TEXTE)
   // TOOD: Improve date detection:
   const date = $derived(texte["@date_publi"]!)

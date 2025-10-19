@@ -7,6 +7,15 @@ export interface Version {
   number: number
 }
 
+export const assembleeDb = postgres({
+  database: config.assembleeDb.database,
+  host: config.assembleeDb.host,
+  password: config.assembleeDb.password,
+  port: config.assembleeDb.port,
+  user: config.assembleeDb.user,
+})
+export const assembleeVersionNumber = 9
+
 export const legiDb = postgres({
   database: config.legiDb.database,
   host: config.legiDb.host,
@@ -14,7 +23,7 @@ export const legiDb = postgres({
   port: config.legiDb.port,
   user: config.legiDb.user,
 })
-export const legiVersionNumber = 17
+export const legiVersionNumber = 20
 
 export const tisseuseDb = postgres({
   database: config.tisseuseDb.database,

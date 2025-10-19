@@ -6,16 +6,14 @@ import {
   getArticleDateSignature,
   getOrLoadArticleSiblingId,
 } from "./articles.js"
-import {
-  getOrLoadArticle,
-  newLegalObjectCacheByIdByCategorieTag,
-} from "./loaders.js"
+import { newLegifranceObjectCache } from "./cache.js"
+import { getOrLoadArticle } from "./loaders/legifrance.js"
 
 describe("getArticleDateSignature", async () => {
   test("getArticleDateSignature(JORFARTI000033203048)", async () => {
     const article = await getOrLoadArticle(
       legiDb,
-      newLegalObjectCacheByIdByCategorieTag(),
+      newLegifranceObjectCache(),
       "JORFARTI000033203048",
     )
     expect(article).not.toBe(undefined)
@@ -25,7 +23,7 @@ describe("getArticleDateSignature", async () => {
   test("getArticleDateSignature(LEGIARTI000033205152)", async () => {
     const article = await getOrLoadArticle(
       legiDb,
-      newLegalObjectCacheByIdByCategorieTag(),
+      newLegifranceObjectCache(),
       "LEGIARTI000033205152",
     )
     expect(article).not.toBe(undefined)
@@ -35,7 +33,7 @@ describe("getArticleDateSignature", async () => {
   test("getArticleDateSignature(LEGIARTI000048665041)", async () => {
     const article = await getOrLoadArticle(
       legiDb,
-      newLegalObjectCacheByIdByCategorieTag(),
+      newLegifranceObjectCache(),
       "LEGIARTI000048665041",
     )
     expect(article).not.toBe(undefined)
@@ -48,7 +46,7 @@ describe("getOrLoadArticleSiblingId", async () => {
     expect(
       await getOrLoadArticleSiblingId(
         legiDb,
-        newLegalObjectCacheByIdByCategorieTag(),
+        newLegifranceObjectCache(),
         "JORFARTI000033203048",
         1,
       ),
@@ -59,7 +57,7 @@ describe("getOrLoadArticleSiblingId", async () => {
     expect(
       await getOrLoadArticleSiblingId(
         legiDb,
-        newLegalObjectCacheByIdByCategorieTag(),
+        newLegifranceObjectCache(),
         "JORFARTI000033203048",
         -1,
       ),

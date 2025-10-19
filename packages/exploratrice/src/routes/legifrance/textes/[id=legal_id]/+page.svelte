@@ -1,7 +1,6 @@
 <script lang="ts">
   import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
-  import { error } from "@sveltejs/kit"
   import {
     gitPathFromId,
     organizationNameByTexteNature,
@@ -24,10 +23,9 @@
 
   let { params } = $props()
 
-  const texteWithLinks = $derived(
-    (await queryTexteWithLinks(params.id)) ?? error(404, "Texte non trouvé"),
-  )
-  const { textelr, texteVersion } = $derived(texteWithLinks)
+  const texteWithLinks = $derived(await queryTexteWithLinks(params.id))
+  const { dossierLegislatifAssembleeUid, textelr, texteVersion } =
+    $derived(texteWithLinks)
   const abro = $derived(texteWithLinks.abro ?? texteVersion?.ABRO?.CONTENU)
   let displayMode: "links" | "references" = $state("links")
   const metaCommun = $derived(texteVersion?.META.META_COMMUN)
@@ -144,6 +142,13 @@
           >
           <ExternalLinkIcon />
         </DropdownMenu.Item>
+        {#if dossierLegislatifAssembleeUid !== undefined}
+          <DropdownMenu.Item>
+            <a href={urlPathFromId(dossierLegislatifAssembleeUid)}
+              >Dossier législatif de l'Assemblée</a
+            >
+          </DropdownMenu.Item>
+        {/if}
       </DropdownMenu.Group>
     </DropdownMenu.Content>
   </DropdownMenu.Root>

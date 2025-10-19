@@ -3,11 +3,24 @@ export {
   getOrLoadArticleSiblingId,
 } from "./articles.js"
 export { assertNever } from "./asserts.js"
+export {
+  newAssembleeObjectCache,
+  newLegifranceObjectCache,
+  newObjectCache,
+  type AssembleeObjectCache,
+  type AssembleeObjectType,
+  type LegifranceObjectCache,
+  type ObjectCache,
+} from "./cache.js"
 export { formatLongDate } from "./dates.js"
 export { jsonReplacer } from "./json.js"
 export {
+  getOrLoadDocument,
+  getOrLoadDocumentsByDossierParlementaireUid,
+  getOrLoadDossierParlementaire,
+} from "./loaders/assemblee.js"
+export {
   extendLoadedArticle,
-  newLegalObjectCacheByIdByCategorieTag,
   getOrLoadArticle,
   getOrLoadJo,
   getOrLoadSectionTa,
@@ -16,9 +29,8 @@ export {
   getOrLoadTexteVersion,
   type ArticleExtension,
   type JorfArticleExtended,
-  type LegalObjectCacheByIdByCategorieTag,
   type LegiArticleExtended,
-} from "./loaders.js"
+} from "./loaders/legifrance.js"
 export { action } from "./text_parsers/actions.js"
 export {
   article,

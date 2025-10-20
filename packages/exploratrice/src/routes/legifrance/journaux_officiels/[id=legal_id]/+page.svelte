@@ -94,6 +94,11 @@
           <ExternalLinkIcon />
         </DropdownMenu.Item>
         <DropdownMenu.Item>
+          <a href="https://legal.tricoteuses.fr/jo/{params.id}">JSON augmenté</a
+          >
+          <ExternalLinkIcon />
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
           <a
             href={new URL(
               gitPathFromId(params.id, ".json"),

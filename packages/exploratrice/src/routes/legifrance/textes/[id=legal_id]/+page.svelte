@@ -116,6 +116,18 @@
           </DropdownMenu.Item>
         {/if}
         <DropdownMenu.Item>
+          <a href="https://legal.tricoteuses.fr/texte_version/{params.id}"
+            >JSON augmenté de TEXTE_VERSION</a
+          >
+          <ExternalLinkIcon />
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a href="https://legal.tricoteuses.fr/textelr/{params.id}"
+            >JSON augmenté de TEXTELR</a
+          >
+          <ExternalLinkIcon />
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
           <a
             href={new URL(
               gitPathFromId(params.id, ".json"),

@@ -359,57 +359,57 @@ export async function* parseTextLinks({
       return
     }
 
-    if (state.textId !== undefined && article.num !== undefined) {
-      const articleDefinition =
-        articleDefinitionByNumByTextId[state.textId]?.[article.num]
-      if (articleDefinition !== undefined) {
-        yield Object.fromEntries(
-          Object.entries({
-            article,
-            definition: articleDefinition,
-            originalTransformation:
-              article.originalTransformation === undefined
-                ? undefined
-                : ancestors === undefined
-                  ? article.originalTransformation
-                  : {
-                      ...article.originalTransformation,
-                      position:
-                        article.originalTransformation.position.start <
-                        ancestors[0].originalTransformation!.position.start
-                          ? {
-                              start:
-                                article.originalTransformation.position.start,
-                              stop: ancestors[0].originalTransformation!
-                                .position.stop,
-                            }
-                          : {
-                              start:
-                                ancestors[0].originalTransformation!.position
-                                  .start,
-                              stop: article.originalTransformation.position
-                                .stop,
-                            },
-                    },
-            position:
-              ancestors === undefined
-                ? article.position!
-                : article.position!.start < ancestors[0].position!.start
-                  ? {
-                      start: article.position.start,
-                      stop: ancestors[0].position.stop,
-                    }
-                  : {
-                      start: ancestors[0].position.start,
-                      stop: article.position.stop,
-                    },
-            reference,
-            type: "internal_article",
-          }).filter(([, value]) => value !== undefined),
-        ) as unknown as ArticleLink
-        return
-      }
-    }
+    // if (state.textId !== undefined && article.num !== undefined) {
+    //   const articleDefinition =
+    //     articleDefinitionByNumByTextId[state.textId]?.[article.num]
+    //   if (articleDefinition !== undefined) {
+    //     yield Object.fromEntries(
+    //       Object.entries({
+    //         article,
+    //         definition: articleDefinition,
+    //         originalTransformation:
+    //           article.originalTransformation === undefined
+    //             ? undefined
+    //             : ancestors === undefined
+    //               ? article.originalTransformation
+    //               : {
+    //                   ...article.originalTransformation,
+    //                   position:
+    //                     article.originalTransformation.position.start <
+    //                     ancestors[0].originalTransformation!.position.start
+    //                       ? {
+    //                           start:
+    //                             article.originalTransformation.position.start,
+    //                           stop: ancestors[0].originalTransformation!
+    //                             .position.stop,
+    //                         }
+    //                       : {
+    //                           start:
+    //                             ancestors[0].originalTransformation!.position
+    //                               .start,
+    //                           stop: article.originalTransformation.position
+    //                             .stop,
+    //                         },
+    //                 },
+    //         position:
+    //           ancestors === undefined
+    //             ? article.position!
+    //             : article.position!.start < ancestors[0].position!.start
+    //               ? {
+    //                   start: article.position.start,
+    //                   stop: ancestors[0].position.stop,
+    //                 }
+    //               : {
+    //                   start: ancestors[0].position.start,
+    //                   stop: article.position.stop,
+    //                 },
+    //         reference,
+    //         type: "internal_article",
+    //       }).filter(([, value]) => value !== undefined),
+    //     ) as unknown as ArticleLink
+    //     return
+    //   }
+    // }
 
     let articlesInfos: Array<{
       data: JorfArticle | LegiArticle

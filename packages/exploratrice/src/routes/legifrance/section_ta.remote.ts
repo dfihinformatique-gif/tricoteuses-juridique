@@ -27,7 +27,7 @@ export const querySectionTa = query(
     auditLegalId,
     auditRequire,
   ),
-  async (id): Promise<JorfSectionTa | LegiSectionTa | undefined> =>
+  async (id): Promise<JorfSectionTa | LegiSectionTa> =>
     (await getOrLoadSectionTa(legiDb, newLegifranceObjectCache(), id)) ??
     error(404),
 )

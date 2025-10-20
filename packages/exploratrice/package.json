@@ -27,7 +27,7 @@
     "@tailwindcss/vite": "^4.0.0",
     "@tricoteuses/assemblee": "^2.4.1",
     "@tricoteuses/legifrance": "^0.16.0",
-    "@types/node": "^22",
+    "@types/node": "^24.9.0",
     "bits-ui": "^2.14.0",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.2",

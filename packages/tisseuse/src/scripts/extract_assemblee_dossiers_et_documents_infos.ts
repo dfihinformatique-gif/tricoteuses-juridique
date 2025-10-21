@@ -1,6 +1,7 @@
 import {
-  Document,
+  capitalizeFirstLetter,
   walkActes,
+  type Document,
   type DossierParlementaire,
 } from "@tricoteuses/assemblee"
 import sade from "sade"
@@ -46,7 +47,9 @@ async function extractAssembleeTextsDescriptions(): Promise<
         cartouches: [
           {
             badge: dossierParlementaire.procedureParlementaire.libelle,
-            titre: dossierParlementaire.titreDossier.titre,
+            titre: capitalizeFirstLetter(
+              dossierParlementaire.titreDossier.titre,
+            ),
           },
         ],
         uid: uid,
@@ -67,14 +70,14 @@ async function extractAssembleeTextsDescriptions(): Promise<
           for (const { data: document, uid: documentUid } of await assembleeDb<
             Array<{ data: Document; uid: string }>
           >`
-          SELECT data, uid
-          FROM documents
-          WHERE uid in ${assembleeDb([...documentsUids])}
-        `) {
+            SELECT data, uid
+            FROM documents
+            WHERE uid in ${assembleeDb([...documentsUids])}
+          `) {
             const documentCartouches = [
               {
                 badge: document.denominationStructurelle,
-                titre: document.titres.titrePrincipal,
+                titre: capitalizeFirstLetter(document.titres.titrePrincipal),
               },
             ]
             if (
@@ -83,7 +86,9 @@ async function extractAssembleeTextsDescriptions(): Promise<
             ) {
               addCartouche(documentCartouches, {
                 badge: document.denominationStructurelle,
-                titre: document.titres.titrePrincipalCourt,
+                titre: capitalizeFirstLetter(
+                  document.titres.titrePrincipalCourt,
+                ),
               })
             }
             assembleeDescriptionByUid.set(documentUid, {

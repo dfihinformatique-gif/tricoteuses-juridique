@@ -88,11 +88,11 @@
 {#if dossierParlementaire.actesLegislatifs !== undefined}
   <ul>
     {#each walkActes(dossierParlementaire.actesLegislatifs) as acte}
-      {#if acte.texteAssocieRef !== undefined}
-        {@render documentView(acte, acte.texteAssocieRef)}
-      {/if}
       {#if acte.texteAdopteRef !== undefined}
         {@render documentView(acte, acte.texteAdopteRef)}
+      {/if}
+      {#if acte.texteAssocieRef !== undefined}
+        {@render documentView(acte, acte.texteAssocieRef)}
       {/if}
     {/each}
 

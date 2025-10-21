@@ -47,10 +47,7 @@ interface LegifranceTextDescription {
 //   titresOfficieux?: string[]
 // }
 
-function addAutocompletion(
-  cartouches: Cartouche[],
-  cartouche: Cartouche,
-): void {
+function addCartouche(cartouches: Cartouche[], cartouche: Cartouche): void {
   if (
     cartouches.find(
       (exisitingAutocompletion) =>
@@ -286,7 +283,7 @@ async function extractLegifranceTextsDescriptions(
         }
 
         for (const titleToParse of titlesToParse) {
-          addAutocompletion(legifranceTextDescription.cartouches, {
+          addCartouche(legifranceTextDescription.cartouches, {
             badge: nature,
             titre: titleToParse,
           })
@@ -410,7 +407,7 @@ async function extractLegifranceTextsDescriptions(
         }
 
         for (const title of otherTitles) {
-          addAutocompletion(legifranceTextDescription.cartouches, {
+          addCartouche(legifranceTextDescription.cartouches, {
             badge: nature,
             titre: title,
           })

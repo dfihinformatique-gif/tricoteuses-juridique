@@ -1,11 +1,15 @@
-import type { DossierParlementaire } from "@tricoteuses/assemblee"
+import {
+  Document,
+  walkActes,
+  type DossierParlementaire,
+} from "@tricoteuses/assemblee"
 import sade from "sade"
 
 import { assembleeDb, tisseuseDb } from "$lib/server/databases/index.js"
 
-interface AssembleeTextDescription {
+interface AssembleeDescription {
   cartouches: Cartouche[]
-  dossierParlementaireUid: string
+  uid: string
 }
 
 export interface Cartouche {
@@ -13,13 +17,21 @@ export interface Cartouche {
   titre: string
 }
 
+function addCartouche(cartouches: Cartouche[], cartouche: Cartouche): void {
+  if (
+    cartouches.find(
+      (exisitingAutocompletion) =>
+        exisitingAutocompletion.titre === cartouche.titre,
+    ) === undefined
+  ) {
+    cartouches.push(cartouche)
+  }
+}
+
 async function extractAssembleeTextsDescriptions(): Promise<
-  Map<string, AssembleeTextDescription>
+  Map<string, AssembleeDescription>
 > {
-  const assembleeTextDescriptionByDossierParlementaireUid = new Map<
-    string,
-    AssembleeTextDescription
-  >()
+  const assembleeDescriptionByUid = new Map<string, AssembleeDescription>()
   for await (const dossierParlementaireRows of assembleeDb<
     Array<{ data: DossierParlementaire; uid: string }>
   >`
@@ -30,18 +42,60 @@ async function extractAssembleeTextsDescriptions(): Promise<
       data: dossierParlementaire,
       uid,
     } of dossierParlementaireRows) {
-      assembleeTextDescriptionByDossierParlementaireUid.set(uid, {
+      assembleeDescriptionByUid.set(uid, {
         cartouches: [
           {
             badge: dossierParlementaire.procedureParlementaire.libelle,
             titre: dossierParlementaire.titreDossier.titre,
           },
         ],
-        dossierParlementaireUid: uid,
+        uid: uid,
       })
+
+      if (dossierParlementaire.actesLegislatifs !== undefined) {
+        const documentsUids = new Set<string>()
+        for (const acte of walkActes(dossierParlementaire.actesLegislatifs)) {
+          if (acte.texteAdopteRef !== undefined) {
+            documentsUids.add(acte.texteAdopteRef)
+          }
+          if (acte.texteAssocieRef !== undefined) {
+            documentsUids.add(acte.texteAssocieRef)
+          }
+        }
+
+        if (documentsUids.size !== 0) {
+          for (const { data: document, uid: documentUid } of await assembleeDb<
+            Array<{ data: Document; uid: string }>
+          >`
+          SELECT data, uid
+          FROM documents
+          WHERE uid in ${assembleeDb([...documentsUids])}
+        `) {
+            const documentCartouches = [
+              {
+                badge: document.denominationStructurelle,
+                titre: document.titres.titrePrincipal,
+              },
+            ]
+            if (
+              document.titres.titrePrincipalCourt !==
+              document.titres.titrePrincipal
+            ) {
+              addCartouche(documentCartouches, {
+                badge: document.denominationStructurelle,
+                titre: document.titres.titrePrincipalCourt,
+              })
+            }
+            assembleeDescriptionByUid.set(documentUid, {
+              cartouches: documentCartouches,
+              uid: documentUid,
+            })
+          }
+        }
+      }
     }
   }
-  return assembleeTextDescriptionByDossierParlementaireUid
+  return assembleeDescriptionByUid
 }
 
 async function extractAssembleeDossiersEtDocumentsInfos({
@@ -49,8 +103,7 @@ async function extractAssembleeDossiersEtDocumentsInfos({
 }: {
   autocompletion?: boolean
 }): Promise<number> {
-  const assembleeTextDescriptionByDossierParlementaireUid =
-    await extractAssembleeTextsDescriptions()
+  const assembleeDescriptionByUid = await extractAssembleeTextsDescriptions()
 
   if (generateAutocompletions) {
     const existingTitreTexteAutocompletionKeys = new Set(
@@ -62,10 +115,7 @@ async function extractAssembleeDossiersEtDocumentsInfos({
         `
       ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
     )
-    for (const {
-      cartouches,
-      dossierParlementaireUid,
-    } of assembleeTextDescriptionByDossierParlementaireUid.values()) {
+    for (const { cartouches, uid } of assembleeDescriptionByUid.values()) {
       for (const cartouche of cartouches) {
         await tisseuseDb`
           INSERT INTO titre_texte_autocompletion (
@@ -75,14 +125,14 @@ async function extractAssembleeDossiersEtDocumentsInfos({
           ) VALUES (
             ${cartouche.titre},
             ${cartouche.badge ?? null},
-            ${dossierParlementaireUid}
+            ${uid}
           )
           ON CONFLICT (autocompletion, id) DO UPDATE SET
             badge = EXCLUDED.badge
           WHERE titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
         `
         existingTitreTexteAutocompletionKeys.delete(
-          JSON.stringify([dossierParlementaireUid, cartouche.titre]),
+          JSON.stringify([uid, cartouche.titre]),
         )
       }
     }

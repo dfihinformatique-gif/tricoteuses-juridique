@@ -5,7 +5,6 @@ import sade from "sade"
 import { formatLongDate } from "$lib/dates"
 import { jsonReplacer } from "$lib/json.js"
 import {
-  assembleeDb,
   legiAnomaliesDb,
   legiDb,
   tisseuseDb,
@@ -20,11 +19,10 @@ import {
 import { definitionTexteFrancais } from "$lib/text_parsers/texts.js"
 import { chainTransformers } from "$lib/text_parsers/transformers.js"
 import { cleanTexteTitle } from "$lib/textes.js"
-import { DossierParlementaire } from "@tricoteuses/assemblee"
 
-interface AssembleeTextDescription {
-  dossierParlementaireUid: string
-  titres: Set<string>
+export interface Cartouche {
+  badge?: string
+  titre: string
 }
 
 interface LegifranceTitleAnalysis {
@@ -37,11 +35,11 @@ interface LegifranceTitleAnalysis {
 
 interface LegifranceTextDescription {
   analysesTitres: LegifranceTitleAnalysis[]
+  cartouches: Cartouche[]
   cid: string
   date: string
   nature: string
   num?: string
-  titres: Set<string>
 }
 
 // interface TextDescription {
@@ -49,30 +47,18 @@ interface LegifranceTextDescription {
 //   titresOfficieux?: string[]
 // }
 
-async function extractAssembleeTextsDescriptions(): Promise<
-  Map<string, AssembleeTextDescription>
-> {
-  const assembleeTextDescriptionByDossierParlementaireUid = new Map<
-    string,
-    AssembleeTextDescription
-  >()
-  for await (const dossierParlementaireRows of assembleeDb<
-    Array<{ data: DossierParlementaire; uid: string }>
-  >`
-    SELECT data, uid
-    FROM dossiers
-  `.cursor(100)) {
-    for (const {
-      data: dossierParlementaire,
-      uid,
-    } of dossierParlementaireRows) {
-      assembleeTextDescriptionByDossierParlementaireUid.set(uid, {
-        dossierParlementaireUid: uid,
-        titres: new Set([dossierParlementaire.titreDossier.titre]),
-      })
-    }
+function addAutocompletion(
+  cartouches: Cartouche[],
+  cartouche: Cartouche,
+): void {
+  if (
+    cartouches.find(
+      (exisitingAutocompletion) =>
+        exisitingAutocompletion.titre === cartouche.titre,
+    ) === undefined
+  ) {
+    cartouches.push(cartouche)
   }
-  return assembleeTextDescriptionByDossierParlementaireUid
 }
 
 async function extractLegifranceTextsDescriptions(
@@ -108,9 +94,11 @@ async function extractLegifranceTextsDescriptions(
           OR id LIKE 'JORFTEXT%'
         )
     `) {
-      const cid = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.CID
-      const date = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.DATE_TEXTE
-      const num = texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE.NUM
+      const metaTexteChronicle =
+        texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE
+      const cid = metaTexteChronicle.CID
+      const date = metaTexteChronicle.DATE_TEXTE
+      const num = metaTexteChronicle.NUM
       // if (id === "LEGITEXT000005617202") {
       //   // Loi n° 96-64 du 29 janvier 1996 autorisant la ratification du traité d'amitié
       //   // et de coopération entre la République française et la République d'Ouzbékistan
@@ -129,11 +117,11 @@ async function extractLegifranceTextsDescriptions(
       let legifranceTextDescription = legifranceTextDescriptionByCid.get(cid)
       if (legifranceTextDescription === undefined) {
         legifranceTextDescription = {
+          cartouches: [],
           analysesTitres: [],
           cid,
           date,
           nature,
-          titres: new Set(),
         }
         legifranceTextDescriptionByCid.set(cid, legifranceTextDescription)
       } else {
@@ -298,7 +286,10 @@ async function extractLegifranceTextsDescriptions(
         }
 
         for (const titleToParse of titlesToParse) {
-          legifranceTextDescription.titres.add(titleToParse)
+          addAutocompletion(legifranceTextDescription.cartouches, {
+            badge: nature,
+            titre: titleToParse,
+          })
           const simplifiedTitle = simplifyTextTitle(titleToParse)
           const context = new TextParserContext(simplifiedTitle)
           const titleParsing = definitionTexteFrancais(context) as
@@ -419,7 +410,10 @@ async function extractLegifranceTextsDescriptions(
         }
 
         for (const title of otherTitles) {
-          legifranceTextDescription.titres.add(title)
+          addAutocompletion(legifranceTextDescription.cartouches, {
+            badge: nature,
+            titre: title,
+          })
         }
       }
     }
@@ -443,103 +437,50 @@ async function extractTextsInfos({
   ])
   await anomalies.load()
 
-  const assembleeTextDescriptionByDossierParlementaireUid =
-    await extractAssembleeTextsDescriptions()
   const legifranceTextDescriptionByCid =
     await extractLegifranceTextsDescriptions(anomalies)
 
   if (generateAutocompletions) {
-    {
-      // Assemblée
-
-      const existingTitreTexteAutocompletionKeys = new Set(
-        (
-          await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
-            SELECT *
-            FROM titre_texte_autocompletion
-            WHERE id LIKE 'DLR%'
-          `
-        ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
-      )
-      for (const {
-        dossierParlementaireUid,
-        titres,
-      } of assembleeTextDescriptionByDossierParlementaireUid.values()) {
-        for (const titre of titres) {
-          if (
-            !existingTitreTexteAutocompletionKeys.delete(
-              JSON.stringify([dossierParlementaireUid, titre]),
-            )
-          ) {
-            await tisseuseDb`
-              INSERT INTO titre_texte_autocompletion (
-                autocompletion,
-                id
-              ) VALUES (
-                ${titre},
-                ${dossierParlementaireUid}
-              )
-              ON CONFLICT DO NOTHING
-            `
-          }
-        }
-      }
-      for (const obsoleteTitreTexteAutocompletionKey of existingTitreTexteAutocompletionKeys) {
-        const [id, autocompletion] = JSON.parse(
-          obsoleteTitreTexteAutocompletionKey,
-        ) as [string, string]
-        await tisseuseDb`
-          DELETE FROM titre_texte_autocompletion
-          WHERE
-            id = ${id}
-            AND autocompletion = ${autocompletion}
+    const existingTitreTexteAutocompletionKeys = new Set(
+      (
+        await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
+          SELECT autocompletion, id
+          FROM titre_texte_autocompletion
+          WHERE id LIKE 'JORFTEXT%' OR id LIKE 'LEGITEXT%'
         `
+      ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
+    )
+    for (const { cid, cartouches } of legifranceTextDescriptionByCid.values()) {
+      for (const cartouche of cartouches) {
+        await tisseuseDb`
+          INSERT INTO titre_texte_autocompletion (
+            autocompletion,
+            badge,
+            id
+          ) VALUES (
+            ${cartouche.titre},
+            ${cartouche.badge ?? null},
+            ${cid}
+          )
+          ON CONFLICT (autocompletion, id) DO UPDATE SET
+            badge = EXCLUDED.badge
+          WHERE titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
+        `
+        existingTitreTexteAutocompletionKeys.delete(
+          JSON.stringify([cid, cartouche.titre]),
+        )
       }
     }
-
-    {
-      // Légifrance
-
-      const existingTitreTexteAutocompletionKeys = new Set(
-        (
-          await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
-            SELECT *
-            FROM titre_texte_autocompletion
-            WHERE id LIKE 'JORFTEXT%' OR id LIKE 'LEGITEXT%'
-          `
-        ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
-      )
-      for (const { cid, titres } of legifranceTextDescriptionByCid.values()) {
-        for (const titre of titres) {
-          if (
-            !existingTitreTexteAutocompletionKeys.delete(
-              JSON.stringify([cid, titre]),
-            )
-          ) {
-            await tisseuseDb`
-              INSERT INTO titre_texte_autocompletion (
-                autocompletion,
-                id
-              ) VALUES (
-                ${titre},
-                ${cid}
-              )
-              ON CONFLICT DO NOTHING
-            `
-          }
-        }
-      }
-      for (const obsoleteTitreTexteAutocompletionKey of existingTitreTexteAutocompletionKeys) {
-        const [id, autocompletion] = JSON.parse(
-          obsoleteTitreTexteAutocompletionKey,
-        ) as [string, string]
-        await tisseuseDb`
-          DELETE FROM titre_texte_autocompletion
-          WHERE
-            id = ${id}
-            AND autocompletion = ${autocompletion}
-        `
-      }
+    for (const obsoleteTitreTexteAutocompletionKey of existingTitreTexteAutocompletionKeys) {
+      const [id, autocompletion] = JSON.parse(
+        obsoleteTitreTexteAutocompletionKey,
+      ) as [string, string]
+      await tisseuseDb`
+        DELETE FROM titre_texte_autocompletion
+        WHERE
+          id = ${id}
+          AND autocompletion = ${autocompletion}
+      `
     }
   }
 
@@ -551,7 +492,7 @@ async function extractTextsInfos({
         .map(([, legifranceTextDescription]) => ({
           legifrance: {
             ...legifranceTextDescription,
-            titres: [...legifranceTextDescription.titres].sort(),
+            titres: [...legifranceTextDescription.cartouches].sort(),
           },
         })),
       { encoding: "utf-8", replacer: jsonReplacer, spaces: 2 },
@@ -575,7 +516,7 @@ sade("extract_texts_infos", true)
   .describe(
     "Extract names of codes, laws, etc and convert them to JSON structures used for links, search, etc",
   )
-  .option("-a, --autocompletion", "Generate autocompletions SQL table")
+  .option("-a, --autocompletion", "Generate cartouches SQL table")
   .option("-j, --json", "Generate texts infos JSON file")
   .action(async (options) => {
     process.exit(await extractTextsInfos(options))

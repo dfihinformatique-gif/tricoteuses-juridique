@@ -11,20 +11,23 @@ export const autocomplete = query(
   ): Promise<
     Array<{
       autocompletion: string
+      badge?: string
       distance: number
       id: string
     }>
   > =>
-    q === null
+    (q === null
       ? await tisseuseDb<
           Array<{
             autocompletion: string
+            badge: string | null
             distance: number
             id: string
           }>
         >`
           SELECT
             autocompletion,
+            badge,
             1 AS distance,
             id
           FROM titre_texte_autocompletion
@@ -36,6 +39,7 @@ export const autocomplete = query(
             await legiDb<
               Array<{
                 id: string
+                nature: string | null
                 num: string | null
                 titre_court_texte: string | null
                 titre_texte: string | null
@@ -43,19 +47,21 @@ export const autocomplete = query(
             >`
               SELECT
                 id,
+                data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as nature,
                 num,
                 data -> 'CONTEXTE' -> 'TEXTE' -> 'TITRE_TXT' -> 0 ->> '@c_titre_court' AS titre_court_texte,
                 data -> 'CONTEXTE' -> 'TEXTE' -> 'TITRE_TXT' -> 0 ->> E'#text' AS titre_texte
               FROM article
               WHERE id = ${q}
             `
-          ).map(({ id, num, titre_court_texte, titre_texte }) => ({
+          ).map(({ id, nature, num, titre_court_texte, titre_texte }) => ({
             autocompletion: [
               titre_texte ?? titre_court_texte,
               num === null ? "article" : `article ${num}`,
             ]
               .filter((fragment) => fragment != null)
               .join(", "),
+            badge: nature,
             distance: 0,
             id,
           }))
@@ -63,12 +69,14 @@ export const autocomplete = query(
           ? await legiDb<
               Array<{
                 autocompletion: string
+                badge: string | null
                 distance: number
                 id: string
               }>
             >`
               SELECT
                 data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'TITRE' AS autocompletion,
+                data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge
                 0 AS distance,
                 id
               FROM jo
@@ -78,12 +86,14 @@ export const autocomplete = query(
             ? await legiDb<
                 Array<{
                   autocompletion: string
+                  badge: string | null
                   distance: number
                   id: string
                 }>
               >`
                 SELECT
                   data -> 'META' -> 'META_DOSSIER_LEGISLATIF' ->> 'TITRE' AS autocompletion,
+                  data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge,
                   0 AS distance,
                   id
                 FROM dole
@@ -114,6 +124,7 @@ export const autocomplete = query(
                   ]
                     .filter((fragment) => fragment != null)
                     .join(", "),
+                  badge: "SECTION",
                   distance: 0,
                   id,
                 }))
@@ -121,12 +132,14 @@ export const autocomplete = query(
                 ? await legiDb<
                     Array<{
                       autocompletion: string
+                      badge: string | null
                       distance: number
                       id: string
                     }>
                   >`
                     SELECT
                       data -> 'META' -> 'META_SPEC' -> 'META_TEXTE_VERSION' ->> 'TITREFULL' AS autocompletion,
+                      data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge,
                       0 AS distance,
                       id
                     FROM texte_version
@@ -135,16 +148,33 @@ export const autocomplete = query(
                 : await tisseuseDb<
                     Array<{
                       autocompletion: string
+                      badge: string | null
                       distance: number
                       id: string
                     }>
                   >`
                     SELECT
                       autocompletion,
+                      badge,
                       autocompletion <-> ${q} AS distance,
                       id
                     FROM titre_texte_autocompletion
                     ORDER BY distance, autocompletion
                     LIMIT 10
-                  `,
+                  `
+    ).map((suggestion) => {
+      if (suggestion.badge === null) {
+        delete (
+          suggestion as {
+            badge?: string
+          }
+        ).badge
+      }
+      return suggestion as {
+        autocompletion: string
+        badge?: string
+        distance: number
+        id: string
+      }
+    }),
 )

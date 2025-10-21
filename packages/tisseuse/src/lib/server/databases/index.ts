@@ -41,7 +41,7 @@ export const tisseuseDb = postgres({
   port: config.tisseuseDb.port,
   user: config.tisseuseDb.user,
 })
-export const tisseuseVersionNumber = 1
+export const tisseuseVersionNumber = 2
 
 /**
  * Check that assemblee database exists and is up to date.

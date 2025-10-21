@@ -8,6 +8,7 @@
 
   import { pushState } from "$app/navigation"
   import { auditQuerySingleton } from "$lib/auditors/queries"
+  import { Badge } from "$lib/components/ui/badge/index.js"
   import * as Command from "$lib/components/ui/command/index.js"
   import { urlPathFromId } from "$lib/urls.js"
 
@@ -75,13 +76,16 @@
   <Command.List>
     <Command.Empty>No results found.</Command.Empty>
     <Command.Group>
-      {#each suggestions as { autocompletion, id } (`${id}_${autocompletion}`)}
+      {#each suggestions as { autocompletion, badge, id } (`${id}_${autocompletion}`)}
         {@const urlPath = urlPathFromId(id)}
         <Command.Item>
           {#if urlPath === null}
             {autocompletion}
           {:else}
             <a href={urlPath}>{autocompletion}</a>
+          {/if}
+          {#if badge !== undefined}
+            <Badge variant="outline">{badge}</Badge>
           {/if}
         </Command.Item>
       {/each}

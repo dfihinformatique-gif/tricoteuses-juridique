@@ -37,6 +37,13 @@ export async function configureTisseuseDatabase() {
 
   // Apply patches that must be executed before every table is created.
 
+  if (version.number < 2) {
+    await tisseuseDb`
+      ALTER TABLE IF EXISTS titre_texte_autocompletion
+      ADD COLUMN IF NOT EXISTS badge text
+    `
+  }
+
   // Types
 
   // Tables
@@ -45,6 +52,7 @@ export async function configureTisseuseDatabase() {
   await tisseuseDb`
     CREATE TABLE IF NOT EXISTS titre_texte_autocompletion (
       autocompletion text NOT NULL,
+      badge text,
       id text NOT NULL,
       PRIMARY KEY (id, autocompletion)
     )

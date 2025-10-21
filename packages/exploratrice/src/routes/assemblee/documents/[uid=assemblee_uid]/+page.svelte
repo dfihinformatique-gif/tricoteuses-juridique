@@ -5,6 +5,7 @@
 
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
+  import { fullDateFormatter } from "$lib/dates.js"
 
   import { queryDocumentPageInfos } from "../../document.remote.js"
 
@@ -16,6 +17,13 @@
     document,
     /* documentFileInfos, */ /* documentFilesIndex, */ documentHtml,
   } = $derived(documentPageInfos)
+  const { chrono } = $derived(document.cycleDeVie)
+  const date = $derived(
+    chrono.datePublication ??
+      chrono.datePublicationWeb ??
+      chrono.dateDepot ??
+      chrono.dateCreation,
+  )
 
   const attachDocumentHtml: Attachment = (element) => {
     const shadow = element.attachShadow({ mode: "open" })
@@ -28,8 +36,11 @@
 </script>
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
-  <Badge>{document.denominationStructurelle}</Badge>
+  <Badge variant="secondary"
+    >{date === undefined ? "date inconnue" : fullDateFormatter(date)}</Badge
+  >
   {document.titres.titrePrincipal}
+  <Badge variant="outline">{document.denominationStructurelle}</Badge>
 </h1>
 
 <div class="mx-auto flex w-1/2 justify-end">

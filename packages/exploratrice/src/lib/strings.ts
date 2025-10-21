@@ -1,7 +1,18 @@
-export function cleanHtmlContenu<StringOrUndefined extends string | undefined>(
+export const capitalizeFirstLetter = <
+  StringOrUndefined extends string | undefined,
+>(
+  s: StringOrUndefined,
+): StringOrUndefined =>
+  (s === undefined
+    ? undefined
+    : s.length === 0
+      ? ""
+      : s[0].toLocaleUpperCase() + s.slice(1)) as StringOrUndefined
+
+export const cleanHtmlContenu = <StringOrUndefined extends string | undefined>(
   fragment: StringOrUndefined,
-): StringOrUndefined {
-  return fragment === undefined
+): StringOrUndefined =>
+  fragment === undefined
     ? (undefined as StringOrUndefined)
     : (fragment
         .replaceAll("<<", "«")
@@ -16,4 +27,3 @@ export function cleanHtmlContenu<StringOrUndefined extends string | undefined>(
         // Remove <br /> at the end of fragment.
         .replace(/\s*(<br\s*\/>\s*)+$/gs, "")
         .trim() as StringOrUndefined)
-}

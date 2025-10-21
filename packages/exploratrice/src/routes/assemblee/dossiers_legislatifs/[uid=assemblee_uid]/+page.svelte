@@ -2,10 +2,12 @@
   import BadgeCheckIcon from "@lucide/svelte/icons/badge-check"
   import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
-  import { walkActes } from "@tricoteuses/assemblee"
+  import { walkActes, type ActeLegislatif } from "@tricoteuses/assemblee"
 
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
+  import { fullDateFormatter } from "$lib/dates"
+  import { capitalizeFirstLetter } from "$lib/strings"
   import { urlPathFromId } from "$lib/urls.js"
 
   import { queryDossierParlementairePageInfos } from "../../dossier_parlementaire.remote"
@@ -20,15 +22,31 @@
   )
 </script>
 
-{#snippet documentView(uid: string)}
+{#snippet documentView(acte: ActeLegislatif, uid: string)}
   {@const document = documentByUid?.[uid]}
   <li>
     {#if document === undefined}
-      Document {uid} non trouvé
+      <Badge variant="secondary"
+        >{acte.dateActe === undefined
+          ? "date inconnue"
+          : fullDateFormatter(acte.dateActe)}</Badge
+      > Document {uid} non trouvé
     {:else}
+      {@const chrono = document.cycleDeVie.chrono}
+      {@const date =
+        acte.dateActe ??
+        chrono.datePublication ??
+        chrono.datePublicationWeb ??
+        chrono.dateDepot ??
+        chrono.dateCreation}
       <a href={urlPathFromId(document.uid)}
-        ><Badge>{document.denominationStructurelle}</Badge>
-        {document.titres.titrePrincipal}</a
+        ><Badge variant="secondary"
+          >{date === undefined
+            ? "date inconnue"
+            : fullDateFormatter(date)}</Badge
+        >
+        {capitalizeFirstLetter(document.titres.titrePrincipal)}
+        <Badge variant="outline">{document.denominationStructurelle}</Badge></a
       >
     {/if}
   </li>
@@ -36,6 +54,9 @@
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
   {dossierParlementaire.titreDossier.titre}
+  <Badge variant="outline"
+    >{dossierParlementaire.procedureParlementaire.libelle}</Badge
+  >
 </h1>
 
 <div class="mx-auto flex w-1/2 justify-end">
@@ -68,10 +89,10 @@
   <ul>
     {#each walkActes(dossierParlementaire.actesLegislatifs) as acte}
       {#if acte.texteAssocieRef !== undefined}
-        {@render documentView(acte.texteAssocieRef)}
+        {@render documentView(acte, acte.texteAssocieRef)}
       {/if}
       {#if acte.texteAdopteRef !== undefined}
-        {@render documentView(acte.texteAdopteRef)}
+        {@render documentView(acte, acte.texteAdopteRef)}
       {/if}
     {/each}
 
@@ -82,16 +103,21 @@
             ? acte.infoJo.urlLegifrance
             : urlPathFromId(legifranceTexteId)}
           ><Badge
-            variant="secondary"
             class="bg-green-500 text-white dark:bg-green-600"
+            variant="secondary"
+            >{acte.dateActe === undefined
+              ? "date inconnue"
+              : fullDateFormatter(acte.dateActe)}</Badge
+          >
+          Loi n°{acte.codeLoi} du {fullDateFormatter(acte.dateActe!)}
+          {acte.titreLoi}
+          <Badge
+            class="bg-green-500 text-white dark:bg-green-600"
+            variant="secondary"
           >
             <BadgeCheckIcon />
             Loi promulguée
-          </Badge>
-          Loi n°{acte.codeLoi} du {new Intl.DateTimeFormat("fr-FR", {
-            dateStyle: "full",
-          }).format(new Date(acte.dateActe!))}
-          {acte.titreLoi}</a
+          </Badge></a
         >
       {/if}
     {/each}

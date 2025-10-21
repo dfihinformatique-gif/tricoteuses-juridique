@@ -77,7 +77,7 @@
 
     {#each walkActes(dossierParlementaire.actesLegislatifs) as acte}
       {#if acte.infoJo?.urlLegifrance !== undefined}
-        <a href={urlPathFromId(acte.infoJo.urlLegifrance)}
+        <a href={acte.infoJo.urlLegifrance}
           ><Badge
             variant="secondary"
             class="bg-green-500 text-white dark:bg-green-600"

@@ -6,6 +6,7 @@
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { fullDateFormatter } from "$lib/dates.js"
+  import { urlPathFromId } from "$lib/urls.js"
 
   import { queryDocumentPageInfos } from "../../document.remote.js"
 
@@ -47,6 +48,12 @@
   <DropdownMenu.Root>
     <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
     <DropdownMenu.Content align="end">
+      <DropdownMenu.Group>
+        <DropdownMenu.Label>Voir aussi</DropdownMenu.Label>
+        <DropdownMenu.Item>
+          <a href={urlPathFromId(document.dossierRef)}>Dossier législatif</a>
+        </DropdownMenu.Item>
+      </DropdownMenu.Group>
       <DropdownMenu.Group>
         <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
         <DropdownMenu.Item>

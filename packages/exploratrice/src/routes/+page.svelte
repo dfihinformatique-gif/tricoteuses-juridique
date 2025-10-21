@@ -54,7 +54,7 @@
     )
   }
 
-  let { q } = $state(auditQuery(cleanAudit, page.url.searchParams)[0])
+  let { q } = $derived(auditQuery(cleanAudit, page.url.searchParams)[0])
   let suggestions = $derived(await autocomplete(q))
 </script>
 

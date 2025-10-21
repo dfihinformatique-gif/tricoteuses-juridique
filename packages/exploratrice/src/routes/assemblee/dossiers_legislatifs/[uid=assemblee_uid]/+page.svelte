@@ -1,4 +1,5 @@
 <script lang="ts">
+  import BadgeCheckIcon from "@lucide/svelte/icons/badge-check"
   import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import { walkActes } from "@tricoteuses/assemblee"
@@ -49,6 +50,15 @@
           >
           <ExternalLinkIcon />
         </DropdownMenu.Item>
+        {#if dossierParlementaire.titreDossier.titreChemin !== undefined}
+          <DropdownMenu.Item>
+            <a
+              href="https://www.assemblee-nationale.fr/dyn/{dossierParlementaire.legislature}/dossiers/{dossierParlementaire
+                .titreDossier.titreChemin}">Assemblée nationale</a
+            >
+            <ExternalLinkIcon />
+          </DropdownMenu.Item>
+        {/if}
       </DropdownMenu.Group>
     </DropdownMenu.Content>
   </DropdownMenu.Root>
@@ -62,6 +72,24 @@
       {/if}
       {#if acte.texteAdopteRef !== undefined}
         {@render documentView(acte.texteAdopteRef)}
+      {/if}
+    {/each}
+
+    {#each walkActes(dossierParlementaire.actesLegislatifs) as acte}
+      {#if acte.infoJo?.urlLegifrance !== undefined}
+        <a href={urlPathFromId(acte.infoJo.urlLegifrance)}
+          ><Badge
+            variant="secondary"
+            class="bg-green-500 text-white dark:bg-green-600"
+          >
+            <BadgeCheckIcon />
+            Loi promulguée
+          </Badge>
+          Loi n°{acte.codeLoi} du {new Intl.DateTimeFormat("fr-FR", {
+            dateStyle: "full",
+          }).format(new Date(acte.dateActe!))}
+          {acte.titreLoi}</a
+        >
       {/if}
     {/each}
   </ul>

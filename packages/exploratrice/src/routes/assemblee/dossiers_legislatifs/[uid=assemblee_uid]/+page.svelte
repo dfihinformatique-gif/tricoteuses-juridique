@@ -15,7 +15,7 @@
   const dossierParlementairePageInfos = $derived(
     await queryDossierParlementairePageInfos(params.uid),
   )
-  const { documentByUid, dossierParlementaire } = $derived(
+  const { documentByUid, dossierParlementaire, legifranceTexteId } = $derived(
     dossierParlementairePageInfos,
   )
 </script>
@@ -77,7 +77,10 @@
 
     {#each walkActes(dossierParlementaire.actesLegislatifs) as acte}
       {#if acte.infoJo?.urlLegifrance !== undefined}
-        <a href={acte.infoJo.urlLegifrance}
+        <a
+          href={legifranceTexteId === undefined
+            ? acte.infoJo.urlLegifrance
+            : urlPathFromId(legifranceTexteId)}
           ><Badge
             variant="secondary"
             class="bg-green-500 text-white dark:bg-green-600"

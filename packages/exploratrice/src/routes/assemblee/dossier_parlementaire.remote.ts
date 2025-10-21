@@ -15,7 +15,7 @@ import {
 import { query } from "$app/server"
 import { auditDossierParlementaireUid } from "$lib/auditors/assemblee.js"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
-import { assembleeDb } from "$lib/server/databases/index.js"
+import { assembleeDb, legiDb } from "$lib/server/databases/index.js"
 
 import type { DossierParlementairePageInfos } from "./dossiers_parlementaires.js"
 
@@ -28,20 +28,33 @@ export const queryDossierParlementairePageInfos = query(
     auditRequire,
   ),
   async (uid): Promise<DossierParlementairePageInfos> => {
-    const [dossierParlementaire, documents] = await Promise.all([
-      (async (): Promise<DossierParlementaire | undefined> =>
-        await getOrLoadDossierParlementaire(
-          assembleeDb,
-          newAssembleeObjectCache(),
-          uid,
-        ))(),
-      (async (): Promise<Document[]> =>
-        await getOrLoadDocumentsByDossierParlementaireUid(
-          assembleeDb,
-          newAssembleeObjectCache(),
-          uid,
-        ))(),
-    ])
+    const [dossierParlementaire, documents, legifranceTexteId] =
+      await Promise.all([
+        (async (): Promise<DossierParlementaire | undefined> =>
+          await getOrLoadDossierParlementaire(
+            assembleeDb,
+            newAssembleeObjectCache(),
+            uid,
+          ))(),
+        (async (): Promise<Document[]> =>
+          await getOrLoadDocumentsByDossierParlementaireUid(
+            assembleeDb,
+            newAssembleeObjectCache(),
+            uid,
+          ))(),
+        (async (): Promise<string | null> =>
+          (
+            await legiDb<
+              Array<{
+                id: string
+              }>
+            >`
+          SELECT id
+          FROM texte_version_dossier_legislatif_assemblee_associations
+          WHERE assemblee_uid = ${uid}
+        `
+          )[0]?.id)(),
+      ])
     if (dossierParlementaire === undefined) {
       error(404)
     }
@@ -54,6 +67,7 @@ export const queryDossierParlementairePageInfos = query(
                 documents.map((document) => [document.uid, document]),
               ),
         dossierParlementaire,
+        legifranceTexteId,
       }).filter(([, value]) => value != null),
     ) as unknown as DossierParlementairePageInfos
   },

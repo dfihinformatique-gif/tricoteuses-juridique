@@ -44,6 +44,12 @@ export async function configureTisseuseDatabase() {
     `
   }
 
+  if (version.number < 3) {
+    await tisseuseDb`
+      DROP TABLE IF EXISTS titre_texte_autocompletion
+    `
+  }
+
   // Types
 
   // Tables
@@ -53,8 +59,10 @@ export async function configureTisseuseDatabase() {
     CREATE TABLE IF NOT EXISTS titre_texte_autocompletion (
       autocompletion text NOT NULL,
       badge text,
+      date text,
       id text NOT NULL,
-      PRIMARY KEY (id, autocompletion)
+      type text NOT NULL,
+      PRIMARY KEY (type, id, autocompletion)
     )
   `
 

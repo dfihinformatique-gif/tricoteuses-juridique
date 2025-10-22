@@ -15,14 +15,17 @@ interface AssembleeDescription {
 
 export interface Cartouche {
   badge?: string
+  date?: string
   titre: string
+  type: "Assemblée document" | "Assemblée dossier"
 }
 
 function addCartouche(cartouches: Cartouche[], cartouche: Cartouche): void {
   if (
     cartouches.find(
       (exisitingAutocompletion) =>
-        exisitingAutocompletion.titre === cartouche.titre,
+        exisitingAutocompletion.titre === cartouche.titre &&
+        exisitingAutocompletion.type === cartouche.type,
     ) === undefined
   ) {
     cartouches.push(cartouche)
@@ -47,9 +50,26 @@ async function extractAssembleeTextsDescriptions(): Promise<
         cartouches: [
           {
             badge: dossierParlementaire.procedureParlementaire.libelle,
+            date:
+              dossierParlementaire.actesLegislatifs === undefined
+                ? undefined
+                : walkActes(dossierParlementaire.actesLegislatifs).reduce(
+                    (mostRecentDate: string | undefined, acte) => {
+                      const date = acte.dateActe?.toString()
+                      if (date === undefined) {
+                        return mostRecentDate
+                      }
+                      if (mostRecentDate === undefined) {
+                        return date
+                      }
+                      return date > mostRecentDate ? date : mostRecentDate
+                    },
+                    undefined,
+                  ),
             titre: capitalizeFirstLetter(
               dossierParlementaire.titreDossier.titre,
             ),
+            type: "Assemblée dossier",
           },
         ],
         uid: uid,
@@ -74,10 +94,28 @@ async function extractAssembleeTextsDescriptions(): Promise<
             FROM documents
             WHERE uid in ${assembleeDb([...documentsUids])}
           `) {
-            const documentCartouches = [
+            const { chrono } = document.cycleDeVie
+            const date = [
+              chrono.dateCreation,
+              chrono.dateDepot,
+              chrono.datePublication,
+              chrono.datePublicationWeb,
+            ].reduce((mostRecentDate: string | undefined, dateObject) => {
+              const date = dateObject?.toString()
+              if (date === undefined) {
+                return mostRecentDate
+              }
+              if (mostRecentDate === undefined) {
+                return date
+              }
+              return date > mostRecentDate ? date : mostRecentDate
+            }, undefined)
+            const documentCartouches: Cartouche[] = [
               {
                 badge: document.denominationStructurelle,
+                date,
                 titre: capitalizeFirstLetter(document.titres.titrePrincipal),
+                type: "Assemblée document",
               },
             ]
             if (
@@ -86,9 +124,11 @@ async function extractAssembleeTextsDescriptions(): Promise<
             ) {
               addCartouche(documentCartouches, {
                 badge: document.denominationStructurelle,
+                date,
                 titre: capitalizeFirstLetter(
                   document.titres.titrePrincipalCourt,
                 ),
+                type: "Assemblée document",
               })
             }
             assembleeDescriptionByUid.set(documentUid, {
@@ -116,7 +156,7 @@ async function extractAssembleeDossiersEtDocumentsInfos({
         await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
           SELECT autocompletion, id
           FROM titre_texte_autocompletion
-          WHERE id LIKE 'DLR%'
+          WHERE type IN ('Assemblée document', 'Assemblée dossier')
         `
       ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
     )
@@ -126,15 +166,22 @@ async function extractAssembleeDossiersEtDocumentsInfos({
           INSERT INTO titre_texte_autocompletion (
             autocompletion,
             badge,
-            id
+            date,
+            id,
+            type
           ) VALUES (
             ${cartouche.titre},
             ${cartouche.badge ?? null},
-            ${uid}
+            ${cartouche.date ?? null},
+            ${uid},
+            ${cartouche.type}
           )
-          ON CONFLICT (autocompletion, id) DO UPDATE SET
-            badge = EXCLUDED.badge
-          WHERE titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
+          ON CONFLICT (type, id, autocompletion) DO UPDATE SET
+            badge = EXCLUDED.badge,
+            date = EXCLUDED.date
+          WHERE
+            titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
+            OR titre_texte_autocompletion.date IS DISTINCT FROM EXCLUDED.date
         `
         existingTitreTexteAutocompletionKeys.delete(
           JSON.stringify([uid, cartouche.titre]),

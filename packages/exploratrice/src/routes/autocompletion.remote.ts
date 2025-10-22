@@ -12,6 +12,7 @@ export const autocomplete = query(
     Array<{
       autocompletion: string
       badge?: string
+      date?: string
       distance: number
       id: string
     }>
@@ -21,6 +22,7 @@ export const autocomplete = query(
           Array<{
             autocompletion: string
             badge: string | null
+            date: string | null
             distance: number
             id: string
           }>
@@ -28,6 +30,7 @@ export const autocomplete = query(
           SELECT
             autocompletion,
             badge,
+            date,
             1 AS distance,
             id
           FROM titre_texte_autocompletion
@@ -38,30 +41,33 @@ export const autocomplete = query(
         ? (
             await legiDb<
               Array<{
+                badge: string | null
+                // date: string | null
                 id: string
-                nature: string | null
                 num: string | null
                 titre_court_texte: string | null
                 titre_texte: string | null
               }>
             >`
               SELECT
+                data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge,
                 id,
-                data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as nature,
                 num,
                 data -> 'CONTEXTE' -> 'TEXTE' -> 'TITRE_TXT' -> 0 ->> '@c_titre_court' AS titre_court_texte,
                 data -> 'CONTEXTE' -> 'TEXTE' -> 'TITRE_TXT' -> 0 ->> E'#text' AS titre_texte
               FROM article
               WHERE id = ${q}
             `
-          ).map(({ id, nature, num, titre_court_texte, titre_texte }) => ({
+          ).map(({ badge, id, num, titre_court_texte, titre_texte }) => ({
             autocompletion: [
               titre_texte ?? titre_court_texte,
               num === null ? "article" : `article ${num}`,
             ]
               .filter((fragment) => fragment != null)
               .join(", "),
-            badge: nature,
+            badge,
+            // TODO: Extract date from article,
+            date: null,
             distance: 0,
             id,
           }))
@@ -70,6 +76,7 @@ export const autocomplete = query(
               Array<{
                 autocompletion: string
                 badge: string | null
+                date: string | null
                 distance: number
                 id: string
               }>
@@ -77,6 +84,7 @@ export const autocomplete = query(
               SELECT
                 data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'TITRE' AS autocompletion,
                 data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge
+                data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'DATE_PUBLI' AS date,
                 0 AS distance,
                 id
               FROM jo
@@ -87,6 +95,7 @@ export const autocomplete = query(
                 Array<{
                   autocompletion: string
                   badge: string | null
+                  date: string | null
                   distance: number
                   id: string
                 }>
@@ -94,6 +103,7 @@ export const autocomplete = query(
                 SELECT
                   data -> 'META' -> 'META_DOSSIER_LEGISLATIF' ->> 'TITRE' AS autocompletion,
                   data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge,
+                  data -> 'META' -> 'META_DOSSIER_LEGISLATIF' ->> 'DATE_DERNIERE_MODIFICATION' AS date,
                   0 AS distance,
                   id
                 FROM dole
@@ -125,6 +135,8 @@ export const autocomplete = query(
                     .filter((fragment) => fragment != null)
                     .join(", "),
                   badge: "SECTION",
+                  // TODO: Extract date from SectionTa,
+                  date: null,
                   distance: 0,
                   id,
                 }))
@@ -133,6 +145,7 @@ export const autocomplete = query(
                     Array<{
                       autocompletion: string
                       badge: string | null
+                      date: string | null
                       distance: number
                       id: string
                     }>
@@ -140,6 +153,7 @@ export const autocomplete = query(
                     SELECT
                       data -> 'META' -> 'META_SPEC' -> 'META_TEXTE_VERSION' ->> 'TITREFULL' AS autocompletion,
                       data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge,
+                      data -> 'META' -> 'META_SPEC' -> 'META_TEXTE_CHRONICLE' ->> 'DATE_TEXTE' as date,
                       0 AS distance,
                       id
                     FROM texte_version
@@ -149,6 +163,7 @@ export const autocomplete = query(
                     Array<{
                       autocompletion: string
                       badge: string | null
+                      date: string | null
                       distance: number
                       id: string
                     }>
@@ -156,6 +171,7 @@ export const autocomplete = query(
                     SELECT
                       autocompletion,
                       badge,
+                      date,
                       autocompletion <-> ${q} AS distance,
                       id
                     FROM titre_texte_autocompletion
@@ -170,9 +186,17 @@ export const autocomplete = query(
           }
         ).badge
       }
+      if (suggestion.date === null) {
+        delete (
+          suggestion as {
+            date?: string
+          }
+        ).date
+      }
       return suggestion as {
         autocompletion: string
         badge?: string
+        date?: string
         distance: number
         id: string
       }

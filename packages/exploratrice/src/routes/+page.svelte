@@ -7,13 +7,14 @@
   } from "@auditors/core"
 
   import { pushState } from "$app/navigation"
+  import { page } from "$app/state"
   import { auditQuerySingleton } from "$lib/auditors/queries"
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as Command from "$lib/components/ui/command/index.js"
+  import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
 
   import { autocomplete } from "./autocompletion.remote.js"
-  import { page } from "$app/state"
 
   const auditQuery = (
     audit: Audit,
@@ -76,9 +77,12 @@
   <Command.List>
     <Command.Empty>No results found.</Command.Empty>
     <Command.Group>
-      {#each suggestions as { autocompletion, badge, id } (`${id}_${autocompletion}`)}
+      {#each suggestions as { autocompletion, badge, date, id } (`${id}_${autocompletion}`)}
         {@const urlPath = urlPathFromId(id)}
         <Command.Item>
+          {#if date !== undefined}
+            <Badge variant="outline">{fullDateFormatter(date)}</Badge>
+          {/if}
           {#if urlPath === null}
             {autocompletion}
           {:else}

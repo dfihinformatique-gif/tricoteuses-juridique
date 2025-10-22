@@ -13,33 +13,41 @@ async function extractJosInfos({
         await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
           SELECT autocompletion, id
           FROM titre_texte_autocompletion
-          WHERE id LIKE 'JORFCONT%'
+          WHERE type = 'JO'
         `
       ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
     )
     for await (const joRows of legiDb<
-      Array<{ id: string; nature: string | null; titre: string }>
+      Array<{ date: string; id: string; nature: string | null; titre: string }>
     >`
       SELECT
+        data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'DATE_PUBLI' AS date,
         id,
         data -> 'META' -> 'META_COMMUN' ->> 'NATURE' AS nature,
         data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'TITRE' AS titre
       FROM jo
     `.cursor(100)) {
-      for (const { id, nature, titre } of joRows) {
+      for (const { date, id, nature, titre } of joRows) {
         await tisseuseDb`
           INSERT INTO titre_texte_autocompletion (
             autocompletion,
             badge,
-            id
+            date,
+            id,
+            type
           ) VALUES (
             ${titre},
             ${nature ?? null},
-            ${id}
+            ${date},
+            ${id},
+            'JO'
           )
-          ON CONFLICT (autocompletion, id) DO UPDATE SET
-            badge = EXCLUDED.badge
-          WHERE titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
+          ON CONFLICT (type, id, autocompletion) DO UPDATE SET
+            badge = EXCLUDED.badge,
+            date = EXCLUDED.date
+          WHERE
+            titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
+            OR titre_texte_autocompletion.date IS DISTINCT FROM EXCLUDED.date
         `
         existingTitreTexteAutocompletionKeys.delete(JSON.stringify([id, titre]))
       }

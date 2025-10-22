@@ -22,6 +22,7 @@ import { cleanTexteTitle } from "$lib/textes.js"
 
 export interface Cartouche {
   badge?: string
+  date?: string
   titre: string
 }
 
@@ -443,25 +444,36 @@ async function extractTextsInfos({
         await tisseuseDb<Array<{ autocompletion: string; id: string }>>`
           SELECT autocompletion, id
           FROM titre_texte_autocompletion
-          WHERE id LIKE 'JORFTEXT%' OR id LIKE 'LEGITEXT%'
+          WHERE type = 'Légifrance texte'
         `
       ).map(({ autocompletion, id }) => JSON.stringify([id, autocompletion])),
     )
-    for (const { cid, cartouches } of legifranceTextDescriptionByCid.values()) {
+    for (const {
+      cid,
+      cartouches,
+      date,
+    } of legifranceTextDescriptionByCid.values()) {
       for (const cartouche of cartouches) {
         await tisseuseDb`
           INSERT INTO titre_texte_autocompletion (
             autocompletion,
             badge,
-            id
+            date,
+            id,
+            type
           ) VALUES (
             ${cartouche.titre},
             ${cartouche.badge ?? null},
-            ${cid}
+            ${date},
+            ${cid},
+            'Légifrance texte'
           )
-          ON CONFLICT (autocompletion, id) DO UPDATE SET
-            badge = EXCLUDED.badge
-          WHERE titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
+          ON CONFLICT (type, id, autocompletion) DO UPDATE SET
+            badge = EXCLUDED.badge,
+            date = EXCLUDED.date
+          WHERE
+            titre_texte_autocompletion.badge IS DISTINCT FROM EXCLUDED.badge
+            OR titre_texte_autocompletion.date IS DISTINCT FROM EXCLUDED.date
         `
         existingTitreTexteAutocompletionKeys.delete(
           JSON.stringify([cid, cartouche.titre]),

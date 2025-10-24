@@ -1277,8 +1277,8 @@ describe("parseTextLinks with transformation", () => {
           num: "10",
           originalTransformation: {
             position: {
-              start: 22,
-              stop: 32,
+              start: 21,
+              stop: 31,
             },
           },
           position: {
@@ -1294,8 +1294,8 @@ describe("parseTextLinks with transformation", () => {
           outerPrefix: "</span>",
           outerSuffix: "<span>",
           position: {
-            start: 22,
-            stop: 121,
+            start: 21,
+            stop: 120,
           },
         },
         position: {
@@ -1310,8 +1310,8 @@ describe("parseTextLinks with transformation", () => {
             innerPrefix: "<span>",
             outerPrefix: "</span>",
             position: {
-              start: 20,
-              stop: 146,
+              start: 19,
+              stop: 145,
             },
           },
           position: {
@@ -1323,8 +1323,8 @@ describe("parseTextLinks with transformation", () => {
               num: "10",
               originalTransformation: {
                 position: {
-                  start: 22,
-                  stop: 32,
+                  start: 21,
+                  stop: 31,
                 },
               },
               position: {
@@ -1339,8 +1339,8 @@ describe("parseTextLinks with transformation", () => {
               outerPrefix: "</span>",
               outerSuffix: "<span>",
               position: {
-                start: 20,
-                stop: 121,
+                start: 19,
+                stop: 120,
               },
             },
             parent: {
@@ -1354,8 +1354,8 @@ describe("parseTextLinks with transformation", () => {
                 outerPrefix: "</span>",
                 outerSuffix: "<span>",
                 position: {
-                  start: 39,
-                  stop: 121,
+                  start: 38,
+                  stop: 120,
                 },
               },
               position: {

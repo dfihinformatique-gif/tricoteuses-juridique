@@ -37,8 +37,8 @@ import {
 } from "./index.js"
 import { TextParserContext } from "./parsers.js"
 import {
-  newOriginalMergedPositionsFromTransformedIterator,
-  originalPositionFromTransformed,
+  newReverseTransformationsMergedFromPositionsIterator,
+  reverseTransformationFromPosition,
   type Transformation,
 } from "./transformers.js"
 
@@ -345,7 +345,7 @@ export async function* parseTextLinks({
   const originalPositionsFromTransformedIterator =
     transformation === undefined
       ? undefined
-      : newOriginalMergedPositionsFromTransformedIterator(transformation)
+      : newReverseTransformationsMergedFromPositionsIterator(transformation)
 
   let state = inputState === undefined ? {} : structuredClone(inputState)
 
@@ -391,7 +391,7 @@ export async function* parseTextLinks({
     //         originalTransformation:
     //           originalPositionsFromTransformedIterator === undefined
     //             ? undefined
-    //             : originalPositionFromTransformed(
+    //             : reverseTransformationFromPosition(
     //                 originalPositionsFromTransformedIterator,
     //                 position,
     //               ),
@@ -534,7 +534,7 @@ export async function* parseTextLinks({
         originalTransformation:
           originalPositionsFromTransformedIterator === undefined
             ? undefined
-            : originalPositionFromTransformed(
+            : reverseTransformationFromPosition(
                 originalPositionsFromTransformedIterator,
                 position,
               ),
@@ -677,7 +677,7 @@ export async function* parseTextLinks({
           const originalTransformation =
             originalPositionsFromTransformedIterator === undefined
               ? undefined
-              : originalPositionFromTransformed(
+              : reverseTransformationFromPosition(
                   originalPositionsFromTransformedIterator,
                   position,
                 )
@@ -821,7 +821,7 @@ export async function* parseTextLinks({
           originalTransformation:
             originalPositionsFromTransformedIterator === undefined
               ? undefined
-              : originalPositionFromTransformed(
+              : reverseTransformationFromPosition(
                   originalPositionsFromTransformedIterator,
                   position,
                 ),

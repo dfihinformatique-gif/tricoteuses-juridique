@@ -352,7 +352,7 @@ function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
  *
  * Use this iterator to insert HTML elements (links, spans, etc).
  */
-export function newOriginalMergedPositionsFromTransformedIterator(
+export function newReverseTransformationsMergedFromPositionsIterator(
   transformation: Transformation,
 ): Generator<
   FragmentReverseTransformation,
@@ -370,66 +370,20 @@ export function newOriginalMergedPositionsFromTransformedIterator(
  * Converts an array of transformed (e.g. simplified) positions to an array
  *  of original (e.g. HTML) positions
  *
- * When a position is included in fragments of HTML elements, the elements are
- * either split (for spans) or the position is enlarged to include the whole
- * elements (for blocks).
- *
- * Use this function to insert HTML elements (links, spans, etc).
- */
-export function originalMergedPositionsFromTransformed(
-  transformation: Transformation,
-  transformedPositions: FragmentPosition[],
-): FragmentReverseTransformation[] {
-  const originalPositionsFromTransformedIterator =
-    newOriginalMergedPositionsFromTransformedIterator(transformation)
-  return transformedPositions.map((transformedPosition) =>
-    originalPositionFromTransformed(
-      originalPositionsFromTransformedIterator,
-      transformedPosition,
-    ),
-  )
-}
-
-/**
- * Use an iterator that converts transformed (e.g. simplified) positions to original
- * (e.g. HTML) positions, to get an original position from a transformed position.
- */
-export function originalPositionFromTransformed(
-  originalPositionsFromTransformedIterator: Generator<
-    FragmentReverseTransformation,
-    void,
-    FragmentPosition | undefined
-  >,
-  transformedPosition: FragmentPosition,
-): FragmentReverseTransformation {
-  const result =
-    originalPositionsFromTransformedIterator.next(transformedPosition)
-  if (result.done) {
-    throw new Error(
-      `Reverse transformation of position failed: ${transformedPosition}`,
-    )
-  }
-  return result.value
-}
-
-/**
- * Converts an array of transformed (e.g. simplified) positions to an array
- *  of original (e.g. HTML) positions
- *
  * Each position is split to ensure that it doesn't contain any HTML element.
  *
  * The positions must be sorted in ascending order.
  *
  * Use this function for diffs.
  */
-export function originalSplitPositionsFromTransformed(
+export function reversePositionsSplitFromPositions(
   transformation: Transformation,
   positions: FragmentPosition[],
 ): FragmentPosition[] {
   for (const { sourceMap } of [
     ...iterTransformationLeafs(transformation),
   ].reverse()) {
-    positions = originalSplitPositionsFromTransformedUsingSourceMap(
+    positions = reversePositionsSplitFromPositionsUsingSourceMap(
       sourceMap,
       positions,
     )
@@ -441,7 +395,7 @@ export function originalSplitPositionsFromTransformed(
  * Note: The original positions are split when they overlap.
  * So, there may be more original positions than transformed positions.
  */
-function originalSplitPositionsFromTransformedUsingSourceMap(
+function reversePositionsSplitFromPositionsUsingSourceMap(
   sourceMap: SourceMapSegment[],
   transformedPositions: FragmentPosition[],
 ): FragmentPosition[] {
@@ -573,6 +527,52 @@ function originalSplitPositionsFromTransformedUsingSourceMap(
     }
   }
   return originalPositions
+}
+
+/**
+ * Converts an array of transformed (e.g. simplified) positions to an array
+ *  of original (e.g. HTML) positions
+ *
+ * When a position is included in fragments of HTML elements, the elements are
+ * either split (for spans) or the position is enlarged to include the whole
+ * elements (for blocks).
+ *
+ * Use this function to insert HTML elements (links, spans, etc).
+ */
+export function reverseTransformationsMergedFromPositions(
+  transformation: Transformation,
+  transformedPositions: FragmentPosition[],
+): FragmentReverseTransformation[] {
+  const originalPositionsFromTransformedIterator =
+    newReverseTransformationsMergedFromPositionsIterator(transformation)
+  return transformedPositions.map((transformedPosition) =>
+    reverseTransformationFromPosition(
+      originalPositionsFromTransformedIterator,
+      transformedPosition,
+    ),
+  )
+}
+
+/**
+ * Use an iterator that converts transformed (e.g. simplified) positions to original
+ * (e.g. HTML) positions, to get an original position from a transformed position.
+ */
+export function reverseTransformationFromPosition(
+  originalPositionsFromTransformedIterator: Generator<
+    FragmentReverseTransformation,
+    void,
+    FragmentPosition | undefined
+  >,
+  transformedPosition: FragmentPosition,
+): FragmentReverseTransformation {
+  const result =
+    originalPositionsFromTransformedIterator.next(transformedPosition)
+  if (result.done) {
+    throw new Error(
+      `Reverse transformation of position failed: ${transformedPosition}`,
+    )
+  }
+  return result.value
 }
 
 export const reverseTransformedInnerFragment = <

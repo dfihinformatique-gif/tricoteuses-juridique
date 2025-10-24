@@ -12,8 +12,8 @@ import { iterIncludedReferences } from "./helpers.js"
 import { TextParserContext } from "./parsers.js"
 import { reference } from "./references.js"
 import {
-  newOriginalMergedPositionsFromTransformedIterator,
-  originalPositionFromTransformed,
+  newReverseTransformationsMergedFromPositionsIterator,
+  reverseTransformationFromPosition,
   type Transformation,
 } from "./transformers.js"
 
@@ -24,7 +24,7 @@ export function* parseCitationReferences(
   const citationTransformation = convertCitationToText(context, citation)
   const citationContext = new TextParserContext(citationTransformation.output)
   const originalPositionsFromTransformedIterator =
-    newOriginalMergedPositionsFromTransformedIterator(citationTransformation)
+    newReverseTransformationsMergedFromPositionsIterator(citationTransformation)
   for (let reference of parseReferences(citationContext)) {
     // Convert position of reference in citation to an absolute position.
     reference = structuredClone(reference)
@@ -37,7 +37,7 @@ export function* parseCitationReferences(
       if (positionInCitation === undefined) {
         continue
       }
-      const reverseTransformation = originalPositionFromTransformed(
+      const reverseTransformation = reverseTransformationFromPosition(
         originalPositionsFromTransformedIterator,
         positionInCitation,
       )
@@ -172,14 +172,14 @@ export function* parseReferencesWithOriginalTransformations(
   transformation: Transformation,
 ): Generator<TextAstReference, void> {
   const originalPositionsFromTransformedIterator =
-    newOriginalMergedPositionsFromTransformedIterator(transformation)
+    newReverseTransformationsMergedFromPositionsIterator(transformation)
   for (const reference of parseReferences(context)) {
     for (const includedReference of iterIncludedReferences(reference, {
       citations: true,
     })) {
       if (includedReference.position !== undefined) {
         includedReference.originalTransformation =
-          originalPositionFromTransformed(
+          reverseTransformationFromPosition(
             originalPositionsFromTransformedIterator,
             includedReference.position,
           )

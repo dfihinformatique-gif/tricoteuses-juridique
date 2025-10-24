@@ -86,7 +86,7 @@ function* iterTransformationLeafs(
  *
  * Use this generator to insert HTML elements (links, spans, etc).
  */
-export function* iterOriginalMergedPositionsFromTransformed(
+function* iterOriginalMergedPositionsFromTransformed(
   transformation: Transformation,
 ): Generator<
   FragmentReverseTransformation,
@@ -343,6 +343,30 @@ function* iterOriginalMergedPositionsFromTransformedUsingTransformationLeaf(
 }
 
 /**
+ * Creates an iterator that converts transformed (e.g. simplified) positions to original
+ * (e.g. HTML) positions
+ *
+ * When a position is included in fragments of HTML elements, the elements are
+ * either split (for spans) or the position is enlarged to include the whole
+ * elements (for blocks).
+ *
+ * Use this iterator to insert HTML elements (links, spans, etc).
+ */
+export function newOriginalMergedPositionsFromTransformedIterator(
+  transformation: Transformation,
+): Generator<
+  FragmentReverseTransformation,
+  void,
+  FragmentPosition | undefined
+> {
+  const originalPositionsFromTransformedIterator =
+    iterOriginalMergedPositionsFromTransformed(transformation)
+  // Initialize iterator by sending a dummy value and ignoring the result.
+  originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
+  return originalPositionsFromTransformedIterator
+}
+
+/**
  * Converts an array of transformed (e.g. simplified) positions to an array
  *  of original (e.g. HTML) positions
  *
@@ -357,19 +381,35 @@ export function originalMergedPositionsFromTransformed(
   transformedPositions: FragmentPosition[],
 ): FragmentReverseTransformation[] {
   const originalPositionsFromTransformedIterator =
-    iterOriginalMergedPositionsFromTransformed(transformation)
-  // Initialize iterator by sending a dummy value and ignoring the result.
-  originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
-  return transformedPositions.map((transformedPosition) => {
-    const result =
-      originalPositionsFromTransformedIterator.next(transformedPosition)
-    if (result.done) {
-      throw new Error(
-        `Reverse transformation of position failed: ${transformedPosition}`,
-      )
-    }
-    return result.value
-  })
+    newOriginalMergedPositionsFromTransformedIterator(transformation)
+  return transformedPositions.map((transformedPosition) =>
+    originalPositionFromTransformed(
+      originalPositionsFromTransformedIterator,
+      transformedPosition,
+    ),
+  )
+}
+
+/**
+ * Use an iterator that converts transformed (e.g. simplified) positions to original
+ * (e.g. HTML) positions, to get an original position from a transformed position.
+ */
+export function originalPositionFromTransformed(
+  originalPositionsFromTransformedIterator: Generator<
+    FragmentReverseTransformation,
+    void,
+    FragmentPosition | undefined
+  >,
+  transformedPosition: FragmentPosition,
+): FragmentReverseTransformation {
+  const result =
+    originalPositionsFromTransformedIterator.next(transformedPosition)
+  if (result.done) {
+    throw new Error(
+      `Reverse transformation of position failed: ${transformedPosition}`,
+    )
+  }
+  return result.value
 }
 
 /**
@@ -555,6 +595,6 @@ export const reverseTransformedReplacement = (
   originalTransformation: FragmentReverseTransformation,
   replacement: string,
 ): string =>
-  (originalTransformation.innerPrefix ?? "") +
+  (originalTransformation.outerPrefix ?? "") +
   replacement +
-  (originalTransformation.innerSuffix ?? "")
+  (originalTransformation.outerSuffix ?? "")

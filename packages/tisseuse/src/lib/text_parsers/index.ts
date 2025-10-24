@@ -12,8 +12,8 @@ import { iterIncludedReferences } from "./helpers.js"
 import { TextParserContext } from "./parsers.js"
 import { reference } from "./references.js"
 import {
-  iterOriginalMergedPositionsFromTransformed,
-  originalMergedPositionsFromTransformed,
+  newOriginalMergedPositionsFromTransformedIterator,
+  originalPositionFromTransformed,
   type Transformation,
 } from "./transformers.js"
 
@@ -23,6 +23,8 @@ export function* parseCitationReferences(
 ): Generator<TextAstReference, void> {
   const citationTransformation = convertCitationToText(context, citation)
   const citationContext = new TextParserContext(citationTransformation.output)
+  const originalPositionsFromTransformedIterator =
+    newOriginalMergedPositionsFromTransformedIterator(citationTransformation)
   for (let reference of parseReferences(citationContext)) {
     // Convert position of reference in citation to an absolute position.
     reference = structuredClone(reference)
@@ -35,20 +37,12 @@ export function* parseCitationReferences(
       if (positionInCitation === undefined) {
         continue
       }
-      // Note: Iterator iterOriginalMergedPositionsFromTransformed can't be used,
-      // because positions of included references are not sequential, they are embedded
-      // in their parent.
-      const reverseTransformations = originalMergedPositionsFromTransformed(
-        citationTransformation,
-        [positionInCitation],
+      const reverseTransformation = originalPositionFromTransformed(
+        originalPositionsFromTransformedIterator,
+        positionInCitation,
       )
-      if (reverseTransformations.length !== 1) {
-        throw new Error(
-          `Reverse transformation of position in citation to absolute position failed: ${positionInCitation} has been tranformed to ${reverseTransformations}`,
-        )
-      }
       ;(includedReference as TextAstPosition).position =
-        reverseTransformations[0].position
+        reverseTransformation.position
     }
 
     yield reference
@@ -178,23 +172,17 @@ export function* parseReferencesWithOriginalTransformations(
   transformation: Transformation,
 ): Generator<TextAstReference, void> {
   const originalPositionsFromTransformedIterator =
-    iterOriginalMergedPositionsFromTransformed(transformation)
-  // Initialize iterator by sending a dummy value and ignoring the result.
-  originalPositionsFromTransformedIterator.next({ start: 0, stop: 0 })
+    newOriginalMergedPositionsFromTransformedIterator(transformation)
   for (const reference of parseReferences(context)) {
     for (const includedReference of iterIncludedReferences(reference, {
       citations: true,
     })) {
       if (includedReference.position !== undefined) {
-        const result = originalPositionsFromTransformedIterator.next(
-          includedReference.position,
-        )
-        if (result.done) {
-          throw new Error(
-            `Reverse transformation of position failed: ${includedReference.position}`,
+        includedReference.originalTransformation =
+          originalPositionFromTransformed(
+            originalPositionsFromTransformedIterator,
+            includedReference.position,
           )
-        }
-        includedReference.originalTransformation = result.value
       }
     }
     yield reference

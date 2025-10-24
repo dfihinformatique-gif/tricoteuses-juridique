@@ -36,7 +36,11 @@ import {
   parseReferencesWithOriginalTransformations,
 } from "./index.js"
 import { TextParserContext } from "./parsers.js"
-import { Transformation } from "$lib/text_parsers/transformers.js"
+import {
+  newOriginalMergedPositionsFromTransformedIterator,
+  originalPositionFromTransformed,
+  type Transformation,
+} from "./transformers.js"
 
 export type DefinitionOrLink =
   | ArticleDefinition
@@ -338,6 +342,11 @@ export async function* parseTextLinks({
     string,
     Record<string, ArticleDefinition>
   > = {}
+  const originalPositionsFromTransformedIterator =
+    transformation === undefined
+      ? undefined
+      : newOriginalMergedPositionsFromTransformedIterator(transformation)
+
   let state = inputState === undefined ? {} : structuredClone(inputState)
 
   /**
@@ -363,46 +372,30 @@ export async function* parseTextLinks({
     //   const articleDefinition =
     //     articleDefinitionByNumByTextId[state.textId]?.[article.num]
     //   if (articleDefinition !== undefined) {
+    //     const position =
+    //       ancestors === undefined
+    //         ? article.position!
+    //         : article.position!.start < ancestors[0].position!.start
+    //           ? {
+    //               start: article.position.start,
+    //               stop: ancestors[0].position.stop,
+    //             }
+    //           : {
+    //               start: ancestors[0].position.start,
+    //               stop: article.position.stop,
+    //             }
     //     yield Object.fromEntries(
     //       Object.entries({
     //         article,
     //         definition: articleDefinition,
     //         originalTransformation:
-    //           article.originalTransformation === undefined
+    //           originalPositionsFromTransformedIterator === undefined
     //             ? undefined
-    //             : ancestors === undefined
-    //               ? article.originalTransformation
-    //               : {
-    //                   ...article.originalTransformation,
-    //                   position:
-    //                     article.originalTransformation.position.start <
-    //                     ancestors[0].originalTransformation!.position.start
-    //                       ? {
-    //                           start:
-    //                             article.originalTransformation.position.start,
-    //                           stop: ancestors[0].originalTransformation!
-    //                             .position.stop,
-    //                         }
-    //                       : {
-    //                           start:
-    //                             ancestors[0].originalTransformation!.position
-    //                               .start,
-    //                           stop: article.originalTransformation.position
-    //                             .stop,
-    //                         },
-    //                 },
-    //         position:
-    //           ancestors === undefined
-    //             ? article.position!
-    //             : article.position!.start < ancestors[0].position!.start
-    //               ? {
-    //                   start: article.position.start,
-    //                   stop: ancestors[0].position.stop,
-    //                 }
-    //               : {
-    //                   start: ancestors[0].position.start,
-    //                   stop: article.position.stop,
-    //                 },
+    //             : originalPositionFromTransformed(
+    //                 originalPositionsFromTransformedIterator,
+    //                 position,
+    //               ),
+    //         position,
     //         reference,
     //         type: "internal_article",
     //       }).filter(([, value]) => value !== undefined),
@@ -522,43 +515,30 @@ export async function* parseTextLinks({
       }
     }
 
+    const position =
+      ancestors === undefined
+        ? article.position!
+        : article.position!.start < ancestors[0].position!.start
+          ? {
+              start: article.position.start,
+              stop: ancestors[0].position.stop,
+            }
+          : {
+              start: ancestors[0].position.start,
+              stop: article.position.stop,
+            }
     yield Object.fromEntries(
       Object.entries({
         article,
         articleId: state.articleId,
         originalTransformation:
-          article.originalTransformation === undefined
+          originalPositionsFromTransformedIterator === undefined
             ? undefined
-            : ancestors === undefined
-              ? article.originalTransformation
-              : {
-                  ...article.originalTransformation,
-                  position:
-                    article.originalTransformation.position.start <
-                    ancestors[0].originalTransformation!.position.start
-                      ? {
-                          start: article.originalTransformation.position.start,
-                          stop: ancestors[0].originalTransformation!.position
-                            .stop,
-                        }
-                      : {
-                          start:
-                            ancestors[0].originalTransformation!.position.start,
-                          stop: article.originalTransformation.position.stop,
-                        },
-                },
-        position:
-          ancestors === undefined
-            ? article.position!
-            : article.position!.start < ancestors[0].position!.start
-              ? {
-                  start: article.position.start,
-                  stop: ancestors[0].position.stop,
-                }
-              : {
-                  start: ancestors[0].position.start,
-                  stop: article.position.stop,
-                },
+            : originalPositionFromTransformed(
+                originalPositionsFromTransformedIterator,
+                position,
+              ),
+        position,
         reference,
         type: "external_article",
       }).filter(([, value]) => value !== undefined),
@@ -689,25 +669,23 @@ export async function* parseTextLinks({
             .split(/\s+/)
             .map((fragment: string) => fragment.trim())
             .filter((fragment: string) => fragment !== "")
+          const position = {
+            // Position start - stop = 0 ⇒ invisible
+            start: division.position.stop,
+            stop: division.position.stop,
+          }
+          const originalTransformation =
+            originalPositionsFromTransformedIterator === undefined
+              ? undefined
+              : originalPositionFromTransformed(
+                  originalPositionsFromTransformedIterator,
+                  position,
+                )
           const insertedDivision = Object.fromEntries(
             Object.entries({
               num: sectionTaNameSplit[1],
-              originalTransformation:
-                division.originalTransformation === undefined
-                  ? undefined
-                  : {
-                      ...division.originalTransformation,
-                      position: {
-                        // Position start - stop = 0 ⇒ invisible
-                        start: division.originalTransformation.position.stop,
-                        stop: division.originalTransformation.position.stop,
-                      },
-                    },
-              position: {
-                // Position start - stop = 0 ⇒ invisible
-                start: division.position.stop,
-                stop: division.position.stop,
-              },
+              originalTransformation,
+              position,
               type: sectionTaNameSplit[0] as DivisionType,
             }).filter(([, value]) => value !== undefined),
           ) as unknown as TextAstDivision
@@ -715,22 +693,8 @@ export async function* parseTextLinks({
             Object.entries({
               child: divisionChildReference ?? division,
               parent: insertedDivision,
-              originalTransformation:
-                division.originalTransformation === undefined
-                  ? undefined
-                  : {
-                      ...division.originalTransformation,
-                      position: {
-                        // Position start - stop = 0 ⇒ invisible
-                        start: division.originalTransformation.position.stop,
-                        stop: division.originalTransformation.position.stop,
-                      },
-                    },
-              position: {
-                // Position start - stop = 0 ⇒ invisible
-                start: division.position.stop,
-                stop: division.position.stop,
-              },
+              originalTransformation,
+              position,
               type: "parent-enfant",
             }).filter(([, value]) => value !== undefined),
           ) as unknown as TextAstParentChild
@@ -839,44 +803,29 @@ export async function* parseTextLinks({
     }
     if (addedLinksCount === 0) {
       state.sectionTaId = divisionLienSectionTa?.["@id"]
+      const position =
+        ancestors === undefined
+          ? division.position!
+          : division.position!.start < ancestors[0].position!.start
+            ? {
+                start: division.position.start,
+                stop: ancestors[0].position.stop,
+              }
+            : {
+                start: ancestors[0].position.start,
+                stop: division.position.stop,
+              }
       yield Object.fromEntries(
         Object.entries({
           division,
           originalTransformation:
-            division.originalTransformation === undefined
+            originalPositionsFromTransformedIterator === undefined
               ? undefined
-              : {
-                  ...division.originalTransformation,
-                  position:
-                    ancestors === undefined
-                      ? division.originalTransformation.position
-                      : division.originalTransformation.position.start <
-                          ancestors[0].originalTransformation!.position.start
-                        ? {
-                            start:
-                              division.originalTransformation.position.start,
-                            stop: ancestors[0].originalTransformation!.position
-                              .stop,
-                          }
-                        : {
-                            start:
-                              ancestors[0].originalTransformation!.position
-                                .start,
-                            stop: division.originalTransformation.position.stop,
-                          },
-                },
-          position:
-            ancestors === undefined
-              ? division.position!
-              : division.position!.start < ancestors[0].position!.start
-                ? {
-                    start: division.position.start,
-                    stop: ancestors[0].position.stop,
-                  }
-                : {
-                    start: ancestors[0].position.start,
-                    stop: division.position.stop,
-                  },
+              : originalPositionFromTransformed(
+                  originalPositionsFromTransformedIterator,
+                  position,
+                ),
+          position,
           reference,
           sectionTaId: state.sectionTaId,
           type: "external_division",

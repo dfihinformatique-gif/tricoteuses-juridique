@@ -10,9 +10,83 @@ import {
   type ArticleExternalLink,
   type DivisionExternalLink,
 } from "./text_links.js"
-import { reverseTransformedInnerFragment } from "./transformers.js"
+import {
+  reverseTransformedInnerFragment,
+  reverseTransformedReplacement,
+} from "./transformers.js"
 
 describe("parseTextLinks", () => {
+  test("L'article 10 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié :", async ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const links = await Array.fromAsync(
+      parseTextLinks({
+        context,
+        date: "2025-10-15",
+        legiDb,
+      }),
+    )
+    expect(links.length).toBe(1)
+    expect(links[0]).toStrictEqual({
+      article: {
+        num: "10",
+        position: {
+          start: 2,
+          stop: 12,
+        },
+        type: "article",
+      },
+      articleId: "LEGIARTI000051173015",
+      position: {
+        start: 2,
+        stop: 75,
+      },
+      reference: {
+        action: {
+          action: "MODIFICATION",
+        },
+        position: {
+          start: 0,
+          stop: 93,
+        },
+        reference: {
+          child: {
+            num: "10",
+            position: {
+              start: 2,
+              stop: 12,
+            },
+            type: "article",
+          },
+          parent: {
+            cid: "JORFTEXT000051168007",
+            date: "2025-02-14",
+            nature: "LOI",
+            num: "2025-127",
+            position: {
+              start: 19,
+              stop: 75,
+            },
+            title: "LOI n° 2025-127 du 14 février 2025 de finances pour 2025",
+            titleRest: "de finances pour 2025",
+            type: "texte",
+          },
+          position: {
+            start: 0,
+            stop: 75,
+          },
+          type: "parent-enfant",
+        },
+        type: "reference_et_action",
+      },
+      type: "external_article",
+    })
+    expect(context.text(links[0].position)).toBe(
+      "article 10 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025",
+    )
+  })
+
   test("Lien à l'intérieur de la partie législative d'un code", async () => {
     const input =
       "Le livre III de la partie législative du code des impositions sur les biens et services"
@@ -1182,6 +1256,180 @@ describe("parseTextLinks", () => {
 })
 
 describe("parseTextLinks with transformation", () => {
+  test("LI HTML avec des SPAN dans le lien", async () => {
+    const inputHtml = dedent`
+      <li>
+        <span>II. – L’article 10 de la loi n°</span><span> </span><span>2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié</span><span> :</span>
+      </li>
+    `
+    const transformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    const inputText = transformation.output
+    expect(inputText).toBe(
+      "II. - L'article 10 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié :",
+    )
+    const context = new TextParserContext(inputText)
+    const links = await Array.fromAsync(
+      parseTextLinks({ context, date: "2016-10-07", legiDb, transformation }),
+    )
+    expect(links).toStrictEqual([
+      {
+        article: {
+          num: "10",
+          originalTransformation: {
+            position: {
+              start: 22,
+              stop: 32,
+            },
+          },
+          position: {
+            start: 8,
+            stop: 18,
+          },
+          type: "article",
+        },
+        articleId: "JORFARTI000051168037",
+        originalTransformation: {
+          innerPrefix: "<span>",
+          innerSuffix: "</span>",
+          outerPrefix: "</span>",
+          outerSuffix: "<span>",
+          position: {
+            start: 22,
+            stop: 121,
+          },
+        },
+        position: {
+          start: 8,
+          stop: 81,
+        },
+        reference: {
+          action: {
+            action: "MODIFICATION",
+          },
+          originalTransformation: {
+            innerPrefix: "<span>",
+            outerPrefix: "</span>",
+            position: {
+              start: 20,
+              stop: 146,
+            },
+          },
+          position: {
+            start: 6,
+            stop: 99,
+          },
+          reference: {
+            child: {
+              num: "10",
+              originalTransformation: {
+                position: {
+                  start: 22,
+                  stop: 32,
+                },
+              },
+              position: {
+                start: 8,
+                stop: 18,
+              },
+              type: "article",
+            },
+            originalTransformation: {
+              innerPrefix: "<span>",
+              innerSuffix: "</span>",
+              outerPrefix: "</span>",
+              outerSuffix: "<span>",
+              position: {
+                start: 20,
+                stop: 121,
+              },
+            },
+            parent: {
+              cid: "JORFTEXT000051168007",
+              date: "2025-02-14",
+              nature: "LOI",
+              num: "2025-127",
+              originalTransformation: {
+                innerPrefix: "<span>",
+                innerSuffix: "</span>",
+                outerPrefix: "</span>",
+                outerSuffix: "<span>",
+                position: {
+                  start: 39,
+                  stop: 121,
+                },
+              },
+              position: {
+                start: 25,
+                stop: 81,
+              },
+              title: "LOI n° 2025-127 du 14 février 2025 de finances pour 2025",
+              titleRest: "de finances pour 2025",
+              type: "texte",
+            },
+            position: {
+              start: 6,
+              stop: 81,
+            },
+            type: "parent-enfant",
+          },
+          type: "reference_et_action",
+        },
+        type: "external_article",
+      },
+    ])
+    const link = links[0] as ArticleExternalLink
+
+    expect(
+      reverseTransformedInnerFragment(inputHtml, link.originalTransformation),
+    ).toBe(
+      "<span>article 10 de la loi n°</span><span> </span><span>2025-127 du 14 février 2025 de finances pour 2025</span>",
+    )
+    expect(
+      reverseTransformedReplacement(
+        link.originalTransformation!,
+        reverseTransformedInnerFragment(inputHtml, link.originalTransformation),
+      ),
+    ).toBe(
+      "</span><span>article 10 de la loi n°</span><span> </span><span>2025-127 du 14 février 2025 de finances pour 2025</span><span>",
+    )
+
+    expect(
+      reverseTransformedInnerFragment(
+        inputHtml,
+        link.article.originalTransformation,
+      ),
+    ).toBe("article 10")
+    expect(
+      reverseTransformedReplacement(
+        link.originalTransformation!,
+        reverseTransformedInnerFragment(
+          inputHtml,
+          link.article.originalTransformation,
+        ),
+      ),
+    ).toBe("</span>article 10<span>")
+
+    expect(
+      reverseTransformedInnerFragment(
+        inputHtml,
+        link.reference.originalTransformation,
+      ),
+    ).toBe(
+      "<span>L’article 10 de la loi n°</span><span> </span><span>2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié</span>",
+    )
+    expect(
+      reverseTransformedReplacement(
+        link.originalTransformation!,
+        reverseTransformedInnerFragment(
+          inputHtml,
+          link.reference.originalTransformation,
+        ),
+      ),
+    ).toBe(
+      "</span><span>L’article 10 de la loi n°</span><span> </span><span>2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié</span><span>",
+    )
+  })
+
   test("Paragraphe HTML avec 3 liens dont 1 dans une citation", async () => {
     const inputHtml = dedent`
       <p>

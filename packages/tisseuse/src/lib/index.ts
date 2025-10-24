@@ -206,8 +206,9 @@ export {
 } from "./text_parsers/texts.js"
 export {
   chainTransformers,
-  iterOriginalMergedPositionsFromTransformed,
+  newOriginalMergedPositionsFromTransformedIterator,
   originalMergedPositionsFromTransformed,
+  originalPositionFromTransformed,
   originalSplitPositionsFromTransformed,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,

@@ -8,14 +8,13 @@ import { error } from "@sveltejs/kit"
 import {
   auditLegalId,
   type JorfArticle,
-  type JorfArticleVersion,
   type LegiArticle,
-  type LegiArticleVersion,
 } from "@tricoteuses/legifrance"
 import {
   extendLoadedArticle,
   getOrLoadArticleSiblingId,
   getOrLoadTextelr,
+  loadArticles,
   newLegifranceObjectCache,
   type JorfArticleExtended,
   type LegifranceObjectCache,
@@ -137,64 +136,47 @@ export const queryArticlePageInfos = query(
       throw error(404)
     }
     const { article } = articleWithLinks
+    const versionsArticlesIds = article.VERSIONS.VERSION.map(
+      (version) => version.LIEN_ART["@id"],
+    )
     const texteCid = article.CONTEXTE.TEXTE["@cid"]
     const textelr =
       texteCid === undefined
         ? undefined
         : await getOrLoadTextelr(legiDb, legifranceObjectCache, texteCid)
-    const detachedArticlesVersions =
+    const otherVersionsArticles = await loadArticles(
+      legiDb,
+      legifranceObjectCache,
       textelr === undefined
-        ? []
-        : (
-            await legiDb<
-              Array<{
-                versions: Array<JorfArticleVersion | LegiArticleVersion>
-              }>
-            >`
-              SELECT data -> 'VERSIONS' -> 'VERSION' as versions
-              FROM article
-              WHERE
-                data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' IN ${legiDb(
-                  textelr.VERSIONS.VERSION.map(
-                    (version) => version.LIEN_TXT["@id"],
-                  ),
-                )}
-                AND num = ${article.num ?? null}
-                AND id NOT IN ${legiDb(
-                  article.VERSIONS.VERSION.map(
-                    (version) => version.LIEN_ART["@id"],
-                  ),
-                )}
-            `
-          )
-            .map(({ versions }) => versions)
-            .flat()
-            .reduce(
-              (versions, version) => {
-                if (
-                  versions.find(
-                    (otherVersion) =>
-                      otherVersion.LIEN_ART["@id"] === version.LIEN_ART["@id"],
-                  ) === undefined
-                ) {
-                  versions.push(version)
-                }
-                return versions
-              },
-              [] as Array<JorfArticleVersion | LegiArticleVersion>,
-            )
+        ? legiDb`
+            WHERE
+              ${legiDb("id")} IN ${legiDb(versionsArticlesIds.filter((versionArticleId) => versionArticleId !== id))}
+          `
+        : legiDb`
+            WHERE
+              (
+                ${legiDb("id")} IN ${legiDb(versionsArticlesIds)}
+                OR (
+                  data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' IN ${legiDb(
+                    textelr.VERSIONS.VERSION.map(
+                      (version) => version.LIEN_TXT["@id"],
+                    ),
+                  )}
+                  AND num = ${article.num ?? null}
+                )
+              )
+              AND id <> ${id}
+          `,
+    )
     return {
       ...articleWithLinks,
-      mergedVersions: [
-        ...article.VERSIONS.VERSION,
-        ...detachedArticlesVersions,
-      ],
       nextArticleId: await getOrLoadArticleSiblingId(
         legiDb,
         legifranceObjectCache,
         id,
         1,
       ),
+      otherVersionsArticles,
       previousArticleId: await getOrLoadArticleSiblingId(
         legiDb,
         legifranceObjectCache,

@@ -9,7 +9,7 @@ import type {
   LegiTextelr,
   LegiTexteVersion,
 } from "@tricoteuses/legifrance"
-import type { JSONValue, Sql } from "postgres"
+import type { JSONValue, PendingQuery, Row, Sql } from "postgres"
 
 import type { LegifranceObjectCache } from "$lib/cache.js"
 
@@ -48,7 +48,10 @@ export async function getOrLoadArticle<
     articleCache = new Map()
     legifranceObjectCache.set("ARTICLE", articleCache)
   }
-  let article = articleCache.get(id) as ArticleType | undefined | null
+  let article = articleCache.get(id) as
+    | (ArticleType & ArticleExtension)
+    | undefined
+    | null
   if (article === undefined) {
     article = (
       await legiDb<
@@ -65,6 +68,55 @@ export async function getOrLoadArticle<
     articleCache.set(id, (article as unknown as JSONValue) ?? null)
   }
   return article ?? undefined
+}
+
+export async function getOrLoadArticles<
+  ArticleType extends JorfArticle | LegiArticle,
+>(
+  legiDb: Sql,
+  legifranceObjectCache: LegifranceObjectCache,
+  ids: string[],
+): Promise<Array<ArticleType & ArticleExtension>> {
+  let articleCache = legifranceObjectCache.get("ARTICLE")
+  if (articleCache === undefined) {
+    articleCache = new Map()
+    legifranceObjectCache.set("ARTICLE", articleCache)
+  }
+  const idsToLoad = new Set(ids)
+  const articles: ArticleType[] = []
+  for (const id of idsToLoad) {
+    const article = articleCache.get(id) as unknown as
+      | (ArticleType & ArticleExtension)
+      | undefined
+      | null
+    if (article !== undefined) {
+      idsToLoad.delete(id)
+      if (article !== null) {
+        articles.push(article)
+      }
+    }
+  }
+  if (idsToLoad.size > 0) {
+    for (const article of (
+      await legiDb<
+        Array<{
+          data: ArticleType
+          num: string | null
+        }>
+      >`
+        SELECT data, num
+        FROM article
+        WHERE id IN ${legiDb([...idsToLoad])}
+      `
+    ).map(extendLoadedArticle)) {
+      articleCache.set(
+        article.META.META_COMMUN.ID,
+        article as unknown as JSONValue,
+      )
+      articles.push(article)
+    }
+  }
+  return articles
 }
 
 export async function getOrLoadJo<JoType extends Jo>(
@@ -233,4 +285,38 @@ export async function getOrLoadTexteVersion<
     texteVersionCache.set(id, (article as unknown as JSONValue) ?? null)
   }
   return article ?? undefined
+}
+
+export async function loadArticles<
+  ArticleType extends JorfArticle | LegiArticle,
+>(
+  legiDb: Sql,
+  legifranceObjectCache: LegifranceObjectCache,
+  whereClause: PendingQuery<Row[]> | Array<PendingQuery<Row[]>>,
+): Promise<Array<ArticleType & ArticleExtension>> {
+  let articleCache = legifranceObjectCache.get("ARTICLE")
+  if (articleCache === undefined) {
+    articleCache = new Map()
+    legifranceObjectCache.set("ARTICLE", articleCache)
+  }
+  const articles: Array<ArticleType & ArticleExtension> = []
+  for (const article of (
+    await legiDb<
+      Array<{
+        data: ArticleType
+        num: string | null
+      }>
+    >`
+      SELECT data, num
+      FROM article
+      ${whereClause}
+    `
+  ).map(extendLoadedArticle)) {
+    articleCache.set(
+      article.META.META_COMMUN.ID,
+      article as unknown as JSONValue,
+    )
+    articles.push(article)
+  }
+  return articles
 }

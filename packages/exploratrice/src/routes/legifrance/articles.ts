@@ -1,14 +1,10 @@
 import type {
-  JorfArticleVersion,
-  LegiArticleVersion,
-} from "@tricoteuses/legifrance"
-import type {
   JorfArticleExtended,
   LegiArticleExtended,
 } from "@tricoteuses/tisseuse"
 
 export interface ArticlePageInfos extends ArticleWithLinks {
-  mergedVersions: Array<JorfArticleVersion | LegiArticleVersion>
+  otherVersionsArticles: Array<JorfArticleExtended | LegiArticleExtended>
   nextArticleId?: string
   previousArticleId?: string
 }

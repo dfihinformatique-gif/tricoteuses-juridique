@@ -63,6 +63,7 @@
       <Select.Root
         onValueChange={(id: string) => goto(urlPathFromId(id)!)}
         type="single"
+        value={params.id}
       >
         <Select.Trigger id="versions"
           >{params.id}

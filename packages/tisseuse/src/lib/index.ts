@@ -27,6 +27,7 @@ export {
   getOrLoadSectionsTa,
   getOrLoadTextelr,
   getOrLoadTexteVersion,
+  loadArticles,
   type ArticleExtension,
   type JorfArticleExtended,
   type LegiArticleExtended,
@@ -206,10 +207,10 @@ export {
 } from "./text_parsers/texts.js"
 export {
   chainTransformers,
-  newOriginalMergedPositionsFromTransformedIterator,
-  originalMergedPositionsFromTransformed,
-  originalPositionFromTransformed,
-  originalSplitPositionsFromTransformed,
+  newReverseTransformationsMergedFromPositionsIterator,
+  reversePositionsSplitFromPositions,
+  reverseTransformationsMergedFromPositions,
+  reverseTransformationFromPosition,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
   type SourceMapSegment,

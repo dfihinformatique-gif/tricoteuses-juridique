@@ -5,7 +5,7 @@ import {
   auditTuple,
   cleanAudit,
 } from "@auditors/core"
-import type { PendingQuery, Row, Sql } from "postgres"
+import type { PendingQuery, Row } from "postgres"
 
 import { query } from "$app/server"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"

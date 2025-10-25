@@ -25,6 +25,7 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
+  import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
 
   import { queryArticlePageInfos } from "../../article.remote.js"
@@ -43,16 +44,17 @@
   const date = $derived(texte["@date_publi"]!)
   let displayMode: "links" | "references" = $state("links")
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
-  const metaArticle = $derived(article.META.META_SPEC.META_ARTICLE)
   const metaCommun = $derived(article.META.META_COMMUN)
+  let showIds = $state(false)
   const versionsArticles = $derived(
-    mergeArticlesVersions(article, otherVersionsArticles),
+    mergeVersions(article, otherVersionsArticles),
   )
 
-  function mergeArticlesVersions(
+  function mergeVersions(
     article: JorfArticleExtended | LegiArticleExtended,
     otherArticles: Array<JorfArticleExtended | LegiArticleExtended>,
   ): Array<JorfArticleExtended | LegiArticleExtended> {
+    console.log(article, otherArticles)
     const versions = article.VERSIONS.VERSION as Array<
       JorfArticleVersion | LegiArticleVersion
     >
@@ -99,7 +101,7 @@
         "What is the good method to merge these kinds of versions arrays?",
       )
     }
-    const sortedVersions = sortArticleVersions(versions)
+    const sortedVersions = sortVersions(versions)
 
     // Now that versions are sorted, sort the articles in the same order.
     const articleById = {
@@ -120,7 +122,7 @@
    * Corrects the sorting of article versions, taking advantage of the fact that,
    * with rare exceptions, they are already well sorted.
    */
-  function sortArticleVersions<
+  function sortVersions<
     T extends {
       LIEN_ART: {
         "@debut": string
@@ -135,31 +137,79 @@
       const { LIEN_ART: lienArt } = version
       if (lienArt["@id"].startsWith("JORF")) {
         // Une version JORF d'un article est présente au plus un fois et toujours à la fin.
-        continue
-      }
-      if (lienArt["@fin"] <= lienArt["@debut"]) {
-        // Article mort né ou autre => on suppose qu'il est déjà à sa bonne place.
-        continue
-      }
-      const { LIEN_ART: previousLienArt } = previousVersion
-      if (previousLienArt["@fin"] <= previousLienArt["@debut"]) {
-        // Article mort né ou autre => on suppose qu'il est déjà à sa bonne place.
-        continue
-      }
-      if (lienArt["@debut"] < previousLienArt["@debut"]) {
-        versions[index] = version
-        versions[index + 1] = previousVersion
-      } else {
         previousVersion = version
+      } else {
+        const { LIEN_ART: previousLienArt } = previousVersion
+        if (
+          lienArt["@debut"] < previousLienArt["@debut"] ||
+          (lienArt["@debut"] === previousLienArt["@debut"] &&
+            lienArt["@fin"] < previousLienArt["@fin"])
+        ) {
+          versions[index] = version
+          versions[index + 1] = previousVersion
+        } else {
+          previousVersion = version
+        }
       }
     }
 
+    // Move last JORF article to first position.
     if (versions.at(-1)?.LIEN_ART["@id"].startsWith("JORF")) {
       versions.unshift(versions.pop()!)
     }
-    return versions
+
+    return versions.reverse()
   }
 </script>
+
+{#snippet versionView(article: JorfArticleExtended | LegiArticleExtended)}
+  {@const metaArticle = article.META.META_SPEC.META_ARTICLE}
+  {@const dateDebut = metaArticle.DATE_DEBUT}
+  {@const dateFin = metaArticle.DATE_FIN}
+  {@const etat = (metaArticle as LegiArticleMetaArticle).ETAT}
+  {@const metaCommun = article.META.META_COMMUN}
+  {#if showIds}
+    {metaCommun.ID}
+  {/if}
+  {#if metaCommun.ORIGINE === "JORF"}
+    Article publié au Journal officiel
+  {:else if metaCommun.ORIGINE === "LEGI" && metaArticle.TYPE !== undefined && ["ENTIEREMENT_MODIF", "PARTIELLEMENT_MODIF"].includes(metaArticle.TYPE)}
+    Article de versement
+  {:else}
+    Article consolidé
+  {/if}
+  {#if dateDebut !== "2999-01-01"}
+    {#if etat === "MODIFIE_MORT_NE"}
+      <b>mort-né</b>
+    {:else if etat === "VIGUEUR"}
+      <b>en vigueur</b>
+    {:else if etat === "VIGUEUR_DIFF"}
+      <b>en vigueur différée</b>
+    {/if}
+    {#if dateDebut === "2222-02-22"}
+      dans le futur
+    {:else if dateFin === "2999-01-01"}
+      {#if etat?.endsWith("_DIFF")}
+        à partir du
+      {:else}
+        depuis le
+      {/if}
+      {fullDateFormatter(dateDebut)}
+    {:else if dateFin <= dateDebut}
+      le {fullDateFormatter(dateDebut)}
+    {:else}
+      du {fullDateFormatter(dateDebut)}
+      {#if dateFin === "2222-02-22"}
+        à une date future
+      {:else}
+        au {fullDateFormatter(dateFin)}
+      {/if}
+    {/if}
+  {/if}
+  {#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
+    <b>{etat}</b>
+  {/if}
+{/snippet}
 
 <ContexteTexteTitre {date} {texte} />
 
@@ -184,30 +234,12 @@
       value={params.id}
     >
       <Select.Trigger id="versions">
-        {#if metaCommun.ORIGINE === "JORF"}
-          Article publié au Journal officiel
-        {:else if metaCommun.ORIGINE === "LEGI" && metaArticle.TYPE !== undefined && ["ENTIEREMENT_MODIF", "PARTIELLEMENT_MODIF"].includes(metaArticle.TYPE)}
-          article de versement
-        {/if}
-        {params.id}
-        {metaArticle.DATE_DEBUT} - {metaArticle.DATE_FIN}
-        {(metaArticle as LegiArticleMetaArticle).ETAT}
+        {@render versionView(article)}
       </Select.Trigger>
       <Select.Content>
         {#each versionsArticles as versionArticle}
-          {@const otherVersionMetaArticle =
-            versionArticle.META.META_SPEC.META_ARTICLE}
-          {@const otherVersionMetaCommun = versionArticle.META.META_COMMUN}
-          {@const versionArticleId = otherVersionMetaCommun.ID}
-          <Select.Item value={versionArticleId}>
-            {#if otherVersionMetaCommun.ORIGINE === "JORF"}
-              Article publié au Journal officiel
-            {:else if otherVersionMetaCommun.ORIGINE === "LEGI" && otherVersionMetaArticle.TYPE !== undefined && ["ENTIEREMENT_MODIF", "PARTIELLEMENT_MODIF"].includes(otherVersionMetaArticle.TYPE)}
-              Article de versement
-            {/if}
-            {versionArticleId}
-            {otherVersionMetaArticle.DATE_DEBUT} - {otherVersionMetaArticle.DATE_FIN}
-            {(otherVersionMetaArticle as LegiArticleMetaArticle).ETAT}
+          <Select.Item value={versionArticle.META.META_COMMUN.ID}>
+            {@render versionView(versionArticle)}
           </Select.Item>
         {/each}
       </Select.Content>
@@ -224,6 +256,9 @@
             >Références sans liens</DropdownMenu.RadioItem
           >
         </DropdownMenu.RadioGroup>
+        <DropdownMenu.CheckboxItem bind:checked={showIds}>
+          Identifiants
+        </DropdownMenu.CheckboxItem>
       </DropdownMenu.Group>
       <DropdownMenu.Separator />
       <DropdownMenu.Group>

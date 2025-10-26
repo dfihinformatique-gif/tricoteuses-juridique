@@ -20,6 +20,7 @@
   const metaArticle = $derived(article.META.META_SPEC.META_ARTICLE)
   const dateDebut = $derived(metaArticle.DATE_DEBUT)
   const dateFin = $derived(metaArticle.DATE_FIN)
+  const espace = " "
   const etat = $derived((metaArticle as LegiArticleMetaArticle).ETAT)
   const metaCommun = $derived(article.META.META_COMMUN)
 </script>
@@ -68,14 +69,35 @@
   {:else if dateFin <= dateDebut}
     le {fullDateFormatter(dateDebut)}
   {:else}
-    du {fullDateFormatter(dateDebut)}
-    {#if dateFin === "2222-02-22"}
-      à une date future
+    du {fullDateFormatter(
+      dateDebut,
+    )}{#if ["PERIME", "TRANSFERE"].includes(etat ?? "")},
+      {#if etat === "PERIME"}
+        {#if displayMode === "article"}
+          <b>périmé</b>
+        {:else}
+          <b>périmée</b>
+        {/if}
+      {:else if displayMode === "article"}
+        <b>transféré</b>
+      {:else}
+        <b>transférée</b>
+      {/if}
+      {#if dateFin === "2222-02-22"}
+        à une date future
+      {:else}
+        le {fullDateFormatter(dateFin)}
+      {/if}
     {:else}
-      au {fullDateFormatter(dateFin)}
+      {espace}
+      {#if dateFin === "2222-02-22"}
+        à une date future
+      {:else}
+        au {fullDateFormatter(dateFin)}
+      {/if}
     {/if}
   {/if}
 {/if}
-{#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
+{#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "PERIME", "TRANSFERE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
   <b>{etat}</b>
 {/if}

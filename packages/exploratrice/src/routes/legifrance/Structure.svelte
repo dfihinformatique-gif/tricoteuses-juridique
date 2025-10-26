@@ -48,6 +48,7 @@
     string,
     ArticleWithLinks | undefined
   >()
+  const espace = " "
   let liensArticles = $derived(structure.LIEN_ART)
   let liensSectionsTa = $derived(structure.LIEN_SECTION_TA)
   const sectionTaById = new SvelteMap<
@@ -131,15 +132,30 @@
             {:else if dateFin <= dateDebut}
               le {fullDateFormatter(dateDebut)}
             {:else}
-              du {fullDateFormatter(dateDebut)}
-              {#if dateFin === "2222-02-22"}
-                à une date future
+              du {fullDateFormatter(
+                dateDebut,
+              )}{#if ["PERIME", "TRANSFERE"].includes(etat ?? "")},
+                {#if etat === "PERIME"}
+                  <b>périmé</b>
+                {:else}
+                  <b>transféré</b>
+                {/if}
+                {#if dateFin === "2222-02-22"}
+                  à une date future
+                {:else}
+                  le {fullDateFormatter(dateFin)}
+                {/if}
               {:else}
-                au {fullDateFormatter(dateFin)}
+                {espace}
+                {#if dateFin === "2222-02-22"}
+                  à une date future
+                {:else}
+                  au {fullDateFormatter(dateFin)}
+                {/if}
               {/if}
             {/if}
           {/if}
-          {#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
+          {#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "PERIME", "TRANSFERE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
             <b>{etat}</b>
           {/if}
         {:else}

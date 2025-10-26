@@ -29,6 +29,7 @@
   // TOOD: Improve date detection:
   const date = $derived(texte["@date_publi"]!)
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
+  let showIds = $state(false)
 </script>
 
 <ContexteTexteTitre {date} {texte} />
@@ -57,6 +58,9 @@
             >Références sans liens</DropdownMenu.RadioItem
           >
         </DropdownMenu.RadioGroup>
+        <DropdownMenu.CheckboxItem bind:checked={showIds}>
+          Identifiants
+        </DropdownMenu.CheckboxItem>
       </DropdownMenu.Group>
       <DropdownMenu.Separator />
       <DropdownMenu.Group>
@@ -160,5 +164,5 @@
 </div>
 
 {#if sectionTa.STRUCTURE_TA !== undefined}
-  <Structure {displayMode} structure={sectionTa.STRUCTURE_TA} />
+  <Structure {displayMode} {showIds} structure={sectionTa.STRUCTURE_TA} />
 {/if}

@@ -10,7 +10,6 @@
     walkContexteTexteTm,
     type JorfArticleTm,
     type JorfArticleVersion,
-    type LegiArticleMetaArticle,
     type LegiArticleTm,
     type LegiArticleVersion,
     type LegiTexteNature,
@@ -23,16 +22,15 @@
   import { goto } from "$app/navigation"
   import { Button } from "$lib/components/ui/button/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
-  import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
-  import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
 
   import { queryArticlePageInfos } from "../../article.remote.js"
+  import ArticleBody from "../../ArticleBody.svelte"
+  import ArticleSummary from "../../ArticleSummary.svelte"
   import ContexteTexteTitre from "../../ContexteTexteTitre.svelte"
   import TmWithTitreArray from "../../TmWithTitreArray.svelte"
   import TmWithTitreSingleton from "../../TmWithTitreSingleton.svelte"
-  import ArticleBody from "../../ArticleBody.svelte"
 
   let { params } = $props()
 
@@ -54,7 +52,6 @@
     article: JorfArticleExtended | LegiArticleExtended,
     otherArticles: Array<JorfArticleExtended | LegiArticleExtended>,
   ): Array<JorfArticleExtended | LegiArticleExtended> {
-    console.log(article, otherArticles)
     const versions = article.VERSIONS.VERSION as Array<
       JorfArticleVersion | LegiArticleVersion
     >
@@ -162,55 +159,6 @@
   }
 </script>
 
-{#snippet versionView(article: JorfArticleExtended | LegiArticleExtended)}
-  {@const metaArticle = article.META.META_SPEC.META_ARTICLE}
-  {@const dateDebut = metaArticle.DATE_DEBUT}
-  {@const dateFin = metaArticle.DATE_FIN}
-  {@const etat = (metaArticle as LegiArticleMetaArticle).ETAT}
-  {@const metaCommun = article.META.META_COMMUN}
-  {#if showIds}
-    {metaCommun.ID}
-  {/if}
-  {#if metaCommun.ORIGINE === "JORF"}
-    Article publié au Journal officiel
-  {:else if metaCommun.ORIGINE === "LEGI" && metaArticle.TYPE !== undefined && ["ENTIEREMENT_MODIF", "PARTIELLEMENT_MODIF"].includes(metaArticle.TYPE)}
-    Article de versement
-  {:else}
-    Article consolidé
-  {/if}
-  {#if dateDebut !== "2999-01-01"}
-    {#if etat === "MODIFIE_MORT_NE"}
-      <b>mort-né</b>
-    {:else if etat === "VIGUEUR"}
-      <b>en vigueur</b>
-    {:else if etat === "VIGUEUR_DIFF"}
-      <b>en vigueur différée</b>
-    {/if}
-    {#if dateDebut === "2222-02-22"}
-      dans le futur
-    {:else if dateFin === "2999-01-01"}
-      {#if etat?.endsWith("_DIFF")}
-        à partir du
-      {:else}
-        depuis le
-      {/if}
-      {fullDateFormatter(dateDebut)}
-    {:else if dateFin <= dateDebut}
-      le {fullDateFormatter(dateDebut)}
-    {:else}
-      du {fullDateFormatter(dateDebut)}
-      {#if dateFin === "2222-02-22"}
-        à une date future
-      {:else}
-        au {fullDateFormatter(dateFin)}
-      {/if}
-    {/if}
-  {/if}
-  {#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
-    <b>{etat}</b>
-  {/if}
-{/snippet}
-
 <ContexteTexteTitre {date} {texte} />
 
 {#if texte.TM !== undefined}
@@ -225,26 +173,28 @@
   Article {article.num}
 </h1>
 
-<div class="mx-auto flex w-1/2 justify-between">
-  <div class="flex space-x-1">
-    <Label for="versions">Versions</Label>
-    <Select.Root
-      onValueChange={(id: string) => goto(urlPathFromId(id)!)}
-      type="single"
-      value={params.id}
-    >
-      <Select.Trigger id="versions">
-        {@render versionView(article)}
-      </Select.Trigger>
-      <Select.Content>
-        {#each versionsArticles as versionArticle}
-          <Select.Item value={versionArticle.META.META_COMMUN.ID}>
-            {@render versionView(versionArticle)}
-          </Select.Item>
-        {/each}
-      </Select.Content>
-    </Select.Root>
-  </div>
+<div class="mx-auto my-6 flex justify-center space-x-2">
+  <Select.Root
+    onValueChange={(id: string) => goto(urlPathFromId(id)!)}
+    type="single"
+    value={params.id}
+  >
+    <Select.Trigger>
+      <ArticleSummary {article} displayMode="version" {showIds} />
+    </Select.Trigger>
+    <Select.Content>
+      {#each versionsArticles as versionArticle}
+        <Select.Item value={versionArticle.META.META_COMMUN.ID}>
+          <ArticleSummary
+            article={versionArticle}
+            displayMode="version"
+            {showIds}
+          />
+        </Select.Item>
+      {/each}
+    </Select.Content>
+  </Select.Root>
+
   <DropdownMenu.Root>
     <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
     <DropdownMenu.Content align="end">

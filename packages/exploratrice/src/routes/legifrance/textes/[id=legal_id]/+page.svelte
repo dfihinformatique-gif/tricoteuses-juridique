@@ -5,15 +5,17 @@
     gitPathFromId,
     organizationNameByTexteNature,
     repositoryNameFromTitle,
+    type JorfTextelrVersion,
     type JorfTexteVersion,
+    type LegiTextelrVersion,
     type LegiTexteNature,
     type LegiTexteVersion,
   } from "@tricoteuses/legifrance"
 
   import { goto } from "$app/navigation"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
-  import { Label } from "$lib/components/ui/label/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
+  import { fullDateFormatter } from "$lib/dates"
   import { cleanHtmlContenu } from "$lib/strings"
   import { urlPathFromId } from "$lib/urls"
 
@@ -38,6 +40,7 @@
   const notice = $derived(
     texteWithLinks.notice ?? (texteVersion as JorfTexteVersion).NOTICE?.CONTENU,
   )
+  let showIds = $state(false)
   const signataires = $derived(
     texteWithLinks.signataires ??
       (texteVersion as LegiTexteVersion).SIGNATAIRES?.CONTENU,
@@ -46,41 +49,74 @@
     texteWithLinks.sm ?? (texteVersion as JorfTexteVersion).SM?.CONTENU,
   )
   const tp = $derived(texteWithLinks.tp ?? texteVersion?.TP?.CONTENU)
-  const versions = $derived(textelr?.VERSIONS.VERSION)
+  const versions = $derived(textelr?.VERSIONS.VERSION.toReversed())
+  const version = $derived(
+    versions?.find((version) => version.LIEN_TXT["@id"] === params.id),
+  )
   const visas = $derived(
     texteWithLinks.visas ?? (texteVersion as LegiTexteVersion).VISAS?.CONTENU,
   )
 </script>
 
+{#snippet versionView(version: JorfTextelrVersion | LegiTextelrVersion)}
+  {@const etat = version["@etat"]}
+  {@const lienTexte = version.LIEN_TXT}
+  {@const dateDebut = lienTexte["@debut"]}
+  {@const dateFin = lienTexte["@fin"]}
+  {#if showIds}
+    <code>{lienTexte["@id"]}</code>
+  {/if}
+  {#if lienTexte["@id"].startsWith("JORF")}
+    Version promulguée
+  {:else}
+    Version consolidée
+  {/if}
+  {#if dateDebut !== "2999-01-01"}
+    {#if dateDebut === "2222-02-22"}
+      dans le futur
+    {:else if dateFin === "2999-01-01"}
+      depuis le
+      {fullDateFormatter(dateDebut)}
+    {:else if dateFin <= dateDebut}
+      le {fullDateFormatter(dateDebut)}
+    {:else}
+      du {fullDateFormatter(dateDebut)}
+      {#if dateFin === "2222-02-22"}
+        à une date future
+      {:else}
+        au {fullDateFormatter(dateFin)}
+      {/if}
+    {/if}
+  {/if}
+  {#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
+    <b>{etat}</b>
+  {/if}
+{/snippet}
+
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
-  {texteVersion?.META.META_SPEC.META_TEXTE_VERSION.TITREFULL}
+  {metaTexteVersion?.TITREFULL}
 </h1>
 
-<div class="mx-auto flex w-1/2 justify-between">
-  <div class="flex space-x-1">
-    {#if versions !== undefined}
-      <Label for="versions">Versions</Label>
-      <Select.Root
-        onValueChange={(id: string) => goto(urlPathFromId(id)!)}
-        type="single"
-        value={params.id}
-      >
-        <Select.Trigger id="versions"
-          >{params.id}
-          {metaTexteVersion?.DATE_DEBUT} - {metaTexteVersion?.DATE_FIN}</Select.Trigger
-        >
-        <Select.Content>
-          {#each versions as version}
-            {@const lien = version.LIEN_TXT}
-            <Select.Item value={lien["@id"]}
-              >{lien["@id"]}
-              {lien["@debut"]} - {lien["@fin"]}</Select.Item
-            >
-          {/each}
-        </Select.Content>
-      </Select.Root>
-    {/if}
-  </div>
+<div class="mx-auto my-6 flex justify-center space-x-2">
+  {#if versions !== undefined}
+    <Select.Root
+      onValueChange={(id: string) => goto(urlPathFromId(id)!)}
+      type="single"
+      value={params.id}
+    >
+      <Select.Trigger>
+        {@render versionView(version!)}
+      </Select.Trigger>
+      <Select.Content>
+        {#each versions as versionTexte}
+          <Select.Item value={versionTexte.LIEN_TXT["@id"]}>
+            {@render versionView(versionTexte)}
+          </Select.Item>
+        {/each}
+      </Select.Content>
+    </Select.Root>
+  {/if}
+
   <DropdownMenu.Root>
     <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
     <DropdownMenu.Content align="end">
@@ -92,6 +128,9 @@
             >Références sans liens</DropdownMenu.RadioItem
           >
         </DropdownMenu.RadioGroup>
+        <DropdownMenu.CheckboxItem bind:checked={showIds}>
+          Identifiants
+        </DropdownMenu.CheckboxItem>
       </DropdownMenu.Group>
       <DropdownMenu.Separator />
       <DropdownMenu.Group>
@@ -221,7 +260,7 @@
 {/if}
 
 {#if textelr?.STRUCT !== undefined}
-  <Structure {displayMode} structure={textelr.STRUCT} />
+  <Structure {displayMode} {showIds} structure={textelr.STRUCT} />
 {/if}
 
 {#if signataires !== undefined}

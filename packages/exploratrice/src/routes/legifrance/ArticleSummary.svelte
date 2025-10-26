@@ -71,8 +71,14 @@
   {:else}
     du {fullDateFormatter(
       dateDebut,
-    )}{#if ["PERIME", "TRANSFERE"].includes(etat ?? "")},
-      {#if etat === "PERIME"}
+    )}{#if ["ABROGE", "ABROGE_DIFF", "PERIME", "TRANSFERE"].includes(etat ?? "")},
+      {#if ["ABROGE", "ABROGE_DIFF"].includes(etat ?? "")}
+        {#if displayMode === "article"}
+          <b>abrogé</b>
+        {:else}
+          <b>abrogée</b>
+        {/if}
+      {:else if etat === "PERIME"}
         {#if displayMode === "article"}
           <b>périmé</b>
         {:else}
@@ -98,6 +104,6 @@
     {/if}
   {/if}
 {/if}
-{#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "PERIME", "TRANSFERE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
+{#if etat !== undefined && !["ABROGE", "ABROGE_DIFF", "MODIFIE", "MODIFIE_MORT_NE", "PERIME", "TRANSFERE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
   <b>{etat}</b>
 {/if}

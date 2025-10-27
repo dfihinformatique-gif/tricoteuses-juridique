@@ -237,9 +237,9 @@ export async function getOrLoadTextelr<
     textelrCache = new Map()
     legifranceObjectCache.set("TEXTELR", textelrCache)
   }
-  let article = textelrCache.get(id) as TextelrType | undefined | null
-  if (article === undefined) {
-    article = (
+  let textelr = textelrCache.get(id) as TextelrType | undefined | null
+  if (textelr === undefined) {
+    textelr = (
       await legiDb<
         Array<{
           data: TextelrType
@@ -251,9 +251,105 @@ export async function getOrLoadTextelr<
         WHERE id = ${id}
       `
     )[0]?.data
-    textelrCache.set(id, (article as unknown as JSONValue) ?? null)
+    textelrCache.set(id, (textelr as unknown as JSONValue) ?? null)
   }
-  return article ?? undefined
+  return textelr ?? undefined
+}
+
+export async function getOrLoadTexteslr<
+  TextelrType extends JorfTextelr | LegiTextelr,
+>(
+  legiDb: Sql,
+  legifranceObjectCache: LegifranceObjectCache,
+  ids: string[],
+): Promise<Array<TextelrType>> {
+  let textelrCache = legifranceObjectCache.get("TEXTELR")
+  if (textelrCache === undefined) {
+    textelrCache = new Map()
+    legifranceObjectCache.set("TEXTELR", textelrCache)
+  }
+  const idsToLoad = new Set(ids)
+  const texteslr: TextelrType[] = []
+  for (const id of idsToLoad) {
+    const textelr = textelrCache.get(id) as unknown as
+      | TextelrType
+      | undefined
+      | null
+    if (textelr !== undefined) {
+      idsToLoad.delete(id)
+      if (textelr !== null) {
+        texteslr.push(textelr)
+      }
+    }
+  }
+  if (idsToLoad.size > 0) {
+    for (const textelr of (
+      await legiDb<
+        Array<{
+          data: TextelrType
+        }>
+      >`
+        SELECT data
+        FROM textelr
+        WHERE id IN ${legiDb([...idsToLoad])}
+      `
+    ).map(({ data }) => data)) {
+      textelrCache.set(
+        textelr.META.META_COMMUN.ID,
+        textelr as unknown as JSONValue,
+      )
+      texteslr.push(textelr)
+    }
+  }
+  return texteslr
+}
+
+export async function getOrLoadTextesVersions<
+  TexteVersionType extends JorfTexteVersion | LegiTexteVersion,
+>(
+  legiDb: Sql,
+  legifranceObjectCache: LegifranceObjectCache,
+  ids: string[],
+): Promise<Array<TexteVersionType>> {
+  let texteVersionCache = legifranceObjectCache.get("TEXTE_VERSION")
+  if (texteVersionCache === undefined) {
+    texteVersionCache = new Map()
+    legifranceObjectCache.set("TEXTE_VERSION", texteVersionCache)
+  }
+  const idsToLoad = new Set(ids)
+  const textesVersions: TexteVersionType[] = []
+  for (const id of idsToLoad) {
+    const texteVersion = texteVersionCache.get(id) as unknown as
+      | TexteVersionType
+      | undefined
+      | null
+    if (texteVersion !== undefined) {
+      idsToLoad.delete(id)
+      if (texteVersion !== null) {
+        textesVersions.push(texteVersion)
+      }
+    }
+  }
+  if (idsToLoad.size > 0) {
+    for (const texteVersion of (
+      await legiDb<
+        Array<{
+          data: TexteVersionType
+        }>
+      >`
+        SELECT data
+        FROM texte_version
+        WHERE id IN ${legiDb([...idsToLoad])}
+      `
+    ).map(({ data }) => data)) {
+      texteVersionCache.set(
+        texteVersion.META.META_COMMUN.ID,
+        texteVersion as unknown as JSONValue,
+      )
+      textesVersions.push(texteVersion)
+    }
+  }
+  return textesVersions
 }
 
 export async function getOrLoadTexteVersion<

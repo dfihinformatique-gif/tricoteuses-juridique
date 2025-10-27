@@ -24,7 +24,7 @@
 
   import { queryArticleWithLinks } from "./article.remote.js"
   import ArticleBody from "./ArticleBody.svelte"
-  import type { ArticleWithLinks } from "./articles.js"
+  import type { ArticleWithLinks } from "./article.js"
   import { querySectionTa } from "./section_ta.remote.js"
   import Structure from "./Structure.svelte"
   import StructureItem from "./StructureItem.svelte"
@@ -112,14 +112,14 @@
           {:else}
             Article {lienArticle["@num"] ?? ""} consolidé
           {/if}
+          {#if etat === "MODIFIE_MORT_NE"}
+            <b>mort-né</b>
+          {:else if etat === "VIGUEUR"}
+            <b>en vigueur</b>
+          {:else if etat === "VIGUEUR_DIFF"}
+            <b>en vigueur différée</b>
+          {/if}
           {#if dateDebut !== "2999-01-01"}
-            {#if etat === "MODIFIE_MORT_NE"}
-              <b>mort-né</b>
-            {:else if etat === "VIGUEUR"}
-              <b>en vigueur</b>
-            {:else if etat === "VIGUEUR_DIFF"}
-              <b>en vigueur différée</b>
-            {/if}
             {#if dateDebut === "2222-02-22"}
               dans le futur
             {:else if dateFin === "2999-01-01"}

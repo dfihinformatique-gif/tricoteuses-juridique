@@ -26,7 +26,7 @@ import { query } from "$app/server"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
-import type { ArticlePageInfos, ArticleWithLinks } from "./articles.js"
+import type { ArticlePageInfos, ArticleWithLinks } from "./article.js"
 
 const loadArticleWithLinks = async (
   legifranceObjectCache: LegifranceObjectCache,

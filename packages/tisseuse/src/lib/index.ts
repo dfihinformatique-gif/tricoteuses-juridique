@@ -26,6 +26,8 @@ export {
   getOrLoadSectionTa,
   getOrLoadSectionsTa,
   getOrLoadTextelr,
+  getOrLoadTexteslr,
+  getOrLoadTextesVersions,
   getOrLoadTexteVersion,
   loadArticles,
   type ArticleExtension,

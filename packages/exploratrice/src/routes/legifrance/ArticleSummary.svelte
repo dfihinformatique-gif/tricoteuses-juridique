@@ -45,18 +45,18 @@
 {:else}
   Version consolidée
 {/if}
-{#if dateDebut !== "2999-01-01"}
-  {#if etat === "MODIFIE_MORT_NE"}
-    {#if displayMode === "article"}
-      <b>mort-né</b>
-    {:else}
-      <b>mort-née</b>
-    {/if}
-  {:else if etat === "VIGUEUR"}
-    <b>en vigueur</b>
-  {:else if etat === "VIGUEUR_DIFF"}
-    <b>en vigueur différée</b>
+{#if etat === "MODIFIE_MORT_NE"}
+  {#if displayMode === "article"}
+    <b>mort-né</b>
+  {:else}
+    <b>mort-née</b>
   {/if}
+{:else if etat === "VIGUEUR"}
+  <b>en vigueur</b>
+{:else if etat === "VIGUEUR_DIFF"}
+  <b>en vigueur différée</b>
+{/if}
+{#if dateDebut !== "2999-01-01"}
   {#if dateDebut === "2222-02-22"}
     dans le futur
   {:else if dateFin === "2999-01-01"}

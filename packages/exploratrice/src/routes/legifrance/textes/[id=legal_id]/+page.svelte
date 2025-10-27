@@ -5,9 +5,7 @@
     gitPathFromId,
     organizationNameByTexteNature,
     repositoryNameFromTitle,
-    type JorfTextelrVersion,
     type JorfTexteVersion,
-    type LegiTextelrVersion,
     type LegiTexteNature,
     type LegiTexteVersion,
   } from "@tricoteuses/legifrance"
@@ -15,102 +13,117 @@
   import { goto } from "$app/navigation"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
-  import { fullDateFormatter } from "$lib/dates"
   import { cleanHtmlContenu } from "$lib/strings"
   import { urlPathFromId } from "$lib/urls"
 
   import HtmlFragmentWithReferences from "../../HtmlFragmentWithReferences.svelte"
   import Structure from "../../Structure.svelte"
-  import { queryTexteWithLinks } from "../../texte.remote.js"
+  import { queryTextePageInfos } from "../../texte.remote.js"
+  import TexteSummary from "../../TexteSummary.svelte"
 
   let { params } = $props()
 
-  const texteWithLinks = $derived(await queryTexteWithLinks(params.id))
-  const { dossierLegislatifAssembleeUid, textelr, texteVersion } =
-    $derived(texteWithLinks)
-  const abro = $derived(texteWithLinks.abro ?? texteVersion?.ABRO?.CONTENU)
+  const textePageInfos = $derived(await queryTextePageInfos(params.id))
+  const {
+    dossierLegislatifAssembleeUid,
+    otherVersionsTextesVersions,
+    textelr,
+    texteVersion,
+  } = $derived(textePageInfos)
+  const abro = $derived(textePageInfos.abro ?? texteVersion?.ABRO?.CONTENU)
   let displayMode: "links" | "references" = $state("links")
+  const espace = " "
   const metaCommun = $derived(texteVersion?.META.META_COMMUN)
   const metaTexteVersion = $derived(
     texteVersion?.META.META_SPEC.META_TEXTE_VERSION,
   )
   const nota = $derived(
-    texteWithLinks.nota ?? (texteVersion as LegiTexteVersion).NOTA?.CONTENU,
+    textePageInfos.nota ?? (texteVersion as LegiTexteVersion).NOTA?.CONTENU,
   )
   const notice = $derived(
-    texteWithLinks.notice ?? (texteVersion as JorfTexteVersion).NOTICE?.CONTENU,
+    textePageInfos.notice ?? (texteVersion as JorfTexteVersion).NOTICE?.CONTENU,
   )
   let showIds = $state(false)
   const signataires = $derived(
-    texteWithLinks.signataires ??
+    textePageInfos.signataires ??
       (texteVersion as LegiTexteVersion).SIGNATAIRES?.CONTENU,
   )
   const sm = $derived(
-    texteWithLinks.sm ?? (texteVersion as JorfTexteVersion).SM?.CONTENU,
+    textePageInfos.sm ?? (texteVersion as JorfTexteVersion).SM?.CONTENU,
   )
-  const tp = $derived(texteWithLinks.tp ?? texteVersion?.TP?.CONTENU)
-  const versions = $derived(textelr?.VERSIONS.VERSION.toReversed())
-  const version = $derived(
-    versions?.find((version) => version.LIEN_TXT["@id"] === params.id),
+  const tp = $derived(textePageInfos.tp ?? texteVersion?.TP?.CONTENU)
+  const versionsTextesVersions = $derived(
+    sortTextesVersions(
+      [texteVersion, ...otherVersionsTextesVersions].filter(
+        (versionTexteVersion) => versionTexteVersion !== undefined,
+      ),
+    ).reverse(),
   )
   const visas = $derived(
-    texteWithLinks.visas ?? (texteVersion as LegiTexteVersion).VISAS?.CONTENU,
+    textePageInfos.visas ?? (texteVersion as LegiTexteVersion).VISAS?.CONTENU,
   )
-</script>
 
-{#snippet versionView(version: JorfTextelrVersion | LegiTextelrVersion)}
-  {@const etat = version["@etat"]}
-  {@const lienTexte = version.LIEN_TXT}
-  {@const dateDebut = lienTexte["@debut"]}
-  {@const dateFin = lienTexte["@fin"]}
-  {#if showIds}
-    <code>{lienTexte["@id"]}</code>
-  {/if}
-  {#if lienTexte["@id"].startsWith("JORF")}
-    Version promulguée
-  {:else}
-    Version consolidée
-  {/if}
-  {#if dateDebut !== "2999-01-01"}
-    {#if dateDebut === "2222-02-22"}
-      dans le futur
-    {:else if dateFin === "2999-01-01"}
-      depuis le
-      {fullDateFormatter(dateDebut)}
-    {:else if dateFin <= dateDebut}
-      le {fullDateFormatter(dateDebut)}
-    {:else}
-      du {fullDateFormatter(dateDebut)}
-      {#if dateFin === "2222-02-22"}
-        à une date future
-      {:else}
-        au {fullDateFormatter(dateFin)}
-      {/if}
-    {/if}
-  {/if}
-  {#if etat !== undefined && !["MODIFIE", "MODIFIE_MORT_NE", "VIGUEUR", "VIGUEUR_DIFF"].includes(etat)}
-    <b>{etat}</b>
-  {/if}
-{/snippet}
+  function sortTextesVersions(
+    textesVersions: Array<JorfTexteVersion | LegiTexteVersion>,
+  ): Array<JorfTexteVersion | LegiTexteVersion> {
+    return textesVersions.toSorted((texteVersion1, texteVersion2) => {
+      const metaTexteChronicle1 =
+        texteVersion1.META.META_SPEC.META_TEXTE_CHRONICLE
+      const metaTexteVersion1 = texteVersion1.META.META_SPEC.META_TEXTE_VERSION
+      let dateDebut1 = metaTexteVersion1.DATE_DEBUT
+      if (dateDebut1 === undefined || dateDebut1 === "2999-01-01") {
+        dateDebut1 = metaTexteChronicle1.DATE_PUBLI
+      }
+      const metaTexteChronicle2 =
+        texteVersion2.META.META_SPEC.META_TEXTE_CHRONICLE
+      const metaTexteVersion2 = texteVersion2.META.META_SPEC.META_TEXTE_VERSION
+      let dateDebut2 = metaTexteVersion2.DATE_DEBUT
+      if (dateDebut2 === undefined || dateDebut2 === "2999-01-01") {
+        dateDebut2 = metaTexteChronicle2.DATE_PUBLI
+      }
+      if (dateDebut1 !== dateDebut2) {
+        return dateDebut1.localeCompare(dateDebut2)
+      }
+      const metaCommun1 = texteVersion1.META.META_COMMUN
+      const origine1 = metaCommun1.ORIGINE
+      const metaCommun2 = texteVersion2.META.META_COMMUN
+      const origine2 = metaCommun2.ORIGINE
+      if (origine1 !== origine2) {
+        if (origine1 === "JORF") {
+          return -1
+        } else if (origine2 === "JORF") {
+          return 1
+        }
+      }
+      throw new Error(
+        `Unable to sort texts ${metaCommun1.ID} & ${metaCommun2.ID} by date.`,
+      )
+    })
+  }
+</script>
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
   {metaTexteVersion?.TITREFULL}
 </h1>
 
 <div class="mx-auto my-6 flex justify-center space-x-2">
-  {#if versions !== undefined}
+  {#if texteVersion !== undefined}
     <Select.Root
       onValueChange={(id: string) => goto(urlPathFromId(id)!)}
       type="single"
       value={params.id}
     >
       <Select.Trigger>
-        {@render versionView(version!)}
+        <TexteSummary {texteVersion} displayMode="version" {showIds} />
       </Select.Trigger>
       <Select.Content>
-        {#each versions as versionTexte}
-          <Select.Item value={versionTexte.LIEN_TXT["@id"]}>
-            {@render versionView(versionTexte)}
+        {#each versionsTextesVersions as versionTexteVersion}
+          <Select.Item value={versionTexteVersion.META.META_COMMUN.ID}>
+            <TexteSummary
+              texteVersion={versionTexteVersion}
+              displayMode="version"
+              {showIds}
+            />
           </Select.Item>
         {/each}
       </Select.Content>

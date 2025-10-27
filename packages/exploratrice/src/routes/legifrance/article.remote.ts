@@ -1,4 +1,5 @@
 import {
+  auditArray,
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
@@ -27,6 +28,70 @@ import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
 import type { ArticlePageInfos, ArticleWithLinks } from "./article.js"
+
+const loadArticlesWithLinks = async (
+  legifranceObjectCache: LegifranceObjectCache,
+  ids: string[],
+): Promise<{ [id: string]: ArticleWithLinks }> => {
+  const articleWithLinksById = Object.fromEntries(
+    (
+      await legiDb<
+        Array<{
+          bloc_textuel: string | null
+          data: JorfArticle | LegiArticle
+          id: string
+          nota: string | null
+          num: string | null
+        }>
+      >`
+      SELECT
+        bloc_textuel,
+        data,
+        article.id AS id,
+        nota,
+        num
+      FROM article
+      LEFT JOIN article_contenu_avec_liens ON article.id = article_contenu_avec_liens.id
+      WHERE article.id IN ${legiDb(ids)}
+    `
+    ).map(
+      ({
+        bloc_textuel: blocTextuel,
+        data,
+        id,
+        nota,
+        num,
+      }): [string, ArticleWithLinks] => [
+        id,
+        Object.fromEntries(
+          Object.entries({
+            article: extendLoadedArticle({ data, num }),
+            blocTextuel,
+            nota,
+          }).filter((_key, value) => value !== null),
+        ) as {
+          article: JorfArticleExtended | LegiArticleExtended
+          blocTextuel?: string
+          nota?: string
+        },
+      ],
+    ),
+  )
+
+  let articleCache = legifranceObjectCache.get("ARTICLE")
+  if (articleCache === undefined) {
+    articleCache = new Map()
+    legifranceObjectCache.set("ARTICLE", articleCache)
+  }
+  for (const [id, articleWithLinks] of Object.entries(articleWithLinksById)) {
+    articleCache.set(
+      id,
+      (articleWithLinks?.article as unknown as JSONValue) ?? null,
+    )
+  }
+
+  return articleWithLinksById
+}
 
 const loadArticleWithLinks = async (
   legifranceObjectCache: LegifranceObjectCache,
@@ -185,6 +250,18 @@ export const queryArticlePageInfos = query(
       ),
     }
   },
+)
+
+export const queryArticlesWithLinks = query(
+  standardSchemaV1<string[]>(
+    cleanAudit,
+    auditArray(auditTrimString, auditEmptyToNull, auditLegalId, auditRequire),
+    auditEmptyToNull,
+    auditRequire,
+  ),
+  async (ids): Promise<{ [id: string]: ArticleWithLinks }> =>
+    (await loadArticlesWithLinks(newLegifranceObjectCache(), ids)) ??
+    error(404),
 )
 
 export const queryArticleWithLinks = query(

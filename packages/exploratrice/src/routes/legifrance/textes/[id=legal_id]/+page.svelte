@@ -32,7 +32,7 @@
   } = $derived(textePageInfos)
   const abro = $derived(textePageInfos.abro ?? texteVersion?.ABRO?.CONTENU)
   let displayMode: "links" | "references" = $state("links")
-  const espace = " "
+
   const metaCommun = $derived(texteVersion?.META.META_COMMUN)
   const metaTexteVersion = $derived(
     texteVersion?.META.META_SPEC.META_TEXTE_VERSION,
@@ -96,7 +96,7 @@
         }
       }
       throw new Error(
-        `Unable to sort texts ${metaCommun1.ID} & ${metaCommun2.ID} by date.`,
+        `Unable to sort texts ${metaCommun1.ID} & ${metaCommun2.ID} by date.`,
       )
     })
   }

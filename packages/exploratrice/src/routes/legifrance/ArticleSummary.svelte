@@ -56,51 +56,65 @@
 {:else if etat === "VIGUEUR_DIFF"}
   <b>en vigueur différée</b>
 {/if}
-{#if dateDebut !== "2999-01-01"}
-  {#if dateDebut === "2222-02-22"}
-    dans le futur
-  {:else if dateFin === "2999-01-01"}
-    {#if etat?.endsWith("_DIFF")}
-      à partir du
-    {:else}
-      depuis le
-    {/if}
-    {fullDateFormatter(dateDebut)}
-  {:else if dateFin <= dateDebut}
-    le {fullDateFormatter(dateDebut)}
+{#if dateDebut === "2999-01-01"}
+  {@const contexteTexte = article.CONTEXTE.TEXTE}
+  {@const titreTexte = contexteTexte.TITRE_TXT}
+  {@const dateSignature =
+    contexteTexte["@date_signature"] ??
+    (titreTexte === undefined
+      ? []
+      : Array.isArray(titreTexte)
+        ? titreTexte
+        : [titreTexte]
+    ).sort((titreTexte1, titreTexte2) =>
+      titreTexte1["@debut"].localeCompare(titreTexte2["@debut"]),
+    )[0]?.["@debut"]}
+  {#if dateSignature !== undefined && dateSignature !== "2999-01-01"}
+    le {fullDateFormatter(dateSignature)}
+  {/if}
+{:else if dateDebut === "2222-02-22"}
+  dans le futur
+{:else if dateFin === "2999-01-01"}
+  {#if etat?.endsWith("_DIFF")}
+    à partir du
   {:else}
-    du {fullDateFormatter(
-      dateDebut,
-    )}{#if ["ABROGE", "ABROGE_DIFF", "PERIME", "TRANSFERE"].includes(etat ?? "")},
-      {#if ["ABROGE", "ABROGE_DIFF"].includes(etat ?? "")}
-        {#if displayMode === "article"}
-          <b>abrogé</b>
-        {:else}
-          <b>abrogée</b>
-        {/if}
-      {:else if etat === "PERIME"}
-        {#if displayMode === "article"}
-          <b>périmé</b>
-        {:else}
-          <b>périmée</b>
-        {/if}
-      {:else if displayMode === "article"}
-        <b>transféré</b>
+    depuis le
+  {/if}
+  {fullDateFormatter(dateDebut)}
+{:else if dateFin <= dateDebut}
+  le {fullDateFormatter(dateDebut)}
+{:else}
+  du {fullDateFormatter(
+    dateDebut,
+  )}{#if ["ABROGE", "ABROGE_DIFF", "PERIME", "TRANSFERE"].includes(etat ?? "")},
+    {#if ["ABROGE", "ABROGE_DIFF"].includes(etat ?? "")}
+      {#if displayMode === "article"}
+        <b>abrogé</b>
       {:else}
-        <b>transférée</b>
+        <b>abrogée</b>
       {/if}
-      {#if dateFin === "2222-02-22"}
-        à une date future
+    {:else if etat === "PERIME"}
+      {#if displayMode === "article"}
+        <b>périmé</b>
       {:else}
-        le {fullDateFormatter(dateFin)}
+        <b>périmée</b>
       {/if}
+    {:else if displayMode === "article"}
+      <b>transféré</b>
     {:else}
-      {espace}
-      {#if dateFin === "2222-02-22"}
-        à une date future
-      {:else}
-        au {fullDateFormatter(dateFin)}
-      {/if}
+      <b>transférée</b>
+    {/if}
+    {#if dateFin === "2222-02-22"}
+      à une date future
+    {:else}
+      le {fullDateFormatter(dateFin)}
+    {/if}
+  {:else}
+    {espace}
+    {#if dateFin === "2222-02-22"}
+      à une date future
+    {:else}
+      au {fullDateFormatter(dateFin)}
     {/if}
   {/if}
 {/if}

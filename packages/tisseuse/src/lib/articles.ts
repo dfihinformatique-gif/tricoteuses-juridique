@@ -19,10 +19,83 @@ import { getOrLoadArticle, getOrLoadSectionTa } from "./loaders/legifrance.js"
 /**
  * TODO: Migrate to @tricoteuses/legifrance
  */
-export function getArticleDateSignature(
+export const getArticleDateDebut = (
   article: JorfArticle | LegiArticle,
-  // legifranceObjectCache: LegifranceObjectCache = newLegifranceObjectCache(),
-): string {
+): string => {
+  // TODO: For non-JORF articles, use links to retrieve article or text that creates or
+  // modify this article and use their date.
+  const dateDebut = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
+  if (
+    dateDebut !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(dateDebut)
+  ) {
+    return dateDebut
+  }
+  // Assume that the latest date of the parent sections TA is a good proxy ot the
+  // creation date of the article.
+  const contexteTexte = article.CONTEXTE.TEXTE
+  const titresTextes = contexteTexte.TITRE_TXT
+  const parentsCreationDates = [
+    ...(titresTextes === undefined
+      ? []
+      : (Array.isArray(titresTextes) ? titresTextes : [titresTextes]).map(
+          (titreTexte) => titreTexte["@debut"],
+        )),
+    ...(contexteTexte.TM === undefined
+      ? []
+      : walkContexteTexteTm(contexteTexte.TM)
+          .map((tm) =>
+            (Array.isArray(tm.TITRE_TM) ? tm.TITRE_TM : [tm.TITRE_TM]).map(
+              (titreTm) => titreTm["@debut"],
+            ),
+          )
+          .toArray()
+          .flat()),
+  ].filter((date) => !["2222-02-22", "2999-01-01"].includes(date))
+  if (parentsCreationDates.length > 0) {
+    return parentsCreationDates.sort().at(-1)!
+  }
+  // Note: article.CONTEXTE.TEXTE["@date_signature"] is always the date_signature of
+  // the first JORF text, so it is not the good date début (nor date signature) for
+  // LEGI articles.
+  const dateSignature = contexteTexte["@date_signature"]
+  if (
+    dateSignature !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(dateSignature)
+  ) {
+    return dateSignature
+  }
+  // Occurs for example:
+  // * for LEGIARTI000037943822 (MODIFIE_MORT_NE) with a dateDebut of "2222-02-22".
+  // * for LEGIARTI000048157126 (MODIFIE) with a dateDebut of "2999-01-01".
+  // When there is no valid dateDebut, try to use  dateFin as a proxy of dateDebut
+  // that is itself a proxy of dateFin.
+  const dateFin = article.META.META_SPEC.META_ARTICLE.DATE_FIN
+  if (
+    dateFin !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(dateFin)
+  ) {
+    return dateFin
+  }
+  if (dateDebut === "2222-02-22") {
+    // Occurs, for example, for LEGIARTI000051214570.
+    // There is no valid date for this article.
+    // => return dateDebut to avoid failing.
+    return dateDebut
+  }
+  // Since, currently, we don't handle events in LIENS.LIEN, no valid date
+  // is found.
+  throw new Error(
+    `Missing date signature in text ${article.META.META_COMMUN.ID}`,
+  )
+}
+
+/**
+ * TODO: Migrate to @tricoteuses/legifrance
+ */
+export const getArticleDateSignature = (
+  article: JorfArticle | LegiArticle,
+): string => {
   // TODO: For non-JORF articles, use links to retrieve article or text that creates or
   // modify this article and use their date.
   const dateDebut = article.META.META_SPEC.META_ARTICLE.DATE_DEBUT
@@ -521,3 +594,33 @@ async function moveToPreviousArticleId(
     }
   }
 }
+
+/**
+ * TODO: Migrate to @tricoteuses/legifrance
+ */
+export const sortArticlesByDate =
+  (dateFromArticle: (article: JorfArticle | LegiArticle) => string) =>
+  (
+    article1: JorfArticle | LegiArticle,
+    article2: JorfArticle | LegiArticle,
+  ): number => {
+    const date1 = dateFromArticle(article1)
+    const date2 = dateFromArticle(article2)
+    if (date1 !== date2) {
+      return date1.localeCompare(date2)
+    }
+    const metaCommun1 = article1.META.META_COMMUN
+    const origine1 = metaCommun1.ORIGINE
+    const metaCommun2 = article2.META.META_COMMUN
+    const origine2 = metaCommun2.ORIGINE
+    if (origine1 !== origine2) {
+      if (origine1 === "JORF") {
+        return -1
+      } else if (origine2 === "JORF") {
+        return 1
+      }
+    }
+    throw new Error(
+      `TODO: Unable to sort articles ${metaCommun1.ID} & ${metaCommun2.ID} by date.`,
+    )
+  }

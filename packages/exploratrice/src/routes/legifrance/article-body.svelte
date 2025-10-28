@@ -4,7 +4,7 @@
   import { cleanHtmlContenu } from "$lib/strings.js"
 
   import type { ArticleWithLinks } from "./article.js"
-  import HtmlFragmentWithReferences from "./HtmlFragmentWithReferences.svelte"
+  import HtmlFragmentWithReferences from "./html-fragment-with-references.svelte"
 
   let {
     articleWithLinks,

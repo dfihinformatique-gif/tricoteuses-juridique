@@ -19,5 +19,5 @@ export interface TexteWithLinks {
   tp?: string
   visas?: string
   textelr?: JorfTextelr | LegiTextelr | undefined
-  texteVersion?: JorfTexteVersion | LegiTexteVersion
+  texteVersion: JorfTexteVersion | LegiTexteVersion
 }

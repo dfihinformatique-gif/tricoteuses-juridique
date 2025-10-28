@@ -16,11 +16,11 @@
   import { urlPathFromId } from "$lib/urls"
 
   import { queryArticlesWithLinks } from "./article.remote.js"
-  import ArticleBody from "./ArticleBody.svelte"
-  import ArticleSummary from "./ArticleSummary.svelte"
-  import { querySectionTa } from "./section_ta.remote.js"
-  import Structure from "./Structure.svelte"
-  import StructureItem from "./StructureItem.svelte"
+  import ArticleBody from "./article-body.svelte"
+  import ArticleSummary from "./article-summary.svelte"
+  import { querySectionTa } from "./section-ta.remote.js"
+  import Structure from "./structure.svelte"
+  import StructureItem from "./structure-item.svelte"
 
   let {
     displayMode,

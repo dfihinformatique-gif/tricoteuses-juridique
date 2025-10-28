@@ -29,7 +29,7 @@ export const queryTextePageInfos = query(
     auditLegalId,
     auditRequire,
   ),
-  async (id): Promise<TextePageInfos> => {
+  async (id): Promise<TextePageInfos | undefined> => {
     const legifranceObjectCache = newLegifranceObjectCache()
     const [textelr, texteVersionWithLinks, dossierLegislatifAssembleeUid] =
       await Promise.all([
@@ -128,13 +128,15 @@ export const queryTextePageInfos = query(
             ).filter((versionTextelrId) => versionTextelrId !== id),
           )
 
-    return Object.fromEntries(
-      Object.entries({
-        otherVersionsTextesVersions,
-        textelr,
-        ...(texteVersionWithLinks ?? {}),
-        dossierLegislatifAssembleeUid,
-      }).filter(([, value]) => value !== null),
-    ) as unknown as TextePageInfos
+    return texteVersionWithLinks === undefined
+      ? undefined
+      : (Object.fromEntries(
+          Object.entries({
+            otherVersionsTextesVersions,
+            textelr,
+            ...texteVersionWithLinks,
+            dossierLegislatifAssembleeUid,
+          }).filter(([, value]) => value !== null),
+        ) as unknown as TextePageInfos)
   },
 )

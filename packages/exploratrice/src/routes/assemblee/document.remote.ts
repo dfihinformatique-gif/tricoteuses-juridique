@@ -4,7 +4,6 @@ import {
   auditTrimString,
   cleanAudit,
 } from "@auditors/core"
-import { error } from "@sveltejs/kit"
 import type { Document, DocumentFilesIndex } from "@tricoteuses/assemblee"
 import { pathFromDocumentUid } from "@tricoteuses/assemblee/loaders"
 import {
@@ -30,7 +29,7 @@ export const queryDocumentPageInfos = query(
     auditDocumentUid,
     auditRequire,
   ),
-  async (uid): Promise<DocumentPageInfos> => {
+  async (uid): Promise<DocumentPageInfos | undefined> => {
     const documentDir = pathFromDocumentUid(config.assembleeDocumentsDir, uid)
     const [document, documentFilesIndex] = await Promise.all([
       (async (): Promise<Document | undefined> =>
@@ -49,7 +48,7 @@ export const queryDocumentPageInfos = query(
       })(),
     ])
     if (document === undefined || documentFilesIndex === undefined) {
-      error(404)
+      return undefined
     }
     const documentFileInfos =
       documentFilesIndex["raw-html"]?.find(
@@ -62,11 +61,11 @@ export const queryDocumentPageInfos = query(
       documentFileInfos === undefined ||
       documentFileInfos.filename === undefined
     ) {
-      error(404)
+      return undefined
     }
     const documentPath = path.join(documentDir, documentFileInfos.filename)
     if (!(await fs.pathExists(documentPath))) {
-      error(404)
+      return undefined
     }
     return {
       document,

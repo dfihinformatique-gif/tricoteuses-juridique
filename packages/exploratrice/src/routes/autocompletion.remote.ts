@@ -11,7 +11,12 @@ import { query } from "$app/server"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
 
-import { possibleTypes, type PossibleType } from "./autocompletion.js"
+import {
+  possibleTypes,
+  type PossibleType,
+  type Suggestion,
+  type SuggestionDb,
+} from "./autocompletion.js"
 
 export const autocomplete = query(
   standardSchemaV1<[string, PossibleType | null]>(
@@ -21,15 +26,7 @@ export const autocomplete = query(
       [auditTrimString, auditEmptyToNull, auditOptions(possibleTypes)],
     ),
   ),
-  async ([q, typeFilter]): Promise<
-    Array<{
-      autocompletion: string
-      badge?: string
-      date?: string
-      distance: number
-      id: string
-    }>
-  > => {
+  async ([q, typeFilter]): Promise<Array<Suggestion>> => {
     const whereClauses: PendingQuery<Row[]>[] = []
     if (typeFilter !== null) {
       whereClauses.push(
@@ -40,15 +37,7 @@ export const autocomplete = query(
     const whereClause = whereClauses.length === 0 ? tisseuseDb`` : whereClauses
     return (
       q === null
-        ? await tisseuseDb<
-            Array<{
-              autocompletion: string
-              badge: string | null
-              date: string | null
-              distance: number
-              id: string
-            }>
-          >`
+        ? await tisseuseDb<Array<SuggestionDb>>`
             SELECT
               autocompletion,
               badge,
@@ -81,29 +70,29 @@ export const autocomplete = query(
                 FROM article
                 WHERE id = ${q}
               `
-            ).map(({ badge, id, num, titre_court_texte, titre_texte }) => ({
-              autocompletion: [
-                titre_texte ?? titre_court_texte,
-                num === null ? "article" : `article ${num}`,
-              ]
-                .filter((fragment) => fragment != null)
-                .join(", "),
-              badge,
-              // TODO: Extract date from article,
-              date: null,
-              distance: 0,
-              id,
-            }))
+            ).map(
+              ({
+                badge,
+                id,
+                num,
+                titre_court_texte,
+                titre_texte,
+              }): SuggestionDb => ({
+                autocompletion: [
+                  titre_texte ?? titre_court_texte,
+                  num === null ? "article" : `article ${num}`,
+                ]
+                  .filter((fragment) => fragment != null)
+                  .join(", "),
+                badge,
+                // TODO: Extract date from article,
+                date: null,
+                distance: 0,
+                id,
+              }),
+            )
           : /^JORFCONT\d{12}$/.test(q)
-            ? await legiDb<
-                Array<{
-                  autocompletion: string
-                  badge: string | null
-                  date: string | null
-                  distance: number
-                  id: string
-                }>
-              >`
+            ? await legiDb<Array<SuggestionDb>>`
                 SELECT
                   data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'TITRE' AS autocompletion,
                   data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge
@@ -114,15 +103,7 @@ export const autocomplete = query(
                 WHERE id = ${q}
               `
             : /^JORFDOLE\d{12}$/.test(q)
-              ? await legiDb<
-                  Array<{
-                    autocompletion: string
-                    badge: string | null
-                    date: string | null
-                    distance: number
-                    id: string
-                  }>
-                >`
+              ? await legiDb<Array<SuggestionDb>>`
                   SELECT
                     data -> 'META' -> 'META_DOSSIER_LEGISLATIF' ->> 'TITRE' AS autocompletion,
                     data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge,
@@ -150,29 +131,28 @@ export const autocomplete = query(
                       FROM section_ta
                       WHERE id = ${q}
                     `
-                  ).map(({ id, titre, titre_court_texte, titre_texte }) => ({
-                    autocompletion: [
-                      titre_texte ?? titre_court_texte,
-                      titre ?? "section sans titre",
-                    ]
-                      .filter((fragment) => fragment != null)
-                      .join(", "),
-                    badge: "SECTION",
-                    // TODO: Extract date from SectionTa,
-                    date: null,
-                    distance: 0,
-                    id,
-                  }))
+                  ).map(
+                    ({
+                      id,
+                      titre,
+                      titre_court_texte,
+                      titre_texte,
+                    }): SuggestionDb => ({
+                      autocompletion: [
+                        titre_texte ?? titre_court_texte,
+                        titre ?? "section sans titre",
+                      ]
+                        .filter((fragment) => fragment != null)
+                        .join(", "),
+                      badge: "SECTION",
+                      // TODO: Extract date from SectionTa,
+                      date: null,
+                      distance: 0,
+                      id,
+                    }),
+                  )
                 : /^(JORF|LEGI)TEXT\d{12}$/.test(q)
-                  ? await legiDb<
-                      Array<{
-                        autocompletion: string
-                        badge: string | null
-                        date: string | null
-                        distance: number
-                        id: string
-                      }>
-                    >`
+                  ? await legiDb<Array<SuggestionDb>>`
                       SELECT
                         data -> 'META' -> 'META_SPEC' -> 'META_TEXTE_VERSION' ->> 'TITREFULL' AS autocompletion,
                         data -> 'META' -> 'META_COMMUN' ->> 'NATURE' as badge,
@@ -182,15 +162,7 @@ export const autocomplete = query(
                       FROM texte_version
                       WHERE id = ${q}
                     `
-                  : await tisseuseDb<
-                      Array<{
-                        autocompletion: string
-                        badge: string | null
-                        date: string | null
-                        distance: number
-                        id: string
-                      }>
-                    >`
+                  : await tisseuseDb<Array<SuggestionDb>>`
                       SELECT
                         autocompletion,
                         badge,
@@ -217,13 +189,7 @@ export const autocomplete = query(
           }
         ).date
       }
-      return suggestion as {
-        autocompletion: string
-        badge?: string
-        date?: string
-        distance: number
-        id: string
-      }
+      return suggestion as Suggestion
     })
   },
 )

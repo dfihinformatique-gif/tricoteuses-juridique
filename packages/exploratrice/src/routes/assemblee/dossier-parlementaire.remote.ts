@@ -4,7 +4,6 @@ import {
   auditTrimString,
   cleanAudit,
 } from "@auditors/core"
-import { error } from "@sveltejs/kit"
 import type { Document, DossierParlementaire } from "@tricoteuses/assemblee"
 import {
   getOrLoadDocumentsByDossierParlementaireUid,
@@ -17,7 +16,7 @@ import { auditDossierParlementaireUid } from "$lib/auditors/assemblee.js"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 import { assembleeDb, legiDb } from "$lib/server/databases/index.js"
 
-import type { DossierParlementairePageInfos } from "./dossiers_parlementaires.js"
+import type { DossierParlementairePageInfos } from "./dossiers-parlementaires.js"
 
 export const queryDossierParlementairePageInfos = query(
   standardSchemaV1<string>(
@@ -27,7 +26,7 @@ export const queryDossierParlementairePageInfos = query(
     auditDossierParlementaireUid,
     auditRequire,
   ),
-  async (uid): Promise<DossierParlementairePageInfos> => {
+  async (uid): Promise<DossierParlementairePageInfos | undefined> => {
     const [dossierParlementaire, documents, legifranceTexteId] =
       await Promise.all([
         (async (): Promise<DossierParlementaire | undefined> =>
@@ -56,7 +55,7 @@ export const queryDossierParlementairePageInfos = query(
           )[0]?.id)(),
       ])
     if (dossierParlementaire === undefined) {
-      error(404)
+      return undefined
     }
     return Object.fromEntries(
       Object.entries({

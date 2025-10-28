@@ -21,7 +21,11 @@
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
 
-  import { possibleTypes, type PossibleType } from "./autocompletion.js"
+  import {
+    possibleTypes,
+    type PossibleType,
+    type Suggestion,
+  } from "./autocompletion.js"
   import { autocomplete } from "./autocompletion.remote.js"
 
   const auditQuery = (
@@ -93,9 +97,15 @@
   }
 </script>
 
-<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
-  Tricoteuses
-</h1>
+{#snippet suggestionView({ autocompletion, badge, date }: Suggestion)}
+  {#if date !== undefined}
+    <Badge variant="outline">{fullDateFormatter(date)}</Badge>
+  {/if}
+  {autocompletion}
+  {#if badge !== undefined}
+    <Badge variant="outline">{badge}</Badge>
+  {/if}
+{/snippet}
 
 <Command.Root shouldFilter={false}>
   <InputGroup.Root class="[--radius:1rem]">
@@ -152,19 +162,13 @@
   <Command.List>
     <Command.Empty>No results found.</Command.Empty>
     <Command.Group>
-      {#each suggestions as { autocompletion, badge, date, id } (`${id}_${autocompletion}`)}
-        {@const urlPath = urlPathFromId(id)}
+      {#each suggestions as suggestion (`${suggestion.id}_${suggestion.autocompletion}`)}
+        {@const urlPath = urlPathFromId(suggestion.id)}
         <Command.Item>
-          {#if date !== undefined}
-            <Badge variant="outline">{fullDateFormatter(date)}</Badge>
-          {/if}
           {#if urlPath === null}
-            {autocompletion}
+            {@render suggestionView(suggestion)}
           {:else}
-            <a href={urlPath}>{autocompletion}</a>
-          {/if}
-          {#if badge !== undefined}
-            <Badge variant="outline">{badge}</Badge>
+            <a href={urlPath}>{@render suggestionView(suggestion)}</a>
           {/if}
         </Command.Item>
       {/each}

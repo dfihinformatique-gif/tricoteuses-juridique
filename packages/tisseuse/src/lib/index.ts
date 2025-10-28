@@ -1,6 +1,8 @@
 export {
+  getArticleDateDebut,
   getArticleDateSignature,
   getOrLoadArticleSiblingId,
+  sortArticlesByDate,
 } from "./articles.js"
 export { assertNever } from "./asserts.js"
 export {
@@ -230,4 +232,9 @@ export {
   numero,
   virguleOuEspace,
 } from "./text_parsers/typography.js"
-export { cleanTexteTitle } from "./textes.js"
+export {
+  cleanTexteTitle,
+  getTexteVersionDateDebut,
+  getTexteVersionDateSignature,
+  sortTextesVersionsByDate,
+} from "./textes.js"

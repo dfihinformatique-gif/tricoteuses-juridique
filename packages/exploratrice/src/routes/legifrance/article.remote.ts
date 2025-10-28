@@ -5,7 +5,6 @@ import {
   auditTrimString,
   cleanAudit,
 } from "@auditors/core"
-import { error } from "@sveltejs/kit"
 import {
   auditLegalId,
   type JorfArticle,
@@ -191,14 +190,14 @@ export const queryArticlePageInfos = query(
     auditLegalId,
     auditRequire,
   ),
-  async (id): Promise<ArticlePageInfos> => {
+  async (id): Promise<ArticlePageInfos | undefined> => {
     const legifranceObjectCache = newLegifranceObjectCache()
     const articleWithLinks = await loadArticleWithLinks(
       legifranceObjectCache,
       id,
     )
     if (articleWithLinks === undefined) {
-      throw error(404)
+      return undefined
     }
     const { article } = articleWithLinks
     const versionsArticlesIds = article.VERSIONS.VERSION.map(
@@ -260,8 +259,7 @@ export const queryArticlesWithLinks = query(
     auditRequire,
   ),
   async (ids): Promise<{ [id: string]: ArticleWithLinks }> =>
-    (await loadArticlesWithLinks(newLegifranceObjectCache(), ids)) ??
-    error(404),
+    await loadArticlesWithLinks(newLegifranceObjectCache(), ids),
 )
 
 export const queryArticleWithLinks = query(
@@ -273,5 +271,5 @@ export const queryArticleWithLinks = query(
     auditRequire,
   ),
   async (id): Promise<ArticleWithLinks | undefined> =>
-    (await loadArticleWithLinks(newLegifranceObjectCache(), id)) ?? error(404),
+    await loadArticleWithLinks(newLegifranceObjectCache(), id),
 )

@@ -41,6 +41,15 @@
                 <li>
                   <NavigationMenu.Link
                     class="flex flex-row whitespace-nowrap"
+                    href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/reunions.md"
+                    target="_blank"
+                    >Prochaines réunions <ExternalLinkIcon
+                    /></NavigationMenu.Link
+                  >
+                </li>
+                <li>
+                  <NavigationMenu.Link
+                    class="flex flex-row whitespace-nowrap"
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/FAQ.md"
                     target="_blank"
                     >Foire aux questions (FAQ) <ExternalLinkIcon

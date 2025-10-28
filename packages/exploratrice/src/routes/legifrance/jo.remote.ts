@@ -4,7 +4,6 @@ import {
   auditTrimString,
   cleanAudit,
 } from "@auditors/core"
-import { error } from "@sveltejs/kit"
 import { auditLegalId, type Jo } from "@tricoteuses/legifrance"
 import { getOrLoadJo, newLegifranceObjectCache } from "@tricoteuses/tisseuse"
 
@@ -22,5 +21,5 @@ export const queryJo = query(
     auditRequire,
   ),
   async (id): Promise<Jo | undefined> =>
-    (await getOrLoadJo(legiDb, newLegifranceObjectCache(), id)) ?? error(404),
+    await getOrLoadJo(legiDb, newLegifranceObjectCache(), id),
 )

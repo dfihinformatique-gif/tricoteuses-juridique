@@ -30,7 +30,16 @@ export const queryDocumentPageInfos = query(
     auditRequire,
   ),
   async (uid): Promise<DocumentPageInfos | undefined> => {
-    const documentDir = pathFromDocumentUid(config.assembleeDocumentsDir, uid)
+    let documentDir: string
+    try {
+      documentDir = pathFromDocumentUid(config.assembleeDocumentsDir, uid)
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "EACCES") {
+        // Permission Denied (EACCES).
+        return undefined
+      }
+      throw error
+    }
     const [document, documentFilesIndex] = await Promise.all([
       (async (): Promise<Document | undefined> =>
         await getOrLoadDocument(assembleeDb, newAssembleeObjectCache(), uid))(),

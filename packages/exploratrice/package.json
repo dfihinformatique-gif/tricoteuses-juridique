@@ -1,5 +1,6 @@
 {
   "name": "@tricoteuses/exploratrice",
+  "description": "Web application to navigate between French legislative documents",
   "version": "0.0.1",
   "type": "module",
   "scripts": {

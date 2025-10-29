@@ -17,6 +17,7 @@ import {
   type Suggestion,
   type SuggestionDb,
 } from "./autocompletion.js"
+import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
 
 export const autocomplete = query(
   standardSchemaV1<[string, PossibleType | null]>(
@@ -162,18 +163,30 @@ export const autocomplete = query(
                       FROM texte_version
                       WHERE id = ${q}
                     `
-                  : await tisseuseDb<Array<SuggestionDb>>`
-                      SELECT
-                        autocompletion,
-                        badge,
-                        date,
-                        autocompletion <-> ${q} AS distance,
-                        id
-                      FROM titre_texte_autocompletion
-                      ${whereClause}
-                      ORDER BY distance, autocompletion
-                      LIMIT 10
-                    `
+                  : documentUidRegex.test(q) || dossierUidRegex.test(q)
+                    ? await tisseuseDb<Array<SuggestionDb>>`
+                        SELECT
+                          autocompletion,
+                          badge,
+                          date,
+                          0 AS distance,
+                          id
+                        FROM titre_texte_autocompletion
+                        WHERE id = ${q}
+                        LIMIT 10
+                      `
+                    : await tisseuseDb<Array<SuggestionDb>>`
+                        SELECT
+                          autocompletion,
+                          badge,
+                          date,
+                          autocompletion <-> ${q} AS distance,
+                          id
+                        FROM titre_texte_autocompletion
+                        ${whereClause}
+                        ORDER BY distance, autocompletion
+                        LIMIT 10
+                      `
     ).map((suggestion) => {
       if (suggestion.badge === null) {
         delete (

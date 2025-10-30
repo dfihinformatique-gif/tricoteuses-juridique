@@ -1,10 +1,9 @@
 import {
-  gitPathFromId,
-  JorfArticle,
-  JorfTexteVersion,
-  LegiArticle,
-  LegiTexteVersion,
   sortArticlesNumbers,
+  type JorfArticle,
+  type JorfTexteVersion,
+  type LegiArticle,
+  type LegiTexteVersion,
 } from "@tricoteuses/legifrance"
 import fs from "fs-extra"
 import assert from "node:assert"
@@ -13,11 +12,13 @@ import sade from "sade"
 
 import { getArticleDateSignature } from "$lib/articles.js"
 import { assertNever } from "$lib/asserts.js"
+import { urlFromLegalId } from "$lib/links.js"
 import {
   extendLoadedArticle,
   JorfArticleExtended,
   LegiArticleExtended,
 } from "$lib/loaders/legifrance.js"
+import config from "$lib/server/config.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
@@ -32,6 +33,7 @@ import {
 } from "$lib/text_parsers/transformers.js"
 import { getTexteVersionDateSignature } from "$lib/textes.js"
 
+const { linkBaseUrl, linkType } = config
 const today = new Date().toISOString().split("T")[0]
 
 async function addLinksToHtml({
@@ -109,7 +111,7 @@ async function addLinksToHtml({
           )
           const replacement = reverseTransformedReplacement(
             articleOriginalTransformation,
-            `<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>`,
+            `<a class="lien_article_externe" href="${urlFromLegalId(linkType, linkBaseUrl, articleId)}">${original}</a>`,
           )
           output =
             output.slice(
@@ -153,7 +155,7 @@ async function addLinksToHtml({
           )
           const replacement = reverseTransformedReplacement(
             divisionOriginalTransformation,
-            `<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>`,
+            `<a class="lien_division_externe" href="${urlFromLegalId(linkType, linkBaseUrl, sectionTaId)}">${original}</a>`,
           )
           output =
             output.slice(
@@ -204,7 +206,7 @@ async function addLinksToHtml({
         )
         const replacement = reverseTransformedReplacement(
           texteOriginalTransformation,
-          `<a class="lien_texte_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>`,
+          `<a class="lien_texte_externe" href="${urlFromLegalId(linkType, linkBaseUrl, text.cid!)}">${original}</a>`,
         )
         output =
           output.slice(

@@ -1,6 +1,8 @@
 import {
   auditEmptyToNull,
+  auditHttpUrl,
   auditInteger,
+  auditOptions,
   auditRequire,
   auditStringToNumber,
   auditTest,
@@ -8,6 +10,8 @@ import {
   cleanAudit,
   type Audit,
 } from "@auditors/core"
+
+import { linkTypes } from "$lib/links"
 
 export function auditConfig(
   audit: Audit,
@@ -40,6 +44,25 @@ export function auditConfig(
       auditRequire,
     )
   }
+  audit.attribute(
+    data,
+    "linkBaseUrl",
+    true,
+    errors,
+    remainingKeys,
+    auditHttpUrl,
+    auditRequire,
+  )
+  audit.attribute(
+    data,
+    "linkType",
+    true,
+    errors,
+    remainingKeys,
+    auditTrimString,
+    auditOptions(linkTypes),
+    auditRequire,
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

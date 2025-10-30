@@ -1,11 +1,14 @@
 import "dotenv/config"
 
+import { LinkType } from "$lib/links"
 import { validateConfig } from "$lib/server/auditors/config.js"
 
 export interface Config {
   assembleeDb: DatabaseConfig
   legiAnomaliesDb: DatabaseConfig
   legiDb: DatabaseConfig
+  linkBaseUrl: string
+  linkType: LinkType
   tisseuseDb: DatabaseConfig
 }
 
@@ -39,6 +42,8 @@ const [config, error] = validateConfig({
     user: process.env.LEGI_DB_USER,
     password: process.env.LEGI_DB_PASSWORD,
   },
+  linkBaseUrl: process.env.LINK_BASE_URL,
+  linkType: process.env.LINK_TYPE,
   tisseuseDb: {
     host: process.env.TISSEUSE_DB_HOST,
     port: process.env.TISSEUSE_DB_PORT,

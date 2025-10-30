@@ -1,13 +1,14 @@
-import { gitPathFromId } from "@tricoteuses/legifrance"
 import fs from "fs-extra"
 import sade from "sade"
 
 import { assertNever } from "$lib/asserts.js"
 import { newLegifranceObjectCache } from "$lib/cache.js"
+import { urlFromLegalId } from "$lib/links.js"
 import {
   getOrLoadArticle,
   getOrLoadSectionTa,
 } from "$lib/loaders/legifrance.js"
+import config from "$lib/server/config.js"
 import { legiDb } from "$lib/server/databases/index.js"
 import {
   readTransformation,
@@ -21,6 +22,8 @@ import {
   reverseTransformedReplacement,
   type Transformation,
 } from "$lib/text_parsers/transformers.js"
+
+const { linkBaseUrl, linkType } = config
 
 async function addLinksToHtmlDocument(
   inputDocumentPath: string,
@@ -129,7 +132,7 @@ async function addLinksToHtmlDocument(
             )
             const replacement = reverseTransformedReplacement(
               articleOriginalTransformation,
-              `<a class="lien_article_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(articleId, ".md")}">${original}</a>`,
+              `<a class="lien_article_externe" href="${urlFromLegalId(linkType, linkBaseUrl, articleId)}">${original}</a>`,
             )
             output =
               output.slice(
@@ -178,7 +181,7 @@ async function addLinksToHtmlDocument(
             )
             const replacement = reverseTransformedReplacement(
               divisionOriginalTransformation,
-              `<a class="lien_division_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(sectionTaId, ".md")}">${original}</a>`,
+              `<a class="lien_division_externe" href="${urlFromLegalId(linkType, linkBaseUrl, sectionTaId)}">${original}</a>`,
             )
             output =
               output.slice(
@@ -236,7 +239,7 @@ async function addLinksToHtmlDocument(
           )
           const replacement = reverseTransformedReplacement(
             texteOriginalTransformation,
-            `<a class="lien_texte_externe" href="https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/${gitPathFromId(text.cid!, ".md")}">${original}</a>`,
+            `<a class="lien_texte_externe" href="${urlFromLegalId(linkType, linkBaseUrl, text.cid!)}">${original}</a>`,
           )
           output =
             output.slice(

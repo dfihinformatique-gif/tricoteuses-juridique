@@ -3,6 +3,7 @@
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import type { Attachment } from "svelte/attachments"
 
+  import { page } from "$app/state"
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { fullDateFormatter } from "$lib/dates.js"
@@ -22,10 +23,17 @@
       chrono.dateDepot ??
       chrono.dateCreation,
   )
+  const linkUrlOriginReplacement = $derived(page.data.linkUrlOriginReplacement)
 
   const attachDocumentHtml: Attachment = (element) => {
     const shadow = element.attachShadow({ mode: "open" })
-    shadow.innerHTML = documentHtml
+    shadow.innerHTML =
+      linkUrlOriginReplacement === undefined
+        ? documentHtml
+        : documentHtml.replaceAll(
+            "https://tricoteuses.fr",
+            linkUrlOriginReplacement,
+          )
 
     return () => {
       // Cleaning up

@@ -7,6 +7,7 @@ export interface Config {
   assembleeDb: DatabaseConfig
   assembleeDocumentsDir: string
   legiDb: DatabaseConfig
+  linkUrlOriginReplacement?: string
   tisseuseDb: DatabaseConfig
   title: string
 }
@@ -36,6 +37,7 @@ const [config, error] = validateConfig({
     user: process.env.LEGI_DB_USER,
     password: process.env.LEGI_DB_PASSWORD,
   },
+  linkUrlOriginReplacement: process.env.LINK_URL_ORIGIN_REPLACEMENT,
   tisseuseDb: {
     host: process.env.TISSEUSE_DB_HOST,
     port: process.env.TISSEUSE_DB_PORT,

@@ -17,9 +17,9 @@
   import { goto } from "$app/navigation"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
-  import { cleanHtmlContenu } from "$lib/strings"
   import { urlPathFromId } from "$lib/urls"
 
+  import HtmlFragmentWithLinks from "./html-fragment-with-links.svelte"
   import HtmlFragmentWithReferences from "./html-fragment-with-references.svelte"
   import Structure from "./structure.svelte"
   import type { TextePageInfos } from "./texte.js"
@@ -190,7 +190,7 @@
 {#if abro !== undefined}
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(abro)}
+      <HtmlFragmentWithLinks fragment={abro} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">
@@ -202,7 +202,7 @@
 {#if notice !== undefined}
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(notice)}
+      <HtmlFragmentWithLinks fragment={notice} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">
@@ -217,7 +217,7 @@
   <h2>Résumé</h2>
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(sm)}
+      <HtmlFragmentWithLinks fragment={sm} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">
@@ -231,7 +231,7 @@
 {#if visas !== undefined}
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(visas)}
+      <HtmlFragmentWithLinks fragment={visas} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">
@@ -247,7 +247,7 @@
 {#if signataires !== undefined}
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(signataires)}
+      <HtmlFragmentWithLinks fragment={signataires} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">
@@ -262,7 +262,7 @@
   <h2>Nota</h2>
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(nota)}
+      <HtmlFragmentWithLinks fragment={nota} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">
@@ -276,7 +276,7 @@
 {#if tp !== undefined}
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(tp)}
+      <HtmlFragmentWithLinks fragment={tp} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">

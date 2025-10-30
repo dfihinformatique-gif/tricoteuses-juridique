@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { LegiArticle } from "@tricoteuses/legifrance"
 
-  import { cleanHtmlContenu } from "$lib/strings.js"
-
   import type { ArticleWithLinks } from "./article.js"
+  import HtmlFragmentWithLinks from "./html-fragment-with-links.svelte"
   import HtmlFragmentWithReferences from "./html-fragment-with-references.svelte"
 
   let {
@@ -34,7 +33,7 @@
   </section>
 {:else if displayMode === "links"}
   <section class="prose prose-links ml-4">
-    {@html cleanHtmlContenu(blocTextuel)}
+    <HtmlFragmentWithLinks fragment={blocTextuel} />
   </section>
 {:else}
   <section class="prose prose-links ml-4">
@@ -46,7 +45,7 @@
   <h2>Nota</h2>
   {#if displayMode === "links"}
     <section class="prose prose-links ml-4">
-      {@html cleanHtmlContenu(nota)}
+      <HtmlFragmentWithLinks fragment={blocTextuel} />
     </section>
   {:else}
     <section class="prose prose-links ml-4">

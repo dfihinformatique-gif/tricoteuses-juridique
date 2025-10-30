@@ -1,6 +1,8 @@
 import {
   auditBoolean,
   auditEmptyToNull,
+  auditFunction,
+  auditHttpUrl,
   auditInteger,
   auditRequire,
   auditSetNullish,
@@ -60,6 +62,15 @@ export function auditConfig(
       auditRequire,
     )
   }
+  audit.attribute(
+    data,
+    "linkUrlOriginReplacement",
+    true,
+    errors,
+    remainingKeys,
+    auditHttpUrl,
+    auditFunction((url) => url.replace(/\/$/, "")),
+  )
 
   return audit.reduceRemaining(data, errors, remainingKeys)
 }

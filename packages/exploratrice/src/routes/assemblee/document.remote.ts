@@ -72,15 +72,25 @@ export const queryDocumentPageInfos = query(
     ) {
       return undefined
     }
-    const documentPath = path.join(documentDir, documentFileInfos.filename)
-    if (!(await fs.pathExists(documentPath))) {
-      return undefined
+    for (const currentDocumentDir of [
+      documentDir.replace("/Documents/", "/Documents_enrichi/"),
+      documentDir,
+    ]) {
+      const documentPath = path.join(
+        currentDocumentDir,
+        documentFileInfos.filename,
+      )
+      if (await fs.pathExists(documentPath)) {
+        return {
+          document,
+          documentFileInfos,
+          documentFilesIndex,
+          documentHtml: await fs.readFile(documentPath, {
+            encoding: "utf-8",
+          }),
+        }
+      }
     }
-    return {
-      document,
-      documentFileInfos,
-      documentFilesIndex,
-      documentHtml: await fs.readFile(documentPath, { encoding: "utf-8" }),
-    }
+    return undefined
   },
 )

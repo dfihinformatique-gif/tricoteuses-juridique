@@ -80,7 +80,9 @@
           versionsIds,
           otherVersionsIds,
         )
-        versionsIds.unshift(...otherVersionsIds)
+        versionsIds.unshift(
+          ...otherVersionsIds.filter((id) => !versionsIds.includes(id)),
+        )
         continue
       }
       if (
@@ -92,7 +94,9 @@
           versionsIds,
           otherVersionsIds,
         )
-        versionsIds.push(...otherVersionsIds)
+        versionsIds.push(
+          ...otherVersionsIds.filter((id) => !versionsIds.includes(id)),
+        )
         continue
       }
       throw Error(

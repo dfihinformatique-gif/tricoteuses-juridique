@@ -378,8 +378,8 @@ export function newReverseTransformationsMergedFromPositionsIterator(
  */
 export function reversePositionsSplitFromPositions(
   transformation: Transformation,
-  positions: FragmentPosition[],
-): FragmentPosition[] {
+  positions: Array<FragmentPosition[]>,
+): Array<FragmentPosition[]> {
   for (const { sourceMap } of [
     ...iterTransformationLeafs(transformation),
   ].reverse()) {
@@ -397,9 +397,9 @@ export function reversePositionsSplitFromPositions(
  */
 function reversePositionsSplitFromPositionsUsingSourceMap(
   sourceMap: SourceMapSegment[],
-  transformedPositions: FragmentPosition[],
-): FragmentPosition[] {
-  const originalPositions: FragmentPosition[] = []
+  transformedPositions: Array<FragmentPosition[]>,
+): Array<FragmentPosition[]> {
+  const originalPositions: Array<FragmentPosition[]> = []
   // Insert empty segment at start & end.
   sourceMap = [
     { inputIndex: 0, inputLength: 0, outputIndex: 0, outputLength: 0 },
@@ -413,117 +413,121 @@ function reversePositionsSplitFromPositionsUsingSourceMap(
   ]
   let segmentIndex = 0
   let segment = sourceMap[segmentIndex]
-  for (const transformedPosition of transformedPositions) {
-    let { start: transformedStart } = transformedPosition
-    const { stop: transformedStop } = transformedPosition
+  for (const transformedPositionsAtIndex of transformedPositions) {
+    const originalPositionsAtIndex: FragmentPosition[] = []
+    originalPositions.push(originalPositionsAtIndex)
+    for (const transformedPosition of transformedPositionsAtIndex) {
+      let { start: transformedStart } = transformedPosition
+      const { stop: transformedStop } = transformedPosition
 
-    transformPosition: for (
-      let positionReverseTransformed = false;
-      !positionReverseTransformed;
+      transformPosition: for (
+        let positionReverseTransformed = false;
+        !positionReverseTransformed;
 
-    ) {
-      for (
-        ;
-        segment.outputIndex + segment.outputLength <= transformedStart;
-        segmentIndex++, segment = sourceMap[segmentIndex]
-      );
-      let firstIncludedSegmentIndex = segmentIndex
-      const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
-      let originalStart =
-        segmentBefore.inputIndex +
-        segmentBefore.inputLength +
-        transformedStart -
-        (segmentBefore.outputIndex + segmentBefore.outputLength)
-
-      let lastIncludedSegmentIndex: number
-      for (
-        lastIncludedSegmentIndex = firstIncludedSegmentIndex - 1;
-        sourceMap[lastIncludedSegmentIndex + 1].outputIndex < transformedStop;
-        lastIncludedSegmentIndex++
-      );
-      const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
-      let originalStop =
-        lastIncludedSegment.inputIndex +
-        lastIncludedSegment.inputLength +
-        transformedStop -
-        (lastIncludedSegment.outputIndex + lastIncludedSegment.outputLength)
-
-      for (
-        let includedSegmentIndex = firstIncludedSegmentIndex;
-        includedSegmentIndex <= lastIncludedSegmentIndex;
-        includedSegmentIndex++
       ) {
-        const includedSegment = sourceMap[includedSegmentIndex]
-        const matchingSegmentIndex = includedSegment.matchingSegmentIndex
-        if (matchingSegmentIndex !== undefined) {
-          // Note: Add 1 to matchingSegmentIndex, because of empty segment
-          // inserted at start of source map.
-          if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
-            const matchingSegment = sourceMap[matchingSegmentIndex + 1]
-            if (matchingSegment.outputIndex < transformedStart) {
-              // Split transformed position.
-              if (includedSegment.inputIndex > originalStart) {
-                originalPositions.push({
-                  start: originalStart,
-                  stop: includedSegment.inputIndex,
-                })
+        for (
+          ;
+          segment.outputIndex + segment.outputLength <= transformedStart;
+          segmentIndex++, segment = sourceMap[segmentIndex]
+        );
+        let firstIncludedSegmentIndex = segmentIndex
+        const segmentBefore = sourceMap[firstIncludedSegmentIndex - 1]
+        let originalStart =
+          segmentBefore.inputIndex +
+          segmentBefore.inputLength +
+          transformedStart -
+          (segmentBefore.outputIndex + segmentBefore.outputLength)
+
+        let lastIncludedSegmentIndex: number
+        for (
+          lastIncludedSegmentIndex = firstIncludedSegmentIndex - 1;
+          sourceMap[lastIncludedSegmentIndex + 1].outputIndex < transformedStop;
+          lastIncludedSegmentIndex++
+        );
+        const lastIncludedSegment = sourceMap[lastIncludedSegmentIndex]
+        let originalStop =
+          lastIncludedSegment.inputIndex +
+          lastIncludedSegment.inputLength +
+          transformedStop -
+          (lastIncludedSegment.outputIndex + lastIncludedSegment.outputLength)
+
+        for (
+          let includedSegmentIndex = firstIncludedSegmentIndex;
+          includedSegmentIndex <= lastIncludedSegmentIndex;
+          includedSegmentIndex++
+        ) {
+          const includedSegment = sourceMap[includedSegmentIndex]
+          const matchingSegmentIndex = includedSegment.matchingSegmentIndex
+          if (matchingSegmentIndex !== undefined) {
+            // Note: Add 1 to matchingSegmentIndex, because of empty segment
+            // inserted at start of source map.
+            if (matchingSegmentIndex + 1 < firstIncludedSegmentIndex) {
+              const matchingSegment = sourceMap[matchingSegmentIndex + 1]
+              if (matchingSegment.outputIndex < transformedStart) {
+                // Split transformed position.
+                if (includedSegment.inputIndex > originalStart) {
+                  originalPositionsAtIndex.push({
+                    start: originalStart,
+                    stop: includedSegment.inputIndex,
+                  })
+                }
+                transformedStart =
+                  includedSegment.outputIndex + includedSegment.outputLength
+                // Ignore following segments whose output are empty.
+                for (
+                  let nextSegmentIndex = includedSegmentIndex,
+                    nextSegment = includedSegment;
+                  nextSegment.outputIndex + nextSegment.outputLength ===
+                  transformedStart;
+                  nextSegmentIndex++, nextSegment = sourceMap[nextSegmentIndex]
+                ) {
+                  segmentIndex = nextSegmentIndex
+                }
+                // Handle remaining split position.
+                continue transformPosition
               }
-              transformedStart =
-                includedSegment.outputIndex + includedSegment.outputLength
-              // Ignore following segments whose output are empty.
-              for (
-                let nextSegmentIndex = includedSegmentIndex,
-                  nextSegment = includedSegment;
-                nextSegment.outputIndex + nextSegment.outputLength ===
-                transformedStart;
-                nextSegmentIndex++, nextSegment = sourceMap[nextSegmentIndex]
+              firstIncludedSegmentIndex = matchingSegmentIndex + 1
+              originalStart = matchingSegment.inputIndex
+            } else if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
+              const matchingSegment = sourceMap[matchingSegmentIndex + 1]
+              if (
+                matchingSegment.outputIndex + matchingSegment.outputLength >
+                transformedStop
               ) {
-                segmentIndex = nextSegmentIndex
+                // Split transformed position.
+                if (includedSegment.inputIndex > originalStart) {
+                  originalPositionsAtIndex.push({
+                    start: originalStart,
+                    stop: includedSegment.inputIndex,
+                  })
+                }
+                transformedStart =
+                  includedSegment.outputIndex + includedSegment.outputLength
+                // Ignore following segments whose output are empty.
+                for (
+                  let nextSegmentIndex = includedSegmentIndex,
+                    nextSegment = includedSegment;
+                  nextSegment.outputIndex + nextSegment.outputLength ===
+                  transformedStart;
+                  nextSegmentIndex++, nextSegment = sourceMap[nextSegmentIndex]
+                ) {
+                  segmentIndex = nextSegmentIndex
+                }
+                // Handle remaining split position.
+                continue transformPosition
               }
-              // Handle remaining split position.
-              continue transformPosition
+              lastIncludedSegmentIndex = matchingSegmentIndex + 1
+              originalStop =
+                matchingSegment.inputIndex + matchingSegment.inputLength
             }
-            firstIncludedSegmentIndex = matchingSegmentIndex + 1
-            originalStart = matchingSegment.inputIndex
-          } else if (matchingSegmentIndex + 1 > lastIncludedSegmentIndex) {
-            const matchingSegment = sourceMap[matchingSegmentIndex + 1]
-            if (
-              matchingSegment.outputIndex + matchingSegment.outputLength >
-              transformedStop
-            ) {
-              // Split transformed position.
-              if (includedSegment.inputIndex > originalStart) {
-                originalPositions.push({
-                  start: originalStart,
-                  stop: includedSegment.inputIndex,
-                })
-              }
-              transformedStart =
-                includedSegment.outputIndex + includedSegment.outputLength
-              // Ignore following segments whose output are empty.
-              for (
-                let nextSegmentIndex = includedSegmentIndex,
-                  nextSegment = includedSegment;
-                nextSegment.outputIndex + nextSegment.outputLength ===
-                transformedStart;
-                nextSegmentIndex++, nextSegment = sourceMap[nextSegmentIndex]
-              ) {
-                segmentIndex = nextSegmentIndex
-              }
-              // Handle remaining split position.
-              continue transformPosition
-            }
-            lastIncludedSegmentIndex = matchingSegmentIndex + 1
-            originalStop =
-              matchingSegment.inputIndex + matchingSegment.inputLength
           }
         }
+        originalPositionsAtIndex.push({
+          start: originalStart,
+          stop: originalStop,
+        })
+        positionReverseTransformed = true
       }
-      originalPositions.push({
-        start: originalStart,
-        stop: originalStop,
-      })
-      positionReverseTransformed = true
     }
   }
   return originalPositions

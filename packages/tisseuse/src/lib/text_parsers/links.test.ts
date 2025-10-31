@@ -3,13 +3,13 @@ import { describe, expect, test } from "vitest"
 
 import { legiDb } from "$lib/server/databases/index.js"
 
-import { TextParserContext } from "./parsers.js"
-import { simplifyHtml } from "./simplifiers.js"
 import {
   parseTextLinks,
   type ArticleExternalLink,
   type DivisionExternalLink,
-} from "./text_links.js"
+} from "./links.js"
+import { TextParserContext } from "./parsers.js"
+import { simplifyHtml } from "./simplifiers.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,

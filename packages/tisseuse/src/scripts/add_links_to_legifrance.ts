@@ -20,13 +20,13 @@ import {
 } from "$lib/loaders/legifrance.js"
 import config from "$lib/server/config.js"
 import { legiDb } from "$lib/server/databases/index.js"
-import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
   parseTextLinks,
   TextLinksParserState,
   type ExtractedLinkDb,
-} from "$lib/text_parsers/text_links.js"
+} from "$lib/text_parsers/links.js"
+import { TextParserContext } from "$lib/text_parsers/parsers.js"
+import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,

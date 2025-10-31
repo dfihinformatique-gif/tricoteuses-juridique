@@ -13,9 +13,9 @@ import { assertNever } from "$lib/asserts.js"
 import { urlFromLegalId } from "$lib/links.js"
 import config from "$lib/server/config.js"
 import { legiDb } from "$lib/server/databases/index.js"
+import { parseTextLinks } from "$lib/text_parsers/links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import { parseTextLinks } from "$lib/text_parsers/text_links.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,

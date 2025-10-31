@@ -126,6 +126,20 @@ export {
   parseReferencesWithOriginalTransformations,
 } from "./text_parsers/index.js"
 export {
+  parseTextLinks,
+  type ArticleDefinition,
+  type ArticleExternalLink,
+  type ArticleInternalLink,
+  type ArticleLink,
+  type DefinitionOrLink,
+  type DivisionExternalLink,
+  type DivisionLink,
+  type ExtractedLinkDb,
+  type TextExternalLink,
+  type TextLink,
+  type TextLinksParserState,
+} from "./text_parsers/links.js"
+export {
   adjectifNumeralOrdinalCourt,
   adverbeMultiplicatifLatin,
   nombreAsTextAstNumber,
@@ -182,20 +196,6 @@ export {
   simplifyText,
   simplifyUnicodeCharacters,
 } from "./text_parsers/simplifiers.js"
-export {
-  parseTextLinks,
-  type ArticleDefinition,
-  type ArticleExternalLink,
-  type ArticleInternalLink,
-  type ArticleLink,
-  type DefinitionOrLink,
-  type DivisionExternalLink,
-  type DivisionLink,
-  type ExtractedLinkDb,
-  type TextExternalLink,
-  type TextLink,
-  type TextLinksParserState,
-} from "./text_parsers/text_links.js"
 export {
   definitionTexteFrancais,
   identificationTexteEuropeen,

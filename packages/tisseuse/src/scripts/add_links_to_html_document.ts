@@ -14,9 +14,9 @@ import {
   readTransformation,
   writeTransformation,
 } from "$lib/server/text_parsers/transformers.js"
+import { parseTextLinks } from "$lib/text_parsers/links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import { parseTextLinks } from "$lib/text_parsers/text_links.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,

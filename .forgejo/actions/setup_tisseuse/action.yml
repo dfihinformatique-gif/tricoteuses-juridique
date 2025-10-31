@@ -44,6 +44,9 @@ runs:
         LEGI_DB_USER="legi"
         LEGI_DB_PASSWORD="${{ inputs.LEGI_DB_PASSWORD }}"
 
+        LINK_BASE_URL="https://tricoteuses.fr/"
+        LINK_TYPE="Exploratrice"
+
         # Tisseuse PostgreSQL database configuration
         TISSEUSE_DB_NAME="tisseuse"
         TISSEUSE_DB_HOST="${{ vars.TISSEUSE_DB_HOST }}"

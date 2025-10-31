@@ -26,6 +26,7 @@ jobs:
       # - name: Setup Tricoteuses Exploratrice
       #   uses: ./.forgejo/actions/setup_exploratrice
       #   with:
+      #     ASSEMBLEE_DB_PASSWORD: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
       #     LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"
       #     TISSEUSE_DB_PASSWORD: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
       # EMFILE: too many open files, watch '/workspace/logiciels/tricoteuses-juridique/packages/tisseuse/package.json'

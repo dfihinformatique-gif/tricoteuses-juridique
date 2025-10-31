@@ -23,6 +23,17 @@ runs:
     - name: Set Tricoteuses Exploratrice environment
       run: |
         cat > .env << EOF
+        # Assemblée PostgreSQL database configuration
+        ASSEMBLEE_DB_NAME="assemblee"
+        ASSEMBLEE_DB_HOST="${{ vars.ASSEMBLEE_DB_HOST }}"
+        ASSEMBLEE_DB_PORT=${{ vars.ASSEMBLEE_DB_PORT }}
+        ASSEMBLEE_DB_USER="assemblee"
+        ASSEMBLEE_DB_PASSWORD="${{ inputs.ASSEMBLEE_DB_PASSWORD }}"
+
+        # Path of repository containing repository of Assemblée documents
+        # in various formats (HTML, PDF, etc)
+        ASSEMBLEE_DOCUMENTS_DIR="../../../assemblee-data/Documents/"
+
         # Légifrance PostgreSQL database configuration
         LEGI_DB_NAME="legi"
         LEGI_DB_HOST="${{ vars.LEGI_DB_HOST }}"
@@ -37,7 +48,7 @@ runs:
         TISSEUSE_DB_USER="tisseuse"
         TISSEUSE_DB_PASSWORD="${{ inputs.TISSEUSE_DB_PASSWORD }}"
 
-        TITLE="Recherche Tricoteuses (action)"
+        TITLE="Tricoteuses (action)"
         EOF
       shell: bash
       working-directory: packages/exploratrice/

@@ -3,13 +3,14 @@
 
   import * as Alert from "$lib/components/ui/alert/index.js"
 
+  import type { ArticleDisplayMode } from "../../article.js"
   import { queryArticlePageInfos } from "../../article.remote.js"
   import Article from "../../article.svelte"
 
   let { params } = $props()
 
   const articlePageInfos = $derived(await queryArticlePageInfos(params.id))
-  let displayMode: "links" | "references" = $state("links")
+  let displayMode: ArticleDisplayMode = $state("links")
   let showIds = $state(false)
 </script>
 

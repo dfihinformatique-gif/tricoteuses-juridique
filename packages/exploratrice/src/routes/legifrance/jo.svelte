@@ -39,7 +39,7 @@
   <ol class="list-inside list-decimal" start={index + 1}>
     {#each liensTxt as lienTxt}
       {@const urlPath = urlPathFromId(lienTxt["@idtxt"])}
-      <li class="ml-4">
+      <li class="mx-4">
         {#if urlPath === null}
           {lienTxt["@titretxt"]}
         {:else}

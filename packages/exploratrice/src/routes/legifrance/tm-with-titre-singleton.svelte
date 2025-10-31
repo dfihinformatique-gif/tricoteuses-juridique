@@ -11,7 +11,7 @@
 </script>
 
 {#snippet view(tm: JorfArticleTm | JorfSectionTaTm)}
-  <ul class="ml-4">
+  <ul class="mx-4">
     <li>
       <a href={urlPathFromId(tm.TITRE_TM["@id"])}
         >{tm.TITRE_TM["#text"] ?? "Section sans titre"}</a

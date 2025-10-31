@@ -106,7 +106,7 @@
       {#if sectionTa !== undefined}
         {@const structureTa = sectionTa.STRUCTURE_TA}
         {#if structureTa !== undefined}
-          <section class="ml-4">
+          <section class="mx-4">
             <Structure {displayMode} {showIds} structure={structureTa} />
           </section>
         {/if}

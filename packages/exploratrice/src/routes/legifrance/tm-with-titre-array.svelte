@@ -18,7 +18,7 @@
 
 {#snippet view(tm: LegiArticleTm | LegiSectionTaTm)}
   {@const titreTm = bestItemForDate(tm.TITRE_TM, date)!}
-  <ul class="ml-4">
+  <ul class="mx-4">
     <li>
       <a href={urlPathFromId(titreTm["@id"])}
         >{titreTm["#text"] ?? "Section sans titre"}</a

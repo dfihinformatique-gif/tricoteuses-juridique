@@ -25,8 +25,9 @@
   import * as Select from "$lib/components/ui/select/index.js"
   import { urlPathFromId } from "$lib/urls.js"
 
-  import type { ArticlePageInfos } from "./article.js"
+  import type { ArticleDisplayMode, ArticlePageInfos } from "./article.js"
   import ArticleBody from "./article-body.svelte"
+  import ArticleBodyDiff from "./article-body-diff.svelte"
   import ArticleSummary from "./article-summary.svelte"
   import ContexteTexteTitre from "./contexte-texte-titre.svelte"
   import TmWithTitreArray from "./tm-with-titre-array.svelte"
@@ -38,7 +39,7 @@
     showIds = $bindable(),
   }: {
     articlePageInfos: ArticlePageInfos
-    displayMode: "links" | "references"
+    displayMode: ArticleDisplayMode
     showIds: boolean
   } = $props()
   let { article, nextArticleId, otherVersionsArticles, previousArticleId } =
@@ -50,6 +51,13 @@
   const id = $derived(metaCommun.ID)
   const versionsArticles = $derived(
     mergeVersionsArticles(article, otherVersionsArticles),
+  )
+  const previousVersionArticle = $derived(
+    versionsArticles[
+      versionsArticles.findIndex(
+        (versionArticle) => versionArticle.META.META_COMMUN.ID === id,
+      ) + 1
+    ],
   )
 
   function mergeVersionsArticles(
@@ -138,7 +146,8 @@
 
 <div class="mx-auto my-6 flex justify-center space-x-2">
   <Select.Root
-    onValueChange={(id: string) => goto(urlPathFromId(id)!)}
+    onValueChange={(id: string) =>
+      goto(urlPathFromId(id)!, { keepFocus: true, noScroll: true })}
     type="single"
     value={id}
   >
@@ -164,6 +173,12 @@
       <DropdownMenu.Group>
         <DropdownMenu.Label>Affichage</DropdownMenu.Label>
         <DropdownMenu.RadioGroup bind:value={displayMode}>
+          <DropdownMenu.RadioItem value="inline_diff"
+            >Différences en ligne</DropdownMenu.RadioItem
+          >
+          <DropdownMenu.RadioItem value="side-by-side_diff"
+            >Différences côte à côte</DropdownMenu.RadioItem
+          >
           <DropdownMenu.RadioItem value="links">Liens</DropdownMenu.RadioItem>
           <DropdownMenu.RadioItem value="references"
             >Références sans liens</DropdownMenu.RadioItem
@@ -272,7 +287,24 @@
   </DropdownMenu.Root>
 </div>
 
-<ArticleBody articleWithLinks={articlePageInfos} {displayMode} />
+{#if ["inline_diff", "side-by-side_diff"].includes(displayMode)}
+  {#if previousVersionArticle === undefined}
+    <section class="mx-4">
+      <i
+        >Cette version de l'article est la première chronologiquement. Elle n'a
+        pas de version la précédant avec laquelle être comparée.</i
+      >
+    </section>
+  {:else}
+    <ArticleBodyDiff
+      {article}
+      displayMode={displayMode as "inline_diff" | "side-by-side_diff"}
+      previousArticle={previousVersionArticle}
+    />
+  {/if}
+{:else}
+  <ArticleBody articleWithLinks={articlePageInfos} {displayMode} />
+{/if}
 
 <div class="mx-auto mt-8 flex w-1/2 justify-between">
   <Button

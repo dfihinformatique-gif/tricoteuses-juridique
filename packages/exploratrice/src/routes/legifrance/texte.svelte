@@ -79,7 +79,8 @@
 
 <div class="mx-auto my-6 flex justify-center space-x-2">
   <Select.Root
-    onValueChange={(id: string) => goto(urlPathFromId(id)!)}
+    onValueChange={(id: string) =>
+      goto(urlPathFromId(id)!, { keepFocus: true, noScroll: true })}
     type="single"
     value={id}
   >
@@ -189,11 +190,11 @@
 
 {#if abro !== undefined}
   {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
+    <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={abro} />
     </section>
   {:else}
-    <section class="prose prose-links ml-4">
+    <section class="prose mx-4">
       <HtmlFragmentWithReferences fragment={texteVersion!.ABRO!.CONTENU!} />
     </section>
   {/if}
@@ -201,11 +202,11 @@
 
 {#if notice !== undefined}
   {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
+    <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={notice} />
     </section>
   {:else}
-    <section class="prose prose-links ml-4">
+    <section class="prose mx-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as JorfTexteVersion).NOTICE!.CONTENU!}
       />
@@ -216,11 +217,11 @@
 {#if sm !== undefined}
   <h2>Résumé</h2>
   {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
+    <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={sm} />
     </section>
   {:else}
-    <section class="prose prose-links ml-4">
+    <section class="prose mx-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as JorfTexteVersion).SM!.CONTENU!}
       />
@@ -230,11 +231,11 @@
 
 {#if visas !== undefined}
   {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
+    <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={visas} />
     </section>
   {:else}
-    <section class="prose prose-links ml-4">
+    <section class="prose mx-4">
       <HtmlFragmentWithReferences fragment={texteVersion!.VISAS!.CONTENU!} />
     </section>
   {/if}
@@ -246,11 +247,11 @@
 
 {#if signataires !== undefined}
   {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
+    <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={signataires} />
     </section>
   {:else}
-    <section class="prose prose-links ml-4">
+    <section class="prose mx-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as LegiTexteVersion).SIGNATAIRES!.CONTENU!}
       />
@@ -261,11 +262,11 @@
 {#if nota !== undefined}
   <h2>Nota</h2>
   {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
+    <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={nota} />
     </section>
   {:else}
-    <section class="prose prose-links ml-4">
+    <section class="prose mx-4">
       <HtmlFragmentWithReferences
         fragment={(texteVersion as LegiTexteVersion).NOTA!.CONTENU!}
       />
@@ -275,11 +276,11 @@
 
 {#if tp !== undefined}
   {#if displayMode === "links"}
-    <section class="prose prose-links ml-4">
+    <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={tp} />
     </section>
   {:else}
-    <section class="prose prose-links ml-4">
+    <section class="prose mx-4">
       <HtmlFragmentWithReferences fragment={texteVersion!.TP!.CONTENU!} />
     </section>
   {/if}

@@ -609,6 +609,7 @@ export const sortArticlesByDate =
     if (date1 !== date2) {
       return date1.localeCompare(date2)
     }
+
     const metaCommun1 = article1.META.META_COMMUN
     const origine1 = metaCommun1.ORIGINE
     const metaCommun2 = article2.META.META_COMMUN
@@ -620,6 +621,31 @@ export const sortArticlesByDate =
         return 1
       }
     }
+
+    const metaArticle1 = (article1 as LegiArticle).META.META_SPEC.META_ARTICLE
+    const etat1 = metaArticle1.ETAT
+    const metaArticle2 = (article2 as LegiArticle).META.META_SPEC.META_ARTICLE
+    const etat2 = metaArticle2.ETAT
+    if (etat1 !== etat2) {
+      if (etat1 === "MODIFIE_MORT_NE") {
+        return -1
+      } else if (etat2 === "MODIFIE_MORT_NE") {
+        return 1
+      }
+    }
+
+    const dateFin1 = metaArticle1.DATE_FIN
+    const dateFin2 = metaArticle2.DATE_FIN
+    if (dateFin1 !== dateFin2) {
+      // Occurs for LEGIARTI000033844126, that is MODIFIE, but
+      // DATE_DEBUT === DATE_FIN ( === 2018-01-01).
+      if (dateFin1 <= date1) {
+        return -1
+      } else if (dateFin2 <= date2) {
+        return 1
+      }
+    }
+
     throw new Error(
       `TODO: Unable to sort articles ${metaCommun1.ID} & ${metaCommun2.ID} by date.`,
     )

@@ -82,6 +82,14 @@
   let { q, type: typeFilter } = $state(
     auditQuery(cleanAudit, page.url.searchParams)[0],
   )
+  const sampleSearches = [
+    "loi informatique et libertés",
+    "article 204 A du code général des impôts",
+    "JORF du 5 octobre 1958",
+    "projet de loi de finances pour 2026",
+    "JORFTEXT000000571356",
+  ]
+
   let suggestions = $derived(await autocomplete([q, typeFilter ?? null]))
 
   const updateUrlSearchParams = (): void => {
@@ -110,6 +118,14 @@
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
   Recherche de documents législatifs
 </h1>
+
+<p class="my-4 text-sm text-muted-foreground">
+  Exemples : {#each sampleSearches as sampleSearch, i}{i === 0 ? "" : ", "}<a
+      class="link"
+      data-sveltekit-reload
+      href="/?q={encodeURIComponent(sampleSearch)}">{sampleSearch}</a
+    >{/each}…
+</p>
 
 <Command.Root shouldFilter={false}>
   <InputGroup.Root class="[--radius:1rem]">

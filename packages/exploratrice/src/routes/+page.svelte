@@ -107,6 +107,10 @@
   {/if}
 {/snippet}
 
+<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
+  Recherche de documents législatifs
+</h1>
+
 <Command.Root shouldFilter={false}>
   <InputGroup.Root class="[--radius:1rem]">
     <InputGroup.Input

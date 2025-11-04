@@ -126,6 +126,7 @@ export {
   parseReferencesWithOriginalTransformations,
 } from "./text_parsers/index.js"
 export {
+  iterReferenceLinks,
   parseTextLinks,
   type ArticleDefinition,
   type ArticleExternalLink,
@@ -190,9 +191,11 @@ export {
   convertHtmlElementsToText,
   decodeNamedHtmlEntities,
   decodeNumericHtmlEntities,
+  replaceHtmlPatterns,
   replacePattern,
-  replacePatterns,
+  replaceTextPatterns,
   simplifyHtml,
+  simplifyPlainText,
   simplifyText,
   simplifyUnicodeCharacters,
 } from "./text_parsers/simplifiers.js"

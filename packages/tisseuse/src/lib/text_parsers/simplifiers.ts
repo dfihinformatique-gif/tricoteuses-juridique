@@ -470,6 +470,34 @@ export function decodeNumericHtmlEntities(input: string): TransformationLeaf {
   }
 }
 
+export function replaceHtmlPatterns(input: string): TransformationNode {
+  const transformations: TransformationLeaf[] = []
+  let text = input
+  for (const [pattern, replacement] of [
+    // Note: The most englobing patterns must be first.
+
+    // Remove HTML comment.
+    [/<!--.*?-->/gs, ""],
+    // Remove <script> element.
+    [/<script.*?>.*?<\/script>/gis, ""],
+    // Remove <style> element.
+    [/<style.*?>.*?<\/style>/gis, ""],
+  ] as Array<[RegExp | string, string]>) {
+    const transformation = replacePattern(pattern, replacement)(text)
+    if (transformation.sourceMap.length !== 0) {
+      transformations.push(transformation)
+      text = transformation.output
+    }
+  }
+  return {
+    input,
+    output: text,
+    title:
+      "Suppression des commentaires, scripts et styles HTML et nettoyage d'expressions",
+    transformations,
+  }
+}
+
 export function replacePattern(
   pattern: RegExp | string,
   replacement: string,
@@ -508,18 +536,12 @@ export function replacePattern(
   }
 }
 
-export function replacePatterns(input: string): TransformationNode {
+export function replaceTextPatterns(input: string): TransformationNode {
   const transformations: TransformationLeaf[] = []
   let text = input
   for (const [pattern, replacement] of [
     // Note: The most englobing patterns must be first.
 
-    // Remove HTML comment.
-    [/<!--.*?-->/gs, ""],
-    // Remove <script> element.
-    [/<script.*?>.*?<\/script>/gis, ""],
-    // Remove <script> element.
-    [/<style.*?>.*?<\/style>/gis, ""],
     // Ensure that there is always a space after "n°".
     [/(\sn°)([^\s])/gi, "$1 $2"],
     // \u200E: left-to-right mark
@@ -541,8 +563,7 @@ export function replacePatterns(input: string): TransformationNode {
   return {
     input,
     output: text,
-    title:
-      "Suppression des commentaires, scripts et styles HTML et nettoyage d'expressions",
+    title: "Nettoyage d'expressions et suppression de caractères non utilisés",
     transformations,
   }
 }
@@ -554,11 +575,20 @@ export function simplifyHtml({
     chainTransformers("Simplification du HTML", [
       decodeNamedHtmlEntities,
       decodeNumericHtmlEntities,
-      replacePatterns,
+      replaceHtmlPatterns,
+      replaceTextPatterns,
       simplifyUnicodeCharacters,
       convertHtmlElementsToText({ removeAWithHref }),
       simplifyText,
     ])(input)
+}
+
+export function simplifyPlainText(input: string): TransformationNode {
+  return chainTransformers("Simplification du texte brut", [
+    replaceTextPatterns,
+    simplifyUnicodeCharacters,
+    simplifyText,
+  ])(input)
 }
 
 export function simplifyText(input: string): TransformationNode {

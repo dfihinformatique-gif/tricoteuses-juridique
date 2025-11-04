@@ -167,6 +167,217 @@ export interface TextLinksParserState {
   textId?: string
 }
 
+/**
+ * iterArticleLinks
+ */
+async function* iterArticleLinks({
+  ancestors,
+  article,
+  context,
+  date,
+  legiDb,
+  originalPositionsFromTransformedIterator,
+  reference,
+  state,
+}: {
+  /**
+   * Defined only when article is the unique descendant of a text and optionally its divisions.
+   */
+  ancestors?: Array<TextAstDivision | (TextAstText & TextAstPosition)>
+  article: TextAstArticle
+  context: TextParserContext
+  date: string
+  legiDb: Sql
+  originalPositionsFromTransformedIterator?: Generator<
+    FragmentReverseTransformation,
+    void,
+    FragmentPosition | undefined
+  >
+  reference: TextAstReference
+  state: TextLinksParserState
+}): AsyncGenerator<ArticleLink, void> {
+  if (article.relative === 0 && state.articleId !== undefined) {
+    // "le même article", "le présent article", etc
+    // Do nothing.
+    return
+  }
+
+  // if (state.textId !== undefined && article.num !== undefined) {
+  //   const articleDefinition =
+  //     articleDefinitionByNumByTextId[state.textId]?.[article.num]
+  //   if (articleDefinition !== undefined) {
+  //     const position =
+  //       ancestors === undefined
+  //         ? article.position!
+  //         : article.position!.start < ancestors[0].position!.start
+  //           ? {
+  //               start: article.position.start,
+  //               stop: ancestors[0].position.stop,
+  //             }
+  //           : {
+  //               start: ancestors[0].position.start,
+  //               stop: article.position.stop,
+  //             }
+  //     yield Object.fromEntries(
+  //       Object.entries({
+  //         article,
+  //         definition: articleDefinition,
+  //         originalTransformation:
+  //           originalPositionsFromTransformedIterator === undefined
+  //             ? undefined
+  //             : reverseTransformationFromPosition(
+  //                 originalPositionsFromTransformedIterator,
+  //                 position,
+  //               ),
+  //         position,
+  //         reference,
+  //         type: "internal_article",
+  //       }).filter(([, value]) => value !== undefined),
+  //     ) as unknown as ArticleLink
+  //     return
+  //   }
+  // }
+
+  let articlesInfos: Array<{
+    data: JorfArticle | LegiArticle
+    id: string
+  }> = []
+  if (state.textId !== undefined) {
+    articlesInfos = [
+      ...(await legiDb<
+        {
+          data: JorfArticle | LegiArticle
+          id: string
+        }[]
+      >`
+        SELECT data, id
+        FROM article
+        WHERE
+          data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.textId}
+          AND num = ${article.num ?? null}
+      `),
+    ]
+  }
+  if (
+    articlesInfos.length === 0 &&
+    state.defaultTextId !== undefined &&
+    state.defaultTextId !== state.textId
+  ) {
+    articlesInfos = [
+      ...(await legiDb<
+        {
+          data: JorfArticle | LegiArticle
+          id: string
+        }[]
+      >`
+        SELECT data, id
+        FROM article
+        WHERE
+          data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.defaultTextId}
+          AND num = ${article.num ?? null}
+      `),
+    ]
+  }
+  if (articlesInfos.length === 0 && article.num !== undefined) {
+    // Look whether there exists only one text with this article number.
+    articlesInfos = [
+      ...(await legiDb<
+        {
+          data: JorfArticle | LegiArticle
+          id: string
+        }[]
+      >`
+        SELECT data, id
+        FROM article
+        WHERE
+          num = ${article.num}
+        LIMIT 100
+      `),
+    ]
+    if (articlesInfos.length !== 0) {
+      const textsIds = articlesInfos.reduce((textsIds, { data }) => {
+        const textId = data.CONTEXTE.TEXTE["@cid"]
+        if (textId !== undefined) {
+          textsIds.add(textId)
+        }
+        return textsIds
+      }, new Set<string>())
+      if (textsIds.size > 1) {
+        // Different texts have an article with the same number.
+        // So try another method.
+        articlesInfos = []
+      }
+    }
+  }
+  if (articlesInfos.length === 0) {
+    console.warn(
+      `In "${context.input.slice(article.position.start, article.position.stop)}": Unknown article ${article.num ?? null} of text ${state.textId} for reference ${JSON.stringify(article, null, 2)}`,
+    )
+    delete state.articleId
+  } else if (articlesInfos.length === 1) {
+    state.articleId = articlesInfos[0].id
+  } else {
+    let filteredArticlesInfos = articlesInfos.filter(({ data }) => {
+      const metaArticle = data.META.META_SPEC.META_ARTICLE
+      return metaArticle.DATE_DEBUT <= date && metaArticle.DATE_FIN > date
+    })
+    if (filteredArticlesInfos.length === 1) {
+      state.articleId = filteredArticlesInfos[0].id
+    } else {
+      if (filteredArticlesInfos.length !== 0) {
+        articlesInfos = filteredArticlesInfos
+      }
+      filteredArticlesInfos = articlesInfos.filter(
+        ({ id }) => !state.textId?.startsWith("JORF") || id.startsWith("JORF"),
+      )
+      if (filteredArticlesInfos.length === 1) {
+        state.articleId = filteredArticlesInfos[0].id
+      } else {
+        if (filteredArticlesInfos.length !== 0) {
+          articlesInfos = filteredArticlesInfos
+        }
+        console.warn(
+          `In "${context.input.slice(article.position.start, article.position.stop)}": Unable to filter article ${article.num ?? null} of text ${state.textId ?? null} among IDs ${JSON.stringify(
+            articlesInfos.map(({ id }) => id),
+            null,
+            2,
+          )} for reference ${JSON.stringify(article, null, 2)}`,
+        )
+        delete state.articleId
+      }
+    }
+  }
+
+  const position =
+    ancestors === undefined
+      ? article.position!
+      : article.position!.start < ancestors[0].position!.start
+        ? {
+            start: article.position.start,
+            stop: ancestors[0].position.stop,
+          }
+        : {
+            start: ancestors[0].position.start,
+            stop: article.position.stop,
+          }
+  yield Object.fromEntries(
+    Object.entries({
+      article,
+      articleId: state.articleId,
+      originalTransformation:
+        originalPositionsFromTransformedIterator === undefined
+          ? undefined
+          : reverseTransformationFromPosition(
+              originalPositionsFromTransformedIterator,
+              position,
+            ),
+      position,
+      reference,
+      type: "external_article",
+    }).filter(([, value]) => value !== undefined),
+  ) as unknown as ArticleLink
+}
+
 function* iterAtomicOrParentChildReferences(
   context: TextParserContext,
   reference: TextAstReference,
@@ -287,6 +498,326 @@ function* iterDeepestDivisionsOrArticles(
   }
 }
 
+/**
+ * iterDivisionLinks
+ */
+async function* iterDivisionLinks({
+  ancestors,
+  context,
+  date,
+  division,
+  divisionChildReference,
+  legiDb,
+  logIgnoredReferencesTypes,
+  originalPositionsFromTransformedIterator,
+  parentLiensSectionTa,
+  reference,
+  state,
+}: {
+  /**
+   * Defined only when division is the unique descendant of a text and optionally its parent
+   * divisions.
+   */
+  ancestors?: Array<TextAstDivision | (TextAstText & TextAstPosition)>
+  context: TextParserContext
+  date: string
+  division: TextAstDivision
+  divisionChildReference?: TextAstParentChild
+  legiDb: Sql
+  logIgnoredReferencesTypes?: boolean
+  originalPositionsFromTransformedIterator?: Generator<
+    FragmentReverseTransformation,
+    void,
+    FragmentPosition | undefined
+  >
+  parentLiensSectionTa?:
+    | JorfTextelrLienSectionTa[]
+    | JorfSectionTaLienSectionTa[]
+    | LegiSectionTaLienSectionTa[]
+    | LegiTextelrLienSectionTa[]
+  reference: TextAstReference
+  state: TextLinksParserState
+}): AsyncGenerator<ArticleLink | DivisionLink, void> {
+  if (division.relative === 0 && state.sectionTaId !== undefined) {
+    // "le même chapitre", "la présente section", etc
+    // Do nothing.
+    return
+  }
+
+  // Find division in given liensSectionTa.
+  let divisionLienSectionTa:
+    | JorfTextelrLienSectionTa
+    | JorfSectionTaLienSectionTa
+    | LegiSectionTaLienSectionTa
+    | LegiTextelrLienSectionTa
+    | undefined = undefined
+  if (parentLiensSectionTa === undefined && state.textId !== undefined) {
+    const textelr = (
+      await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
+        SELECT data
+        FROM textelr
+        WHERE id = ${state.textId}
+      `
+    )[0]?.data
+    if (textelr !== undefined) {
+      parentLiensSectionTa = textelr.STRUCT?.LIEN_SECTION_TA
+    }
+  }
+  if (parentLiensSectionTa !== undefined) {
+    for (const parentLienSectionTa of parentLiensSectionTa) {
+      if (
+        parentLienSectionTa["@debut"] > date ||
+        parentLienSectionTa["@fin"] < date
+      ) {
+        continue
+      }
+      const sectionTaTypeAndNumber = parentLienSectionTa["#text"]
+        ?.split(":")[0]
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .map((fragment: string) => fragment.trim())
+        .filter((fragment: string) => fragment !== "")
+        .join(" ")
+      if (sectionTaTypeAndNumber !== undefined) {
+        let found = false
+        if (division.index !== undefined) {
+          found = iterDivisionTypesAndNumbers(
+            division.type,
+            division.index,
+          ).some(
+            (divisionTypeAndNumber) =>
+              divisionTypeAndNumber === sectionTaTypeAndNumber,
+          )
+        }
+        if (!found && division.num !== undefined) {
+          found =
+            `${division.type} ${division.num.toLowerCase()}` ===
+            sectionTaTypeAndNumber
+        }
+
+        if (found) {
+          divisionLienSectionTa = parentLienSectionTa
+          break
+        }
+      }
+    }
+    if (divisionLienSectionTa === undefined) {
+      // Division not found.
+      // If parentLiensSectionTa contains a "Partie législative" sectionTa, use it
+      // as division, because in legislative texts, the "Partie législative" is often
+      // implicit in references.
+      // For example:
+      // "Le livre III du code des impositions sur les biens et services"
+      // instead of:
+      // "Le livre III de la partie législative du code des impositions sur les biens et services"
+      divisionLienSectionTa = parentLiensSectionTa
+        .filter(
+          (parentLienSectionTa) =>
+            parentLienSectionTa["@debut"] <= date &&
+            parentLienSectionTa["@fin"] >= date,
+        )
+        .find((parentLienSectionTa) => {
+          const sectionTaNameSplit = parentLienSectionTa["#text"]
+            ?.split(":")[0]
+            .trim()
+            .toLowerCase()
+            .split(/\s+/)
+            .map((fragment: string) => fragment.trim())
+            .filter((fragment: string) => fragment !== "")
+          return (
+            sectionTaNameSplit !== undefined &&
+            sectionTaNameSplit.length === 2 &&
+            divisionTypes.includes(sectionTaNameSplit[0] as DivisionType) &&
+            sectionTaNameSplit[1] === "législative"
+          )
+        })
+      if (divisionLienSectionTa !== undefined) {
+        // Create an invisible division containing the "Partie législative".
+        const sectionTaNameSplit = divisionLienSectionTa["#text"]!.split(":")[0]
+          .trim()
+          .toLowerCase()
+          .split(/\s+/)
+          .map((fragment: string) => fragment.trim())
+          .filter((fragment: string) => fragment !== "")
+        const position = {
+          // Position start - stop = 0 ⇒ invisible
+          start: division.position.stop,
+          stop: division.position.stop,
+        }
+        const originalTransformation =
+          originalPositionsFromTransformedIterator === undefined
+            ? undefined
+            : reverseTransformationFromPosition(
+                originalPositionsFromTransformedIterator,
+                position,
+              )
+        const insertedDivision = Object.fromEntries(
+          Object.entries({
+            num: sectionTaNameSplit[1],
+            originalTransformation,
+            position,
+            type: sectionTaNameSplit[0] as DivisionType,
+          }).filter(([, value]) => value !== undefined),
+        ) as unknown as TextAstDivision
+        divisionChildReference = Object.fromEntries(
+          Object.entries({
+            child: divisionChildReference ?? division,
+            parent: insertedDivision,
+            originalTransformation,
+            position,
+            type: "parent-enfant",
+          }).filter(([, value]) => value !== undefined),
+        ) as unknown as TextAstParentChild
+        division = insertedDivision
+      }
+    }
+  }
+
+  const divisionDeepestDivisionsOrArticles =
+    divisionChildReference === undefined
+      ? []
+      : [
+          ...iterDeepestDivisionsOrArticles(
+            context,
+            divisionChildReference.child,
+          ),
+        ]
+  let addedLinksCount = 0
+  if (divisionChildReference !== undefined) {
+    for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
+      context,
+      divisionChildReference.child,
+    )) {
+      const atomicReference =
+        atomicOrParentChildReference.type === "parent-enfant"
+          ? atomicOrParentChildReference.parent
+          : atomicOrParentChildReference
+      const parentChildReference =
+        atomicOrParentChildReference.type === "parent-enfant"
+          ? atomicOrParentChildReference
+          : undefined
+      switch (atomicReference.type) {
+        case "alinéa":
+        case "incomplete-header":
+        case "item":
+        case "phrase": {
+          // Ignore sub-article & incomplete-header references.
+          break
+        }
+
+        case "article": {
+          yield* iterArticleLinks({
+            ancestors:
+              divisionDeepestDivisionsOrArticles.length === 1
+                ? [...(ancestors ?? []), division]
+                : undefined,
+            article: atomicReference,
+            context,
+            date,
+            legiDb,
+            originalPositionsFromTransformedIterator,
+            reference,
+            state,
+          })
+          addedLinksCount++
+          break
+        }
+
+        case "chapitre":
+        case "livre":
+        case "paragraphe":
+        case "partie":
+        case "section":
+        case "sous-paragraphe":
+        case "sous-section":
+        case "sous-sous-paragraphe":
+        case "sous-titre":
+        case "titre": {
+          let divisionSectionTa: JorfSectionTa | LegiSectionTa | undefined =
+            undefined
+          let subdivisionsLiensSectionTa:
+            | JorfTextelrLienSectionTa[]
+            | LegiTextelrLienSectionTa[]
+            | undefined = undefined
+          if (divisionLienSectionTa !== undefined) {
+            divisionSectionTa = (
+              await legiDb<{ data: JorfSectionTa | LegiSectionTa }[]>`
+                SELECT data
+                FROM section_ta
+                WHERE id = ${divisionLienSectionTa["@id"]}
+              `
+            )[0]?.data
+            if (divisionSectionTa !== undefined) {
+              subdivisionsLiensSectionTa =
+                divisionSectionTa.STRUCTURE_TA?.LIEN_SECTION_TA
+            }
+          }
+
+          yield* iterDivisionLinks({
+            ancestors:
+              divisionDeepestDivisionsOrArticles.length === 1
+                ? [...(ancestors ?? []), division]
+                : undefined,
+            context,
+            date,
+            division: atomicReference,
+            divisionChildReference: parentChildReference,
+            legiDb,
+            logIgnoredReferencesTypes,
+            originalPositionsFromTransformedIterator,
+            parentLiensSectionTa: subdivisionsLiensSectionTa,
+            reference,
+            state,
+          })
+          addedLinksCount++
+          break
+        }
+
+        default: {
+          if (logIgnoredReferencesTypes) {
+            console.log(
+              `In "${context.input.slice(divisionChildReference.position.start, divisionChildReference.position.stop)}": Reference of type ${atomicReference.type} ignored in division`,
+            )
+            console.log(JSON.stringify(divisionChildReference, null, 2))
+          }
+        }
+      }
+    }
+  }
+  if (addedLinksCount === 0) {
+    state.sectionTaId = divisionLienSectionTa?.["@id"]
+    const position =
+      ancestors === undefined
+        ? division.position!
+        : division.position!.start < ancestors[0].position!.start
+          ? {
+              start: division.position.start,
+              stop: ancestors[0].position.stop,
+            }
+          : {
+              start: ancestors[0].position.start,
+              stop: division.position.stop,
+            }
+    yield Object.fromEntries(
+      Object.entries({
+        division,
+        originalTransformation:
+          originalPositionsFromTransformedIterator === undefined
+            ? undefined
+            : reverseTransformationFromPosition(
+                originalPositionsFromTransformedIterator,
+                position,
+              ),
+        position,
+        reference,
+        sectionTaId: state.sectionTaId,
+        type: "external_division",
+      }).filter(([, value]) => value !== undefined),
+    ) as unknown as DivisionLink
+  }
+}
+
 function* iterDivisionTypesAndNumbers(
   divisionType: string,
   index: number,
@@ -309,6 +840,267 @@ function* iterDivisionTypesAndNumbers(
       }
       for (const cardinal of iterCardinalNumeralFormsFromNumber(index0)) {
         yield `${divisionType} ${latinMultiplicativeAdverb} ${cardinal.toLowerCase()}`
+      }
+    }
+  }
+}
+
+export async function* iterReferenceLinks({
+  articleDefinitionByNumByTextId: articleDefinitionByNumByTextIdInput,
+  context,
+  date,
+  legiDb,
+  logIgnoredReferencesTypes,
+  logPartialReferences,
+  originalPositionsFromTransformedIterator,
+  reference,
+  state: inputState,
+}: {
+  articleDefinitionByNumByTextId?: Record<
+    string,
+    Record<string, ArticleDefinition>
+  >
+  context: TextParserContext
+  date: string
+  legiDb: Sql
+  logIgnoredReferencesTypes?: boolean
+  logPartialReferences?: boolean
+  originalPositionsFromTransformedIterator?: Generator<
+    FragmentReverseTransformation,
+    void,
+    FragmentPosition | undefined
+  >
+  reference: TextAstReference
+  /**
+   * When given, state is modified by this generator, so that the callers
+   * always has the latest state version (and can reuse it for the next article,
+   * for example).
+   */
+  state?: TextLinksParserState
+}): AsyncGenerator<DefinitionOrLink> {
+  const articleDefinitionByNumByTextId =
+    articleDefinitionByNumByTextIdInput ?? {}
+  const state: TextLinksParserState = inputState === undefined ? {} : inputState
+  for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
+    context,
+    reference,
+  )) {
+    const atomicReference =
+      atomicOrParentChildReference.type === "parent-enfant"
+        ? atomicOrParentChildReference.parent
+        : atomicOrParentChildReference
+    const parentChildReference =
+      atomicOrParentChildReference.type === "parent-enfant"
+        ? atomicOrParentChildReference
+        : undefined
+    switch (atomicReference.type) {
+      case "alinéa":
+      case "incomplete-header":
+      case "item":
+      case "phrase": {
+        // Ignore sub-article & incomplete-header references.
+        break
+      }
+
+      case "article": {
+        if (atomicReference.definition && state.textId !== undefined) {
+          const articleDefinition =
+            articleDefinitionByNumByTextId[state.textId]?.[atomicReference.num!]
+          if (articleDefinition !== undefined) {
+            yield articleDefinition
+          }
+        } else {
+          yield* iterArticleLinks({
+            article: atomicReference,
+            context,
+            date,
+            legiDb,
+            originalPositionsFromTransformedIterator,
+            reference,
+            state,
+          })
+        }
+        break
+      }
+
+      case "chapitre":
+      case "livre":
+      case "paragraphe":
+      case "partie":
+      case "section":
+      case "sous-paragraphe":
+      case "sous-section":
+      case "sous-sous-paragraphe":
+      case "sous-titre":
+      case "titre": {
+        if (atomicReference.definition && state.textId !== undefined) {
+          // TODO
+          // const divisionDefinition =
+          //   divisionDefinitionByNumByTextId[state.textId]?.[
+          //     atomicReference.num!
+          //   ]
+          // if (divisionDefinition !== undefined) {
+          //   yield divisionDefinition
+          // }
+        } else {
+          yield* iterDivisionLinks({
+            context,
+            date,
+            division: atomicReference,
+            divisionChildReference: parentChildReference,
+            legiDb,
+            logIgnoredReferencesTypes,
+            originalPositionsFromTransformedIterator,
+            reference,
+            state,
+          })
+        }
+        break
+      }
+
+      case "texte": {
+        updateStateTextId({
+          context,
+          logPartialReferences,
+          reference,
+          state,
+          text: atomicReference,
+        })
+
+        const textDeepestDivisionsOrArticles =
+          parentChildReference === undefined
+            ? []
+            : [
+                ...iterDeepestDivisionsOrArticles(
+                  context,
+                  parentChildReference.child,
+                ),
+              ]
+        let addedLinksCount = 0
+        if (parentChildReference !== undefined) {
+          for (const atomicOrParentChildReferenceInText of iterAtomicOrParentChildReferences(
+            context,
+            parentChildReference.child,
+          )) {
+            const atomicReferenceInText =
+              atomicOrParentChildReferenceInText.type === "parent-enfant"
+                ? atomicOrParentChildReferenceInText.parent
+                : atomicOrParentChildReferenceInText
+            const parentChildReferenceInText =
+              atomicOrParentChildReferenceInText.type === "parent-enfant"
+                ? atomicOrParentChildReferenceInText
+                : undefined
+            switch (atomicReferenceInText.type) {
+              case "alinéa":
+              case "incomplete-header":
+              case "item":
+              case "phrase": {
+                // Ignore sub-article & incomplete-header references.
+                break
+              }
+
+              case "article": {
+                yield* iterArticleLinks({
+                  ancestors:
+                    textDeepestDivisionsOrArticles.length === 1
+                      ? [atomicReference] // text
+                      : undefined,
+                  article: atomicReferenceInText,
+                  context,
+                  date,
+                  legiDb,
+                  originalPositionsFromTransformedIterator,
+                  reference,
+                  state,
+                })
+                addedLinksCount++
+                break
+              }
+
+              case "chapitre":
+              case "livre":
+              case "paragraphe":
+              case "partie":
+              case "section":
+              case "sous-paragraphe":
+              case "sous-section":
+              case "sous-sous-paragraphe":
+              case "sous-titre":
+              case "titre": {
+                let textelr: JorfTextelr | LegiTextelr | undefined = undefined
+                let liensSectionTa:
+                  | JorfTextelrLienSectionTa[]
+                  | LegiTextelrLienSectionTa[]
+                  | undefined = undefined
+                if (state.textId !== undefined) {
+                  textelr = (
+                    await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
+                    SELECT data
+                    FROM textelr
+                    WHERE id = ${state.textId}
+                  `
+                  )[0]?.data
+                  if (textelr !== undefined) {
+                    liensSectionTa = textelr.STRUCT?.LIEN_SECTION_TA
+                  }
+                }
+                yield* iterDivisionLinks({
+                  ancestors:
+                    textDeepestDivisionsOrArticles.length === 1
+                      ? [atomicReference] // text
+                      : undefined,
+                  context,
+                  date,
+                  division: atomicReferenceInText,
+                  divisionChildReference: parentChildReferenceInText,
+                  legiDb,
+                  logIgnoredReferencesTypes,
+                  originalPositionsFromTransformedIterator,
+                  parentLiensSectionTa: liensSectionTa,
+                  reference,
+                  state,
+                })
+                addedLinksCount++
+                break
+              }
+
+              default: {
+                if (logIgnoredReferencesTypes) {
+                  console.log(
+                    `In "${context.input.slice(reference.position.start, parentChildReference.position.stop)}": Reference of type ${atomicReferenceInText.type} ignored in text`,
+                  )
+                  console.log(JSON.stringify(parentChildReference, null, 2))
+                }
+              }
+            }
+          }
+        }
+        if (addedLinksCount === 0) {
+          if (atomicReference.position === undefined) {
+            throw new Error(
+              `Position missing in atomic reference: ${atomicReference}`,
+            )
+          }
+          yield Object.fromEntries(
+            Object.entries({
+              originalTransformation: atomicReference.originalTransformation,
+              position: atomicReference.position,
+              reference,
+              text: atomicReference,
+              type: "external_text",
+            }).filter(([, value]) => value !== undefined),
+          ) as unknown as TextLink
+        }
+        break
+      }
+
+      default: {
+        if (logIgnoredReferencesTypes) {
+          console.log(
+            `In "${context.input.slice(reference.position.start, reference.position.stop)}": Reference ${JSON.stringify(atomicReference, null, 2)} ignored`,
+          )
+          console.log(JSON.stringify(reference, null, 2))
+        }
       }
     }
   }
@@ -348,599 +1140,6 @@ export async function* parseTextLinks({
       : newReverseTransformationsMergedFromPositionsIterator(transformation)
 
   let state = inputState === undefined ? {} : structuredClone(inputState)
-
-  /**
-   * iterArticleLinks
-   */
-  async function* iterArticleLinks(
-    reference: TextAstReference,
-    article: TextAstArticle,
-    /**
-     * Defined only when article is the unique descendant of a text and optionally its divisions.
-     */
-    ancestors:
-      | Array<TextAstDivision | (TextAstText & TextAstPosition)>
-      | undefined = undefined,
-  ): AsyncGenerator<ArticleLink, void> {
-    if (article.relative === 0 && state.articleId !== undefined) {
-      // "le même article", "le présent article", etc
-      // Do nothing.
-      return
-    }
-
-    // if (state.textId !== undefined && article.num !== undefined) {
-    //   const articleDefinition =
-    //     articleDefinitionByNumByTextId[state.textId]?.[article.num]
-    //   if (articleDefinition !== undefined) {
-    //     const position =
-    //       ancestors === undefined
-    //         ? article.position!
-    //         : article.position!.start < ancestors[0].position!.start
-    //           ? {
-    //               start: article.position.start,
-    //               stop: ancestors[0].position.stop,
-    //             }
-    //           : {
-    //               start: ancestors[0].position.start,
-    //               stop: article.position.stop,
-    //             }
-    //     yield Object.fromEntries(
-    //       Object.entries({
-    //         article,
-    //         definition: articleDefinition,
-    //         originalTransformation:
-    //           originalPositionsFromTransformedIterator === undefined
-    //             ? undefined
-    //             : reverseTransformationFromPosition(
-    //                 originalPositionsFromTransformedIterator,
-    //                 position,
-    //               ),
-    //         position,
-    //         reference,
-    //         type: "internal_article",
-    //       }).filter(([, value]) => value !== undefined),
-    //     ) as unknown as ArticleLink
-    //     return
-    //   }
-    // }
-
-    let articlesInfos: Array<{
-      data: JorfArticle | LegiArticle
-      id: string
-    }> = []
-    if (state.textId !== undefined) {
-      articlesInfos = [
-        ...(await legiDb<
-          {
-            data: JorfArticle | LegiArticle
-            id: string
-          }[]
-        >`
-          SELECT data, id
-          FROM article
-          WHERE
-            data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.textId}
-            AND num = ${article.num ?? null}
-        `),
-      ]
-    }
-    if (
-      articlesInfos.length === 0 &&
-      state.defaultTextId !== undefined &&
-      state.defaultTextId !== state.textId
-    ) {
-      articlesInfos = [
-        ...(await legiDb<
-          {
-            data: JorfArticle | LegiArticle
-            id: string
-          }[]
-        >`
-          SELECT data, id
-          FROM article
-          WHERE
-            data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.defaultTextId}
-            AND num = ${article.num ?? null}
-        `),
-      ]
-    }
-    if (articlesInfos.length === 0 && article.num !== undefined) {
-      // Look whether there exists only one text with this article number.
-      articlesInfos = [
-        ...(await legiDb<
-          {
-            data: JorfArticle | LegiArticle
-            id: string
-          }[]
-        >`
-          SELECT data, id
-          FROM article
-          WHERE
-            num = ${article.num}
-          LIMIT 100
-        `),
-      ]
-      if (articlesInfos.length !== 0) {
-        const textsIds = articlesInfos.reduce((textsIds, { data }) => {
-          const textId = data.CONTEXTE.TEXTE["@cid"]
-          if (textId !== undefined) {
-            textsIds.add(textId)
-          }
-          return textsIds
-        }, new Set<string>())
-        if (textsIds.size > 1) {
-          // Different texts have an article with the same number.
-          // So try another method.
-          articlesInfos = []
-        }
-      }
-    }
-    if (articlesInfos.length === 0) {
-      console.warn(
-        `In "${context.input.slice(article.position.start, article.position.stop)}": Unknown article ${article.num ?? null} of text ${state.textId} for reference ${JSON.stringify(article, null, 2)}`,
-      )
-      delete state.articleId
-    } else if (articlesInfos.length === 1) {
-      state.articleId = articlesInfos[0].id
-    } else {
-      let filteredArticlesInfos = articlesInfos.filter(({ data }) => {
-        const metaArticle = data.META.META_SPEC.META_ARTICLE
-        return metaArticle.DATE_DEBUT <= date && metaArticle.DATE_FIN > date
-      })
-      if (filteredArticlesInfos.length === 1) {
-        state.articleId = filteredArticlesInfos[0].id
-      } else {
-        if (filteredArticlesInfos.length !== 0) {
-          articlesInfos = filteredArticlesInfos
-        }
-        filteredArticlesInfos = articlesInfos.filter(
-          ({ id }) =>
-            !state.textId?.startsWith("JORF") || id.startsWith("JORF"),
-        )
-        if (filteredArticlesInfos.length === 1) {
-          state.articleId = filteredArticlesInfos[0].id
-        } else {
-          if (filteredArticlesInfos.length !== 0) {
-            articlesInfos = filteredArticlesInfos
-          }
-          console.warn(
-            `In "${context.input.slice(article.position.start, article.position.stop)}": Unable to filter article ${article.num ?? null} of text ${state.textId ?? null} among IDs ${JSON.stringify(
-              articlesInfos.map(({ id }) => id),
-              null,
-              2,
-            )} for reference ${JSON.stringify(article, null, 2)}`,
-          )
-          delete state.articleId
-        }
-      }
-    }
-
-    const position =
-      ancestors === undefined
-        ? article.position!
-        : article.position!.start < ancestors[0].position!.start
-          ? {
-              start: article.position.start,
-              stop: ancestors[0].position.stop,
-            }
-          : {
-              start: ancestors[0].position.start,
-              stop: article.position.stop,
-            }
-    yield Object.fromEntries(
-      Object.entries({
-        article,
-        articleId: state.articleId,
-        originalTransformation:
-          originalPositionsFromTransformedIterator === undefined
-            ? undefined
-            : reverseTransformationFromPosition(
-                originalPositionsFromTransformedIterator,
-                position,
-              ),
-        position,
-        reference,
-        type: "external_article",
-      }).filter(([, value]) => value !== undefined),
-    ) as unknown as ArticleLink
-  }
-
-  /**
-   * iterDivisionLinks
-   */
-  async function* iterDivisionLinks(
-    reference: TextAstReference,
-    division: TextAstDivision,
-    divisionChildReference?: TextAstParentChild,
-    parentLiensSectionTa?:
-      | JorfTextelrLienSectionTa[]
-      | JorfSectionTaLienSectionTa[]
-      | LegiSectionTaLienSectionTa[]
-      | LegiTextelrLienSectionTa[],
-    /**
-     * Defined only when division is the unique descendant of a text and optionally its parent
-     * divisions.
-     */
-    ancestors:
-      | Array<TextAstDivision | (TextAstText & TextAstPosition)>
-      | undefined = undefined,
-  ): AsyncGenerator<ArticleLink | DivisionLink, void> {
-    if (division.relative === 0 && state.sectionTaId !== undefined) {
-      // "le même chapitre", "la présente section", etc
-      // Do nothing.
-      return
-    }
-
-    // Find division in given liensSectionTa.
-    let divisionLienSectionTa:
-      | JorfTextelrLienSectionTa
-      | JorfSectionTaLienSectionTa
-      | LegiSectionTaLienSectionTa
-      | LegiTextelrLienSectionTa
-      | undefined = undefined
-    if (parentLiensSectionTa === undefined && state.textId !== undefined) {
-      const textelr = (
-        await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
-          SELECT data
-          FROM textelr
-          WHERE id = ${state.textId}
-        `
-      )[0]?.data
-      if (textelr !== undefined) {
-        parentLiensSectionTa = textelr.STRUCT?.LIEN_SECTION_TA
-      }
-    }
-    if (parentLiensSectionTa !== undefined) {
-      for (const parentLienSectionTa of parentLiensSectionTa) {
-        if (
-          parentLienSectionTa["@debut"] > date ||
-          parentLienSectionTa["@fin"] < date
-        ) {
-          continue
-        }
-        const sectionTaTypeAndNumber = parentLienSectionTa["#text"]
-          ?.split(":")[0]
-          .trim()
-          .toLowerCase()
-          .split(/\s+/)
-          .map((fragment: string) => fragment.trim())
-          .filter((fragment: string) => fragment !== "")
-          .join(" ")
-        if (sectionTaTypeAndNumber !== undefined) {
-          let found = false
-          if (division.index !== undefined) {
-            found = iterDivisionTypesAndNumbers(
-              division.type,
-              division.index,
-            ).some(
-              (divisionTypeAndNumber) =>
-                divisionTypeAndNumber === sectionTaTypeAndNumber,
-            )
-          }
-          if (!found && division.num !== undefined) {
-            found =
-              `${division.type} ${division.num.toLowerCase()}` ===
-              sectionTaTypeAndNumber
-          }
-
-          if (found) {
-            divisionLienSectionTa = parentLienSectionTa
-            break
-          }
-        }
-      }
-      if (divisionLienSectionTa === undefined) {
-        // Division not found.
-        // If parentLiensSectionTa contains a "Partie législative" sectionTa, use it
-        // as division, because in legislative texts, the "Partie législative" is often
-        // implicit in references.
-        // For example:
-        // "Le livre III du code des impositions sur les biens et services"
-        // instead of:
-        // "Le livre III de la partie législative du code des impositions sur les biens et services"
-        divisionLienSectionTa = parentLiensSectionTa
-          .filter(
-            (parentLienSectionTa) =>
-              parentLienSectionTa["@debut"] <= date &&
-              parentLienSectionTa["@fin"] >= date,
-          )
-          .find((parentLienSectionTa) => {
-            const sectionTaNameSplit = parentLienSectionTa["#text"]
-              ?.split(":")[0]
-              .trim()
-              .toLowerCase()
-              .split(/\s+/)
-              .map((fragment: string) => fragment.trim())
-              .filter((fragment: string) => fragment !== "")
-            return (
-              sectionTaNameSplit !== undefined &&
-              sectionTaNameSplit.length === 2 &&
-              divisionTypes.includes(sectionTaNameSplit[0] as DivisionType) &&
-              sectionTaNameSplit[1] === "législative"
-            )
-          })
-        if (divisionLienSectionTa !== undefined) {
-          // Create an invisible division containing the "Partie législative".
-          const sectionTaNameSplit = divisionLienSectionTa["#text"]!.split(
-            ":",
-          )[0]
-            .trim()
-            .toLowerCase()
-            .split(/\s+/)
-            .map((fragment: string) => fragment.trim())
-            .filter((fragment: string) => fragment !== "")
-          const position = {
-            // Position start - stop = 0 ⇒ invisible
-            start: division.position.stop,
-            stop: division.position.stop,
-          }
-          const originalTransformation =
-            originalPositionsFromTransformedIterator === undefined
-              ? undefined
-              : reverseTransformationFromPosition(
-                  originalPositionsFromTransformedIterator,
-                  position,
-                )
-          const insertedDivision = Object.fromEntries(
-            Object.entries({
-              num: sectionTaNameSplit[1],
-              originalTransformation,
-              position,
-              type: sectionTaNameSplit[0] as DivisionType,
-            }).filter(([, value]) => value !== undefined),
-          ) as unknown as TextAstDivision
-          divisionChildReference = Object.fromEntries(
-            Object.entries({
-              child: divisionChildReference ?? division,
-              parent: insertedDivision,
-              originalTransformation,
-              position,
-              type: "parent-enfant",
-            }).filter(([, value]) => value !== undefined),
-          ) as unknown as TextAstParentChild
-          division = insertedDivision
-        }
-      }
-    }
-
-    const divisionDeepestDivisionsOrArticles =
-      divisionChildReference === undefined
-        ? []
-        : [
-            ...iterDeepestDivisionsOrArticles(
-              context,
-              divisionChildReference.child,
-            ),
-          ]
-    let addedLinksCount = 0
-    if (divisionChildReference !== undefined) {
-      for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
-        context,
-        divisionChildReference.child,
-      )) {
-        const atomicReference =
-          atomicOrParentChildReference.type === "parent-enfant"
-            ? atomicOrParentChildReference.parent
-            : atomicOrParentChildReference
-        const parentChildReference =
-          atomicOrParentChildReference.type === "parent-enfant"
-            ? atomicOrParentChildReference
-            : undefined
-        switch (atomicReference.type) {
-          case "alinéa":
-          case "incomplete-header":
-          case "item":
-          case "phrase": {
-            // Ignore sub-article & incomplete-header references.
-            break
-          }
-
-          case "article": {
-            yield* iterArticleLinks(
-              reference,
-              atomicReference,
-              divisionDeepestDivisionsOrArticles.length === 1
-                ? [...(ancestors ?? []), division]
-                : undefined,
-            )
-            addedLinksCount++
-            break
-          }
-
-          case "chapitre":
-          case "livre":
-          case "paragraphe":
-          case "partie":
-          case "section":
-          case "sous-paragraphe":
-          case "sous-section":
-          case "sous-sous-paragraphe":
-          case "sous-titre":
-          case "titre": {
-            let divisionSectionTa: JorfSectionTa | LegiSectionTa | undefined =
-              undefined
-            let subdivisionsLiensSectionTa:
-              | JorfTextelrLienSectionTa[]
-              | LegiTextelrLienSectionTa[]
-              | undefined = undefined
-            if (divisionLienSectionTa !== undefined) {
-              divisionSectionTa = (
-                await legiDb<{ data: JorfSectionTa | LegiSectionTa }[]>`
-                  SELECT data
-                  FROM section_ta
-                  WHERE id = ${divisionLienSectionTa["@id"]}
-                `
-              )[0]?.data
-              if (divisionSectionTa !== undefined) {
-                subdivisionsLiensSectionTa =
-                  divisionSectionTa.STRUCTURE_TA?.LIEN_SECTION_TA
-              }
-            }
-
-            yield* iterDivisionLinks(
-              reference,
-              atomicReference,
-              parentChildReference,
-              subdivisionsLiensSectionTa,
-              divisionDeepestDivisionsOrArticles.length === 1
-                ? [...(ancestors ?? []), division]
-                : undefined,
-            )
-            addedLinksCount++
-            break
-          }
-
-          default: {
-            if (logIgnoredReferencesTypes) {
-              console.log(
-                `In "${context.input.slice(divisionChildReference.position.start, divisionChildReference.position.stop)}": Reference of type ${atomicReference.type} ignored in division`,
-              )
-              console.log(JSON.stringify(divisionChildReference, null, 2))
-            }
-          }
-        }
-      }
-    }
-    if (addedLinksCount === 0) {
-      state.sectionTaId = divisionLienSectionTa?.["@id"]
-      const position =
-        ancestors === undefined
-          ? division.position!
-          : division.position!.start < ancestors[0].position!.start
-            ? {
-                start: division.position.start,
-                stop: ancestors[0].position.stop,
-              }
-            : {
-                start: ancestors[0].position.start,
-                stop: division.position.stop,
-              }
-      yield Object.fromEntries(
-        Object.entries({
-          division,
-          originalTransformation:
-            originalPositionsFromTransformedIterator === undefined
-              ? undefined
-              : reverseTransformationFromPosition(
-                  originalPositionsFromTransformedIterator,
-                  position,
-                ),
-          position,
-          reference,
-          sectionTaId: state.sectionTaId,
-          type: "external_division",
-        }).filter(([, value]) => value !== undefined),
-      ) as unknown as DivisionLink
-    }
-  }
-
-  /**
-   * updateStateTextId
-   */
-  function updateStateTextId(
-    reference: TextAstReference,
-    text: TextAstText,
-  ): void {
-    switch (text.nature) {
-      case "ARRETE":
-      case "CIRCULAIRE":
-      case "CONVENTION":
-      case "DECRET_LOI":
-      case "DIRECTIVE_EURO":
-      case "REGLEMENTEUROPEEN": {
-        // TODO
-        delete state.textId
-        break
-      }
-
-      case "CODE": {
-        if (text.relative === 0 && state.codeId !== undefined) {
-          state.textId = state.codeId
-          break
-        }
-
-        if (text.cid === undefined) {
-          if (logPartialReferences) {
-            console.log(
-              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
-            )
-          }
-          delete state.textId
-          break
-        }
-
-        state.textId = state.codeId = text.cid
-        break
-      }
-
-      case "CONSTITUTION": {
-        if (text.relative === 0 && state.constitutionId !== undefined) {
-          state.textId = state.constitutionId
-          break
-        }
-
-        if (text.cid === undefined) {
-          if (logPartialReferences) {
-            console.log(
-              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
-            )
-          }
-          delete state.textId
-          break
-        }
-
-        state.textId = state.constitutionId = text.cid
-        break
-      }
-
-      case "DECRET": {
-        if (text.relative === 0 && state.decreeId !== undefined) {
-          state.textId = state.decreeId
-          break
-        }
-
-        if (text.cid === undefined) {
-          if (logPartialReferences) {
-            console.log(
-              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
-            )
-          }
-          delete state.textId
-          break
-        }
-
-        state.textId = state.decreeId = text.cid
-        break
-      }
-
-      case "LOI":
-      case "LOI_CONSTIT":
-      case "LOI_ORGANIQUE":
-      case "ORDONNANCE": {
-        if (text.relative === 0 && state.lawId !== undefined) {
-          state.textId = state.lawId
-          break
-        }
-
-        if (text.cid === undefined) {
-          if (logPartialReferences) {
-            console.log(
-              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
-            )
-          }
-          delete state.textId
-          break
-        }
-
-        state.textId = state.lawId = text.cid
-        break
-      }
-
-      default: {
-        assertNever("nature", text.nature)
-      }
-    }
-  }
 
   //
   // FIRST STEP: Store declarations of divisions & articles.
@@ -1035,7 +1234,13 @@ export async function* parseTextLinks({
         }
 
         case "texte": {
-          updateStateTextId(reference, atomicReference)
+          updateStateTextId({
+            context,
+            logPartialReferences,
+            reference,
+            state,
+            text: atomicReference,
+          })
           break
         }
 
@@ -1059,197 +1264,133 @@ export async function* parseTextLinks({
   // Reset state
   state = inputState === undefined ? {} : inputState
   for (const reference of references) {
-    for (const atomicOrParentChildReference of iterAtomicOrParentChildReferences(
+    yield* iterReferenceLinks({
+      articleDefinitionByNumByTextId,
       context,
+      date,
+      legiDb,
+      logIgnoredReferencesTypes,
+      logPartialReferences,
+      originalPositionsFromTransformedIterator,
       reference,
-    )) {
-      const atomicReference =
-        atomicOrParentChildReference.type === "parent-enfant"
-          ? atomicOrParentChildReference.parent
-          : atomicOrParentChildReference
-      const parentChildReference =
-        atomicOrParentChildReference.type === "parent-enfant"
-          ? atomicOrParentChildReference
-          : undefined
-      switch (atomicReference.type) {
-        case "alinéa":
-        case "incomplete-header":
-        case "item":
-        case "phrase": {
-          // Ignore sub-article & incomplete-header references.
-          break
-        }
+      state,
+    })
+  }
+}
 
-        case "article": {
-          if (atomicReference.definition && state.textId !== undefined) {
-            const articleDefinition =
-              articleDefinitionByNumByTextId[state.textId]?.[
-                atomicReference.num!
-              ]
-            if (articleDefinition !== undefined) {
-              yield articleDefinition
-            }
-          } else {
-            yield* iterArticleLinks(reference, atomicReference)
-          }
-          break
-        }
+/**
+ * updateStateTextId
+ */
+function updateStateTextId({
+  context,
+  logPartialReferences,
+  reference,
+  state,
+  text,
+}: {
+  context: TextParserContext
+  logPartialReferences?: boolean
+  reference: TextAstReference
+  state: TextLinksParserState
+  text: TextAstText
+}): void {
+  switch (text.nature) {
+    case "ARRETE":
+    case "CIRCULAIRE":
+    case "CONVENTION":
+    case "DECRET_LOI":
+    case "DIRECTIVE_EURO":
+    case "REGLEMENTEUROPEEN": {
+      // TODO
+      delete state.textId
+      break
+    }
 
-        case "chapitre":
-        case "livre":
-        case "paragraphe":
-        case "partie":
-        case "section":
-        case "sous-paragraphe":
-        case "sous-section":
-        case "sous-sous-paragraphe":
-        case "sous-titre":
-        case "titre": {
-          if (atomicReference.definition && state.textId !== undefined) {
-            // TODO
-            // const divisionDefinition =
-            //   divisionDefinitionByNumByTextId[state.textId]?.[
-            //     atomicReference.num!
-            //   ]
-            // if (divisionDefinition !== undefined) {
-            //   yield divisionDefinition
-            // }
-          } else {
-            yield* iterDivisionLinks(
-              reference,
-              atomicReference,
-              parentChildReference,
-            )
-          }
-          break
-        }
-
-        case "texte": {
-          updateStateTextId(reference, atomicReference)
-
-          const textDeepestDivisionsOrArticles =
-            parentChildReference === undefined
-              ? []
-              : [
-                  ...iterDeepestDivisionsOrArticles(
-                    context,
-                    parentChildReference.child,
-                  ),
-                ]
-          let addedLinksCount = 0
-          if (parentChildReference !== undefined) {
-            for (const atomicOrParentChildReferenceInText of iterAtomicOrParentChildReferences(
-              context,
-              parentChildReference.child,
-            )) {
-              const atomicReferenceInText =
-                atomicOrParentChildReferenceInText.type === "parent-enfant"
-                  ? atomicOrParentChildReferenceInText.parent
-                  : atomicOrParentChildReferenceInText
-              const parentChildReferenceInText =
-                atomicOrParentChildReferenceInText.type === "parent-enfant"
-                  ? atomicOrParentChildReferenceInText
-                  : undefined
-              switch (atomicReferenceInText.type) {
-                case "alinéa":
-                case "incomplete-header":
-                case "item":
-                case "phrase": {
-                  // Ignore sub-article & incomplete-header references.
-                  break
-                }
-
-                case "article": {
-                  yield* iterArticleLinks(
-                    reference,
-                    atomicReferenceInText,
-                    textDeepestDivisionsOrArticles.length === 1
-                      ? [atomicReference] // text
-                      : undefined,
-                  )
-                  addedLinksCount++
-                  break
-                }
-
-                case "chapitre":
-                case "livre":
-                case "paragraphe":
-                case "partie":
-                case "section":
-                case "sous-paragraphe":
-                case "sous-section":
-                case "sous-sous-paragraphe":
-                case "sous-titre":
-                case "titre": {
-                  let textelr: JorfTextelr | LegiTextelr | undefined = undefined
-                  let liensSectionTa:
-                    | JorfTextelrLienSectionTa[]
-                    | LegiTextelrLienSectionTa[]
-                    | undefined = undefined
-                  if (state.textId !== undefined) {
-                    textelr = (
-                      await legiDb<{ data: JorfTextelr | LegiTextelr }[]>`
-                      SELECT data
-                      FROM textelr
-                      WHERE id = ${state.textId}
-                    `
-                    )[0]?.data
-                    if (textelr !== undefined) {
-                      liensSectionTa = textelr.STRUCT?.LIEN_SECTION_TA
-                    }
-                  }
-                  yield* iterDivisionLinks(
-                    reference,
-                    atomicReferenceInText,
-                    parentChildReferenceInText,
-                    liensSectionTa,
-                    textDeepestDivisionsOrArticles.length === 1
-                      ? [atomicReference] // text
-                      : undefined,
-                  )
-                  addedLinksCount++
-                  break
-                }
-
-                default: {
-                  if (logIgnoredReferencesTypes) {
-                    console.log(
-                      `In "${context.input.slice(reference.position.start, parentChildReference.position.stop)}": Reference of type ${atomicReferenceInText.type} ignored in text`,
-                    )
-                    console.log(JSON.stringify(parentChildReference, null, 2))
-                  }
-                }
-              }
-            }
-          }
-          if (addedLinksCount === 0) {
-            if (atomicReference.position === undefined) {
-              throw new Error(
-                `Position missing in atomic reference: ${atomicReference}`,
-              )
-            }
-            yield Object.fromEntries(
-              Object.entries({
-                originalTransformation: atomicReference.originalTransformation,
-                position: atomicReference.position,
-                reference,
-                text: atomicReference,
-                type: "external_text",
-              }).filter(([, value]) => value !== undefined),
-            ) as unknown as TextLink
-          }
-          break
-        }
-
-        default: {
-          if (logIgnoredReferencesTypes) {
-            console.log(
-              `In "${context.input.slice(reference.position.start, reference.position.stop)}": Reference ${JSON.stringify(atomicReference, null, 2)} ignored`,
-            )
-            console.log(JSON.stringify(reference, null, 2))
-          }
-        }
+    case "CODE": {
+      if (text.relative === 0 && state.codeId !== undefined) {
+        state.textId = state.codeId
+        break
       }
+
+      if (text.cid === undefined) {
+        if (logPartialReferences) {
+          console.log(
+            `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+          )
+        }
+        delete state.textId
+        break
+      }
+
+      state.textId = state.codeId = text.cid
+      break
+    }
+
+    case "CONSTITUTION": {
+      if (text.relative === 0 && state.constitutionId !== undefined) {
+        state.textId = state.constitutionId
+        break
+      }
+
+      if (text.cid === undefined) {
+        if (logPartialReferences) {
+          console.log(
+            `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+          )
+        }
+        delete state.textId
+        break
+      }
+
+      state.textId = state.constitutionId = text.cid
+      break
+    }
+
+    case "DECRET": {
+      if (text.relative === 0 && state.decreeId !== undefined) {
+        state.textId = state.decreeId
+        break
+      }
+
+      if (text.cid === undefined) {
+        if (logPartialReferences) {
+          console.log(
+            `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+          )
+        }
+        delete state.textId
+        break
+      }
+
+      state.textId = state.decreeId = text.cid
+      break
+    }
+
+    case "LOI":
+    case "LOI_CONSTIT":
+    case "LOI_ORGANIQUE":
+    case "ORDONNANCE": {
+      if (text.relative === 0 && state.lawId !== undefined) {
+        state.textId = state.lawId
+        break
+      }
+
+      if (text.cid === undefined) {
+        if (logPartialReferences) {
+          console.log(
+            `In "${context.input.slice(reference.position.start, reference.position.stop)}": Missing CID of ${text.nature} reference ${JSON.stringify(text, null, 2)}`,
+          )
+        }
+        delete state.textId
+        break
+      }
+
+      state.textId = state.lawId = text.cid
+      break
+    }
+
+    default: {
+      assertNever("nature", text.nature)
     }
   }
 }

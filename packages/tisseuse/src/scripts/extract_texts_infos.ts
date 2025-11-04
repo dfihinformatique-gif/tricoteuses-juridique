@@ -11,13 +11,8 @@ import {
 } from "$lib/server/databases/index.js"
 import type { TextAstText } from "$lib/text_parsers/ast.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import {
-  replacePatterns,
-  simplifyText,
-  simplifyUnicodeCharacters,
-} from "$lib/text_parsers/simplifiers.js"
+import { simplifyPlainText } from "$lib/text_parsers/simplifiers.js"
 import { definitionTexteFrancais } from "$lib/text_parsers/texts.js"
-import { chainTransformers } from "$lib/text_parsers/transformers.js"
 import { cleanTexteTitle } from "$lib/textes.js"
 
 export interface Cartouche {
@@ -288,7 +283,7 @@ async function extractLegifranceTextsDescriptions(
             badge: nature,
             titre: titleToParse,
           })
-          const simplifiedTitle = simplifyTextTitle(titleToParse)
+          const simplifiedTitle = simplifyPlainText(titleToParse).output
           const context = new TextParserContext(simplifiedTitle)
           const titleParsing = definitionTexteFrancais(context) as
             | TextAstText
@@ -511,14 +506,6 @@ async function extractTextsInfos({
   await anomalies.save()
 
   return 0
-}
-
-function simplifyTextTitle(title: string): string {
-  return chainTransformers("Simplification d'un titre de texte", [
-    replacePatterns,
-    simplifyUnicodeCharacters,
-    simplifyText,
-  ])(title).output
 }
 
 sade("extract_texts_infos", true)

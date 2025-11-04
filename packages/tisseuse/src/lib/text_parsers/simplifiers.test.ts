@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest"
 
 import {
   convertHtmlElementsToText,
-  replacePatterns,
+  replaceTextPatterns,
   simplifyHtml,
   simplifyText,
   simplifyUnicodeCharacters,
@@ -1170,9 +1170,9 @@ describe("reversePositionsSplitFromPositions", () => {
   })
 })
 
-describe("replacePatterns", () => {
+describe("replaceTextPatterns", () => {
   test("add space after n°", () => {
-    const { transformations } = replacePatterns("Loi organique N°1234")
+    const { transformations } = replaceTextPatterns("Loi organique N°1234")
     expect(transformations).toStrictEqual([
       {
         input: "Loi organique N°1234",

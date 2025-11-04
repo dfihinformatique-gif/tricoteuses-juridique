@@ -3,11 +3,24 @@ import { describe, expect, test } from "vitest"
 import { legiDb } from "$lib/server/databases/index.js"
 
 import {
+  getArticleDateDebut,
   getArticleDateSignature,
   getOrLoadArticleSiblingId,
 } from "./articles.js"
 import { newLegifranceObjectCache } from "./cache.js"
 import { getOrLoadArticle } from "./loaders/legifrance.js"
+
+describe("getArticleDateDebut", async () => {
+  test("getArticleDateDebut(LEGIARTI000048665041)", async () => {
+    const article = await getOrLoadArticle(
+      legiDb,
+      newLegifranceObjectCache(),
+      "LEGIARTI000048665041",
+    )
+    expect(article).not.toBe(undefined)
+    expect(getArticleDateDebut(article!)).toBe("2023-12-23")
+  })
+})
 
 describe("getArticleDateSignature", async () => {
   test("getArticleDateSignature(JORFARTI000033203048)", async () => {
@@ -28,16 +41,6 @@ describe("getArticleDateSignature", async () => {
     )
     expect(article).not.toBe(undefined)
     expect(getArticleDateSignature(article!)).toBe("2016-10-07")
-  })
-
-  test("getArticleDateSignature(LEGIARTI000048665041)", async () => {
-    const article = await getOrLoadArticle(
-      legiDb,
-      newLegifranceObjectCache(),
-      "LEGIARTI000048665041",
-    )
-    expect(article).not.toBe(undefined)
-    expect(getArticleDateSignature(article!)).toBe("2015-01-01")
   })
 })
 

@@ -1,3 +1,4 @@
+import dedent from "dedent-js"
 import { describe, expect, test } from "vitest"
 
 import type {
@@ -8,10 +9,139 @@ import type {
 } from "./ast.js"
 import { TextParserContext } from "./parsers.js"
 import {
+  listeReferencesSeules,
   reference,
+  referenceSeule,
   uniteBasePreciseeSingulier,
   uniteBaseSingulier,
 } from "./references.js"
+
+describe("listeReferencesSeules", () => {
+  test("article 199 quater B", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = listeReferencesSeules(context) as TextAstReference[]
+    expect(result).toStrictEqual([
+      {
+        num: "199 quater B",
+        position: {
+          start: 0,
+          stop: 20,
+        },
+        type: "article",
+      },
+    ])
+    expect(context.remaining()).toBe("")
+    expect(
+      result.map((reference) => context.text(reference.position)),
+    ).toStrictEqual(["article 199 quater B"])
+  })
+
+  test(
+    dedent`
+      article 199 quater B
+      article 199 undecies B
+      article 238 bis
+      article 107
+    `,
+    ({ task }) => {
+      const context = new TextParserContext(task.name)
+      const result = listeReferencesSeules(context) as TextAstReference[]
+      expect(result).toStrictEqual([
+        {
+          num: "199 quater B",
+          position: {
+            start: 0,
+            stop: 20,
+          },
+          type: "article",
+        },
+        {
+          num: "199 undecies B",
+          position: {
+            start: 21,
+            stop: 43,
+          },
+          type: "article",
+        },
+        {
+          num: "238 bis",
+          position: {
+            start: 44,
+            stop: 59,
+          },
+          type: "article",
+        },
+        {
+          num: "107",
+          position: {
+            start: 60,
+            stop: 71,
+          },
+          type: "article",
+        },
+      ])
+      expect(context.remaining()).toBe("")
+      expect(
+        result.map((reference) => context.text(reference.position)),
+      ).toStrictEqual([
+        "article 199 quater B",
+        "article 199 undecies B",
+        "article 238 bis",
+        "article 107",
+      ])
+    },
+  )
+
+  test("article 199 quater B, article 199 undecies B, article 238 bis, article 107", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = listeReferencesSeules(context) as TextAstReference[]
+    expect(result).toStrictEqual([
+      {
+        num: "199 quater B",
+        position: {
+          start: 0,
+          stop: 20,
+        },
+        type: "article",
+      },
+      {
+        num: "199 undecies B",
+        position: {
+          start: 22,
+          stop: 44,
+        },
+        type: "article",
+      },
+      {
+        num: "238 bis",
+        position: {
+          start: 46,
+          stop: 61,
+        },
+        type: "article",
+      },
+      {
+        num: "107",
+        position: {
+          start: 63,
+          stop: 74,
+        },
+        type: "article",
+      },
+    ])
+    expect(context.remaining()).toBe("")
+    expect(
+      result.map((reference) => context.text(reference.position)),
+    ).toStrictEqual([
+      "article 199 quater B",
+      "article 199 undecies B",
+      "article 238 bis",
+      "article 107",
+    ])
+  })
+})
 
 describe("reference", () => {
   test("à l'article 199 quater B, à l'article 199 undecies B, à l'exception des dix derniers alinéas du I, à l'article 238 bis et à l'article 107 de la loi n° 2021-1104 du 22 août 2021", ({
@@ -1861,6 +1991,43 @@ describe("reference", () => {
     expect(
       context.text((result.child as TextAstParentChild).child.position),
     ).toBe("livre III")
+  })
+})
+
+describe("referenceSeule", () => {
+  test("article 107 de la loi n° 2021-1104 du 22 août 2021", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = referenceSeule(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        num: "107",
+        position: {
+          start: 0,
+          stop: 11,
+        },
+        type: "article",
+      },
+      parent: {
+        cid: "JORFTEXT000043956924",
+        date: "2021-08-22",
+        nature: "LOI",
+        num: "2021-1104",
+        position: {
+          start: 18,
+          stop: 50,
+        },
+        title:
+          "LOI n° 2021-1104 du 22 août 2021 portant lutte contre le dérèglement climatique et renforcement de la résilience face à ses effets",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 50,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
   })
 })
 

@@ -8,6 +8,7 @@ import {
 import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
 import {
   iterReferenceLinks,
+  listeReferencesSeules,
   reference,
   simplifyPlainText,
   TextParserContext,
@@ -37,67 +38,78 @@ export const autocomplete = query(
   async ([q, typeFilter]): Promise<Array<Suggestion>> => {
     if (q !== null) {
       const context = new TextParserContext(simplifyPlainText(q).output)
-      const referenceAst = reference(context) as TextAstReference | undefined
-      if (referenceAst !== undefined) {
+      let referenceAstArray = listeReferencesSeules(context) as
+        | TextAstReference[]
+        | undefined
+      if (referenceAstArray === undefined) {
+        const referenceAst = reference(context) as TextAstReference | undefined
+        if (referenceAst !== undefined) {
+          referenceAstArray = [referenceAst]
+        }
+      }
+      console.log("referenceAstArray", referenceAstArray)
+      if (referenceAstArray !== undefined) {
         const encounteredIds = new Set<string>()
         const suggestionsDb: SuggestionDb[] = []
-        for await (const link of iterReferenceLinks({
-          context,
-          date: new Date().toISOString().split("T")[0],
-          reference: referenceAst,
-          legiDb,
-        })) {
-          switch (link.type) {
-            case "external_article": {
-              if (
-                link.articleId !== undefined &&
-                !encounteredIds.has(link.articleId)
-              ) {
-                encounteredIds.add(link.articleId)
-                suggestionsDb.push(
-                  ...(await suggestionDbArrayFromLegifranceArticleId(
-                    link.articleId,
-                  )),
-                )
+        for (const referenceAst of referenceAstArray) {
+          for await (const link of iterReferenceLinks({
+            context,
+            date: new Date().toISOString().split("T")[0],
+            reference: referenceAst,
+            legiDb,
+          })) {
+            switch (link.type) {
+              case "external_article": {
+                if (
+                  link.articleId !== undefined &&
+                  !encounteredIds.has(link.articleId)
+                ) {
+                  encounteredIds.add(link.articleId)
+                  suggestionsDb.push(
+                    ...(await suggestionDbArrayFromLegifranceArticleId(
+                      link.articleId,
+                    )),
+                  )
+                }
+                break
               }
-              break
-            }
 
-            case "external_division": {
-              if (
-                link.sectionTaId !== undefined &&
-                !encounteredIds.has(link.sectionTaId)
-              ) {
-                encounteredIds.add(link.sectionTaId)
-                suggestionsDb.push(
-                  ...(await suggestionDbArrayFromLegifranceSectionTaId(
-                    link.sectionTaId,
-                  )),
-                )
+              case "external_division": {
+                if (
+                  link.sectionTaId !== undefined &&
+                  !encounteredIds.has(link.sectionTaId)
+                ) {
+                  encounteredIds.add(link.sectionTaId)
+                  suggestionsDb.push(
+                    ...(await suggestionDbArrayFromLegifranceSectionTaId(
+                      link.sectionTaId,
+                    )),
+                  )
+                }
+                break
               }
-              break
-            }
 
-            case "external_text": {
-              // TODO: Use the latest ID of text instead of its CID
-              if (
-                link.text.cid !== undefined &&
-                !encounteredIds.has(link.text.cid)
-              ) {
-                encounteredIds.add(link.text.cid)
-                suggestionsDb.push(
-                  ...(await suggestionDbArrayFromLegifranceTexteId(
-                    link.text.cid,
-                  )),
-                )
+              case "external_text": {
+                // TODO: Use the latest ID of text instead of its CID
+                if (
+                  link.text.cid !== undefined &&
+                  !encounteredIds.has(link.text.cid)
+                ) {
+                  encounteredIds.add(link.text.cid)
+                  suggestionsDb.push(
+                    ...(await suggestionDbArrayFromLegifranceTexteId(
+                      link.text.cid,
+                    )),
+                  )
+                }
+                break
               }
-              break
-            }
 
-            // case "article_definition":
-            // case "internal_article":
-            default: {
-              throw new Error(`Unexpected link of type "${link.type}"`)
+              // case "article_definition":
+              // case "internal_article":
+              default: {
+                throw new Error(`Unexpected link of type "${link.type}"`)
+              }
             }
           }
         }

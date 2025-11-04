@@ -13,7 +13,14 @@ import {
   createEnumerationOrBoundedInterval,
   createParentChildTreeFromReferences,
 } from "./helpers.js"
-import { alternatives, chain, optional, regExp, repeat } from "./parsers.js"
+import {
+  alternatives,
+  chain,
+  convert,
+  optional,
+  regExp,
+  repeat,
+} from "./parsers.js"
 import { portionPrecisePluriel, portionPreciseSingulier } from "./portions.js"
 import {
   introPluriel,
@@ -23,6 +30,7 @@ import {
 } from "./prepositions.js"
 import { separateurEnumeration, separateurExclusion } from "./separators.js"
 import { texte } from "./texts.js"
+import { virgule } from "./typography.js"
 
 export const uniteBasePluriel = alternatives(articles, divisions)
 
@@ -217,4 +225,35 @@ export const reference = chain(
         context.position(),
       ),
   },
+)
+
+export const referenceSeule = convert(referenceSingulier2Internal, {
+  value: (result, context) => ({
+    ...(result as TextAstReference),
+    position: context.position(),
+  }),
+})
+
+export const listeReferencesSeules = alternatives(
+  repeat(referenceSeule, {
+    min: 2,
+    separator: virgule,
+    value: (results) => [
+      results[0],
+      ...(results.slice(1) as Array<[string, TextAstReference]>).map(
+        ([, reference]) => reference,
+      ),
+    ],
+  }),
+  repeat(referenceSeule, {
+    min: 2,
+    separator: regExp(String.raw`\n`),
+    value: (results) => [
+      results[0],
+      ...(results.slice(1) as Array<[string, TextAstReference]>).map(
+        ([, reference]) => reference,
+      ),
+    ],
+  }),
+  convert(referenceSeule, { value: (result) => [result] }),
 )

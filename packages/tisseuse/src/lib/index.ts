@@ -177,7 +177,9 @@ export {
   liaisonSingulier,
 } from "./text_parsers/prepositions.js"
 export {
+  listeReferencesSeules,
   reference,
+  referenceSeule,
   uniteBasePreciseeSingulier,
   uniteBaseSingulier,
 } from "./text_parsers/references.js"

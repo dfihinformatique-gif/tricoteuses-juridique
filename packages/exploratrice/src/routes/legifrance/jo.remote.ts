@@ -2,7 +2,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import { auditLegalId, type Jo } from "@tricoteuses/legifrance"
 import { getOrLoadJo, newLegifranceObjectCache } from "@tricoteuses/tisseuse"
@@ -14,7 +14,7 @@ import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
 
 export const queryJo = query(
   standardSchemaV1<string>(
-    cleanAudit,
+    strictAudit,
     auditTrimString,
     auditEmptyToNull,
     auditLegalId,

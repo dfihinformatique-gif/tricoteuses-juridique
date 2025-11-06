@@ -3,7 +3,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import {
   auditLegalId,
@@ -142,7 +142,7 @@ const loadArticleWithLinks = async (
 
 // export const queryArticle = query(
 //   standardSchemaV1<string>(
-//     cleanAudit,
+//     strictAudit,
 //     auditTrimString,
 //     auditEmptyToNull,
 //     auditLegalId,
@@ -154,7 +154,7 @@ const loadArticleWithLinks = async (
 
 // export const queryArticleContenuAvecLiens = query(
 //   standardSchemaV1<string>(
-//     cleanAudit,
+//     strictAudit,
 //     auditTrimString,
 //     auditEmptyToNull,
 //     auditLegalId,
@@ -184,7 +184,7 @@ const loadArticleWithLinks = async (
 
 export const queryArticlePageInfos = query(
   standardSchemaV1<string>(
-    cleanAudit,
+    strictAudit,
     auditTrimString,
     auditEmptyToNull,
     auditLegalId,
@@ -253,7 +253,7 @@ export const queryArticlePageInfos = query(
 
 export const queryArticlesWithLinks = query(
   standardSchemaV1<string[]>(
-    cleanAudit,
+    strictAudit,
     auditArray(auditTrimString, auditEmptyToNull, auditLegalId, auditRequire),
     auditEmptyToNull,
     auditRequire,
@@ -264,7 +264,7 @@ export const queryArticlesWithLinks = query(
 
 export const queryArticleWithLinks = query(
   standardSchemaV1<string>(
-    cleanAudit,
+    strictAudit,
     auditTrimString,
     auditEmptyToNull,
     auditLegalId,

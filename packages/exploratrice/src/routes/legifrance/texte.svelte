@@ -17,7 +17,8 @@
   import { goto } from "$app/navigation"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
-  import { urlPathFromId } from "$lib/urls"
+  import { searchContext } from "$lib/hooks/search-context.svelte.js"
+  import { urlPathFromId } from "$lib/urls.js"
 
   import HtmlFragmentWithLinks from "./html-fragment-with-links.svelte"
   import HtmlFragmentWithReferences from "./html-fragment-with-references.svelte"
@@ -45,6 +46,9 @@
 
   const metaCommun = $derived(texteVersion.META.META_COMMUN)
   const id = $derived(metaCommun.ID)
+  const metaTexteChronicle = $derived(
+    texteVersion.META.META_SPEC.META_TEXTE_CHRONICLE,
+  )
   const metaTexteVersion = $derived(
     texteVersion.META.META_SPEC.META_TEXTE_VERSION,
   )
@@ -71,6 +75,14 @@
   const visas = $derived(
     textePageInfos.visas ?? (texteVersion as LegiTexteVersion).VISAS?.CONTENU,
   )
+
+  $effect(() => {
+    searchContext.legifranceTexteCid = metaTexteChronicle.CID
+
+    return () => {
+      searchContext.legifranceTexteCid = undefined
+    }
+  })
 </script>
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">

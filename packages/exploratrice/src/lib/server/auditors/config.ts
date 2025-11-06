@@ -11,7 +11,7 @@ import {
   auditSwitch,
   auditTest,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
   type Audit,
 } from "@auditors/core"
 
@@ -122,5 +122,5 @@ export function auditDb(
 }
 
 export function validateConfig(data: unknown): [unknown, unknown] {
-  return auditConfig(cleanAudit, data)
+  return auditConfig(strictAudit, data)
 }

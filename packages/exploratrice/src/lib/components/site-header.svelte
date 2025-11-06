@@ -7,6 +7,7 @@
   import { Separator } from "$lib/components/ui/separator/index.js"
 
   import ModeSwitcher from "./mode-switcher.svelte"
+  import SearchDialog from "./search-dialog.svelte"
 </script>
 
 <header class="sticky top-0 z-50 w-full bg-background">
@@ -70,11 +71,9 @@
         </NavigationMenu.List>
       </NavigationMenu.Root>
       <div class="ml-auto flex items-center gap-2 md:flex-1 md:justify-end">
-        <!-- <div class="hidden w-full flex-1 md:flex md:w-auto md:flex-none">
-					<CommandMenu {colors} />
-				</div>
-				<Separator orientation="vertical" class="ml-2 hidden lg:block" />
-				<GithubLink /> -->
+        <div class="hidden w-full flex-1 md:flex md:w-auto md:flex-none">
+          <SearchDialog />
+        </div>
         <Separator orientation="vertical" />
         <ModeSwitcher />
       </div>

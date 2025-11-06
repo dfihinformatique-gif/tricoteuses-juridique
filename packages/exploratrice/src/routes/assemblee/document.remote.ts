@@ -2,7 +2,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import type { Document, DocumentFilesIndex } from "@tricoteuses/assemblee"
 import { pathFromDocumentUid } from "@tricoteuses/assemblee/loaders"
@@ -23,7 +23,7 @@ import type { DocumentPageInfos } from "./documents.js"
 
 export const queryDocumentPageInfos = query(
   standardSchemaV1<string>(
-    cleanAudit,
+    strictAudit,
     auditTrimString,
     auditEmptyToNull,
     auditDocumentUid,

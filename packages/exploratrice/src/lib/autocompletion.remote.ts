@@ -3,9 +3,10 @@ import {
   auditOptions,
   auditTrimString,
   auditTuple,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
+import { auditLegalId } from "@tricoteuses/legifrance"
 import {
   iterReferenceLinks,
   listeReferencesSeules,
@@ -28,14 +29,15 @@ import {
 } from "./autocompletion.js"
 
 export const autocomplete = query(
-  standardSchemaV1<[string, PossibleType | null]>(
-    cleanAudit,
+  standardSchemaV1<[string, PossibleType | null, string | undefined]>(
+    strictAudit,
     auditTuple(
       [auditTrimString, auditEmptyToNull],
       [auditTrimString, auditEmptyToNull, auditOptions(possibleTypes)],
+      [auditLegalId],
     ),
   ),
-  async ([q, typeFilter]): Promise<Array<Suggestion>> => {
+  async ([q, typeFilter, defaultTextId]): Promise<Array<Suggestion>> => {
     if (q !== null) {
       const context = new TextParserContext(simplifyPlainText(q).output)
       let referenceAstArray = listeReferencesSeules(context) as
@@ -47,7 +49,6 @@ export const autocomplete = query(
           referenceAstArray = [referenceAst]
         }
       }
-      console.log("referenceAstArray", referenceAstArray)
       if (referenceAstArray !== undefined) {
         const encounteredIds = new Set<string>()
         const suggestionsDb: SuggestionDb[] = []
@@ -57,6 +58,7 @@ export const autocomplete = query(
             date: new Date().toISOString().split("T")[0],
             reference: referenceAst,
             legiDb,
+            state: { defaultTextId },
           })) {
             switch (link.type) {
               case "external_article": {

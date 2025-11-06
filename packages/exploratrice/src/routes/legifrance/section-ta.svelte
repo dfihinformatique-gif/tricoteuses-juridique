@@ -16,6 +16,7 @@
   } from "@tricoteuses/legifrance"
 
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
+  import { searchContext } from "$lib/hooks/search-context.svelte.js"
 
   import ContexteTexteTitre from "./contexte-texte-titre.svelte"
   import Structure from "./structure.svelte"
@@ -37,6 +38,14 @@
   // TOOD: Improve date detection:
   const date = $derived(texte["@date_publi"]!)
   const foundTitreTxt = $derived(bestItemForDate(texte.TITRE_TXT, date))
+
+  $effect(() => {
+    searchContext.legifranceTexteCid = texte["@cid"]
+
+    return () => {
+      searchContext.legifranceTexteCid = undefined
+    }
+  })
 </script>
 
 <ContexteTexteTitre {date} {texte} />

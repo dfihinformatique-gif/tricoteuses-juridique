@@ -2,7 +2,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import {
   auditLegalId,
@@ -20,7 +20,7 @@ import { legiDb } from "$lib/server/databases/index.js"
 
 export const querySectionTa = query(
   standardSchemaV1<string>(
-    cleanAudit,
+    strictAudit,
     auditTrimString,
     auditEmptyToNull,
     auditLegalId,

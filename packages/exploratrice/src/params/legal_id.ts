@@ -3,7 +3,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import type { ParamMatcher } from "@sveltejs/kit"
 import { auditLegalId } from "@tricoteuses/legifrance"
@@ -14,4 +14,4 @@ export const match = ((param: string): boolean =>
     auditEmptyToNull,
     auditLegalId,
     auditRequire,
-  )(cleanAudit, param)[1] === null) satisfies ParamMatcher
+  )(strictAudit, param)[1] === null) satisfies ParamMatcher

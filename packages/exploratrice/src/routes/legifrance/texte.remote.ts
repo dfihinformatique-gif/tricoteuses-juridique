@@ -2,7 +2,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import {
   auditLegalId,
@@ -23,7 +23,7 @@ import type { TextePageInfos } from "./texte.js"
 
 export const queryTextePageInfos = query(
   standardSchemaV1<string>(
-    cleanAudit,
+    strictAudit,
     auditTrimString,
     auditEmptyToNull,
     auditLegalId,

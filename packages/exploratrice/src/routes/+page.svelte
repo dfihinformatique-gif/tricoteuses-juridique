@@ -5,7 +5,7 @@
     auditSetNullish,
     auditString,
     auditTrimString,
-    cleanAudit,
+    strictAudit,
     type Audit,
   } from "@auditors/core"
   import ChevronDownIcon from "@lucide/svelte/icons/chevron-down"
@@ -14,19 +14,18 @@
   import { goto } from "$app/navigation"
   import { page } from "$app/state"
   import { auditQuerySingleton } from "$lib/auditors/queries"
+  import {
+    possibleTypes,
+    type PossibleType,
+    type Suggestion,
+  } from "$lib/autocompletion.js"
+  import { autocomplete } from "$lib/autocompletion.remote.js"
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as Command from "$lib/components/ui/command/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as InputGroup from "$lib/components/ui/input-group/index.js"
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
-
-  import {
-    possibleTypes,
-    type PossibleType,
-    type Suggestion,
-  } from "./autocompletion.js"
-  import { autocomplete } from "./autocompletion.remote.js"
 
   const auditQuery = (
     audit: Audit,
@@ -80,7 +79,7 @@
   }
 
   let { q, type: typeFilter } = $state(
-    auditQuery(cleanAudit, page.url.searchParams)[0],
+    auditQuery(strictAudit, page.url.searchParams)[0],
   )
   const sampleSearches = [
     "loi informatique et libertés",
@@ -90,14 +89,16 @@
     "JORFTEXT000000571356",
   ]
 
-  let suggestions = $derived(await autocomplete([q, typeFilter ?? null]))
+  let suggestions = $derived(
+    await autocomplete([q, typeFilter ?? null, undefined]),
+  )
 
   const updateUrlSearchParams = (): void => {
     const params = [
       ["q", q || undefined],
       ["type", typeFilter],
     ].filter(([, value]) => value !== undefined) as Array<[string, string]>
-    goto(params.length === 0 ? "" : `?${new URLSearchParams(params)}`, {
+    goto(params.length === 0 ? "." : `?${new URLSearchParams(params)}`, {
       keepFocus: true,
       noScroll: true,
       replaceState: true,
@@ -119,13 +120,22 @@
   Recherche de documents législatifs
 </h1>
 
-<p class="my-4 text-sm text-muted-foreground">
-  Exemples : {#each sampleSearches as sampleSearch, i}{i === 0 ? "" : ", "}<a
-      class="link"
-      data-sveltekit-reload
-      href="/?q={encodeURIComponent(sampleSearch)}">{sampleSearch}</a
-    >{/each}…
-</p>
+<section class="my-4 space-y-1">
+  <p class="text-sm text-muted-foreground">
+    Tapez les premiers caractères d'un texte législatif ou collez une référence
+    ou un identifiant.
+  </p>
+
+  <p class="text-sm text-muted-foreground italic">
+    <b>Exemples</b> : {#each sampleSearches as sampleSearch, i}{i === 0
+        ? ""
+        : ", "}<a
+        class="link"
+        data-sveltekit-reload
+        href="/?q={encodeURIComponent(sampleSearch)}">{sampleSearch}</a
+      >{/each}…
+  </p>
+</section>
 
 <Command.Root shouldFilter={false}>
   <InputGroup.Root class="[--radius:1rem]">

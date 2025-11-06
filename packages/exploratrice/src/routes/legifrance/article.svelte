@@ -23,6 +23,7 @@
   import { Button } from "$lib/components/ui/button/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
+  import { searchContext } from "$lib/hooks/search-context.svelte.js"
   import { urlPathFromId } from "$lib/urls.js"
 
   import type { ArticleDisplayMode, ArticlePageInfos } from "./article.js"
@@ -59,6 +60,14 @@
       ) + 1
     ],
   )
+
+  $effect(() => {
+    searchContext.legifranceTexteCid = texte["@cid"]
+
+    return () => {
+      searchContext.legifranceTexteCid = undefined
+    }
+  })
 
   function mergeVersionsArticles(
     article: JorfArticleExtended | LegiArticleExtended,

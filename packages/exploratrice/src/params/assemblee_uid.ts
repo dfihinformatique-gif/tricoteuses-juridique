@@ -3,7 +3,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import type { ParamMatcher } from "@sveltejs/kit"
 
@@ -15,4 +15,4 @@ export const match = ((param: string): boolean =>
     auditEmptyToNull,
     auditAssembleeUid,
     auditRequire,
-  )(cleanAudit, param)[1] === null) satisfies ParamMatcher
+  )(strictAudit, param)[1] === null) satisfies ParamMatcher

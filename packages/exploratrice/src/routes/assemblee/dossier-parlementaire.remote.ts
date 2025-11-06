@@ -2,7 +2,7 @@ import {
   auditEmptyToNull,
   auditRequire,
   auditTrimString,
-  cleanAudit,
+  strictAudit,
 } from "@auditors/core"
 import type { Document, DossierParlementaire } from "@tricoteuses/assemblee"
 import {
@@ -20,7 +20,7 @@ import type { DossierParlementairePageInfos } from "./dossiers-parlementaires.js
 
 export const queryDossierParlementairePageInfos = query(
   standardSchemaV1<string>(
-    cleanAudit,
+    strictAudit,
     auditTrimString,
     auditEmptyToNull,
     auditDossierParlementaireUid,

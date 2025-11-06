@@ -22,3 +22,23 @@ export const possibleTypes = [
   "JO",
   "Légifrance texte",
 ] as const
+
+export const suggestionFromSuggestionDb = (
+  suggestion: SuggestionDb,
+): Suggestion => {
+  if (suggestion.badge === null) {
+    delete (
+      suggestion as {
+        badge?: string
+      }
+    ).badge
+  }
+  if (suggestion.date === null) {
+    delete (
+      suggestion as {
+        date?: string
+      }
+    ).date
+  }
+  return suggestion as Suggestion
+}

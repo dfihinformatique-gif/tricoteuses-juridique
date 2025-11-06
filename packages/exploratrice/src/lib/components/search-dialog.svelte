@@ -13,7 +13,7 @@
   } from "@auditors/core"
   import ChevronDownIcon from "@lucide/svelte/icons/chevron-down"
   import SearchIcon from "@lucide/svelte/icons/search"
-  import { getContext, type Component } from "svelte"
+  import type { Component } from "svelte"
   import type { HTMLAttributes } from "svelte/elements"
 
   import { goto } from "$app/navigation"
@@ -130,7 +130,7 @@
   }
 </script>
 
-{#snippet CommandMenuKbd({
+{#snippet commandMenuKbd({
   class: className,
   content,
   ...restProps
@@ -151,7 +151,7 @@
   </kbd>
 {/snippet}
 
-{#snippet SuggestionView({ autocompletion, badge, date }: Suggestion)}
+{#snippet suggestionView({ autocompletion, badge, date }: Suggestion)}
   {#if date !== undefined}
     <Badge variant="outline">{fullDateFormatter(date)}</Badge>
   {/if}
@@ -203,8 +203,8 @@
         <span class="hidden lg:inline-flex">Recherche de législation…</span>
         <span class="inline-flex lg:hidden">Recherche…</span>
         <div class="absolute top-1.5 right-1.5 hidden gap-1 sm:flex">
-          {@render CommandMenuKbd({ content: modifierKeyPrefix.current })}
-          {@render CommandMenuKbd({ content: "K", class: "aspect-square" })}
+          {@render commandMenuKbd({ content: modifierKeyPrefix.current })}
+          {@render commandMenuKbd({ content: "K", class: "aspect-square" })}
         </div>
       </Button>
     {/snippet}
@@ -292,10 +292,10 @@
             {@const urlPath = urlPathFromId(suggestion.id)}
             <Command.Item>
               {#if urlPath === null}
-                {@render SuggestionView(suggestion)}
+                {@render suggestionView(suggestion)}
               {:else}
                 <a data-sveltekit-reload href={urlPath}
-                  >{@render SuggestionView(suggestion)}</a
+                  >{@render suggestionView(suggestion)}</a
                 >
               {/if}
             </Command.Item>

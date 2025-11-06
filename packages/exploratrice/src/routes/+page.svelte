@@ -1,207 +1,163 @@
 <script lang="ts">
-  import {
-    auditEmptyToNull,
-    auditOptions,
-    auditSetNullish,
-    auditString,
-    auditTrimString,
-    strictAudit,
-    type Audit,
-  } from "@auditors/core"
-  import ChevronDownIcon from "@lucide/svelte/icons/chevron-down"
-  import SearchIcon from "@lucide/svelte/icons/search"
+  import { onDestroy, onMount } from "svelte"
 
-  import { goto } from "$app/navigation"
-  import { page } from "$app/state"
-  import { auditQuerySingleton } from "$lib/auditors/queries"
-  import {
-    possibleTypes,
-    type PossibleType,
-    type Suggestion,
-  } from "$lib/autocompletion.js"
-  import { autocomplete } from "$lib/autocompletion.remote.js"
+  import type { Suggestion } from "$lib/autocompletion.js"
   import { Badge } from "$lib/components/ui/badge/index.js"
-  import * as Command from "$lib/components/ui/command/index.js"
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
-  import * as InputGroup from "$lib/components/ui/input-group/index.js"
+  import * as Item from "$lib/components/ui/item/index.js"
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
 
-  const auditQuery = (
-    audit: Audit,
-    query: URLSearchParams,
-  ): [{ q: string; type?: PossibleType }, unknown] => {
-    if (query == null) {
-      return [query, null]
-    }
-    if (!(query instanceof URLSearchParams)) {
-      return audit.unexpectedType(query, "URLSearchParams")
-    }
+  import { queryHomePageInfos } from "./home.remote.js"
 
-    const data: { [key: string]: string[] } = {}
-    for (const [key, value] of query.entries()) {
-      let values = data[key]
-      if (values === undefined) {
-        values = data[key] = []
+  let intervalId: NodeJS.Timeout | undefined = $state(undefined)
+  let { documents, dossiersParlementaires, jos, textes } = $derived(
+    await queryHomePageInfos(),
+  )
+  let tagline = $state("")
+  let taglineIndex = 0
+  const taglines = [
+    "",
+    ", la loi sous git",
+    ", la loi en liens",
+    ", la loi en diffs",
+    ", la loi et sa genèse",
+    ", la loi en données publiques",
+    ", la loi en logiciel libre",
+    ", la loi en temps réel",
+  ] as const
+
+  onMount(() => {
+    // Start the interval and store its ID to clear it later
+    intervalId = setInterval(() => {
+      taglineIndex++
+      if (taglineIndex >= taglines.length) {
+        taglineIndex = 0
       }
-      values.push(value)
+      tagline = taglines[taglineIndex]
+    }, 3000)
+  })
+
+  onDestroy(() => {
+    if (intervalId) {
+      clearInterval(intervalId)
     }
-    const errors: { [key: string]: unknown } = {}
-    const remainingKeys = new Set(Object.keys(data))
-
-    audit.attribute(
-      data,
-      "q",
-      true,
-      errors,
-      remainingKeys,
-      auditQuerySingleton(auditString, auditSetNullish("")),
-    )
-    audit.attribute(
-      data,
-      "type",
-      true,
-      errors,
-      remainingKeys,
-      auditQuerySingleton(
-        auditTrimString,
-        auditEmptyToNull,
-        auditOptions(possibleTypes),
-      ),
-    )
-
-    return audit.reduceRemaining(
-      data,
-      errors,
-      remainingKeys,
-      auditSetNullish({}),
-    )
-  }
-
-  let { q, type: typeFilter } = $state(
-    auditQuery(strictAudit, page.url.searchParams)[0],
-  )
-  const sampleSearches = [
-    "loi informatique et libertés",
-    "article 204 A du code général des impôts",
-    "JORF du 5 octobre 1958",
-    "projet de loi de finances pour 2026",
-    "JORFTEXT000000571356",
-  ]
-
-  let suggestions = $derived(
-    await autocomplete([q, typeFilter ?? null, undefined]),
-  )
-
-  const updateUrlSearchParams = (): void => {
-    const params = [
-      ["q", q || undefined],
-      ["type", typeFilter],
-    ].filter(([, value]) => value !== undefined) as Array<[string, string]>
-    goto(params.length === 0 ? "." : `?${new URLSearchParams(params)}`, {
-      keepFocus: true,
-      noScroll: true,
-      replaceState: true,
-    })
-  }
+  })
 </script>
 
-{#snippet suggestionView({ autocompletion, badge, date }: Suggestion)}
-  {#if date !== undefined}
-    <Badge variant="outline">{fullDateFormatter(date)}</Badge>
-  {/if}
-  {autocompletion}
-  {#if badge !== undefined}
-    <Badge variant="outline">{badge}</Badge>
-  {/if}
+{#snippet suggestionItemContent({ autocompletion, badge, date }: Suggestion)}
+  <Item.Content>
+    <Item.Title>
+      {#if date !== undefined}
+        <Badge variant="outline">{fullDateFormatter(date)}</Badge>
+      {/if}
+      {autocompletion}
+      {#if badge !== undefined}
+        <Badge variant="outline">{badge}</Badge>
+      {/if}
+    </Item.Title>
+  </Item.Content>
 {/snippet}
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
-  Recherche de documents législatifs
+  Tricoteuses{tagline}
 </h1>
 
-<section class="my-4 space-y-1">
-  <p class="text-sm text-muted-foreground">
-    Tapez les premiers caractères d'un texte législatif ou collez une référence
-    ou un identifiant.
-  </p>
+<section class="my-4">
+  <h2
+    class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0"
+  >
+    Les derniers journaux officiels
+  </h2>
 
-  <p class="text-sm text-muted-foreground italic">
-    <b>Exemples</b> : {#each sampleSearches as sampleSearch, i}{i === 0
-        ? ""
-        : ", "}<a
-        class="link"
-        data-sveltekit-reload
-        href="/?q={encodeURIComponent(sampleSearch)}">{sampleSearch}</a
-      >{/each}…
-  </p>
+  <Item.Group>
+    {#each jos as suggestion}
+      {@const urlPath = urlPathFromId(suggestion.id)}
+      <Item.Root variant="outline" size="sm">
+        {#snippet child({ props })}
+          {#if urlPath === null}
+            {@render suggestionItemContent(suggestion)}
+          {:else}
+            <a data-sveltekit-reload href={urlPath} {...props}>
+              {@render suggestionItemContent(suggestion)}
+            </a>
+          {/if}
+        {/snippet}
+      </Item.Root>
+    {/each}
+  </Item.Group>
 </section>
 
-<Command.Root shouldFilter={false}>
-  <InputGroup.Root class="[--radius:1rem]">
-    <InputGroup.Input
-      placeholder="Nom de loi ou de projet de loi ou de JO…"
-      bind:value={
-        () => q,
-        (value) => {
-          q = value
-          updateUrlSearchParams()
-        }
-      }
-    />
-    <InputGroup.Addon>
-      <SearchIcon />
-    </InputGroup.Addon>
-    <InputGroup.Addon align="inline-end">
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger>
-          {#snippet child({ props })}
-            <InputGroup.Button
-              {...props}
-              variant="ghost"
-              class="pr-1.5! text-xs"
-            >
-              {typeFilter === undefined ? "Chercher dans…" : typeFilter}
-              <ChevronDownIcon class="size-3" />
-            </InputGroup.Button>
-          {/snippet}
-        </DropdownMenu.Trigger>
-        <DropdownMenu.Content align="end" class="[--radius:0.95rem]">
-          <DropdownMenu.RadioGroup
-            bind:value={
-              () => typeFilter ?? "",
-              (value) => {
-                typeFilter = value || undefined
-                updateUrlSearchParams()
-              }
-            }
-          >
-            <DropdownMenu.RadioItem value=""><i>Tous</i></DropdownMenu.RadioItem
-            >
-            <DropdownMenu.Separator />
-            {#each possibleTypes as possibleType}
-              <DropdownMenu.RadioItem value={possibleType}
-                >{possibleType}</DropdownMenu.RadioItem
-              >
-            {/each}
-          </DropdownMenu.RadioGroup>
-        </DropdownMenu.Content>
-      </DropdownMenu.Root>
-    </InputGroup.Addon>
-  </InputGroup.Root>
-  <Command.List>
-    <Command.Empty>No results found.</Command.Empty>
-    <Command.Group>
-      {#each suggestions as suggestion (`${suggestion.id}_${suggestion.autocompletion}`)}
-        {@const urlPath = urlPathFromId(suggestion.id)}
-        <Command.Item>
+<section class="my-4">
+  <h2
+    class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0"
+  >
+    Les derniers textes promulgués
+  </h2>
+
+  <Item.Group>
+    {#each textes as suggestion}
+      {@const urlPath = urlPathFromId(suggestion.id)}
+      <Item.Root variant="outline" size="sm">
+        {#snippet child({ props })}
           {#if urlPath === null}
-            {@render suggestionView(suggestion)}
+            {@render suggestionItemContent(suggestion)}
           {:else}
-            <a href={urlPath}>{@render suggestionView(suggestion)}</a>
+            <a data-sveltekit-reload href={urlPath} {...props}>
+              {@render suggestionItemContent(suggestion)}
+            </a>
           {/if}
-        </Command.Item>
-      {/each}
-    </Command.Group>
-  </Command.List>
-</Command.Root>
+        {/snippet}
+      </Item.Root>
+    {/each}
+  </Item.Group>
+</section>
+
+<section class="my-4">
+  <h2
+    class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0"
+  >
+    Les derniers dossiers législatifs de l'Assemblée nationale
+  </h2>
+
+  <Item.Group>
+    {#each dossiersParlementaires as suggestion}
+      {@const urlPath = urlPathFromId(suggestion.id)}
+      <Item.Root variant="outline" size="sm">
+        {#snippet child({ props })}
+          {#if urlPath === null}
+            {@render suggestionItemContent(suggestion)}
+          {:else}
+            <a data-sveltekit-reload href={urlPath} {...props}>
+              {@render suggestionItemContent(suggestion)}
+            </a>
+          {/if}
+        {/snippet}
+      </Item.Root>
+    {/each}
+  </Item.Group>
+</section>
+
+<section class="my-4">
+  <h2
+    class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0"
+  >
+    Les derniers textes publiés à l'Assemblée nationale
+  </h2>
+
+  <Item.Group>
+    {#each documents as suggestion}
+      {@const urlPath = urlPathFromId(suggestion.id)}
+      <Item.Root variant="outline" size="sm">
+        {#snippet child({ props })}
+          {#if urlPath === null}
+            {@render suggestionItemContent(suggestion)}
+          {:else}
+            <a data-sveltekit-reload href={urlPath} {...props}>
+              {@render suggestionItemContent(suggestion)}
+            </a>
+          {/if}
+        {/snippet}
+      </Item.Root>
+    {/each}
+  </Item.Group>
+</section>

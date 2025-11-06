@@ -23,6 +23,7 @@ import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
 
 import {
   possibleTypes,
+  suggestionFromSuggestionDb,
   type PossibleType,
   type Suggestion,
   type SuggestionDb,
@@ -297,21 +298,3 @@ const suggestionDbArrayFromLegifranceTexteId = async (
     FROM texte_version
     WHERE id = ${id}
   `
-
-const suggestionFromSuggestionDb = (suggestion: SuggestionDb): Suggestion => {
-  if (suggestion.badge === null) {
-    delete (
-      suggestion as {
-        badge?: string
-      }
-    ).badge
-  }
-  if (suggestion.date === null) {
-    delete (
-      suggestion as {
-        date?: string
-      }
-    ).date
-  }
-  return suggestion as Suggestion
-}

@@ -1,9 +1,8 @@
 <script lang="ts">
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
 
-  import favicon from "$lib/assets/favicon.png"
-  import { Button } from "$lib/components/ui/button/index.js"
   import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js"
+  import * as Select from "$lib/components/ui/select/index.js"
   import { Separator } from "$lib/components/ui/separator/index.js"
 
   import ModeSwitcher from "./mode-switcher.svelte"
@@ -16,20 +15,22 @@
       class="3xl:fixed:container flex h-(--header-height) items-center gap-2 **:data-[slot=separator]:h-4"
     >
       <!-- <MobileNav class="flex lg:hidden" /> -->
-      <Button
-        class="hidden size-8 lg:flex"
-        href="/"
-        size="icon"
-        variant="ghost"
-      >
-        <img alt="Logo des Tricoteuses" class="size-5" src={favicon} />
-      </Button>
       <NavigationMenu.Root>
         <NavigationMenu.List>
           <NavigationMenu.Item>
             <NavigationMenu.Trigger>Tricoteuses</NavigationMenu.Trigger>
             <NavigationMenu.Content>
               <ul>
+                <li>
+                  <NavigationMenu.Link
+                    class="flex flex-row whitespace-nowrap"
+                    href="/"
+                    target="_blank">Accueil</NavigationMenu.Link
+                  >
+                </li>
+                <li>
+                  <Select.Separator />
+                </li>
                 <li>
                   <NavigationMenu.Link
                     class="flex flex-row whitespace-nowrap"

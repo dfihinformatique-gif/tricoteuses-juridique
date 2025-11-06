@@ -26,6 +26,7 @@ import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
 import type { HomePageInfos } from "./home.js"
 
 export const queryHomePageInfos = query(async (): Promise<HomePageInfos> => {
+  const today = new Date().toISOString().split("T")[0]
   const [documents, dossiersParlementaires, jos, textes] = await Promise.all([
     (async (): Promise<Suggestion[]> =>
       (
@@ -39,7 +40,8 @@ export const queryHomePageInfos = query(async (): Promise<HomePageInfos> => {
           FROM titre_texte_autocompletion
           WHERE
             type = 'Assemblée document'
-          ORDER BY date DESC
+            AND date <= ${today}
+          ORDER BY date DESC NULLS LAST
           LIMIT 5
         `
       ).map(suggestionFromSuggestionDb))(),
@@ -55,7 +57,8 @@ export const queryHomePageInfos = query(async (): Promise<HomePageInfos> => {
           FROM titre_texte_autocompletion
           WHERE
             type = 'Assemblée dossier'
-          ORDER BY date DESC
+            AND date <= ${today}
+          ORDER BY date DESC NULLS LAST
           LIMIT 5
         `
       ).map(suggestionFromSuggestionDb))(),
@@ -69,8 +72,8 @@ export const queryHomePageInfos = query(async (): Promise<HomePageInfos> => {
             0 AS distance,
             id
           FROM jo
-          WHERE data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'DATE_PUBLI' <> '2999-01-01'
-          ORDER BY data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'DATE_PUBLI' DESC
+          WHERE data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'DATE_PUBLI' <= ${today}
+          ORDER BY data -> 'META' -> 'META_SPEC' -> 'META_CONTENEUR' ->> 'DATE_PUBLI' DESC NULLS LAST
           LIMIT 5
         `
       ).map(suggestionFromSuggestionDb))(),
@@ -86,8 +89,8 @@ export const queryHomePageInfos = query(async (): Promise<HomePageInfos> => {
           FROM titre_texte_autocompletion
           WHERE
             type = 'Légifrance texte'
-            AND date <> '2999-01-01'
-          ORDER BY date DESC
+            AND date <= ${today}
+          ORDER BY date DESC NULLS LAST
           LIMIT 5
         `
       ).map(suggestionFromSuggestionDb))(),

@@ -22,11 +22,7 @@
             <NavigationMenu.Content>
               <ul>
                 <li>
-                  <NavigationMenu.Link
-                    class="flex flex-row whitespace-nowrap"
-                    href="/"
-                    target="_blank">Accueil</NavigationMenu.Link
-                  >
+                  <NavigationMenu.Link href="/">Accueil</NavigationMenu.Link>
                 </li>
                 <li>
                   <Select.Separator />
@@ -37,6 +33,7 @@
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos"
                     target="_blank"
                     >À propos des Tricoteuses <ExternalLinkIcon
+                      class="ml-1"
                     /></NavigationMenu.Link
                   >
                 </li>
@@ -46,6 +43,7 @@
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/reunions.md"
                     target="_blank"
                     >Prochaines réunions <ExternalLinkIcon
+                      class="ml-1"
                     /></NavigationMenu.Link
                   >
                 </li>
@@ -55,6 +53,7 @@
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/FAQ.md"
                     target="_blank"
                     >Foire aux questions (FAQ) <ExternalLinkIcon
+                      class="ml-1"
                     /></NavigationMenu.Link
                   >
                 </li>
@@ -63,7 +62,9 @@
                     class="flex flex-row whitespace-nowrap"
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/mentions_legales.md"
                     target="_blank"
-                    >Mentions légales <ExternalLinkIcon /></NavigationMenu.Link
+                    >Mentions légales <ExternalLinkIcon
+                      class="ml-1"
+                    /></NavigationMenu.Link
                   >
                 </li>
               </ul>

@@ -64,18 +64,20 @@
         <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href="https://assemblee.tricoteuses.fr/dossiers/{dossierParlementaire.uid}"
-            >JSON augmenté</a
+            target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
         {#if dossierParlementaire.titreDossier.titreChemin !== undefined}
           <DropdownMenu.Item>
             <a
+              class="flex whitespace-nowrap"
               href="https://www.assemblee-nationale.fr/dyn/{dossierParlementaire.legislature}/dossiers/{dossierParlementaire
-                .titreDossier.titreChemin}">Assemblée nationale</a
+                .titreDossier.titreChemin}"
+              target="_blank"
+              >Assemblée nationale <ExternalLinkIcon class="ml-1" /></a
             >
-            <ExternalLinkIcon />
           </DropdownMenu.Item>
         {/if}
       </DropdownMenu.Group>

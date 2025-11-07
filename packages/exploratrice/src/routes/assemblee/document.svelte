@@ -62,10 +62,11 @@
       <DropdownMenu.Group>
         <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
         <DropdownMenu.Item>
-          <a href="https://assemblee.tricoteuses.fr/documents/{document.uid}"
-            >JSON augmenté</a
+          <a
+            class="flex whitespace-nowrap"
+            href="https://assemblee.tricoteuses.fr/documents/{document.uid}"
+            target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
       </DropdownMenu.Group>
     </DropdownMenu.Content>

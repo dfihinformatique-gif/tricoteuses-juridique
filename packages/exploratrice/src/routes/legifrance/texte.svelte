@@ -128,73 +128,90 @@
         </DropdownMenu.CheckboxItem>
       </DropdownMenu.Group>
       <DropdownMenu.Separator />
-      <DropdownMenu.Group>
-        <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
-        <DropdownMenu.Item>
-          <a
-            href={new URL(
-              gitPathFromId(id, ".md"),
-              "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-            ).toString()}>Markdown dans git</a
-          >
-          <ExternalLinkIcon />
-        </DropdownMenu.Item>
-        {#if metaCommun !== undefined && metaTexteVersion !== undefined && ["CODE", "CONSTITUTION", "DECLARATION"].includes(metaCommun.NATURE ?? "")}
-          <DropdownMenu.Item>
-            <a
-              href={new URL(
-                "README.md",
-                `https://git.tricoteuses.fr/${organizationNameByTexteNature[metaCommun.NATURE as LegiTexteNature]}/${repositoryNameFromTitle(metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE ?? metaCommun.ID)}/src/branch/main/`,
-              ).toString()}>Markdown chronologique dans git</a
-            >
-            <ExternalLinkIcon />
-          </DropdownMenu.Item>
-        {/if}
-        <DropdownMenu.Item>
-          <a href="https://legal.tricoteuses.fr/texte_version/{id}"
-            >JSON augmenté de TEXTE_VERSION</a
-          >
-          <ExternalLinkIcon />
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a href="https://legal.tricoteuses.fr/textelr/{id}"
-            >JSON augmenté de TEXTELR</a
-          >
-          <ExternalLinkIcon />
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            href={new URL(
-              gitPathFromId(id, ".json"),
-              "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
-            ).toString()}>JSON dans git</a
-          >
-          <ExternalLinkIcon />
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            href={new URL(
-              gitPathFromId(id, ".json"),
-              "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
-            ).toString()}>Références JSON dans git</a
-          >
-          <ExternalLinkIcon />
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            href={metaCommun !== undefined && metaCommun.NATURE === "CODE"
-              ? `https://www.legifrance.gouv.fr/codes/texte_lc/${id}`
-              : `https://www.legifrance.gouv.fr/loda/id/${id}/`}>Légifrance</a
-          >
-          <ExternalLinkIcon />
-        </DropdownMenu.Item>
-        {#if dossierLegislatifAssembleeUid !== undefined}
+      {#if dossierLegislatifAssembleeUid !== undefined}
+        <DropdownMenu.Group>
+          <DropdownMenu.Label>Voir aussi</DropdownMenu.Label>
           <DropdownMenu.Item>
             <a href={urlPathFromId(dossierLegislatifAssembleeUid)}
               >Dossier législatif de l'Assemblée</a
             >
           </DropdownMenu.Item>
+        </DropdownMenu.Group>
+      {/if}
+      <DropdownMenu.Group>
+        <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href={new URL(
+              gitPathFromId(id, ".md"),
+              "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+            ).toString()}
+            target="_blank"
+            >Markdown dans git <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
+        {#if metaCommun !== undefined && metaTexteVersion !== undefined && ["CODE", "CONSTITUTION", "DECLARATION"].includes(metaCommun.NATURE ?? "")}
+          <DropdownMenu.Item>
+            <a
+              class="flex whitespace-nowrap"
+              href={new URL(
+                "README.md",
+                `https://git.tricoteuses.fr/${organizationNameByTexteNature[metaCommun.NATURE as LegiTexteNature]}/${repositoryNameFromTitle(metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE ?? metaCommun.ID)}/src/branch/main/`,
+              ).toString()}
+              target="_blank"
+              >Markdown chronologique dans git <ExternalLinkIcon
+                class="ml-1"
+              /></a
+            >
+          </DropdownMenu.Item>
         {/if}
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href="https://legal.tricoteuses.fr/texte_version/{id}"
+            target="_blank"
+            >JSON augmenté de TEXTE_VERSION <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href="https://legal.tricoteuses.fr/textelr/{id}"
+            target="_blank"
+            >JSON augmenté de TEXTELR <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href={new URL(
+              gitPathFromId(id, ".json"),
+              "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
+            ).toString()}
+            target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href={new URL(
+              gitPathFromId(id, ".json"),
+              "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
+            ).toString()}
+            target="_blank"
+            >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href={metaCommun !== undefined && metaCommun.NATURE === "CODE"
+              ? `https://www.legifrance.gouv.fr/codes/texte_lc/${id}`
+              : `https://www.legifrance.gouv.fr/loda/id/${id}/`}
+            target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
       </DropdownMenu.Group>
     </DropdownMenu.Content>
   </DropdownMenu.Root>

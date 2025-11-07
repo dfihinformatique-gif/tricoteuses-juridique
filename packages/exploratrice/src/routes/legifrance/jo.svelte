@@ -85,43 +85,51 @@
         <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href={new URL(
               gitPathFromId(id, ".md"),
               "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-            ).toString()}>Markdown dans git</a
+            ).toString()}
+            target="_blank"
+            >Markdown dans git <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a href="https://legal.tricoteuses.fr/jo/{id}">JSON augmenté</a>
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
+            href="https://legal.tricoteuses.fr/jo/{id}"
+            target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
             href={new URL(
               gitPathFromId(id, ".json"),
               "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
-            ).toString()}>JSON dans git</a
+            ).toString()}
+            target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href={new URL(
               gitPathFromId(id, ".json"),
               "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
-            ).toString()}>Références JSON dans git</a
+            ).toString()}
+            target="_blank"
+            >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href={metaConteneur.NUM === undefined
               ? `https://www.legifrance.gouv.fr/jorf/jo/id/${id}`
               : `https://www.legifrance.gouv.fr/jorf/jo/${metaConteneur.DATE_PUBLI.replaceAll("-", "/")}/${`0000${metaConteneur.NUM}`.slice(-4)}`}
-            >Légifrance</a
+            target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
       </DropdownMenu.Group>
     </DropdownMenu.Content>

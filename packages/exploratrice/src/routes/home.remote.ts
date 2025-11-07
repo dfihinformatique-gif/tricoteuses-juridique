@@ -1,20 +1,3 @@
-import {
-  auditEmptyToNull,
-  auditRequire,
-  auditTrimString,
-  strictAudit,
-} from "@auditors/core"
-import {
-  type Jo,
-  type JorfTexteVersion,
-  type LegiTexteVersion,
-} from "@tricoteuses/legifrance"
-import {
-  getOrLoadTextelr,
-  getOrLoadTextesVersions,
-  newLegifranceObjectCache,
-} from "@tricoteuses/tisseuse"
-
 import { query } from "$app/server"
 import {
   suggestionFromSuggestionDb,

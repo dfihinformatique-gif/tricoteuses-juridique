@@ -202,16 +202,19 @@
         <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href={new URL(
               gitPathFromId(id, ".md"),
               "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-            ).toString()}>Markdown dans git</a
+            ).toString()}
+            target="_blank"
+            >Markdown dans git <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
         {#if ["CODE", "CONSTITUTION", "DECLARATION"].includes(texte["@nature"] ?? "")}
           <DropdownMenu.Item>
             <a
+              class="flex whitespace-nowrap"
               href={new URL(
                 [
                   ...(texte.TM === undefined
@@ -250,35 +253,45 @@
                   })(),
                 ].join("/"),
                 `https://git.tricoteuses.fr/${organizationNameByTexteNature[texte["@nature"] as LegiTexteNature]}/${repositoryNameFromTitle(foundTitreTxt?.["#text"] ?? foundTitreTxt?.["@c_titre_court"] ?? texte["@cid"]!)}/src/branch/main/`,
-              ).toString()}>Markdown chronologique dans git</a
+              ).toString()}
+              target="_blank"
+              >Markdown chronologique dans git <ExternalLinkIcon
+                class="ml-1"
+              /></a
             >
-            <ExternalLinkIcon />
           </DropdownMenu.Item>
         {/if}
         <DropdownMenu.Item>
-          <a href="https://legal.tricoteuses.fr/article/{id}">JSON augmenté</a>
-          <ExternalLinkIcon />
+          <a
+            class="flex whitespace-nowrap"
+            href="https://legal.tricoteuses.fr/article/{id}"
+            target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+          >
         </DropdownMenu.Item>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href={new URL(
               gitPathFromId(id, ".json"),
               "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
-            ).toString()}>JSON dans git</a
+            ).toString()}
+            target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href={new URL(
               gitPathFromId(id, ".json"),
               "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
-            ).toString()}>Références JSON dans git</a
+            ).toString()}
+            target="_blank"
+            >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
         <DropdownMenu.Item>
           <a
+            class="flex whitespace-nowrap"
             href={texte["@nature"] === "CODE"
               ? `https://www.legifrance.gouv.fr/codes/article_lc/${id}`
               : // Show article inside full text:
@@ -287,9 +300,8 @@
                 id.startsWith("JORF")
                 ? `https://www.legifrance.gouv.fr/jorf/article_jo/${id}/`
                 : `https://www.legifrance.gouv.fr/loda/article_lc/${id}/`}
-            >Légifrance</a
+            target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
           >
-          <ExternalLinkIcon />
         </DropdownMenu.Item>
       </DropdownMenu.Group>
     </DropdownMenu.Content>

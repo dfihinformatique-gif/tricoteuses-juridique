@@ -1,5 +1,4 @@
 <script lang="ts">
-  import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import {
     bestItemForDate,
@@ -20,9 +19,11 @@
   } from "@tricoteuses/tisseuse"
 
   import { goto } from "$app/navigation"
+  import NavigationMenuDropdown from "$lib/components/navigation-menu-dropdown.svelte"
   import { Button } from "$lib/components/ui/button/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
+  import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { searchContext } from "$lib/hooks/search-context.svelte.js"
   import { urlPathFromId } from "$lib/urls.js"
 
@@ -62,9 +63,19 @@
   )
 
   $effect(() => {
+    mainMenu.pageSpecificMenuItem = pageSpecificMenuItem
+
+    return () => {
+      // Caution: Don't use delete.
+      mainMenu.pageSpecificMenuItem = undefined
+    }
+  })
+
+  $effect(() => {
     searchContext.legifranceTexteCid = texte["@cid"]
 
     return () => {
+      // Caution: Don't use delete.
       searchContext.legifranceTexteCid = undefined
     }
   })
@@ -139,6 +150,135 @@
   }
 </script>
 
+{#snippet pageSpecificMenuItem()}
+  <NavigationMenuDropdown trigger="Article">
+    <DropdownMenu.Group>
+      <DropdownMenu.Label>Affichage</DropdownMenu.Label>
+      <DropdownMenu.RadioGroup bind:value={displayMode}>
+        <DropdownMenu.RadioItem value="inline_diff"
+          >Différences en ligne</DropdownMenu.RadioItem
+        >
+        <DropdownMenu.RadioItem value="side-by-side_diff"
+          >Différences côte à côte</DropdownMenu.RadioItem
+        >
+        <DropdownMenu.RadioItem value="links">Liens</DropdownMenu.RadioItem>
+        <DropdownMenu.RadioItem value="references"
+          >Références sans liens</DropdownMenu.RadioItem
+        >
+      </DropdownMenu.RadioGroup>
+      <DropdownMenu.CheckboxItem bind:checked={showIds}>
+        Identifiants
+      </DropdownMenu.CheckboxItem>
+    </DropdownMenu.Group>
+    <DropdownMenu.Separator />
+    <DropdownMenu.Group>
+      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={new URL(
+            gitPathFromId(id, ".md"),
+            "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+          ).toString()}
+          target="_blank">Markdown dans git <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      {#if ["CODE", "CONSTITUTION", "DECLARATION"].includes(texte["@nature"] ?? "")}
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href={new URL(
+              [
+                ...(texte.TM === undefined
+                  ? []
+                  : walkContexteTexteTm(texte.TM)
+                ).map((tm) => {
+                  const titreTm = tm.TITRE_TM
+                  const foundTitreTm = Array.isArray(titreTm)
+                    ? bestItemForDate(titreTm, date)!
+                    : titreTm
+                  const sectionTaTitle =
+                    foundTitreTm["#text"]?.replace(/\s+/g, " ").trim() ??
+                    `Section sans titre ${foundTitreTm["@id"]}`
+                  let sectionTaSlug = slugify(
+                    sectionTaTitle.split(":")[0].trim(),
+                    "_",
+                  )
+                  if (sectionTaSlug.length > 255) {
+                    sectionTaSlug = sectionTaSlug.slice(0, 254)
+                    if (sectionTaSlug.at(-1) !== "_") {
+                      sectionTaSlug += "_"
+                    }
+                  }
+                  return sectionTaSlug
+                }),
+                (() => {
+                  const articleTitle = `Article ${article.num ?? id}`
+                  let articleSlug = slugify(articleTitle, "_")
+                  if (articleSlug.length > 252) {
+                    articleSlug = articleSlug.slice(0, 251)
+                    if (articleSlug.at(-1) !== "_") {
+                      articleSlug += "_"
+                    }
+                  }
+                  return `${articleSlug}.md`
+                })(),
+              ].join("/"),
+              `https://git.tricoteuses.fr/${organizationNameByTexteNature[texte["@nature"] as LegiTexteNature]}/${repositoryNameFromTitle(foundTitreTxt?.["#text"] ?? foundTitreTxt?.["@c_titre_court"] ?? texte["@cid"]!)}/src/branch/main/`,
+            ).toString()}
+            target="_blank"
+            >Markdown chronologique dans git <ExternalLinkIcon
+              class="ml-1"
+            /></a
+          >
+        </DropdownMenu.Item>
+      {/if}
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href="https://legal.tricoteuses.fr/article/{id}"
+          target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={new URL(
+            gitPathFromId(id, ".json"),
+            "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
+          ).toString()}
+          target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={new URL(
+            gitPathFromId(id, ".json"),
+            "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
+          ).toString()}
+          target="_blank"
+          >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={texte["@nature"] === "CODE"
+            ? `https://www.legifrance.gouv.fr/codes/article_lc/${id}`
+            : // Show article inside full text:
+              // `https://www.legifrance.gouv.fr/loda/id/${id}/`
+              // Show article alone:
+              id.startsWith("JORF")
+              ? `https://www.legifrance.gouv.fr/jorf/article_jo/${id}/`
+              : `https://www.legifrance.gouv.fr/loda/article_lc/${id}/`}
+          target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+    </DropdownMenu.Group>
+  </NavigationMenuDropdown>
+{/snippet}
+
 <ContexteTexteTitre {date} {texte} />
 
 {#if texte.TM !== undefined}
@@ -153,7 +293,7 @@
   Article {article.num}
 </h1>
 
-<div class="mx-auto my-6 flex justify-center space-x-2">
+<div class="mx-auto my-6 flex justify-center">
   <Select.Root
     onValueChange={(id: string) =>
       goto(urlPathFromId(id)!, { keepFocus: true, noScroll: true })}
@@ -175,137 +315,6 @@
       {/each}
     </Select.Content>
   </Select.Root>
-
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
-    <DropdownMenu.Content align="end">
-      <DropdownMenu.Group>
-        <DropdownMenu.Label>Affichage</DropdownMenu.Label>
-        <DropdownMenu.RadioGroup bind:value={displayMode}>
-          <DropdownMenu.RadioItem value="inline_diff"
-            >Différences en ligne</DropdownMenu.RadioItem
-          >
-          <DropdownMenu.RadioItem value="side-by-side_diff"
-            >Différences côte à côte</DropdownMenu.RadioItem
-          >
-          <DropdownMenu.RadioItem value="links">Liens</DropdownMenu.RadioItem>
-          <DropdownMenu.RadioItem value="references"
-            >Références sans liens</DropdownMenu.RadioItem
-          >
-        </DropdownMenu.RadioGroup>
-        <DropdownMenu.CheckboxItem bind:checked={showIds}>
-          Identifiants
-        </DropdownMenu.CheckboxItem>
-      </DropdownMenu.Group>
-      <DropdownMenu.Separator />
-      <DropdownMenu.Group>
-        <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={new URL(
-              gitPathFromId(id, ".md"),
-              "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-            ).toString()}
-            target="_blank"
-            >Markdown dans git <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        {#if ["CODE", "CONSTITUTION", "DECLARATION"].includes(texte["@nature"] ?? "")}
-          <DropdownMenu.Item>
-            <a
-              class="flex whitespace-nowrap"
-              href={new URL(
-                [
-                  ...(texte.TM === undefined
-                    ? []
-                    : walkContexteTexteTm(texte.TM)
-                  ).map((tm) => {
-                    const titreTm = tm.TITRE_TM
-                    const foundTitreTm = Array.isArray(titreTm)
-                      ? bestItemForDate(titreTm, date)!
-                      : titreTm
-                    const sectionTaTitle =
-                      foundTitreTm["#text"]?.replace(/\s+/g, " ").trim() ??
-                      `Section sans titre ${foundTitreTm["@id"]}`
-                    let sectionTaSlug = slugify(
-                      sectionTaTitle.split(":")[0].trim(),
-                      "_",
-                    )
-                    if (sectionTaSlug.length > 255) {
-                      sectionTaSlug = sectionTaSlug.slice(0, 254)
-                      if (sectionTaSlug.at(-1) !== "_") {
-                        sectionTaSlug += "_"
-                      }
-                    }
-                    return sectionTaSlug
-                  }),
-                  (() => {
-                    const articleTitle = `Article ${article.num ?? id}`
-                    let articleSlug = slugify(articleTitle, "_")
-                    if (articleSlug.length > 252) {
-                      articleSlug = articleSlug.slice(0, 251)
-                      if (articleSlug.at(-1) !== "_") {
-                        articleSlug += "_"
-                      }
-                    }
-                    return `${articleSlug}.md`
-                  })(),
-                ].join("/"),
-                `https://git.tricoteuses.fr/${organizationNameByTexteNature[texte["@nature"] as LegiTexteNature]}/${repositoryNameFromTitle(foundTitreTxt?.["#text"] ?? foundTitreTxt?.["@c_titre_court"] ?? texte["@cid"]!)}/src/branch/main/`,
-              ).toString()}
-              target="_blank"
-              >Markdown chronologique dans git <ExternalLinkIcon
-                class="ml-1"
-              /></a
-            >
-          </DropdownMenu.Item>
-        {/if}
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href="https://legal.tricoteuses.fr/article/{id}"
-            target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={new URL(
-              gitPathFromId(id, ".json"),
-              "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
-            ).toString()}
-            target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={new URL(
-              gitPathFromId(id, ".json"),
-              "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
-            ).toString()}
-            target="_blank"
-            >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={texte["@nature"] === "CODE"
-              ? `https://www.legifrance.gouv.fr/codes/article_lc/${id}`
-              : // Show article inside full text:
-                // `https://www.legifrance.gouv.fr/loda/id/${id}/`
-                // Show article alone:
-                id.startsWith("JORF")
-                ? `https://www.legifrance.gouv.fr/jorf/article_jo/${id}/`
-                : `https://www.legifrance.gouv.fr/loda/article_lc/${id}/`}
-            target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-      </DropdownMenu.Group>
-    </DropdownMenu.Content>
-  </DropdownMenu.Root>
 </div>
 
 {#if ["inline_diff", "side-by-side_diff"].includes(displayMode)}

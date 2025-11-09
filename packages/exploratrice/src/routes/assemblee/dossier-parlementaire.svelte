@@ -1,12 +1,13 @@
 <script lang="ts">
   import BadgeCheckIcon from "@lucide/svelte/icons/badge-check"
-  import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import { walkActes, type ActeLegislatif } from "@tricoteuses/assemblee"
 
+  import NavigationMenuDropdown from "$lib/components/navigation-menu-dropdown.svelte"
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
   import { fullDateFormatter } from "$lib/dates"
+  import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { capitalizeFirstLetter } from "$lib/strings"
   import { urlPathFromId } from "$lib/urls.js"
 
@@ -17,6 +18,15 @@
     dossierParlementaire,
     legifranceTexteId,
   }: DossierParlementairePageInfos = $props()
+
+  $effect(() => {
+    mainMenu.pageSpecificMenuItem = pageSpecificMenuItem
+
+    return () => {
+      // Caution: Don't use delete.
+      mainMenu.pageSpecificMenuItem = undefined
+    }
+  })
 </script>
 
 {#snippet documentView(acte: ActeLegislatif, uid: string)}
@@ -49,41 +59,38 @@
   </li>
 {/snippet}
 
+{#snippet pageSpecificMenuItem()}
+  <NavigationMenuDropdown trigger="Dossier législatif">
+    <DropdownMenu.Group>
+      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href="https://assemblee.tricoteuses.fr/dossiers/{dossierParlementaire.uid}"
+          target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      {#if dossierParlementaire.titreDossier.titreChemin !== undefined}
+        <DropdownMenu.Item>
+          <a
+            class="flex whitespace-nowrap"
+            href="https://www.assemblee-nationale.fr/dyn/{dossierParlementaire.legislature}/dossiers/{dossierParlementaire
+              .titreDossier.titreChemin}"
+            target="_blank"
+            >Assemblée nationale <ExternalLinkIcon class="ml-1" /></a
+          >
+        </DropdownMenu.Item>
+      {/if}
+    </DropdownMenu.Group>
+  </NavigationMenuDropdown>
+{/snippet}
+
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
   {dossierParlementaire.titreDossier.titre}
   <Badge variant="outline"
     >{dossierParlementaire.procedureParlementaire.libelle}</Badge
   >
 </h1>
-
-<div class="mx-auto flex w-1/2 justify-end">
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
-    <DropdownMenu.Content align="end">
-      <DropdownMenu.Group>
-        <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href="https://assemblee.tricoteuses.fr/dossiers/{dossierParlementaire.uid}"
-            target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        {#if dossierParlementaire.titreDossier.titreChemin !== undefined}
-          <DropdownMenu.Item>
-            <a
-              class="flex whitespace-nowrap"
-              href="https://www.assemblee-nationale.fr/dyn/{dossierParlementaire.legislature}/dossiers/{dossierParlementaire
-                .titreDossier.titreChemin}"
-              target="_blank"
-              >Assemblée nationale <ExternalLinkIcon class="ml-1" /></a
-            >
-          </DropdownMenu.Item>
-        {/if}
-      </DropdownMenu.Group>
-    </DropdownMenu.Content>
-  </DropdownMenu.Root>
-</div>
 
 {#if dossierParlementaire.actesLegislatifs !== undefined}
   <ul>

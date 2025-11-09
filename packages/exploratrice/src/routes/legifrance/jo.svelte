@@ -1,5 +1,4 @@
 <script lang="ts">
-  import EllipsisVerticalIcon from "@lucide/svelte/icons/ellipsis-vertical"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import {
     gitPathFromId,
@@ -8,7 +7,9 @@
     type JoTm,
   } from "@tricoteuses/legifrance"
 
+  import NavigationMenuDropdown from "$lib/components/navigation-menu-dropdown.svelte"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
+  import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { urlPathFromId } from "$lib/urls"
 
   let { jo }: { jo: Jo } = $props()
@@ -17,6 +18,15 @@
   const id = $derived(metaCommun.ID)
   const metaConteneur = $derived(jo.META.META_SPEC.META_CONTENEUR)
   const structureTxt = $derived(jo.STRUCTURE_TXT)
+
+  $effect(() => {
+    mainMenu.pageSpecificMenuItem = pageSpecificMenuItem
+
+    return () => {
+      // Caution: Don't use delete.
+      mainMenu.pageSpecificMenuItem = undefined
+    }
+  })
 
   const getTmDeepSize = (tm: JoTm): number =>
     (tm.TM ?? []).reduce(
@@ -50,6 +60,61 @@
   </ol>
 {/snippet}
 
+{#snippet pageSpecificMenuItem()}
+  <NavigationMenuDropdown trigger="Journal officiel">
+    <DropdownMenu.Group>
+      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={new URL(
+            gitPathFromId(id, ".md"),
+            "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
+          ).toString()}
+          target="_blank">Markdown dans git <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href="https://legal.tricoteuses.fr/jo/{id}"
+          target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={new URL(
+            gitPathFromId(id, ".json"),
+            "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
+          ).toString()}
+          target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={new URL(
+            gitPathFromId(id, ".json"),
+            "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
+          ).toString()}
+          target="_blank"
+          >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+      <DropdownMenu.Item>
+        <a
+          class="flex whitespace-nowrap"
+          href={metaConteneur.NUM === undefined
+            ? `https://www.legifrance.gouv.fr/jorf/jo/id/${id}`
+            : `https://www.legifrance.gouv.fr/jorf/jo/${metaConteneur.DATE_PUBLI.replaceAll("-", "/")}/${`0000${metaConteneur.NUM}`.slice(-4)}`}
+          target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
+        >
+      </DropdownMenu.Item>
+    </DropdownMenu.Group>
+  </NavigationMenuDropdown>
+{/snippet}
+
 {#snippet tmsView(tms: JoTm[], index: number, level = 0)}
   {#each iterTms(tms, index) as [tm, tmIndex]}
     <svelte:element
@@ -76,65 +141,6 @@
   {/if}
   {metaConteneur.TITRE}
 </h1>
-
-<div class="mx-auto flex w-1/2 justify-end">
-  <DropdownMenu.Root>
-    <DropdownMenu.Trigger><EllipsisVerticalIcon /></DropdownMenu.Trigger>
-    <DropdownMenu.Content align="end">
-      <DropdownMenu.Group>
-        <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={new URL(
-              gitPathFromId(id, ".md"),
-              "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
-            ).toString()}
-            target="_blank"
-            >Markdown dans git <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href="https://legal.tricoteuses.fr/jo/{id}"
-            target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={new URL(
-              gitPathFromId(id, ".json"),
-              "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
-            ).toString()}
-            target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={new URL(
-              gitPathFromId(id, ".json"),
-              "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
-            ).toString()}
-            target="_blank"
-            >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-        <DropdownMenu.Item>
-          <a
-            class="flex whitespace-nowrap"
-            href={metaConteneur.NUM === undefined
-              ? `https://www.legifrance.gouv.fr/jorf/jo/id/${id}`
-              : `https://www.legifrance.gouv.fr/jorf/jo/${metaConteneur.DATE_PUBLI.replaceAll("-", "/")}/${`0000${metaConteneur.NUM}`.slice(-4)}`}
-            target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
-          >
-        </DropdownMenu.Item>
-      </DropdownMenu.Group>
-    </DropdownMenu.Content>
-  </DropdownMenu.Root>
-</div>
 
 {#if structureTxt?.LIEN_TXT !== undefined}
   {@render liensTxtView(structureTxt.LIEN_TXT, 0)}

@@ -4,6 +4,7 @@
   import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js"
   import * as Select from "$lib/components/ui/select/index.js"
   import { Separator } from "$lib/components/ui/separator/index.js"
+  import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
 
   import ModeSwitcher from "./mode-switcher.svelte"
   import SearchDialog from "./search-dialog.svelte"
@@ -17,7 +18,7 @@
       <!-- <MobileNav class="flex lg:hidden" /> -->
       <NavigationMenu.Root>
         <NavigationMenu.List>
-          <NavigationMenu.Item>
+          <NavigationMenu.Item openOnHover={false}>
             <NavigationMenu.Trigger>Tricoteuses</NavigationMenu.Trigger>
             <NavigationMenu.Content>
               <ul>
@@ -70,6 +71,9 @@
               </ul>
             </NavigationMenu.Content>
           </NavigationMenu.Item>
+          {#if mainMenu.pageSpecificMenuItem !== undefined}
+            {@render mainMenu.pageSpecificMenuItem()}
+          {/if}
         </NavigationMenu.List>
       </NavigationMenu.Root>
       <div class="ml-auto flex items-center gap-2 md:flex-1 md:justify-end">

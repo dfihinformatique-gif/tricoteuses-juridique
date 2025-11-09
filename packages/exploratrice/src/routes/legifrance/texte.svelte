@@ -280,7 +280,9 @@
 {/if}
 
 {#if textelr?.STRUCT !== undefined}
-  <Structure {displayMode} {showIds} structure={textelr.STRUCT} />
+  <section class="my-4">
+    <Structure {displayMode} {showIds} structure={textelr.STRUCT} />
+  </section>
 {/if}
 
 {#if signataires !== undefined}

@@ -43,7 +43,8 @@ export const nomSpecialArticle = alternatives(
   regExp("liminaire", { flags: "i", value: "liminaire" }),
   regExp("préambule", { flags: "i", value: "préambule" }),
   regExp("préliminaire", { flags: "i", value: "préliminaire" }),
-  regExp("unique", { flags: "i", value: "unique" }),
+  regExp("premier", { flags: "i", value: "1" }),
+  regExp("unique", { flags: "i", value: "1" }),
 )
 
 /**

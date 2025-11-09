@@ -40,7 +40,7 @@ export { action } from "./text_parsers/actions.js"
 export {
   article,
   articles,
-  definitionArticle,
+  definitionArticleDansCitation,
   designationArticle,
   listeArticles,
   nomArticle,

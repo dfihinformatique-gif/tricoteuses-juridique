@@ -1,4 +1,4 @@
-import { definitionArticle } from "./articles.js"
+import { definitionArticleDansCitation } from "./articles.js"
 import type {
   TextAstArticle,
   TextAstCitation,
@@ -110,7 +110,7 @@ export function* parseReferences(
       yield* parseCitationReferences(context, citationAst)
       candidateRegExp.lastIndex = citationAst.position.stop
     } else if (candidate[0].toLowerCase() === "art.") {
-      const definitionArticleAst = definitionArticle(context) as
+      const definitionArticleAst = definitionArticleDansCitation(context) as
         | TextAstArticle
         | undefined
       if (definitionArticleAst === undefined) {

@@ -10,7 +10,7 @@ import { TextParserContext } from "./parsers.js"
 import {
   article,
   articles,
-  definitionArticle,
+  definitionArticleDansCitation,
   designationArticle,
   listeArticles,
   nomArticle,
@@ -288,10 +288,10 @@ describe("articles", () => {
   })
 })
 
-describe("definitionArticle", () => {
+describe("definitionArticleDansCitation", () => {
   test("Art. L. 322-66. - ", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "L322-66",
@@ -307,7 +307,7 @@ describe("definitionArticle", () => {
 
   test("Art. L. 166 BA. - ", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "L166 BA",
@@ -323,7 +323,7 @@ describe("definitionArticle", () => {
 
   test("Art. L. 134-17-1. - ", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "L134-17-1",
@@ -339,7 +339,7 @@ describe("definitionArticle", () => {
 
   test("Art. 223 VO quindecies. - ", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "223 VO quindecies",
@@ -355,7 +355,7 @@ describe("definitionArticle", () => {
 
   test("Art. 223 VR quater. - ", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "223 VR quater",
@@ -371,7 +371,7 @@ describe("definitionArticle", () => {
 
   test("Art. 223 WA quinquies A. - ", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "223 WA quinquies A",
@@ -389,7 +389,7 @@ describe("definitionArticle", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "L80 R",
@@ -407,7 +407,7 @@ describe("definitionArticle", () => {
 
   test("Art. 235 ter XB - I. - 1. Il est institué une taxe", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "235 ter XB",
@@ -425,7 +425,7 @@ describe("definitionArticle", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const result = definitionArticle(context) as TextAstArticle
+    const result = definitionArticleDansCitation(context) as TextAstArticle
     expect(result).toStrictEqual({
       definition: true,
       num: "L542-10-2",
@@ -904,13 +904,6 @@ describe("nomArticle", () => {
     expect(context.remaining()).toBe("")
   })
 
-  test("1er", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    const result = nomArticle(context)
-    expect(result).toBe("1")
-    expect(context.remaining()).toBe("")
-  })
-
   test("A 3 A bis-3 A 7-3", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
@@ -981,10 +974,24 @@ describe("nomArticle", () => {
     expect(context.remaining()).toBe("")
   })
 
+  test("premier", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = nomArticle(context)
+    expect(result).toBe("1")
+    expect(context.remaining()).toBe("")
+  })
+
   test("R. 3 bis-0", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("R3 bis-0")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("unique", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = nomArticle(context)
+    expect(result).toBe("1")
     expect(context.remaining()).toBe("")
   })
 })

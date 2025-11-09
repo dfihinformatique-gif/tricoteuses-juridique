@@ -133,10 +133,11 @@ export const nomArticleDefinition = alternatives(
 )
 
 /**
- * Déclaration d'un article
+ * Déclaration d'un article au sein d'une citation dans un projet
+ * ou une proposition de loi
  * Exemple : « Art. L. 322‑66. - blablabla… en début de ligne
  */
-export const definitionArticle = chain(
+export const definitionArticleDansCitation = chain(
   [
     chain(
       [regExp(String.raw`^art\. `, { flags: "im" }), nomArticleDefinition],

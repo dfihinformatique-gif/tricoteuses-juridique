@@ -11,9 +11,11 @@ import {
   article,
   articles,
   definitionArticleDansCitation,
+  definitionArticleDansProjetOuPropositionLoi,
   designationArticle,
   listeArticles,
   nomArticle,
+  nomArticleProjetOuPropositionLoi,
   nomSpecialArticle,
   typeArticle,
 } from "./articles.js"
@@ -437,6 +439,131 @@ describe("definitionArticleDansCitation", () => {
     })
     expect(context.remaining()).toBe("A. - Le produit du tarif de stockage")
     expect(context.text(result.position)).toBe("Art. L. 542-10-2")
+  })
+})
+
+describe("definitionArticleDansProjetOuPropositionLoi", () => {
+  test("Article 1", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "1",
+      position: {
+        start: 0,
+        stop: 9,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Article 1 :", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      definitionSuffix: " :",
+      num: "1",
+      position: {
+        start: 0,
+        stop: 9,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position) + result.definitionSuffix).toBe(
+      task.name,
+    )
+  })
+
+  test("Article 1 bis", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "1 bis",
+      position: {
+        start: 0,
+        stop: 13,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Article 1 bis :", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      definitionSuffix: " :",
+      num: "1 bis",
+      position: {
+        start: 0,
+        stop: 13,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position) + result.definitionSuffix).toBe(
+      task.name,
+    )
+  })
+
+  test("Article 1 A", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual(undefined)
+    expect(context.remaining()).toBe(task.name)
+  })
+
+  test("Article 1er", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "1",
+      position: {
+        start: 0,
+        stop: 11,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Article premier", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "1",
+      position: {
+        start: 0,
+        stop: 15,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
   })
 })
 
@@ -992,6 +1119,36 @@ describe("nomArticle", () => {
     const context = new TextParserContext(task.name)
     const result = nomArticle(context)
     expect(result).toBe("1")
+    expect(context.remaining()).toBe("")
+  })
+})
+
+describe("nomArticleProjetOuPropositionLoi", () => {
+  test("1", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = nomArticleProjetOuPropositionLoi(context) as TextAstArticle
+    expect(result).toBe(task.name)
+    expect(context.remaining()).toBe("")
+  })
+
+  test("1 bis", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = nomArticleProjetOuPropositionLoi(context) as TextAstArticle
+    expect(result).toBe(task.name)
+    expect(context.remaining()).toBe("")
+  })
+
+  test("1er", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = nomArticleProjetOuPropositionLoi(context) as TextAstArticle
+    expect(result).toBe("1")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("annexe", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = nomArticleProjetOuPropositionLoi(context) as TextAstArticle
+    expect(result).toBe(task.name)
     expect(context.remaining()).toBe("")
   })
 })

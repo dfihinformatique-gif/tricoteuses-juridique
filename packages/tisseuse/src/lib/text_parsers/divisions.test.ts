@@ -65,6 +65,38 @@ describe("definitionDivision", () => {
     expect(context.text(result.position)).toBe(task.name)
   })
 
+  test("Première partie", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 1,
+      position: {
+        start: 0,
+        stop: 15,
+      },
+      type: "partie",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Première section", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 1,
+      position: {
+        start: 0,
+        stop: 16,
+      },
+      type: "section",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("Section 0I bis", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = definitionDivision(context) as TextAstDivision
@@ -111,6 +143,40 @@ describe("definitionDivision", () => {
         stop: 14,
       },
       type: "sous-section",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("TITRE IER", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 1,
+      num: "IER",
+      position: {
+        start: 0,
+        stop: 9,
+      },
+      type: "titre",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("TITRE Ier", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionDivision(context) as TextAstDivision
+    expect(result).toStrictEqual({
+      definition: true,
+      index: 1,
+      num: "Ier",
+      position: {
+        start: 0,
+        stop: 9,
+      },
+      type: "titre",
     })
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)

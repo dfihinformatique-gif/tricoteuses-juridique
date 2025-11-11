@@ -6,9 +6,16 @@ import {
 } from "@auditors/core"
 import type { Document, DocumentFilesIndex } from "@tricoteuses/assemblee"
 import { pathFromDocumentUid } from "@tricoteuses/assemblee/loaders"
+import { slugify } from "@tricoteuses/legifrance"
 import {
   getOrLoadDocument,
   newAssembleeObjectCache,
+  reverseTransformedInnerFragment,
+  reverseTransformedReplacement,
+  walkTableOfContents,
+  type TableOfContentsArticlePositioned,
+  type TableOfContentsDivisionPositioned,
+  type TableOfContentsPositioned,
 } from "@tricoteuses/tisseuse"
 import fs from "fs-extra"
 import path from "node:path"
@@ -81,13 +88,63 @@ export const queryDocumentPageInfos = query(
         documentFileInfos.filename,
       )
       if (await fs.pathExists(documentPath)) {
+        let documentHtml = await fs.readFile(documentPath, {
+          encoding: "utf-8",
+        })
+        const documentSegmentationPath = documentPath.replace(
+          /\.html$/,
+          "_segmentation.json",
+        )
+        const documentSegmentation = (await fs.pathExists(
+          documentSegmentationPath,
+        ))
+          ? ((await fs.readJson(documentSegmentationPath, {
+              encoding: "utf-8",
+            })) as TableOfContentsPositioned)
+          : undefined
+        if (documentSegmentation !== undefined) {
+          let offset = 0
+          for (const {
+            line,
+            originalTransformation,
+            type,
+          } of walkTableOfContents(documentSegmentation) as Iterable<
+            | TableOfContentsArticlePositioned
+            | TableOfContentsDivisionPositioned,
+            void,
+            unknown
+          >) {
+            if (type !== "article") {
+              continue
+            }
+            const innerFragment = reverseTransformedInnerFragment(
+              documentHtml,
+              originalTransformation,
+              offset,
+            )
+            const replacement = reverseTransformedReplacement(
+              originalTransformation,
+              `<a id="tricoteuses-${slugify(line)}" style="scroll-margin-top: 3em">${innerFragment}</a>`,
+            )
+            documentHtml =
+              documentHtml.slice(
+                0,
+                originalTransformation.position.start + offset,
+              ) +
+              replacement +
+              documentHtml.slice(originalTransformation.position.stop + offset)
+            offset +=
+              replacement.length -
+              (originalTransformation.position.stop -
+                originalTransformation.position.start)
+          }
+        }
         return {
           document,
           documentFileInfos,
           documentFilesIndex,
-          documentHtml: await fs.readFile(documentPath, {
-            encoding: "utf-8",
-          }),
+          documentHtml,
+          documentSegmentation,
         }
       }
     }

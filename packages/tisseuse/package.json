@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@auditors/core": "^0.7.4",
-    "@tricoteuses/assemblee": "^2.4.3",
+    "@tricoteuses/assemblee": "^2.5.2",
     "@tricoteuses/legifrance": "^0.16.0",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^24.8.1",

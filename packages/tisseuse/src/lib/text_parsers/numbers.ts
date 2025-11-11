@@ -60,7 +60,7 @@ export const nombreRomainCardinal = regExp(String.raw`[IVXLCDM]+`, {
 })
 
 export const nombreRomainOrdinal = alternatives(
-  regExp("Ier", { value: 1 }),
+  regExp("IER|Ier", { value: 1 }),
   chain([regExp(String.raw`[IVXLCDM]+`), eme], {
     value: (results) => numberFromRomanNumeral(results[0] as string),
   }),
@@ -74,7 +74,7 @@ export const nombreRomainOu0iAsTextAstNumber = alternatives(
       value: 0,
     }),
   }),
-  regExp("Ier", {
+  regExp("IER|Ier", {
     value: (_match, context) => ({
       position: context.position(),
       text: context.text(),

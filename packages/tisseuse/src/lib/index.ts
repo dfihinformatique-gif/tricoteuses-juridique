@@ -36,11 +36,21 @@ export {
   type JorfArticleExtended,
   type LegiArticleExtended,
 } from "./loaders/legifrance.js"
+export {
+  walkTableOfContents,
+  type TableOfContents,
+  type TableOfContentsArticle,
+  type TableOfContentsArticlePositioned,
+  type TableOfContentsDivision,
+  type TableOfContentsDivisionPositioned,
+  type TableOfContentsPositioned,
+} from "./table_of_contents.js"
 export { action } from "./text_parsers/actions.js"
 export {
   article,
   articles,
   definitionArticleDansCitation,
+  definitionArticleDansProjetOuPropositionLoi,
   designationArticle,
   listeArticles,
   nomArticle,

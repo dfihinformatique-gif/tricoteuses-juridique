@@ -83,13 +83,13 @@ export const nomArticle = alternatives(
     [
       typeArticle,
       regExp(String.raw`\d+`),
-      optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
+      optional(regExp("(ème|er|e|r)", { value: "" }), { default: "" }),
       repeat([
         alternatives(regExp(" ?- ?"), regExp(String.raw` ?\.`), espace),
         alternatives(
           [
             regExp(String.raw`[\dA-Z]+`),
-            optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
+            optional(regExp("(ème|er|e|r)", { value: "" }), { default: "" }),
           ],
           convert(adverbeMultiplicatifLatin, {
             value: (result) => (result as TextAstNumber).text,
@@ -101,8 +101,9 @@ export const nomArticle = alternatives(
   ),
   nomSpecialArticle,
 )
+
 /**
- * Numéro d’article, utilisé lors de sa definition,
+ * Numéro d’article, utilisé lors de sa définition,
  * par exemple « L.O 113-1 » ou « L328-1 A bis-0 » ou « préliminaire »
  * Attention cette règle est plus stricte que nomArticle, car, par exemple,
  * dans la ligne :
@@ -114,19 +115,46 @@ export const nomArticleDefinition = alternatives(
     [
       typeArticle,
       regExp(String.raw`\d+`),
-      optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
+      optional(regExp("(ème|er|e|r)", { value: "" }), { default: "" }),
       repeat([
         alternatives(regExp("-"), regExp(String.raw` ?\.`), espace),
         alternatives(
           [
             regExp(String.raw`[\dA-Z]+`),
-            optional(regExp("(ème|e?r?)", { value: "" }), { default: "" }),
+            optional(regExp("(ème|er|e|r)", { value: "" }), { default: "" }),
           ],
           convert(adverbeMultiplicatifLatin, {
             value: (result) => (result as TextAstNumber).text,
           }),
         ),
       ]),
+    ],
+    { value: (results, context) => context.textFromResults(results) },
+  ),
+  nomSpecialArticle,
+)
+
+/**
+ * Numéro d’article à l'intérieur d'un projet ou d'une proposition de loi
+ *
+ * Dans un projet (ou une proposition) de loi initial, un numéro d'article
+ * est un simple nombre ou un nom spécial.
+ * Dans les versions suivantes, le numéro d'article est un nombre éventuellement
+ * suivi d'un adverbe multiplicatif latin.
+ */
+export const nomArticleProjetOuPropositionLoi = alternatives(
+  chain(
+    [
+      regExp(String.raw`\d+`),
+      optional(
+        alternatives(
+          chain([espace, adverbeMultiplicatifLatin], {
+            value: (results) => " " + (results[1] as TextAstNumber).text,
+          }),
+          regExp("(ème|er|e|r)", { value: "" }),
+        ),
+        { default: "" },
+      ),
     ],
     { value: (results, context) => context.textFromResults(results) },
   ),
@@ -155,6 +183,40 @@ export const definitionArticleDansCitation = chain(
   ],
   {
     value: (results) => results[0],
+  },
+)
+
+/**
+ * Déclaration d'un article dans un projet ou une proposition de loi
+ * Exemple : « Article 2 » en début de ligne
+ */
+export const definitionArticleDansProjetOuPropositionLoi = chain(
+  [
+    chain(
+      [
+        regExp("^article", { flags: "im" }),
+        espace,
+        nomArticleProjetOuPropositionLoi,
+      ],
+      {
+        value: (results, context) => ({
+          definition: true,
+          num: results[2] as string,
+          position: context.position(),
+          type: "article",
+        }),
+      },
+    ),
+    regExp("( :)?$", { flags: "m" }),
+  ],
+  {
+    value: (results) => {
+      const definition = results[0] as TextAstArticle
+      if (results[1]) {
+        definition.definitionSuffix = results[1] as string
+      }
+      return definition
+    },
   },
 )
 

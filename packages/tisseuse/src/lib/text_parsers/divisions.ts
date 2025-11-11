@@ -109,22 +109,42 @@ export const numeroDivision = chain(
 /**
  * Déclaration d'une division
  */
-export const definitionDivision = chain(
-  [
-    regExp("^", { flags: "m" }),
-    natureDivisionSingulier,
-    espace,
-    numeroDivision,
-    regExp("$", { flags: "m" }),
-  ],
-  {
-    value: (results, context) => ({
-      definition: true,
-      ...(results[3] as TextAstLocalization),
-      position: context.position(),
-      type: results[1] as string,
-    }),
-  },
+export const definitionDivision = alternatives(
+  chain(
+    [
+      regExp("^", { flags: "m" }),
+      natureDivisionSingulier,
+      espace,
+      numeroDivision,
+      regExp("$", { flags: "m" }),
+    ],
+    {
+      value: (results, context) => ({
+        definition: true,
+        ...(results[3] as TextAstLocalization),
+        position: context.position(),
+        type: results[1] as DivisionType,
+      }),
+    },
+  ),
+  chain(
+    [
+      regExp("^", { flags: "m" }),
+      adjectifNumeralOrdinal,
+      espace,
+      natureDivisionSingulier,
+      regExp("$", { flags: "m" }),
+    ],
+    {
+      value: (results, context) => ({
+        definition: true,
+        index: results[1] as number,
+        // num: (results[1] as number).toString(),
+        position: context.position(),
+        type: results[3] as DivisionType,
+      }),
+    },
+  ),
 )
 
 export const designationDivision = alternatives(

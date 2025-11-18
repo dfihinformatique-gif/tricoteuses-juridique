@@ -5,13 +5,15 @@ import {
 import fs from "fs-extra"
 import sade from "sade"
 
-import { jsonReplacer } from "$lib/json.js"
+import {
+  cleanTexteTitle,
+  definitionTexteFrancais,
+  jsonReplacer,
+  simplifyPlainText,
+  TextParserContext,
+  type TextAstText,
+} from "$lib"
 import { legiDb } from "$lib/server/databases/index.js"
-import type { TextAstText } from "$lib/text_parsers/ast.js"
-import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { definitionTexteFrancais } from "$lib/text_parsers/texts.js"
-import { simplifyPlainText } from "$lib/text_parsers/simplifiers.js"
-import { cleanTexteTitle } from "$lib/textes.js"
 
 type TextCidByWordsTree = {
   cid?: string | string[]

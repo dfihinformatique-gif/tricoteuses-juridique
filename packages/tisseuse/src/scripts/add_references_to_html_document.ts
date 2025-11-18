@@ -9,18 +9,15 @@ import fs from "fs-extra"
 import sade from "sade"
 
 import {
-  readTransformation,
-  writeTransformation,
-} from "$lib/server/text_parsers/transformers.js"
-import { iterIncludedReferences } from "$lib/text_parsers/helpers.js"
-import { parseReferencesWithOriginalTransformations } from "$lib/text_parsers/index.js"
-import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import {
+  iterIncludedReferences,
+  parseReferencesWithOriginalTransformations,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
+  simplifyHtml,
+  TextParserContext,
   type Transformation,
-} from "$lib/text_parsers/transformers.js"
+} from "$lib"
+import { readTransformation, writeTransformation } from "$lib/server"
 
 async function addReferencesToHtmlDocument(
   inputDocumentPath: string,

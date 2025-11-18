@@ -10,28 +10,24 @@ import assert from "node:assert"
 import type { JSONValue } from "postgres"
 import sade from "sade"
 
-import { getArticleDateSignature } from "$lib/articles.js"
-import { assertNever } from "$lib/asserts.js"
-import { urlFromLegalId } from "$lib/links.js"
 import {
+  assertNever,
   extendLoadedArticle,
-  JorfArticleExtended,
-  LegiArticleExtended,
-} from "$lib/loaders/legifrance.js"
-import config from "$lib/server/config.js"
-import { legiDb } from "$lib/server/databases/index.js"
-import {
+  getArticleDateSignature,
+  getTexteVersionDateSignature,
   parseTextLinks,
-  TextLinksParserState,
-  type ExtractedLinkDb,
-} from "$lib/text_parsers/links.js"
-import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
-} from "$lib/text_parsers/transformers.js"
-import { getTexteVersionDateSignature } from "$lib/textes.js"
+  simplifyHtml,
+  TextParserContext,
+  urlFromLegalId,
+  type ExtractedLinkDb,
+  type JorfArticleExtended,
+  type LegiArticleExtended,
+  type TextLinksParserState,
+} from "$lib"
+import config from "$lib/server/config.js"
+import { legiDb } from "$lib/server/databases/index.js"
 
 const { linkBaseUrl, linkType } = config
 const today = new Date().toISOString().split("T")[0]

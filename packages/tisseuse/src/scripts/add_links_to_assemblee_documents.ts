@@ -9,17 +9,17 @@ import assert from "node:assert"
 import path from "node:path"
 import sade from "sade"
 
-import { assertNever } from "$lib/asserts.js"
-import { urlFromLegalId } from "$lib/links.js"
-import config from "$lib/server/config.js"
-import { legiDb } from "$lib/server/databases/index.js"
-import { parseTextLinks } from "$lib/text_parsers/links.js"
-import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
+  assertNever,
+  parseTextLinks,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
-} from "$lib/text_parsers/transformers.js"
+  simplifyHtml,
+  TextParserContext,
+  urlFromLegalId,
+} from "$lib"
+import config from "$lib/server/config.js"
+import { legiDb } from "$lib/server/databases/index.js"
 
 const { linkBaseUrl, linkType } = config
 

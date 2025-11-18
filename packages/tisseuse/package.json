@@ -36,6 +36,11 @@
       "import": "./dist/index.js",
       "types": "./dist/lib/index.d.ts"
     },
+    "./server": {
+      "typedoc": "./src/server/index.ts",
+      "import": "./dist/server.js",
+      "types": "./dist/lib/server/index.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

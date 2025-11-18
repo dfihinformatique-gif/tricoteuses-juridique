@@ -1,4 +1,5 @@
 import fs from "fs-extra"
+import assert from "node:assert"
 import sade from "sade"
 
 import {
@@ -11,8 +12,7 @@ import {
   type TextAstArticle,
   type TextAstDivision,
 } from "$lib"
-import { readTransformation } from "$lib/server/text_parsers/transformers"
-import assert from "node:assert"
+import { readTransformation } from "$lib/server"
 
 function* parseBillDefinitions(
   context: TextParserContext,

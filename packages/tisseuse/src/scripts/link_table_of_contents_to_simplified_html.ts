@@ -42,7 +42,7 @@ import {
   type TableOfContents,
   type Transformation,
 } from "$lib"
-import { readTransformation } from "$lib/server/text_parsers/transformers"
+import { readTransformation } from "$lib/server"
 
 function* addPositionsToTableOfContentsItems({
   context,

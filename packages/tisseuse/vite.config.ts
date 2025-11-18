@@ -15,6 +15,7 @@ export default defineConfig({
       // entry: resolve(__dirname, 'src/index.ts'), // if single entry
       entry: {
         index: resolve(__dirname, "src/lib/index.ts"),
+        server: resolve(__dirname, "src/lib/server/index.ts"),
       },
       name: "@tricoteuses/tisseuse", // The global variable name if not using module systems
       // the proper extensions will be added
@@ -28,6 +29,7 @@ export default defineConfig({
         "node:assert",
         "node:path",
         // Dependencies from package.json
+        "fs-extra",
       ],
       output: {
         // Preserve module structure for entry points (if possible with multiple entries)

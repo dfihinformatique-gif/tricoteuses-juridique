@@ -2,7 +2,7 @@ import fs from "fs-extra"
 import sade from "sade"
 
 import { simplifyHtml } from "$lib"
-import { writeTransformation } from "$lib/server/text_parsers/transformers.js"
+import { writeTransformation } from "$lib/server"
 
 async function htmlDocumentToText(
   htmlPath: string,

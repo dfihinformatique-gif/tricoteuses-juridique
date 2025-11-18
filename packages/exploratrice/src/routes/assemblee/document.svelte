@@ -16,7 +16,7 @@
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { urlPathFromId } from "$lib/urls.js"
 
-  import type { DocumentPageInfos } from "./documents"
+  import type { DocumentPageInfos } from "./documents.js"
 
   let {
     document,

@@ -19,15 +19,14 @@ import type { PendingQuery, Row } from "postgres"
 
 import { query } from "$app/server"
 import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
-import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
-
 import {
   possibleTypes,
   suggestionFromSuggestionDb,
   type PossibleType,
   type Suggestion,
   type SuggestionDb,
-} from "./autocompletion.js"
+} from "$lib/autocompletion.js"
+import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
 
 export const autocomplete = query(
   standardSchemaV1<[string, PossibleType | null, string | undefined]>(

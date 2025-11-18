@@ -9,11 +9,11 @@ import {
 } from "@tricoteuses/legifrance"
 import sade from "sade"
 
-import { newLegifranceObjectCache } from "$lib/cache.js"
 import {
+  newLegifranceObjectCache,
   getOrLoadSectionsTa,
   getOrLoadTextelr,
-} from "$lib/loaders/legifrance.js"
+} from "$lib"
 import { legiDb } from "$lib/server/databases/index.js"
 
 export async function getArticleNum(

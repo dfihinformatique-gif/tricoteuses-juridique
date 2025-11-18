@@ -16,6 +16,7 @@ export {
 } from "./cache.js"
 export { formatLongDate } from "./dates.js"
 export { jsonReplacer } from "./json.js"
+export { linkTypes, urlFromLegalId, type LinkType } from "./links.js"
 export {
   getOrLoadDocument,
   getOrLoadDocumentsByDossierParlementaireUid,

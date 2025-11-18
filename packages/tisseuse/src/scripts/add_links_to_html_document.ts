@@ -1,27 +1,22 @@
 import fs from "fs-extra"
 import sade from "sade"
 
-import { assertNever } from "$lib/asserts.js"
-import { newLegifranceObjectCache } from "$lib/cache.js"
-import { urlFromLegalId } from "$lib/links.js"
 import {
+  assertNever,
   getOrLoadArticle,
   getOrLoadSectionTa,
-} from "$lib/loaders/legifrance.js"
-import config from "$lib/server/config.js"
-import { legiDb } from "$lib/server/databases/index.js"
-import {
-  readTransformation,
-  writeTransformation,
-} from "$lib/server/text_parsers/transformers.js"
-import { parseTextLinks } from "$lib/text_parsers/links.js"
-import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
-import {
+  newLegifranceObjectCache,
+  parseTextLinks,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
+  simplifyHtml,
+  TextParserContext,
+  urlFromLegalId,
   type Transformation,
-} from "$lib/text_parsers/transformers.js"
+} from "$lib"
+import { readTransformation, writeTransformation } from "$lib/server"
+import config from "$lib/server/config.js"
+import { legiDb } from "$lib/server/databases/index.js"
 
 const { linkBaseUrl, linkType } = config
 

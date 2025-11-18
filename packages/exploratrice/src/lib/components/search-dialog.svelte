@@ -24,7 +24,6 @@
     type PossibleType,
     type Suggestion,
   } from "$lib/autocompletion.js"
-  import { autocomplete } from "$lib/autocompletion.remote.js"
   import { Badge } from "$lib/components/ui/badge/index.js"
   import { Button } from "$lib/components/ui/button/index.js"
   import * as Command from "$lib/components/ui/command/index.js"
@@ -34,6 +33,7 @@
   import { fullDateFormatter } from "$lib/dates.js"
   import { useModifierKeyPrefix } from "$lib/hooks/use-modifier-key-prefix.svelte.js"
   import { searchContext } from "$lib/hooks/search-context.svelte.js"
+  import { autocomplete } from "$lib/autocompletion.remote.js"
   import { urlPathFromId } from "$lib/urls.js"
   import { cn } from "$lib/utils.js"
 

@@ -3,7 +3,10 @@ import type {
   DocumentFileInfos,
   DocumentFilesIndex,
 } from "@tricoteuses/assemblee"
-import type { TableOfContentsPositioned } from "@tricoteuses/tisseuse"
+import type {
+  TableOfContentsPositioned,
+  Transformation,
+} from "@tricoteuses/tisseuse"
 
 export interface DocumentPageInfos {
   document: Document
@@ -11,4 +14,10 @@ export interface DocumentPageInfos {
   documentFilesIndex: DocumentFilesIndex
   documentHtml: string
   documentSegmentation?: TableOfContentsPositioned
+  documentTransformation?: Transformation
+}
+
+export interface DocumentsDiffPageInfos {
+  current?: DocumentPageInfos
+  previous?: DocumentPageInfos
 }

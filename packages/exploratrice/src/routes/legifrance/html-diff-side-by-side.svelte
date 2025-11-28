@@ -30,29 +30,27 @@
     })
 
     let currentTextIndex = 0
-    const currentTextPositions: Array<FragmentPosition[]> = []
+    const currentTextPositions: FragmentPosition[] = []
     let previousTextIndex = 0
-    const previousTextPositions: Array<FragmentPosition[]> = []
+    const previousTextPositions: FragmentPosition[] = []
     for (const change of changes) {
       const changeLength = change.value.length
       if (change.added) {
         const changeStop = currentTextIndex + changeLength
-        const currentTextPositionsForChange: FragmentPosition[] = []
-        currentTextPositions.push(currentTextPositionsForChange)
         let start = currentTextIndex
         for (let i = currentTextIndex; i < changeStop; i++) {
           if (currentText[i] === "\n") {
             if (i > start) {
-              currentTextPositionsForChange.push({
+              currentTextPositions.push({
                 start,
                 stop: i,
               })
-              start = i + 1
             }
+            start = i + 1
           }
         }
         if (start < changeStop) {
-          currentTextPositionsForChange.push({
+          currentTextPositions.push({
             start,
             stop: changeStop,
           })
@@ -60,27 +58,25 @@
         currentTextIndex += changeLength // - (changeEndsWithLineFeed ? 1 : 0);
       } else if (change.removed) {
         const changeStop = previousTextIndex + changeLength
-        const previousTextPositionsForChange: FragmentPosition[] = []
-        previousTextPositions.push(previousTextPositionsForChange)
         let start = previousTextIndex
         for (let i = previousTextIndex; i < changeStop; i++) {
           if (previousText[i] === "\n") {
             if (i > start) {
-              previousTextPositionsForChange.push({
+              previousTextPositions.push({
                 start,
                 stop: i,
               })
-              start = i + 1
             }
+            start = i + 1
           }
         }
         if (start < changeStop) {
-          previousTextPositionsForChange.push({
+          previousTextPositions.push({
             start,
             stop: changeStop,
           })
         }
-        previousTextIndex += changeLength // - (changeEndsWithLineFeed ? 1 : 0);
+        previousTextIndex += changeLength
       } else {
         previousTextIndex += changeLength
         currentTextIndex += changeLength

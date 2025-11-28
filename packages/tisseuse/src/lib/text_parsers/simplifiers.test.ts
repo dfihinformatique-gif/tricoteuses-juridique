@@ -854,7 +854,7 @@ describe("reversePositionsSplitFromPositions", () => {
       "a first sentence",
     )
     const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-      [textPosition],
+      textPosition,
     ])
     expect(htmlPositions.length).toBe(1)
     const htmlPositionsAtIndex = htmlPositions[0]
@@ -876,7 +876,7 @@ describe("reversePositionsSplitFromPositions", () => {
       "sentence\na\nsecond sentence",
     )
     const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-      [textPosition],
+      textPosition,
     ])
     expect(htmlPositions.length).toBe(1)
     const htmlPositionsAtIndex = htmlPositions[0]
@@ -906,7 +906,7 @@ describe("reversePositionsSplitFromPositions", () => {
     {
       // Test first HTML position only
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition0],
+        textPosition0,
       ])
       expect(htmlPositions.length).toBe(1)
       const htmlPositionsAtIndex = htmlPositions[0]
@@ -918,7 +918,7 @@ describe("reversePositionsSplitFromPositions", () => {
     {
       // Test second HTML position only
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition1],
+        textPosition1,
       ])
       expect(htmlPositions.length).toBe(1)
       const htmlPositionsAtIndex = htmlPositions[0]
@@ -933,8 +933,8 @@ describe("reversePositionsSplitFromPositions", () => {
     {
       // Test the merging of 2 overlapping HTML positions.
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition0],
-        [textPosition1],
+        textPosition0,
+        textPosition1,
       ])
       expect(htmlPositions.length).toBe(2)
       const htmlPositions0 = htmlPositions[0]
@@ -969,7 +969,7 @@ describe("reversePositionsSplitFromPositions", () => {
     {
       // Test first HTML position only
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition0],
+        textPosition0,
       ])
       expect(htmlPositions.length).toBe(1)
       const htmlPositionsAtIndex = htmlPositions[0]
@@ -984,7 +984,7 @@ describe("reversePositionsSplitFromPositions", () => {
     {
       // Test second HTML position only
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition1],
+        textPosition1,
       ])
       expect(htmlPositions.length).toBe(1)
       const htmlPositionsAtIndex = htmlPositions[0]
@@ -999,8 +999,8 @@ describe("reversePositionsSplitFromPositions", () => {
     {
       // Test the merging of 2 overlapping HTML positions.
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition0],
-        [textPosition1],
+        textPosition0,
+        textPosition1,
       ])
       expect(htmlPositions.length).toBe(2)
       const htmlPositions0 = htmlPositions[0]
@@ -1035,7 +1035,7 @@ describe("reversePositionsSplitFromPositions", () => {
         "complex world!",
       )
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition],
+        textPosition,
       ])
       expect(htmlPositions.length).toBe(1)
       const htmlPositionsAtIndex = htmlPositions[0]
@@ -1053,7 +1053,7 @@ describe("reversePositionsSplitFromPositions", () => {
         "complex world",
       )
       const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-        [textPosition],
+        textPosition,
       ])
       expect(htmlPositions.length).toBe(1)
       const htmlPositionsAtIndex = htmlPositions[0]
@@ -1078,7 +1078,7 @@ describe("reversePositionsSplitFromPositions", () => {
     const textPosition = { start: 6, stop: 11 }
     expect(text.slice(textPosition.start, textPosition.stop)).toBe("world")
     const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-      [textPosition],
+      textPosition,
     ])
     expect(htmlPositions.length).toBe(1)
     const htmlPositionsAtIndex = htmlPositions[0]
@@ -1098,7 +1098,7 @@ describe("reversePositionsSplitFromPositions", () => {
       "Hello world!",
     )
     const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-      [textPosition],
+      textPosition,
     ])
     expect(htmlPositions.length).toBe(1)
     const htmlPositionsAtIndex = htmlPositions[0]
@@ -1118,7 +1118,7 @@ describe("reversePositionsSplitFromPositions", () => {
       "Hello world!",
     )
     const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-      [textPosition],
+      textPosition,
     ])
     expect(htmlPositions.length).toBe(1)
     const htmlPositionsAtIndex = htmlPositions[0]
@@ -1138,7 +1138,7 @@ describe("reversePositionsSplitFromPositions", () => {
       "article 197",
     )
     const htmlPositions = reversePositionsSplitFromPositions(transformation, [
-      [textPosition],
+      textPosition,
     ])
     expect(htmlPositions.length).toBe(1)
     const htmlPositionsAtIndex = htmlPositions[0]
@@ -1159,7 +1159,7 @@ describe("reversePositionsSplitFromPositions", () => {
     expect(text.slice(textPosition.start, textPosition.stop)).toBe("!")
     const htmlPositionsAtIndex = reversePositionsSplitFromPositions(
       transformation,
-      [[textPosition]],
+      [textPosition],
     )[0]
     expect(htmlPositionsAtIndex).toStrictEqual([
       {

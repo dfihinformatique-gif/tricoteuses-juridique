@@ -34,13 +34,13 @@
     let previousTextIndex = 0
     const textPositions: Array<
       | {
-          currentPositions: FragmentPosition[]
+          currentPosition: FragmentPosition
           previousIndex: number
           source: "current"
         }
       | {
           currentIndex: number
-          previousPositions: FragmentPosition[]
+          previousPosition: FragmentPosition
           source: "previous"
         }
     > = []
@@ -48,58 +48,78 @@
       const changeLength = change.value.length
       if (change.added) {
         const changeStop = currentTextIndex + changeLength
-        const currentPositions: FragmentPosition[] = []
-        textPositions.push({
-          currentPositions,
-          previousIndex: previousTextIndex,
-          source: "current",
-        })
         let start = currentTextIndex
         for (let i = currentTextIndex; i < changeStop; i++) {
           if (currentText[i] === "\n") {
             if (i > start) {
-              currentPositions.push({
-                start,
-                stop: i,
+              textPositions.push({
+                currentPosition: {
+                  start,
+                  stop: i,
+                },
+                previousIndex: previousTextIndex,
+                source: "current",
               })
-              start = i + 1
             }
+            textPositions.push({
+              currentPosition: {
+                start: i,
+                stop: i + 1,
+              },
+              previousIndex: previousTextIndex,
+              source: "current",
+            })
+            start = i + 1
           }
         }
         if (start < changeStop) {
-          currentPositions.push({
-            start,
-            stop: changeStop,
+          textPositions.push({
+            currentPosition: {
+              start,
+              stop: changeStop,
+            },
+            previousIndex: previousTextIndex,
+            source: "current",
           })
         }
-        currentTextIndex += changeLength // - (changeEndsWithLineFeed ? 1 : 0);
+        currentTextIndex += changeLength
       } else if (change.removed) {
         const changeStop = previousTextIndex + changeLength
-        const previousPositions: FragmentPosition[] = []
-        textPositions.push({
-          currentIndex: currentTextIndex,
-          previousPositions,
-          source: "previous",
-        })
         let start = previousTextIndex
         for (let i = previousTextIndex; i < changeStop; i++) {
           if (previousText[i] === "\n") {
             if (i > start) {
-              previousPositions.push({
-                start,
-                stop: i,
+              textPositions.push({
+                currentIndex: currentTextIndex,
+                previousPosition: {
+                  start,
+                  stop: i,
+                },
+                source: "previous",
               })
-              start = i + 1
             }
+            textPositions.push({
+              currentIndex: currentTextIndex,
+              previousPosition: {
+                start: i,
+                stop: i + 1,
+              },
+              source: "previous",
+            })
+            start = i + 1
           }
         }
         if (start < changeStop) {
-          previousPositions.push({
-            start,
-            stop: changeStop,
+          textPositions.push({
+            currentIndex: currentTextIndex,
+            previousPosition: {
+              start,
+              stop: changeStop,
+            },
+            source: "previous",
           })
         }
-        previousTextIndex += changeLength // - (changeEndsWithLineFeed ? 1 : 0);
+        previousTextIndex += changeLength
       } else {
         previousTextIndex += changeLength
         currentTextIndex += changeLength
@@ -110,26 +130,22 @@
       currentTransformation,
       textPositions.map((textPositionForChange) =>
         textPositionForChange.source === "previous"
-          ? [
-              {
-                start: textPositionForChange.currentIndex,
-                stop: textPositionForChange.currentIndex,
-              },
-            ]
-          : textPositionForChange.currentPositions,
+          ? {
+              start: textPositionForChange.currentIndex,
+              stop: textPositionForChange.currentIndex,
+            }
+          : textPositionForChange.currentPosition,
       ),
     )
     const previousHtmlPositions = reversePositionsSplitFromPositions(
       previousTransformation,
       textPositions.map((textPositionForChange) =>
         textPositionForChange.source === "current"
-          ? [
-              {
-                start: textPositionForChange.previousIndex,
-                stop: textPositionForChange.previousIndex,
-              },
-            ]
-          : textPositionForChange.previousPositions,
+          ? {
+              start: textPositionForChange.previousIndex,
+              stop: textPositionForChange.previousIndex,
+            }
+          : textPositionForChange.previousPosition,
       ),
     )
     let currentHtmlIndex = 0
@@ -137,9 +153,9 @@
     let previousHtmlIndex = 0
     for (const [
       changeIndex,
-      textPositionsForChange,
+      textPositionForChange,
     ] of textPositions.entries()) {
-      switch (textPositionsForChange.source) {
+      switch (textPositionForChange.source) {
         case "current": {
           const previousHtmlPosition = previousHtmlPositions[changeIndex][0]
           if (previousHtmlPosition.start > previousHtmlIndex) {
@@ -149,6 +165,11 @@
             )
             previousHtmlIndex += previousHtmlPosition.start - previousHtmlIndex
           }
+          const lineBreak =
+            currentText.slice(
+              textPositionForChange.currentPosition.start,
+              textPositionForChange.currentPosition.stop,
+            ) === "\n"
           for (const [i, currentHtmlPosition] of currentHtmlPositions[
             changeIndex
           ].entries()) {
@@ -161,7 +182,9 @@
               currentHtmlPosition.start,
               currentHtmlPosition.stop,
             )
-            const currentModifiedHtmlFragment = `<ins style="background-color: oklch(87.1% 0.15 154.449) !important">${currentOriginalHtmlFragment}</ins>`
+            const currentModifiedHtmlFragment = lineBreak
+              ? currentOriginalHtmlFragment
+              : `<ins style="background-color: oklch(87.1% 0.15 154.449) !important">${currentOriginalHtmlFragment}</ins>`
             htmlFragments.push(currentModifiedHtmlFragment)
             currentHtmlIndex = currentHtmlPosition.stop
           }
@@ -174,6 +197,11 @@
             // Text fragment is the same on both previous & current texts.
             currentHtmlIndex += currentHtmlPosition.start - currentHtmlIndex
           }
+          const lineBreak =
+            previousText.slice(
+              textPositionForChange.previousPosition.start,
+              textPositionForChange.previousPosition.stop,
+            ) === "\n"
           for (const previousHtmlPosition of previousHtmlPositions[
             changeIndex
           ]) {
@@ -189,7 +217,9 @@
               previousHtmlPosition.start,
               previousHtmlPosition.stop,
             )
-            const previousModifiedHtmlFragment = `<del style="background-color: oklch(80.8% 0.114 19.571) !important">${previousOriginalHtmlFragment}</del>`
+            const previousModifiedHtmlFragment = lineBreak
+              ? previousOriginalHtmlFragment
+              : `<del style="background-color: oklch(80.8% 0.114 19.571) !important">${previousOriginalHtmlFragment}</del>`
             htmlFragments.push(previousModifiedHtmlFragment)
             previousHtmlIndex = previousHtmlPosition.stop
           }

@@ -368,7 +368,8 @@ export function newReverseTransformationsMergedFromPositionsIterator(
 
 /**
  * Converts an array of transformed (e.g. simplified) positions to an array
- *  of original (e.g. HTML) positions
+ * of arrays of original (e.g. HTML) positions (one array of original positions
+ * for each transformed position)
  *
  * Each position is split to ensure that it doesn't contain any HTML element.
  *
@@ -378,8 +379,9 @@ export function newReverseTransformationsMergedFromPositionsIterator(
  */
 export function reversePositionsSplitFromPositions(
   transformation: Transformation,
-  positions: Array<FragmentPosition[]>,
+  transformedPositions: FragmentPosition[],
 ): Array<FragmentPosition[]> {
+  let positions = transformedPositions.map((position) => [position])
   for (const { sourceMap } of [
     ...iterTransformationLeafs(transformation),
   ].reverse()) {

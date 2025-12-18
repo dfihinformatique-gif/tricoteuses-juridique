@@ -10,7 +10,7 @@
   import SearchDialog from "./search-dialog.svelte"
 </script>
 
-<header class="sticky top-0 z-50 w-full bg-background">
+<header class="sticky top-0 z-50 container mx-auto bg-background py-5">
   <div class="container-wrapper 3xl:fixed:px-0 px-6">
     <div
       class="3xl:fixed:container flex h-(--header-height) items-center gap-2 **:data-[slot=separator]:h-4"

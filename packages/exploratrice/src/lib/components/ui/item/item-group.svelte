@@ -8,7 +8,7 @@
 <div
 	role="list"
 	data-slot="item-group"
-	class={cn("group/item-group flex flex-col", className)}
+	class={cn("group/item-group flex flex-col gap-2", className)}
 	{...restProps}
 >
 	{@render children?.()}

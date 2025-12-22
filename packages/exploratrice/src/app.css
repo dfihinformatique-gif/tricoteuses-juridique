@@ -1,6 +1,6 @@
 @import "tailwindcss";
-
 @import "tw-animate-css";
+@import "@fontsource-variable/lora";
 
 @custom-variant dark (&:is(.dark *));
 

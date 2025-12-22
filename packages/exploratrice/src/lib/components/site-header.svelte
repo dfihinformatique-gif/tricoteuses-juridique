@@ -2,7 +2,6 @@
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
 
   import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js"
-  import * as Select from "$lib/components/ui/select/index.js"
   import { Separator } from "$lib/components/ui/separator/index.js"
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
 
@@ -10,8 +9,8 @@
   import SearchDialog from "./search-dialog.svelte"
 </script>
 
-<header class="sticky top-0 z-50 container mx-auto bg-background py-5">
-  <div class="container-wrapper 3xl:fixed:px-0 px-6">
+<header class="sticky top-0 z-50 mb-6 border-b bg-background py-5">
+  <div class="3xl:fixed:px-0 container mx-auto px-6">
     <div
       class="3xl:fixed:container flex h-(--header-height) items-center gap-2 **:data-[slot=separator]:h-4"
     >
@@ -22,11 +21,8 @@
             <NavigationMenu.Trigger>Tricoteuses</NavigationMenu.Trigger>
             <NavigationMenu.Content>
               <ul>
-                <li>
+                <li class="border-b">
                   <NavigationMenu.Link href="/">Accueil</NavigationMenu.Link>
-                </li>
-                <li>
-                  <Select.Separator />
                 </li>
                 <li>
                   <NavigationMenu.Link

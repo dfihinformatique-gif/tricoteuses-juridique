@@ -122,7 +122,7 @@
   </ul>
 {/snippet}
 
-<h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
+<h1>
   <Badge variant="secondary"
     >{date === undefined ? "date inconnue" : fullDateFormatter(date)}</Badge
   >

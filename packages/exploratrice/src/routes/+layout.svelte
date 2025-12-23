@@ -15,4 +15,7 @@
 
 <ModeWatcher />
 <SiteHeader />
-{@render children?.()}
+
+<main class="container mx-auto px-6">
+  {@render children?.()}
+</main>

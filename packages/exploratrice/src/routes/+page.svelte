@@ -56,7 +56,9 @@
   <Item.Content class="overflow-x-auto">
     <Item.Title class="flex w-full justify-between">
       {#if date !== undefined}
-        <time datetime={date} class="first-letter:uppercase text-sm font-bold">{fullDateFormatter(date)}</time>
+        <time datetime={date} class="text-sm font-bold first-letter:uppercase"
+          >{fullDateFormatter(date)}</time
+        >
       {/if}
 
       {#if badge !== undefined}
@@ -129,7 +131,7 @@
   <Card.Root>
     <Card.Content>
       <h2>
-        <NewspaperIcon size={20}  />
+        <NewspaperIcon size={20} />
         Les derniers journaux officiels
       </h2>
       <Item.Group>
@@ -181,7 +183,7 @@
   <Card.Root>
     <Card.Content>
       <h2>
-        <FolderOpenIcon size={20}  />
+        <FolderOpenIcon size={20} />
         Les derniers dossiers législatifs en cours
       </h2>
       <Item.Group>
@@ -207,7 +209,7 @@
   <Card.Root>
     <Card.Content>
       <h2>
-        <FileTextIcon size={20}  />
+        <FileTextIcon size={20} />
         Les derniers textes publiés
       </h2>
       <Item.Group>

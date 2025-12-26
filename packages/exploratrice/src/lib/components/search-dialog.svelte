@@ -134,7 +134,7 @@
   class: className,
   content,
   ...restProps
-}: HTMLAttributes<HTMLElement> & { content: string | Component })}
+}: HTMLAttributes & { content: string | Component })}
   {@const Content = content}
   <kbd
     class={cn(

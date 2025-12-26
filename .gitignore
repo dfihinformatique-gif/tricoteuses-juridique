@@ -1,4 +1,7 @@
+.DS_Store
 node_modules/
+
+*.log
 
 # Env
 /packages/*/*.env
@@ -6,6 +9,8 @@ node_modules/
 
 /packages/exploratrice/.svelte-kit
 /packages/exploratrice/build
+
+packages/moulineuse/dist
 
 packages/tisseuse/dist
 # Ensure that text_titles_infos.json remains empty:

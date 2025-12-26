@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "moulineuse-stdio": {
+      "comment": "Local stdio connection (default mode)",
+      "command": "node",
+      "args": [
+        "/absolute/path/to/tricoteuses-juridique/packages/moulineuse/dist/index.js"
+      ],
+      "env": {
+        "ASSEMBLEE_DB_NAME": "canutes_assemblee",
+        "ASSEMBLEE_DB_HOST": "localhost",
+        "ASSEMBLEE_DB_PORT": "5432",
+        "ASSEMBLEE_DB_USER": "assemblee",
+        "ASSEMBLEE_DB_PASSWORD": "your_password",
+        "LEGI_DB_NAME": "canutes_legifrance",
+        "LEGI_DB_HOST": "localhost",
+        "LEGI_DB_PORT": "5432",
+        "LEGI_DB_USER": "legi",
+        "LEGI_DB_PASSWORD": "your_password"
+      }
+    },
+    "moulineuse-http": {
+      "comment": "Remote HTTP/SSE connection",
+      "url": "https://mcp.code4code.eu/sse",
+      "transport": "sse"
+    }
+  }
+}

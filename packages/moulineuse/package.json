@@ -1,0 +1,69 @@
+{
+  "name": "@tricoteuses/moulineuse",
+  "description": "MCP server for querying French legislative databases (Assemblée, Légifrance)",
+  "version": "0.1.0",
+  "keywords": [
+    "Assemblée nationale",
+    "France",
+    "Légifrance",
+    "law",
+    "MCP",
+    "Model Context Protocol",
+    "open data",
+    "Parliament",
+    "Sénat"
+  ],
+  "author": "Emmanuel Raviart <emmanuel@raviart.com>",
+  "bugs": {
+    "url": "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/issues"
+  },
+  "homepage": "https://tricoteuses.fr/",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "moulineuse": "./dist/index.js",
+    "moulineuse-http": "./dist/http-server.js"
+  },
+  "files": [
+    "dist",
+    "!**/*.test.js"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint .",
+    "test": "npm run test:unit -- --run",
+    "test:unit": "vitest",
+    "dev:http": "tsx src/http-server.ts",
+    "start:http": "node dist/http-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
+    "express": "^5.2.1",
+    "postgres": "^3.4.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@auditors/core": "^0.7.4",
+    "@types/node": "^24.8.1",
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "@typescript-eslint/parser": "^8.46.1",
+    "eslint": "^9.38.0",
+    "prettier": "^3.0.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.0.0",
+    "vitest": "^4.0.1"
+  }
+}

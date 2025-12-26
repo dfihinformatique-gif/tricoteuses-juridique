@@ -1,7 +1,7 @@
 # Dockerfile pour Moulineuse MCP HTTP/SSE Server
 
 # Étape 1: Build
-FROM node:24-alpine AS builder
+FROM node:24-trixie-slim AS builder
 
 WORKDIR /app
 
@@ -18,12 +18,12 @@ COPY src ./src
 RUN npm run build
 
 # Étape 2: Production
-FROM node:24-alpine
+FROM node:24-trixie-slim
 
 WORKDIR /app
 
 # Installer uniquement les dépendances de production
-COPY package*.json ./
+COPY package.json ../../package-lock.json ./
 RUN npm ci --omit=dev && \
     npm cache clean --force
 
@@ -43,9 +43,9 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Labels pour la documentation
 LABEL maintainer="Emmanuel Raviart <emmanuel@raviart.com>" \
-      description="Moulineuse - MCP server for French legislative databases" \
+      description="Moulineuse - MCP server for French legislation" \
       version="0.1.0" \
-      org.opencontainers.image.source="https://git.tricoteuses.fr/logiciels/tricoteuses-juridique"
+      org.opencontainers.image.source="https://git.tricoteuses.fr/logiciels/tricoteuses-moulineuse"
 
 # Démarrer le serveur HTTP/SSE
 CMD ["node", "dist/http-server.js"]

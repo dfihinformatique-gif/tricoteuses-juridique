@@ -24,6 +24,8 @@ jobs:
       - name: Build container image
         run: |
           podman build -t $IMAGE_TAG .
+        working-directory: packages/moulineuse/
       - name: Push container image to registry
         run: |
           podman push $IMAGE_TAG
+        working-directory: packages/moulineuse/

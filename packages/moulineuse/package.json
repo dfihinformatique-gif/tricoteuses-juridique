@@ -38,7 +38,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"*.md\"",
     "lint": "eslint .",
     "test": "npm run test:unit -- --run",
     "test:unit": "vitest",

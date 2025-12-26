@@ -49,7 +49,7 @@
   "scripts": {
     "build": "vite build",
     "configure": "tsx src/scripts/configure.ts",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"*.md\"",
     "lint": "eslint .",
     "prepack": "npm run build",
     "test": "npm run test:unit -- --run",

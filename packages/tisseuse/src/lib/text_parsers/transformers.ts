@@ -425,7 +425,6 @@ function reversePositionsSplitFromPositionsUsingSourceMap(
       transformPosition: for (
         let positionReverseTransformed = false;
         !positionReverseTransformed;
-
       ) {
         for (
           ;

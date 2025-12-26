@@ -3,10 +3,12 @@
 ## Introduction
 
 Moulineuse est un serveur MCP (Model Context Protocol) qui permet d'interroger directement les bases de données PostgreSQL contenant les documents juridiques français :
+
 - **canutes_assemblee** : données de l'Assemblée nationale
 - **canutes_legifrance** : textes juridiques de Légifrance
 
 Moulineuse propose **deux modes d'utilisation** :
+
 - ⭐ **HTTP/SSE (Recommandé)** : Accès distant simple via https://mcp.code4code.eu
 - **Stdio (Avancé)** : Accès local nécessitant une connexion aux bases PostgreSQL
 
@@ -73,6 +75,7 @@ Quels sont les articles du code civil qui mentionnent le mariage ?
 ### Cas d'usage du mode stdio
 
 Ce mode est destiné aux utilisateurs qui :
+
 - Développent sur le projet Moulineuse lui-même
 - Ont besoin d'un déploiement privé/isolé
 - Veulent tester des modifications locales des bases de données
@@ -81,11 +84,13 @@ Ce mode est destiné aux utilisateurs qui :
 ### Configuration
 
 1. **Copiez le fichier d'exemple de configuration** :
+
    ```bash
    cp example.env .env
    ```
 
 2. **Éditez `.env` avec vos identifiants de base de données** :
+
    ```env
    ASSEMBLEE_DB_NAME="canutes_assemblee"
    ASSEMBLEE_DB_HOST="localhost"  # ou votre serveur PostgreSQL
@@ -101,6 +106,7 @@ Ce mode est destiné aux utilisateurs qui :
    ```
 
 3. **Construisez le projet** :
+
    ```bash
    npm install
    npm run build
@@ -149,6 +155,7 @@ Quel que soit le mode choisi (HTTP/SSE ou stdio), vous avez accès aux 5 outils 
 Liste toutes les tables disponibles dans une base de données.
 
 **Exemple d'utilisation :**
+
 ```
 Peux-tu lister les tables disponibles dans la base assemblee ?
 ```
@@ -161,6 +168,7 @@ Liste des tables avec leurs schémas (ex: `acteur`, `amendement`, `scrutin`, etc
 Décrit la structure d'une table (colonnes, types, contraintes).
 
 **Exemple d'utilisation :**
+
 ```
 Peux-tu décrire la structure de la table "acteur" dans la base assemblee ?
 ```
@@ -173,6 +181,7 @@ Détails des colonnes : noms, types de données, nullable, valeurs par défaut, 
 Récupère les JSON Schemas décrivant la structure des données JSON dans les champs `data` des tables.
 
 **Exemple d'utilisation :**
+
 ```
 Peux-tu me donner les JSON Schemas pour la base assemblee ?
 ```
@@ -182,12 +191,14 @@ Un objet JSON contenant toutes les définitions de schémas pour les différents
 
 **Utilité :**
 Les JSON Schemas vous permettent de comprendre la structure exacte des documents stockés dans les champs `data` JSONB des tables PostgreSQL. Cela est essentiel pour :
+
 - Comprendre quels champs sont disponibles dans chaque type de document
 - Savoir comment accéder aux données imbriquées
 - Construire des requêtes SQL qui extraient des données spécifiques des champs JSON
 
 **Exemple de requête utilisant les schémas :**
 Une fois que vous connaissez la structure grâce au schéma, vous pouvez faire des requêtes comme :
+
 ```sql
 SELECT
   uid,
@@ -210,6 +221,7 @@ Trouve les 10 premiers députés de la 16ème législature
 ```
 
 Requête SQL générée :
+
 ```sql
 SELECT nom, prenom, groupe_sigle
 FROM acteur
@@ -222,6 +234,7 @@ Combien d'amendements ont été déposés pendant la 16ème législature ?
 ```
 
 Requête SQL générée :
+
 ```sql
 SELECT COUNT(*) as total_amendements
 FROM amendement
@@ -239,6 +252,7 @@ Trouve les articles du code civil traitant du mariage
 ```
 
 Requête SQL générée :
+
 ```sql
 SELECT id, numero, titre
 FROM article
@@ -252,6 +266,7 @@ Quels sont les derniers décrets publiés ?
 ```
 
 Requête SQL générée :
+
 ```sql
 SELECT id, titre, date_publication
 FROM texte
@@ -281,6 +296,7 @@ LIMIT 10
 ### Mode HTTP/SSE
 
 **Le serveur ne répond pas :**
+
 - Vérifiez que https://mcp.code4code.eu est accessible depuis votre réseau
 - Vérifiez votre connexion internet
 - Essayez d'accéder à https://mcp.code4code.eu/health dans un navigateur
@@ -288,12 +304,14 @@ LIMIT 10
 ### Mode stdio
 
 **Erreur de connexion à la base de données :**
+
 - Vérifiez que PostgreSQL est démarré
 - Vérifiez les identifiants dans `.env`
 - Vérifiez que l'utilisateur a les permissions de lecture sur les bases
 - Vérifiez que le pare-feu autorise la connexion au port PostgreSQL
 
 **Le serveur MCP ne démarre pas :**
+
 - Vérifiez que le projet est compilé (`npm run build`)
 - Vérifiez que le chemin dans la configuration MCP est correct (chemin absolu)
 - Vérifiez que les variables d'environnement sont bien définies
@@ -304,5 +322,6 @@ LIMIT 10
 ## 📞 Support
 
 Pour toute question ou problème :
+
 - Issues : https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/issues
 - Documentation : https://tricoteuses.fr/

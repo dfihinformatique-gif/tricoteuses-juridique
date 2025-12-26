@@ -2,12 +2,12 @@
 
 _Find links in/to French legislative documents_
 
-_Tricoteuses Tisseuse is free and open source software.
+_Tricoteuses Tisseuse_ is free and open source software.
 
 - [software repository](https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/src/branch/main/packages/tisseuse)
 - [GNU Affero General Public License version 3 or greater](https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/src/branch/main/packages/tisseuse/LICENSE.md)
 
-Tricoteuses Tisseuse started from a full rewrite of [Metslesliens](https://www.npmjs.com/package/metslesliens) by Seb35, published under the "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE" (WTFPL) version 2.
+_Tricoteuses Tisseuse_ started from a full rewrite of [Metslesliens](https://www.npmjs.com/package/metslesliens) by Seb35, published under the "DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE" (WTFPL) version 2.
 
 ## Installation
 

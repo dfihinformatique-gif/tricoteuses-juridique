@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js"
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js"
 import cors from "cors"
 import express from "express"
+import { randomUUID } from "node:crypto"
 import { z } from "zod"
 import { assembleeDb, closeConnections, legiDb } from "./lib/databases.js"
 import { loadAssembleeSchemas, loadLegifranceSchemas } from "./lib/schemas.js"
@@ -294,21 +295,33 @@ app.get("/health", (_req, res) => {
     status: "ok",
     server: "moulineuse",
     version: "0.1.0",
-    transport: "sse",
+    transport: "streamable-http",
   })
 })
 
-// SSE endpoint for MCP
-app.get("/sse", async (req, res) => {
-  const server = createServer()
-  const transport = new SSEServerTransport("/message", res)
-  await server.connect(transport)
-})
+// MCP HTTP endpoint - handles GET, POST, and DELETE
+app.all("/mcp", async (req, res) => {
+  try {
+    // Create a new server and transport for each request
+    const server = createServer()
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+    })
 
-// Message endpoint for MCP
-app.post("/message", async (req, res) => {
-  // This is handled by the SSE transport
-  res.status(200).end()
+    // Connect the server to the transport
+    await server.connect(transport)
+
+    // Handle the request (GET, POST, or DELETE)
+    await transport.handleRequest(req, res, req.body)
+  } catch (error) {
+    console.error("Error handling MCP request:", error)
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Internal server error",
+        message: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
 })
 
 // Start server
@@ -321,8 +334,10 @@ async function main() {
 ║  Local:  http://localhost:${PORT.toString().padEnd(43)}║
 ║  Public: https://mcp.code4code.eu                                ║
 ║                                                                  ║
-║  Health: http://localhost:${PORT}/health${" ".repeat(36 - PORT.toString().length)}║
-║  SSE:    http://localhost:${PORT}/sse${" ".repeat(39 - PORT.toString().length)}║
+║  Health:   http://localhost:${PORT}/health${" ".repeat(34 - PORT.toString().length)}║
+║  Endpoint: http://localhost:${PORT}/mcp${" ".repeat(37 - PORT.toString().length)}║
+║                                                                  ║
+║  Transport: Streamable HTTP (MCP Protocol)                      ║
 ╚══════════════════════════════════════════════════════════════════╝
     `)
   })

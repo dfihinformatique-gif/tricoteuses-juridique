@@ -9,12 +9,12 @@ Moulineuse est un serveur MCP (Model Context Protocol) qui permet d'interroger d
 
 Moulineuse propose **deux modes d'utilisation** :
 
-- ⭐ **HTTP/SSE (Recommandé)** : Accès distant simple via https://mcp.code4code.eu
+- ⭐ **HTTP (Recommandé)** : Accès distant simple via https://mcp.code4code.eu
 - **Stdio (Avancé)** : Accès local nécessitant une connexion aux bases PostgreSQL
 
 ---
 
-## ⭐ Mode HTTP/SSE (Recommandé)
+## ⭐ Mode HTTP (Recommandé)
 
 ### Pourquoi ce mode ?
 
@@ -24,6 +24,7 @@ Moulineuse propose **deux modes d'utilisation** :
 - ✅ **Accès immédiat** - Connectez-vous directement à https://mcp.code4code.eu
 - ✅ **Toujours à jour** - Les données sont maintenues par l'équipe Tricoteuses
 - ✅ **Sécurisé** - Connexion HTTPS chiffrée
+- ✅ **Transport moderne** - Utilise le protocole Streamable HTTP MCP
 
 ### Configuration (3 lignes !)
 
@@ -33,8 +34,8 @@ Ajoutez simplement ceci à votre configuration MCP (ex: Claude Desktop) :
 {
   "mcpServers": {
     "moulineuse": {
-      "url": "https://mcp.code4code.eu/sse",
-      "transport": "sse"
+      "url": "https://mcp.code4code.eu/mcp",
+      "transport": "streamable-http"
     }
   }
 }

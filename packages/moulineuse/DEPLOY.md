@@ -1,6 +1,6 @@
 # Guide de déploiement de Moulineuse avec Podman/Docker
 
-Ce guide explique comment déployer le serveur MCP HTTP/SSE de Moulineuse avec Podman ou Docker.
+Ce guide explique comment déployer le serveur MCP HTTP de Moulineuse avec Podman ou Docker.
 
 ## 📋 Prérequis
 

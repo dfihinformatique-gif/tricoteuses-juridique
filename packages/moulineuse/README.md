@@ -109,9 +109,9 @@ npm run build
 npm start  # or: moulineuse
 ```
 
-### 2. HTTP/SSE Mode
+### 2. HTTP Mode
 
-For remote access via HTTP with Server-Sent Events transport:
+For remote access via HTTP with Streamable HTTP transport:
 
 **Development:**
 
@@ -134,8 +134,9 @@ The HTTP server will be available at:
 **Endpoints:**
 
 - `GET /health` - Health check
-- `GET /sse` - MCP Server-Sent Events endpoint
-- `POST /message` - MCP message endpoint
+- `GET /mcp` - MCP Streamable HTTP endpoint (for SSE streaming)
+- `POST /mcp` - MCP Streamable HTTP endpoint (for JSON-RPC messages)
+- `DELETE /mcp` - Session termination endpoint
 
 ### 3. Docker/Podman Deployment
 

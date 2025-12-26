@@ -20,9 +20,9 @@
       }
     },
     "moulineuse-http": {
-      "comment": "Remote HTTP/SSE connection",
-      "url": "https://mcp.code4code.eu/sse",
-      "transport": "sse"
+      "comment": "Remote Streamable HTTP connection (recommended)",
+      "url": "https://mcp.code4code.eu/mcp",
+      "transport": "streamable-http"
     }
   }
 }

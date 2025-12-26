@@ -42,7 +42,7 @@ runs:
         LEGI_DB_HOST="${{ vars.DB_HOST_RW }}"
         LEGI_DB_PORT=${{ vars.DB_PORT }}
         LEGI_DB_USER="legifrance_rw"
-        LEGI_DB_PASSWORD="${{ inputs.LEGI_DB_PASSWORD }}"
+        LEGI_DB_PASSWORD="${{ inputs.LEGI_DB_PASSWORD_RW }}"
 
         LINK_BASE_URL="https://tricoteuses.fr/"
         LINK_TYPE="Exploratrice"

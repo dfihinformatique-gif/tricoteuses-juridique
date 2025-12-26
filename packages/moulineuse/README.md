@@ -87,7 +87,6 @@ LEGI_DB_USER="legi"
 LEGI_DB_PASSWORD="your_password"
 ```
 
-## Usage
 
 ## Usage
 
@@ -137,6 +136,41 @@ The HTTP server will be available at:
 - `GET /health` - Health check
 - `GET /sse` - MCP Server-Sent Events endpoint
 - `POST /message` - MCP message endpoint
+
+### 3. Docker/Podman Deployment
+
+For production deployment with Docker or Podman:
+
+**Build the image:**
+```bash
+podman build -t moulineuse:latest .
+# or
+docker build -t moulineuse:latest .
+```
+
+**Run the container:**
+```bash
+podman run -d \
+  --name moulineuse-mcp \
+  --restart=unless-stopped \
+  -p 3000:3000 \
+  --env-file .env \
+  moulineuse:latest
+```
+
+**Or use Docker Compose:**
+```bash
+docker-compose up -d
+# or
+podman-compose up -d
+```
+
+📖 **Full deployment guide:** See [DEPLOY.md](DEPLOY.md) for detailed instructions including:
+- Reverse proxy configuration (Nginx, Traefik)
+- Systemd integration
+- Monitoring and troubleshooting
+- Security best practices
+
 
 ### MCP Client Configuration
 

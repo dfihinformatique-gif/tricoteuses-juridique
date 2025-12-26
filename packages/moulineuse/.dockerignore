@@ -1,0 +1,37 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build
+dist/
+
+# Git
+.git/
+.gitignore
+
+# Env files
+.env
+*.env
+!example.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Tests
+*.test.ts
+*.test.js
+vitest.config.ts
+
+# Documentation
+README.md
+USAGE.md
+LICENSE.md
+mcp-config-example.json
+
+# Claude
+.claude/

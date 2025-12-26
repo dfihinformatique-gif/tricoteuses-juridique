@@ -1,0 +1,29 @@
+name: Release Moulineuse image
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+enable-email-notifications: true
+
+jobs:
+  release_moulineuse_image:
+    runs-on: docker
+    if: "${{ forgejo.ref_name }} == 'main'"
+    env:
+      IMAGE_TAG: git.tricoteuses.fr/logiciels/tricoteuses-moulineuse:latest
+    steps:
+      - name: Checkout tricoteuses-juridique
+        uses: actions/checkout@v4
+      - name: Install podman
+        run: |
+          apt-get update && apt-get install -y podman
+      - name: Log in to container registry
+        run: |
+          echo "${{ secrets.REGISTRY_TOKEN }}" | podman login --username not_used --password-stdin git.tricoteuses.fr
+      - name: Build container image
+        run: |
+          podman build -t $IMAGE_TAG .
+      - name: Push container image to registry
+        run: |
+          podman push $IMAGE_TAG

@@ -1,4 +1,4 @@
-name: Test
+name: Test & Release
 
 on:
   push:
@@ -15,10 +15,10 @@ jobs:
       - name: Setup Tricoteuses Tisseuse
         uses: ./.forgejo/actions/setup_tisseuse
         with:
-          ASSEMBLEE_DB_PASSWORD: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
-          LEGI_ANOMALIES_DB_PASSWORD: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
-          LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"
-          TISSEUSE_DB_PASSWORD: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
+          ASSEMBLEE_DB_PASSWORD_RW: "${{ secrets.ASSEMBLEE_DB_PASSWORD_RW }}"
+          LEGI_ANOMALIES_DB_PASSWORD_RW: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD_RW }}"
+          LEGI_DB_PASSWORD_RW: "${{ secrets.LEGI_DB_PASSWORD_RW }}"
+          TISSEUSE_DB_PASSWORD_RW: "${{ secrets.TISSEUSE_DB_PASSWORD_RW }}"
       - name: Extract titles from texts
         run: npx tsx src/scripts/extract_texts_titles_infos.ts
         working-directory: packages/tisseuse/
@@ -26,9 +26,9 @@ jobs:
       # - name: Setup Tricoteuses Exploratrice
       #   uses: ./.forgejo/actions/setup_exploratrice
       #   with:
-      #     ASSEMBLEE_DB_PASSWORD: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
-      #     LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"
-      #     TISSEUSE_DB_PASSWORD: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
+      #     ASSEMBLEE_DB_PASSWORD_RO: "${{ secrets.ASSEMBLEE_DB_PASSWORD_RO }}"
+      #     LEGI_DB_PASSWORD_RO: "${{ secrets.LEGI_DB_PASSWORD_RO }}"
+      #     TISSEUSE_DB_PASSWORD_RO: "${{ secrets.TISSEUSE_DB_PASSWORD_RO }}"
       # EMFILE: too many open files, watch '/workspace/logiciels/tricoteuses-juridique/packages/tisseuse/package.json'
       # - name: Launch Exploratrice & Tisseuse tests
       #   run: npm test
@@ -39,13 +39,21 @@ jobs:
         run: npx tsx src/scripts/extract_texts_infos.ts
         working-directory: packages/tisseuse/
 
+  release_moulineuse_image:
+    needs: [test]
+    if: forge.ref_name == 'main'
+    runs-on: docker
+    uses: ./.forgejo/workflows/release_moulineuse_image.yml
+    secrets:
+      REGISTRY_TOKEN: "${{ secrets.REGISTRY_TOKEN }}"
+
   update_tisseuse_database:
     needs: [test]
     if: forge.ref_name == 'main'
     runs-on: juridique
     uses: ./.forgejo/workflows/update_tisseuse_database.yml
     secrets:
-      ASSEMBLEE_DB_PASSWORD: "${{ secrets.ASSEMBLEE_DB_PASSWORD }}"
-      LEGI_ANOMALIES_DB_PASSWORD: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD }}"
-      LEGI_DB_PASSWORD: "${{ secrets.LEGI_DB_PASSWORD }}"
-      TISSEUSE_DB_PASSWORD: "${{ secrets.TISSEUSE_DB_PASSWORD }}"
+      ASSEMBLEE_DB_PASSWORD_RW: "${{ secrets.ASSEMBLEE_DB_PASSWORD_RW }}"
+      LEGI_ANOMALIES_DB_PASSWORD_RW: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD_RW }}"
+      LEGI_DB_PASSWORD_RW: "${{ secrets.LEGI_DB_PASSWORD_RW }}"
+      TISSEUSE_DB_PASSWORD_RW: "${{ secrets.TISSEUSE_DB_PASSWORD_RW }}"

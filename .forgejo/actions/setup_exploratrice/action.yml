@@ -1,16 +1,13 @@
 name: Setup Tricoteuses Tisseuse
 description: Install Tricoteuses Tisseuse & create its environment
 inputs:
-  ASSEMBLEE_DB_PASSWORD:
-    description: "Password of Assemblée PostgreSQL database"
+  ASSEMBLEE_DB_PASSWORD_RO:
+    description: "Password of Assemblée PostgreSQL read-only database"
     required: true
-  LEGI_ANOMALIES_DB_PASSWORD:
-    description: "Password of Légifrance Anomalies PostgreSQL database"
+  LEGI_DB_PASSWORD_RO:
+    description: "Password of Légifrance PostgreSQL read-only database"
     required: true
-  LEGI_DB_PASSWORD:
-    description: "Password of Légifrance PostgreSQL database"
-    required: true
-  TISSEUSE_DB_PASSWORD:
+  TISSEUSE_DB_PASSWORD_RO:
     description: "Password of Tisseuse PostgreSQL database"
     required: true
 runs:
@@ -24,29 +21,29 @@ runs:
       run: |
         cat > .env << EOF
         # Assemblée PostgreSQL database configuration
-        ASSEMBLEE_DB_NAME="assemblee"
-        ASSEMBLEE_DB_HOST="${{ vars.ASSEMBLEE_DB_HOST }}"
-        ASSEMBLEE_DB_PORT=${{ vars.ASSEMBLEE_DB_PORT }}
-        ASSEMBLEE_DB_USER="assemblee"
-        ASSEMBLEE_DB_PASSWORD="${{ inputs.ASSEMBLEE_DB_PASSWORD }}"
+        ASSEMBLEE_DB_NAME="canutes_assemblee"
+        ASSEMBLEE_DB_HOST="${{ vars.DB_HOST_RO }}"
+        ASSEMBLEE_DB_PORT=${{ vars.DB_PORT }}
+        ASSEMBLEE_DB_USER="assemblee_ro"
+        ASSEMBLEE_DB_PASSWORD="${{ inputs.ASSEMBLEE_DB_PASSWORD_RO }}"
 
         # Path of repository containing repository of Assemblée documents
         # in various formats (HTML, PDF, etc)
         ASSEMBLEE_DOCUMENTS_DIR="../../../assemblee-data/Documents/"
 
         # Légifrance PostgreSQL database configuration
-        LEGI_DB_NAME="legi"
-        LEGI_DB_HOST="${{ vars.LEGI_DB_HOST }}"
-        LEGI_DB_PORT=${{ vars.LEGI_DB_PORT }}
-        LEGI_DB_USER="legi"
-        LEGI_DB_PASSWORD="${{ inputs.LEGI_DB_PASSWORD }}"
+        LEGI_DB_NAME="canutes_legifrance"
+        LEGI_DB_HOST="${{ vars.DB_HOST_RO }}"
+        LEGI_DB_PORT=${{ vars.DB_PORT }}
+        LEGI_DB_USER="legifrance_ro"
+        LEGI_DB_PASSWORD="${{ inputs.LEGI_DB_PASSWORD_RO }}"
 
         # Tisseuse PostgreSQL database configuration
-        TISSEUSE_DB_NAME="tisseuse"
-        TISSEUSE_DB_HOST="${{ vars.TISSEUSE_DB_HOST }}"
-        TISSEUSE_DB_PORT=${{ vars.TISSEUSE_DB_PORT }}
-        TISSEUSE_DB_USER="tisseuse"
-        TISSEUSE_DB_PASSWORD="${{ inputs.TISSEUSE_DB_PASSWORD }}"
+        TISSEUSE_DB_NAME="canutes_tisseuse"
+        TISSEUSE_DB_HOST="${{ vars.DB_HOST_RO }}"
+        TISSEUSE_DB_PORT=${{ vars.DB_PORT }}
+        TISSEUSE_DB_USER="tisseuse_ro"
+        TISSEUSE_DB_PASSWORD="${{ inputs.TISSEUSE_DB_PASSWORD_RO }}"
 
         TITLE="Tricoteuses (action)"
         EOF

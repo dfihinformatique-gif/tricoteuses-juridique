@@ -112,7 +112,7 @@
 
       <EndpointCategorySection
         title="Endpoints principaux"
-        description="Ces endpoints retournent des données structurées dans un champ "data" avec des schémas JSON détaillés."
+        description={`Ces endpoints retournent des données structurées dans un champ "data" avec des schémas JSON détaillés.`}
         endpoints={categorizedEndpoints.withDataField}
         colorClass="text-blue-600 dark:text-blue-400"
         {endpointCard}

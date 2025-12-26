@@ -6,7 +6,7 @@ FROM node:24-trixie-slim AS builder
 WORKDIR /app
 
 # Copier les fichiers de configuration
-COPY package*.json tsconfig.json ./
+COPY ../../package-lock.json package.json tsconfig.json ./
 
 # Installer les dépendances
 RUN npm ci
@@ -23,7 +23,7 @@ FROM node:24-trixie-slim
 WORKDIR /app
 
 # Installer uniquement les dépendances de production
-COPY package.json ../../package-lock.json ./
+COPY ../../package-lock.json package.json ./
 RUN npm ci --omit=dev && \
     npm cache clean --force
 
@@ -31,11 +31,11 @@ RUN npm ci --omit=dev && \
 COPY --from=builder /app/dist ./dist
 
 # Variables d'environnement par défaut
-ENV PORT=3000 \
+ENV PORT=8000 \
     NODE_ENV=production
 
 # Exposer le port
-EXPOSE 3000
+EXPOSE 8000
 
 # Healthcheck
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \

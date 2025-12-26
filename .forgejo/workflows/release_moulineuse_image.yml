@@ -23,7 +23,7 @@ jobs:
           echo "${{ secrets.REGISTRY_TOKEN }}" | podman login --username not_used --password-stdin git.tricoteuses.fr
       - name: Build container image
         run: |
-          podman build -t $IMAGE_TAG .
+          podman build --build-context=root=../../ -t $IMAGE_TAG .
         working-directory: packages/moulineuse/
       - name: Push container image to registry
         run: |

@@ -40,12 +40,12 @@ LEGI_DB_PASSWORD=votre_mot_de_passe
 
 **Avec Podman :**
 ```bash
-podman build -t moulineuse:latest .
+podman build --build-context=root=../../ -t moulineuse:latest .
 ```
 
 **Avec Docker :**
 ```bash
-docker build -t moulineuse:latest .
+docker build --build-context=root=../../ -t moulineuse:latest .
 ```
 
 ### 3. Démarrer le conteneur

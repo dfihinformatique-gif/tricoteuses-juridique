@@ -6,7 +6,8 @@ FROM node:24-trixie-slim AS builder
 WORKDIR /app
 
 # Copier les fichiers de configuration
-COPY ../../package-lock.json package.json tsconfig.json ./
+COPY --from=root package-lock.json ./
+COPY package.json tsconfig.json ./
 
 # Installer les dépendances
 RUN npm ci
@@ -23,7 +24,8 @@ FROM node:24-trixie-slim
 WORKDIR /app
 
 # Installer uniquement les dépendances de production
-COPY ../../package-lock.json package.json ./
+COPY --from=root package-lock.json ./
+COPY package.json ./
 RUN npm ci --omit=dev && \
     npm cache clean --force
 

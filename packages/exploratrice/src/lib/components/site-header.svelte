@@ -21,8 +21,13 @@
             <NavigationMenu.Trigger>Tricoteuses</NavigationMenu.Trigger>
             <NavigationMenu.Content>
               <ul>
-                <li class="border-b">
+                <li>
                   <NavigationMenu.Link href="/">Accueil</NavigationMenu.Link>
+                </li>
+                <li class="border-b">
+                  <NavigationMenu.Link href="/opendata"
+                    >API et données ouvertes</NavigationMenu.Link
+                  >
                 </li>
                 <li>
                   <NavigationMenu.Link

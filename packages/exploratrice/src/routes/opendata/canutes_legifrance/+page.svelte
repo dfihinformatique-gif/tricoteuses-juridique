@@ -15,6 +15,7 @@
     categorizeEndpoints,
     getBaseApiUrl,
   } from "$lib/openapi/helpers"
+  import AboutApiTricoteuses from "$lib/components/about-api-tricoteuses.svelte"
 
   let { data }: { data: PageData } = $props()
 
@@ -152,4 +153,6 @@
       <SchemaDocumentation definitions={data.jsonSchema.definitions} />
     {/if}
   {/if}
+
+  <AboutApiTricoteuses />
 </div>

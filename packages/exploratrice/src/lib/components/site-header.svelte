@@ -26,7 +26,7 @@
                 </li>
                 <li class="border-b">
                   <NavigationMenu.Link href="/opendata"
-                    >API et données ouvertes</NavigationMenu.Link
+                    >Données ouvertes, API et IA</NavigationMenu.Link
                   >
                 </li>
                 <li>

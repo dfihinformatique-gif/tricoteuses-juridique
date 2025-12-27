@@ -1,6 +1,7 @@
 <script lang="ts">
   import { getTypeDisplay, extractRefName } from "$lib/openapi/helpers"
   import { Badge } from "$lib/components/ui/badge"
+  import FormattedDescription from "./formatted-description.svelte"
   import SchemaPropertyRenderer from "./schema-property-renderer.svelte"
 
   interface Props {
@@ -37,9 +38,12 @@
           {/if}
         </div>
         {#if (propSchema as any).description}
-          <p class="mt-1 ml-1 text-xs text-muted-foreground">
-            {(propSchema as any).description}
-          </p>
+          <div class="mt-1 ml-1">
+            <FormattedDescription
+              description={(propSchema as any).description}
+              class="text-xs text-muted-foreground"
+            />
+          </div>
         {/if}
         {#if (propSchema as any).enum}
           <div class="mt-1 ml-1 text-xs">

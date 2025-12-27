@@ -4,6 +4,7 @@
   import { Badge } from "$lib/components/ui/badge"
   import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "$lib/components/ui/accordion"
   import { Separator } from "$lib/components/ui/separator"
+  import FormattedDescription from "./formatted-description.svelte"
 
   interface Props {
     definitions: Record<string, any>
@@ -55,9 +56,12 @@
           <div class="text-left">
             <h3 class="text-lg font-semibold">{schemaName}</h3>
             {#if (schema as any)?.description}
-              <p class="mt-1 text-sm text-muted-foreground">
-                {(schema as any).description}
-              </p>
+              <div class="mt-1">
+                <FormattedDescription
+                  description={(schema as any).description}
+                  class="text-sm text-muted-foreground"
+                />
+              </div>
             {/if}
           </div>
         </AccordionTrigger>
@@ -109,9 +113,12 @@
                       {/if}
                     </div>
                     {#if (propSchema as any).description}
-                      <p class="mt-1 ml-1 text-xs text-muted-foreground">
-                        {(propSchema as any).description}
-                      </p>
+                      <div class="mt-1 ml-1">
+                        <FormattedDescription
+                          description={(propSchema as any).description}
+                          class="text-xs text-muted-foreground"
+                        />
+                      </div>
                     {/if}
                     {#if (propSchema as any).enum}
                       <div class="mt-1 ml-1 text-xs">

@@ -2,6 +2,7 @@
   import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "$lib/components/ui/card"
   import { Badge } from "$lib/components/ui/badge"
   import { Separator } from "$lib/components/ui/separator"
+  import FormattedDescription from "./formatted-description.svelte"
   import SchemaPropertyRenderer from "./schema-property-renderer.svelte"
 
   interface Props {
@@ -84,9 +85,10 @@
                   {/if}
                 </div>
                 {#if subSchema.description}
-                  <CardDescription>
-                    {subSchema.description}
-                  </CardDescription>
+                  <FormattedDescription
+                    description={subSchema.description}
+                    class="text-sm text-muted-foreground"
+                  />
                 {/if}
               </CardHeader>
               <CardContent>
@@ -113,9 +115,12 @@
               {/if}
             </div>
             {#if schema.description}
-              <CardDescription class="mt-2">
-                {schema.description}
-              </CardDescription>
+              <div class="mt-2">
+                <FormattedDescription
+                  description={schema.description}
+                  class="text-sm text-muted-foreground"
+                />
+              </div>
             {/if}
           </CardHeader>
           <CardContent>

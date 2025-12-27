@@ -78,6 +78,14 @@
 
       {#if schema.oneOf}
         <!-- Multiple possible schemas -->
+        <div class="mb-3 flex items-baseline gap-2">
+          <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+            data
+          </span>
+          <span class="rounded bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700">
+            oneOf
+          </span>
+        </div>
         <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
           Ce champ peut contenir l'un des types suivants :
         </p>
@@ -106,12 +114,27 @@
         {/each}
       {:else}
         <!-- Single schema -->
-        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
+        <div class="mb-3">
+          <div class="flex items-baseline gap-2">
+            <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+              data
+            </span>
+            <span class="rounded bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700">
+              {schema.type || 'object'}
+            </span>
+            {#if schema.title}
+              <span class="text-sm text-gray-600 dark:text-gray-400">
+                ({schema.title})
+              </span>
+            {/if}
+          </div>
           {#if schema.description}
-            <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+            <p class="mt-1 ml-1 text-sm text-gray-600 dark:text-gray-400">
               {schema.description}
             </p>
           {/if}
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
           <SchemaPropertyRenderer {schema} />
         </div>
       {/if}

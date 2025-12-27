@@ -9,6 +9,13 @@
 
   let expandedSchemas = $state<Set<string>>(new Set())
 
+  // Sort schemas alphabetically by name
+  const sortedDefinitions = $derived(
+    Object.entries(definitions).sort(([nameA], [nameB]) =>
+      nameA.localeCompare(nameB),
+    ),
+  )
+
   function toggleSchema(schemaName: string) {
     const newSet = new Set(expandedSchemas)
     if (newSet.has(schemaName)) {
@@ -48,7 +55,7 @@
   </p>
 
   <div class="space-y-4">
-    {#each Object.entries(definitions) as [schemaName, schema] (schemaName)}
+    {#each sortedDefinitions as [schemaName, schema] (schemaName)}
       <div
         id={schemaName}
         class="scroll-mt-4 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"

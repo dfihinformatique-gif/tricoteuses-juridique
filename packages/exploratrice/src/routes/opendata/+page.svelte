@@ -147,6 +147,80 @@
       </div>
     </a>
 
+    <!-- API Parlement -->
+    <a
+      href="/opendata/parlement"
+      class="group flex flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-blue-500 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-400"
+    >
+      <div class="mb-4 flex items-center gap-3">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30"
+        >
+          <svg
+            class="h-6 w-6 text-blue-600 dark:text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+        </div>
+        <h2
+          class="text-2xl font-bold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400"
+        >
+          API Parlement
+        </h2>
+      </div>
+
+      <p class="mb-4 text-gray-600 dark:text-gray-300">
+        Accédez aux données unifiées du Parlement français : Assemblée Nationale
+        et Sénat. Acteurs, amendements, dossiers, documents, débats, scrutins,
+        questions et bien plus.
+      </p>
+
+      <div class="flex flex-wrap gap-2">
+        <span
+          class="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+        >
+          Express API
+        </span>
+        <span
+          class="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+        >
+          OpenAPI 3.0
+        </span>
+        <span
+          class="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+        >
+          Assemblée & Sénat
+        </span>
+      </div>
+
+      <div
+        class="mt-4 flex items-center text-sm font-medium text-blue-600 dark:text-blue-400"
+      >
+        Consulter la documentation
+        <svg
+          class="ml-2 h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </div>
+    </a>
+
     <!-- Dépôts de données DILA -->
     <a
       href="https://git.tricoteuses.fr/dila"
@@ -377,14 +451,14 @@
       href="https://git.tricoteuses.fr/constitution/constitution_du_4_octobre_1958"
       target="_blank"
       rel="noopener noreferrer"
-      class="group flex flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-indigo-500 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-400"
+      class="group flex flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-slate-500 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-slate-400"
     >
       <div class="mb-4 flex items-center gap-3">
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30"
+          class="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900/30"
         >
           <svg
-            class="h-6 w-6 text-indigo-600 dark:text-indigo-400"
+            class="h-6 w-6 text-slate-600 dark:text-slate-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -398,7 +472,7 @@
           </svg>
         </div>
         <h2
-          class="text-2xl font-bold text-gray-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400"
+          class="text-2xl font-bold text-gray-900 group-hover:text-slate-600 dark:text-white dark:group-hover:text-slate-400"
         >
           Constitution de 1958
         </h2>
@@ -411,24 +485,24 @@
 
       <div class="flex flex-wrap gap-2">
         <span
-          class="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+          class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-800 dark:bg-slate-900/30 dark:text-slate-300"
         >
           Texte intégral
         </span>
         <span
-          class="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+          class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-800 dark:bg-slate-900/30 dark:text-slate-300"
         >
           Git
         </span>
         <span
-          class="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+          class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-800 dark:bg-slate-900/30 dark:text-slate-300"
         >
           Historique
         </span>
       </div>
 
       <div
-        class="mt-4 flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400"
+        class="mt-4 flex items-center text-sm font-medium text-slate-600 dark:text-slate-400"
       >
         Consulter la Constitution
         <svg
@@ -452,14 +526,14 @@
       href="https://git.tricoteuses.fr/codes"
       target="_blank"
       rel="noopener noreferrer"
-      class="group flex flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-indigo-500 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-400"
+      class="group flex flex-col rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-slate-500 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-slate-400"
     >
       <div class="mb-4 flex items-center gap-3">
         <div
-          class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 dark:bg-indigo-900/30"
+          class="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-900/30"
         >
           <svg
-            class="h-6 w-6 text-indigo-600 dark:text-indigo-400"
+            class="h-6 w-6 text-slate-600 dark:text-slate-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -473,7 +547,7 @@
           </svg>
         </div>
         <h2
-          class="text-2xl font-bold text-gray-900 group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400"
+          class="text-2xl font-bold text-gray-900 group-hover:text-slate-600 dark:text-white dark:group-hover:text-slate-400"
         >
           Codes juridiques
         </h2>
@@ -486,24 +560,24 @@
 
       <div class="flex flex-wrap gap-2">
         <span
-          class="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+          class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-800 dark:bg-slate-900/30 dark:text-slate-300"
         >
           Tous les codes
         </span>
         <span
-          class="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+          class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-800 dark:bg-slate-900/30 dark:text-slate-300"
         >
           Git
         </span>
         <span
-          class="rounded-full bg-indigo-100 px-3 py-1 text-sm text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300"
+          class="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-800 dark:bg-slate-900/30 dark:text-slate-300"
         >
           Historique
         </span>
       </div>
 
       <div
-        class="mt-4 flex items-center text-sm font-medium text-indigo-600 dark:text-indigo-400"
+        class="mt-4 flex items-center text-sm font-medium text-slate-600 dark:text-slate-400"
       >
         Consulter les codes
         <svg
@@ -614,7 +688,7 @@
     </div>
   </div>
 
-  <!-- Note Code4code.eu -->
+  <!-- Note sur les fournisseurs de services -->
   <div
     class="mt-8 rounded-lg border border-blue-200 bg-blue-50 p-6 dark:border-blue-800 dark:bg-blue-950"
   >
@@ -634,17 +708,32 @@
       </svg>
       <div>
         <p class="text-sm text-blue-900 dark:text-blue-100">
-          L'ensemble de ces services vous sont proposés gracieusement par
-          <a
-            href="https://code4code.eu"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="font-semibold underline hover:text-blue-700 dark:hover:text-blue-300"
-          >
-            Code4code.eu
-          </a>, dans le cadre de son engagement, au sein des Tricoteuses, pour l'ouverture et l'accessibilité des données
-          publiques juridiques françaises.
+          Ces services vous sont proposés gracieusement, dans le cadre de l'engagement des Tricoteuses pour l'ouverture et l'accessibilité des données publiques juridiques françaises :
         </p>
+        <ul class="mt-2 space-y-1 text-sm text-blue-900 dark:text-blue-100">
+          <li>
+            • L'API Parlement par
+            <a
+              href="https://www.legiwatch.fr/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-semibold underline hover:text-blue-700 dark:hover:text-blue-300"
+            >
+              Legiwatch
+            </a>
+          </li>
+          <li>
+            • Les autres services (API Canutes, dépôts de données, serveur MCP) par
+            <a
+              href="https://code4code.eu"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="font-semibold underline hover:text-blue-700 dark:hover:text-blue-300"
+            >
+              Code4code.eu
+            </a>
+          </li>
+        </ul>
       </div>
     </div>
   </div>

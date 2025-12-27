@@ -137,26 +137,29 @@ export function deriveEndpoints(
 ): Endpoint[] {
   if (!openApiSpec?.paths) return []
 
-  return Object.entries(openApiSpec.paths).map(([path, pathItem]) => {
-    // For RPC endpoints, allow multiple methods
-    // For regular endpoints, only GET and HEAD (read-only database)
-    const isRpc = path.startsWith("/rpc/")
-    const allowedMethods = isRpc
-      ? ["get", "post", "put", "delete", "patch", "head"]
-      : ["get", "head"]
+  return Object.entries(openApiSpec.paths)
+    // Filter out non-path entries (only keep entries starting with /)
+    .filter(([path]) => path.startsWith("/"))
+    .map(([path, pathItem]) => {
+      // For RPC endpoints, allow multiple methods
+      // For regular endpoints, only GET and HEAD (read-only database)
+      const isRpc = path.startsWith("/rpc/")
+      const allowedMethods = isRpc
+        ? ["get", "post", "put", "delete", "patch", "head"]
+        : ["get", "head"]
 
-    const methods = Object.entries(pathItem || {})
-      .filter(([method]) => allowedMethods.includes(method.toLowerCase()))
-      .map(([method, details]) => ({
-        method,
-        details: details as OpenAPIV2.OperationObject,
-      }))
+      const methods = Object.entries(pathItem || {})
+        .filter(([method]) => allowedMethods.includes(method.toLowerCase()))
+        .map(([method, details]) => ({
+          method,
+          details: details as OpenAPIV2.OperationObject,
+        }))
 
-    return {
-      path,
-      methods,
-    }
-  })
+      return {
+        path,
+        methods,
+      }
+    })
 }
 
 /**

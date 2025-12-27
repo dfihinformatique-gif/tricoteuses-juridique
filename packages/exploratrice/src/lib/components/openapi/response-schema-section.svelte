@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "$lib/components/ui/card"
+  import { Badge } from "$lib/components/ui/badge"
+  import { Separator } from "$lib/components/ui/separator"
   import SchemaPropertyRenderer from "./schema-property-renderer.svelte"
 
   interface Props {
@@ -10,133 +13,115 @@
 </script>
 
 {#if schema}
-  <div>
-    <h4 class="mb-2 font-semibold">Structure de la réponse</h4>
+  <div class="space-y-4">
+    <h4 class="text-sm font-semibold">Structure de la réponse</h4>
 
     <!-- Common response fields -->
-    <div
-      class="mb-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
-    >
-      <h5 class="mb-3 text-sm font-semibold">
-        Champs communs (tous les endpoints)
-      </h5>
-      <div
-        class="space-y-2 border-l-2 border-gray-300 pl-3 dark:border-gray-600"
-      >
+    <Card class="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+      <CardHeader>
+        <CardTitle class="text-sm">Champs communs (tous les endpoints)</CardTitle>
+      </CardHeader>
+      <CardContent class="space-y-3">
         <div class="text-sm">
           <div class="flex items-baseline gap-2">
-            <span
-              class="font-mono font-semibold text-blue-600 dark:text-blue-400"
-            >
+            <span class="font-mono font-semibold text-primary">
               {commonIdFieldName}
             </span>
-            <span
-              class="rounded bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700"
-            >
-              string
-            </span>
-            <span
-              class="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-400"
-            >
-              requis
-            </span>
+            <Badge variant="outline" class="text-xs">string</Badge>
+            <Badge variant="destructive" class="text-xs">requis</Badge>
           </div>
-          <p class="mt-1 ml-1 text-xs text-gray-600 dark:text-gray-400">
+          <p class="mt-1 ml-1 text-xs text-muted-foreground">
             Identifiant unique de l'enregistrement
           </p>
         </div>
 
         <div class="text-sm">
           <div class="flex items-baseline gap-2">
-            <span
-              class="font-mono font-semibold text-blue-600 dark:text-blue-400"
-            >
+            <span class="font-mono font-semibold text-primary">
               data
             </span>
-            <span
-              class="rounded bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700"
-            >
-              object
-            </span>
-            <span
-              class="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-400"
-            >
-              requis
-            </span>
+            <Badge variant="outline" class="text-xs">object</Badge>
+            <Badge variant="destructive" class="text-xs">requis</Badge>
           </div>
-          <p class="mt-1 ml-1 text-xs text-gray-600 dark:text-gray-400">
+          <p class="mt-1 ml-1 text-xs text-muted-foreground">
             Données JSON contenant les informations détaillées (voir ci-dessous)
           </p>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
 
     <div>
-      <h5 class="mb-2 text-sm font-semibold">
+      <h5 class="mb-3 text-sm font-semibold">
         Structure détaillée du champ "data"
       </h5>
 
       {#if schema.oneOf}
         <!-- Multiple possible schemas -->
-        <div class="mb-3 flex items-baseline gap-2">
-          <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
-            data
-          </span>
-          <span class="rounded bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700">
-            oneOf
-          </span>
-        </div>
-        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
-          Ce champ peut contenir l'un des types suivants :
-        </p>
-        {#each schema.oneOf as subSchema, idx (idx)}
-          <div
-            class="mb-4 rounded-lg border border-gray-200 p-4 dark:border-gray-700"
-          >
-            <h6 class="mb-2 flex items-center gap-2 text-base font-semibold">
-              <span>{subSchema.title || "Type " + (idx + 1)}</span>
-              {#if subSchema.title}
-                <a
-                  href="#{subSchema.title}"
-                  class="text-sm text-purple-600 hover:underline dark:text-purple-400"
-                >
-                  → Voir le schéma complet
-                </a>
-              {/if}
-            </h6>
-            {#if subSchema.description}
-              <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
-                {subSchema.description}
-              </p>
-            {/if}
-            <SchemaPropertyRenderer schema={subSchema} />
-          </div>
-        {/each}
-      {:else}
-        <!-- Single schema -->
-        <div class="mb-3">
+        <div class="space-y-4">
           <div class="flex items-baseline gap-2">
-            <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+            <span class="font-mono text-sm font-semibold text-primary">
               data
             </span>
-            <span class="rounded bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700">
-              {schema.type || 'object'}
-            </span>
-            {#if schema.title}
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                ({schema.title})
-              </span>
-            {/if}
+            <Badge variant="outline" class="text-xs">oneOf</Badge>
           </div>
-          {#if schema.description}
-            <p class="mt-1 ml-1 text-sm text-gray-600 dark:text-gray-400">
-              {schema.description}
-            </p>
-          {/if}
+          <p class="text-sm text-muted-foreground">
+            Ce champ peut contenir l'un des types suivants :
+          </p>
+          {#each schema.oneOf as subSchema, idx (idx)}
+            <Card>
+              <CardHeader>
+                <div class="flex items-center justify-between">
+                  <CardTitle class="text-base">
+                    {subSchema.title || "Type " + (idx + 1)}
+                  </CardTitle>
+                  {#if subSchema.title}
+                    <a
+                      href="#{subSchema.title}"
+                      class="text-sm text-purple-600 hover:underline dark:text-purple-400"
+                    >
+                      → Voir le schéma complet
+                    </a>
+                  {/if}
+                </div>
+                {#if subSchema.description}
+                  <CardDescription>
+                    {subSchema.description}
+                  </CardDescription>
+                {/if}
+              </CardHeader>
+              <CardContent>
+                <SchemaPropertyRenderer schema={subSchema} />
+              </CardContent>
+            </Card>
+          {/each}
         </div>
-        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-          <SchemaPropertyRenderer {schema} />
-        </div>
+      {:else}
+        <!-- Single schema -->
+        <Card>
+          <CardHeader>
+            <div class="flex items-baseline gap-2">
+              <span class="font-mono text-sm font-semibold text-primary">
+                data
+              </span>
+              <Badge variant="outline" class="text-xs">
+                {schema.type || 'object'}
+              </Badge>
+              {#if schema.title}
+                <span class="text-sm text-muted-foreground">
+                  ({schema.title})
+                </span>
+              {/if}
+            </div>
+            {#if schema.description}
+              <CardDescription class="mt-2">
+                {schema.description}
+              </CardDescription>
+            {/if}
+          </CardHeader>
+          <CardContent>
+            <SchemaPropertyRenderer {schema} />
+          </CardContent>
+        </Card>
       {/if}
     </div>
   </div>

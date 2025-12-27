@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getTypeDisplay, extractRefName } from "$lib/openapi/helpers"
+  import { Badge } from "$lib/components/ui/badge"
   import SchemaPropertyRenderer from "./schema-property-renderer.svelte"
 
   interface Props {
@@ -11,75 +12,67 @@
 </script>
 
 {#if schema.properties}
-  <div class="space-y-2 border-l-2 border-gray-300 pl-3 dark:border-gray-600">
-    {#each Object.entries(schema.properties) as [propName, propSchema]: [string, any] (propName)}
+  <div class="space-y-2 border-l-2 border-muted pl-3">
+    {#each Object.entries(schema.properties) as [propName, propSchema] (propName)}
       <div class="text-sm">
         <div class="flex items-baseline gap-2">
-          <span
-            class="font-mono font-semibold text-blue-600 dark:text-blue-400"
-          >
+          <span class="font-mono font-semibold text-primary">
             {propName}
           </span>
-          <span
-            class="rounded bg-gray-200 px-2 py-0.5 text-xs dark:bg-gray-700"
-          >
-            {getTypeDisplay(propSchema)}
-          </span>
+          <Badge variant="outline" class="text-xs">
+            {getTypeDisplay(propSchema as any)}
+          </Badge>
           {#if schema.required?.includes(propName)}
-            <span
-              class="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-400"
-            >
+            <Badge variant="destructive" class="text-xs">
               requis
-            </span>
+            </Badge>
           {/if}
-          {#if propSchema.$ref}
+          {#if (propSchema as any).$ref}
             <a
-              href="#{extractRefName(propSchema.$ref)}"
+              href="#{extractRefName((propSchema as any).$ref)}"
               class="text-xs text-purple-600 hover:underline dark:text-purple-400"
             >
-              → {extractRefName(propSchema.$ref)}
+              → {extractRefName((propSchema as any).$ref)}
             </a>
           {/if}
         </div>
-        {#if propSchema.description}
-          <p class="mt-1 ml-1 text-xs text-gray-600 dark:text-gray-400">
-            {propSchema.description}
+        {#if (propSchema as any).description}
+          <p class="mt-1 ml-1 text-xs text-muted-foreground">
+            {(propSchema as any).description}
           </p>
         {/if}
-        {#if propSchema.enum}
+        {#if (propSchema as any).enum}
           <div class="mt-1 ml-1 text-xs">
-            <span class="text-gray-500">Valeurs possibles:</span>
+            <span class="text-muted-foreground">Valeurs possibles:</span>
             <div class="mt-1 flex flex-wrap gap-1">
-              {#each propSchema.enum as enumValue}
-                <span
-                  class="rounded bg-gray-100 px-2 py-0.5 font-mono dark:bg-gray-800"
-                >
+              {#each (propSchema as any).enum as enumValue}
+                <Badge variant="secondary" class="font-mono text-xs">
                   {enumValue}
-                </span>
+                </Badge>
               {/each}
             </div>
           </div>
         {/if}
-        {#if propSchema.type === "object" && propSchema.properties}
+        {#if (propSchema as any).type === "object" && (propSchema as any).properties}
           <div class="mt-2">
             <SchemaPropertyRenderer schema={propSchema} depth={depth + 1} />
           </div>
         {/if}
-        {#if propSchema.type === "array" && propSchema.items}
-          {#if propSchema.items.properties}
+        {#if (propSchema as any).type === "array" && (propSchema as any).items}
+          {#if (propSchema as any).items.properties}
             <div class="mt-2">
-              <div class="mb-1 text-xs text-gray-500">Éléments du tableau:</div>
+              <div class="mb-1 text-xs text-muted-foreground">Éléments du tableau:</div>
               <SchemaPropertyRenderer
-                schema={propSchema.items}
+                schema={(propSchema as any).items}
                 depth={depth + 1}
               />
             </div>
-          {:else if propSchema.items.$ref}
+          {:else if (propSchema as any).items.$ref}
             <a
-              href="#{extractRefName(propSchema.items.$ref)}"
+              href="#{extractRefName((propSchema as any).items.$ref)}"
               class="ml-1 text-xs text-purple-600 hover:underline dark:text-purple-400"
             >
-              → Voir {extractRefName(propSchema.items.$ref)}
+              → Voir {extractRefName((propSchema as any).items.$ref)}
             </a>
           {/if}
         {/if}

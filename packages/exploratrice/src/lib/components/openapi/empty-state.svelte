@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { Alert, AlertDescription } from "$lib/components/ui/alert"
+  import { SearchX } from "@lucide/svelte"
+
   interface Props {
     searchQuery: string
   }
@@ -6,6 +9,9 @@
   let { searchQuery }: Props = $props()
 </script>
 
-<div class="py-12 text-center text-gray-500">
-  <p>Aucun endpoint trouvé pour la recherche "{searchQuery}"</p>
-</div>
+<Alert class="my-12">
+  <SearchX class="h-4 w-4" />
+  <AlertDescription class="ml-2">
+    Aucun endpoint trouvé pour la recherche "{searchQuery}"
+  </AlertDescription>
+</Alert>

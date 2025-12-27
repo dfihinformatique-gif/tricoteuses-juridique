@@ -29,46 +29,30 @@
   }
 
   function getSchemaForEndpoint(path: string): any {
-    // Extract resource name from path (remove leading slash and trailing /{uid} or /{id})
-    const pathSegment = path
-      .slice(1)
-      .replace(/\/{uid}$/, "")
-      .replace(/\/{id}$/, "")
-    const schemaName = schemaMap[pathSegment]
-
-    if (!schemaName || !data.jsonSchema?.definitions) {
-      return null
+    // Extract schema from OpenAPI spec response
+    // All endpoints now have their schema defined in the OpenAPI spec
+    if (data.openApiSpec?.paths?.[path]) {
+      const pathItem = data.openApiSpec.paths[path]
+      const getMethod = (pathItem as any)?.get
+      if (getMethod?.responses?.["200"]?.schema) {
+        const responseSchema = getMethod.responses["200"].schema
+        // Check if response has a data field with a $ref
+        if (responseSchema.properties?.data?.$ref) {
+          const refPath = responseSchema.properties.data.$ref
+          const schemaName = refPath.split("/").pop()
+          if (schemaName && data.jsonSchema?.definitions?.[schemaName]) {
+            const schema = data.jsonSchema.definitions[schemaName]
+            // Add the schema name as title if not already present
+            return {
+              ...schema,
+              title: schema.title || schemaName
+            }
+          }
+        }
+      }
     }
 
-    return data.jsonSchema.definitions[schemaName]
-  }
-
-  // Schema mapping for Parlement endpoints
-  // Maps the path segment to the corresponding schema name
-  const schemaMap: Record<string, string> = {
-    actesLegislatifs: "ActeLegislatif",
-    acteurs: "Acteur",
-    adressesElectroniques: "AdresseElectronique",
-    adressesPostales: "AdressePostale",
-    alineas: "Alinea",
-    amendements: "Amendement",
-    collaborateurs: "Collaborateur",
-    communes: "Commune",
-    co_signataires_amendement: "CoSignataireAmendement",
-    debats: "Debat",
-    documents: "Document",
-    dossiers: "Dossier",
-    etapesLegislatives: "EtapeLegislative",
-    groupesVotants: "GroupeVotant",
-    mandats: "Mandat",
-    organes: "Organe",
-    points_odj: "PointOdj",
-    questions: "Question",
-    reunions: "Reunion",
-    scrutins: "Scrutin",
-    votes: "Vote",
-    // Note: some endpoints may not have schemas
-    // (interventions, metriques, participants_reunions, personnes_auditionnees_reunions, stats, etc.)
+    return null
   }
 
   // List of endpoints that have a data field in their response

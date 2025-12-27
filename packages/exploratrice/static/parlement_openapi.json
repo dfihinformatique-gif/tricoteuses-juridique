@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Parlement",
-    "description": "A REST API based on the French Parliament (Assemblée Nationale & Sénat)",
-    "version": "1.0.0"
+    "title": "Tricoteuses API Parlement",
+    "description": "Une API REST basée sur les données du Parlement français (Assemblée Nationale et Sénat)",
+    "version": "0.3.0"
   },
   "baseUrl": "/",
   "paths": {
@@ -12,8 +12,70 @@
         "tags": [
           "Dossiers"
         ],
-        "description": "Returns a acte legislatif by uid.",
+        "summary": "Détails d'un acte législatif",
+        "description": "Retourne les informations détaillées d'un acte législatif par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de l'acte législatif"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acte législatif trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/ActeLegislatif"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Acte législatif non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
+          }
+        }
+      }
+    },
+    "/actesLegislatifs/{format}": {
+      "get": {
+        "tags": [
+          "ActesLegislatifs"
+        ],
+        "summary": "Liste des actes législatifs",
+        "description": "Retourne la liste des actes législatifs dans le format spécifié (json, csv, rss).",
+        "parameters": [
+          {
+            "$ref": "#/parameters/perPageParam"
+          },
+          {
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
@@ -21,75 +83,147 @@
             "$ref": "#/parameters/includeParam"
           },
           {
-            "in": "path",
-            "name": "uid"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns a acte legislatif by uid."
-          }
-        }
-      }
-    },
-    "/actesLegislatifs/format": {
-      "get": {
-        "tags": [
-          "ActesLegislatifs"
-        ],
-        "description": "Returns a list of actes legislatifs as a specified format (json, csv, rss).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/distinctParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des actes législatifs retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/ActeLegislatif"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/acteurs/format": {
+    "/acteurs/{format}": {
       "get": {
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns a list of acteurs as a specified format (json, csv, rss).",
+        "summary": "Liste des acteurs parlementaires",
+        "description": "Retourne la liste des acteurs (députés et sénateurs) dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/perPageParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          },
+          {
+            "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des acteurs retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Acteur"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -99,8 +233,70 @@
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns an acteur by uid.",
+        "summary": "Détails d'un acteur parlementaire",
+        "description": "Retourne les informations détaillées d'un acteur (député ou sénateur) par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de l'acteur"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acteur trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Acteur"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Acteur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
+          }
+        }
+      }
+    },
+    "/adressesElectroniques/{format}": {
+      "get": {
+        "tags": [
+          "Acteurs"
+        ],
+        "summary": "Liste des adresses électroniques",
+        "description": "Retourne la liste des adresses électroniques (emails) des parlementaires dans le format spécifié (json, csv, rss).",
+        "parameters": [
+          {
+            "$ref": "#/parameters/perPageParam"
+          },
+          {
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
@@ -108,44 +304,61 @@
             "$ref": "#/parameters/includeParam"
           },
           {
-            "in": "path",
-            "name": "uid"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns an acteur by uid."
-          }
-        }
-      }
-    },
-    "/adressesElectroniques/format": {
-      "get": {
-        "tags": [
-          "Acteurs"
-        ],
-        "description": "Returns a list of adressesElectroniques as a specified format (json, csv, rss).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/distinctParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des adresses électroniques retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/AdresseElectronique"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -155,8 +368,70 @@
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns an adresseElectronique by uid.",
+        "summary": "Détails d'une adresse électronique",
+        "description": "Retourne les informations détaillées d'une adresse électronique par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de l'adresse électronique"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Adresse électronique trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/AdresseElectronique"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Adresse électronique non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
+          }
+        }
+      }
+    },
+    "/adressesPostales/{format}": {
+      "get": {
+        "tags": [
+          "Acteurs"
+        ],
+        "summary": "Liste des adresses postales",
+        "description": "Retourne la liste des adresses postales des parlementaires dans le format spécifié (json, csv, rss).",
+        "parameters": [
+          {
+            "$ref": "#/parameters/perPageParam"
+          },
+          {
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
@@ -164,44 +439,61 @@
             "$ref": "#/parameters/includeParam"
           },
           {
-            "in": "path",
-            "name": "uid"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns an adresseElectronique by uid."
-          }
-        }
-      }
-    },
-    "/adressesPostales/format": {
-      "get": {
-        "tags": [
-          "Acteurs"
-        ],
-        "description": "Returns a list of adressesPostales as a specified format (json, csv, rss).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/distinctParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des adresses postales retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/AdressePostale"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -211,8 +503,70 @@
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns an adressesPostales by uid.",
+        "summary": "Détails d'une adresse postale",
+        "description": "Retourne les informations détaillées d'une adresse postale par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de l'adresse postale"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Adresse postale trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/AdressePostale"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Adresse postale non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
+          }
+        }
+      }
+    },
+    "/alineas/{format}": {
+      "get": {
+        "tags": [
+          "Alineas"
+        ],
+        "summary": "Liste des alinéas de documents",
+        "description": "Retourne la liste des alinéas des documents législatifs dans le format spécifié (json, csv, rss).",
+        "parameters": [
+          {
+            "$ref": "#/parameters/perPageParam"
+          },
+          {
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
@@ -220,44 +574,61 @@
             "$ref": "#/parameters/includeParam"
           },
           {
-            "in": "path",
-            "name": "uid"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns an adressesPostales by uid."
-          }
-        }
-      }
-    },
-    "/alineas/format": {
-      "get": {
-        "tags": [
-          "Alineas"
-        ],
-        "description": "Returns a list of alineas as a specified format (json, csv, rss).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/distinctParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des alinéas retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Alinea"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -267,11 +638,17 @@
         "tags": [
           "Documents"
         ],
-        "description": "Returns an alinea by id.",
+        "summary": "Détails d'un alinéa",
+        "description": "Retourne les informations détaillées d'un alinéa par son identifiant.",
         "parameters": [
           {
             "in": "path",
-            "name": "uid"
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de l'alinéa"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -282,38 +659,111 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns an alinea by id."
+            "description": "Alinéa trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Alinea"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Alinéa non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/amendements/format": {
+    "/amendements/{format}": {
       "get": {
         "tags": [
           "Amendements"
         ],
-        "description": "Returns a list of amendements as a specified format (json, csv, rss).",
+        "summary": "Liste des amendements",
+        "description": "Retourne la liste des amendements parlementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/perPageParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          },
+          {
+            "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des amendements retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Amendement"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -323,32 +773,57 @@
         "tags": [
           "Amendements"
         ],
-        "description": "Returns an amendement by uid.",
+        "summary": "Détails d'un amendement",
+        "description": "Retourne les informations détaillées d'un amendement par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de l'amendement"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "uid"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns an amendement by uid."
+            "description": "Amendement trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Amendement"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Amendement non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/collaborateurs/format": {
+    "/collaborateurs/{format}": {
       "get": {
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns a list of collaborateurs in the specified format (json, csv, rss).",
+        "summary": "Liste des collaborateurs parlementaires",
+        "description": "Retourne la liste des collaborateurs des parlementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -367,11 +842,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of collaborateurs int the specified format (json, csv, rss)."
+            "description": "Liste des collaborateurs retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Collaborateur"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -381,32 +905,57 @@
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns a collaborateur by uid.",
+        "summary": "Détails d'un collaborateur parlementaire",
+        "description": "Retourne les informations détaillées d'un collaborateur par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du collaborateur"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "uid"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a collaborateur by uid."
+            "description": "Collaborateur trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Collaborateur"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Collaborateur non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/communes/format": {
+    "/communes/{format}": {
       "get": {
         "tags": [
           "Communes"
         ],
-        "description": "Returns a list of communes in the specified format (json, csv, rss).",
+        "summary": "Liste des communes",
+        "description": "Retourne la liste des communes françaises dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -425,11 +974,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of communes in the specified format (json, csv, rss)."
+            "description": "Liste des communes retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Commune"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -439,32 +1037,57 @@
         "tags": [
           "Communes"
         ],
-        "description": "Returns an commune by id.",
+        "summary": "Détails d'une commune",
+        "description": "Retourne les informations détaillées d'une commune par son identifiant.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la commune"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "id"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns an commune by id."
+            "description": "Commune trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Commune"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Commune non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/co_signataires_amendement/format": {
+    "/coSignatairesAmendement/{format}": {
       "get": {
         "tags": [
           "Amendements"
         ],
-        "description": "Returns a list of co-signataires amendement in the specified format (json, csv, rss).",
+        "summary": "Liste des co-signataires d'amendements",
+        "description": "Retourne la liste des co-signataires d'amendements dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -486,46 +1109,120 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of co-signataires amendement in the specified format (json, csv, rss)."
+            "description": "Liste des co-signataires retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/CoSignataireAmendement"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/co_signataires_amendement/{id}": {
+    "/coSignatairesAmendement/{id}": {
       "get": {
         "tags": [
           "Amendements"
         ],
-        "description": "Returns a co-signataire amendement by id.",
+        "summary": "Détails d'un co-signataire d'amendement",
+        "description": "Retourne les informations détaillées d'un co-signataire d'amendement par son identifiant.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du co-signataire"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "id"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a co-signataire amendement by id."
+            "description": "Co-signataire trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/CoSignataireAmendement"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Co-signataire non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/debats/format": {
+    "/debats/{format}": {
       "get": {
         "tags": [
           "Débats"
         ],
-        "description": "Returns a list of debats in the specified format (json, csv, rss).",
+        "summary": "Liste des débats parlementaires",
+        "description": "Retourne la liste des débats parlementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -544,11 +1241,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of debats in the specified format (json, csv, rss)."
+            "description": "Liste des débats retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Debat"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -558,32 +1304,57 @@
         "tags": [
           "Débats"
         ],
-        "description": "Returns a debat by uid.",
+        "summary": "Détails d'un débat parlementaire",
+        "description": "Retourne les informations détaillées d'un débat par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du débat"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "uid"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a debat by uid."
+            "description": "Débat trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Debat"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Débat non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/documents/format": {
+    "/documents/{format}": {
       "get": {
         "tags": [
           "Documents"
         ],
-        "description": "Returns a list of documents in the specified format (json, csv, rss).",
+        "summary": "Liste des documents parlementaires",
+        "description": "Retourne la liste des documents parlementaires (rapports, propositions de loi, etc.) dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -605,11 +1376,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of documents in the specified format (json, csv, rss)."
+            "description": "Liste des documents retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Document"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -619,11 +1439,17 @@
         "tags": [
           "Documents"
         ],
-        "description": "Returns a document by uid.",
+        "summary": "Détails d'un document parlementaire",
+        "description": "Retourne les informations détaillées d'un document par son identifiant unique.",
         "parameters": [
           {
             "in": "path",
-            "name": "uid"
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du document"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -634,38 +1460,111 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a document by uid."
+            "description": "Document trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Document"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/dossiers/format": {
+    "/dossiers/{format}": {
       "get": {
         "tags": [
           "Dossiers"
         ],
-        "description": "Returns a list of dossiers as a specified format (json, csv, rss).",
+        "summary": "Liste des dossiers législatifs",
+        "description": "Retourne la liste des dossiers législatifs et réglementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/perPageParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          },
+          {
+            "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des dossiers retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Dossier"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -675,22 +1574,46 @@
         "tags": [
           "Dossiers"
         ],
-        "description": "Returns a dossier by uid.",
+        "summary": "Détails d'un dossier législatif",
+        "description": "Retourne les informations détaillées d'un dossier législatif par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du dossier"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "uid"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a dossier by uid."
+            "description": "Dossier trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Dossier"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Dossier non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -700,8 +1623,70 @@
         "tags": [
           "Dossiers"
         ],
-        "description": "Returns a etape legislative by uid.",
+        "summary": "Détails d'une étape législative",
+        "description": "Retourne les informations détaillées d'une étape législative par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de l'étape législative"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Étape législative trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/EtapeLegislative"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Étape législative non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
+          }
+        }
+      }
+    },
+    "/etapesLegislatives/{format}": {
+      "get": {
+        "tags": [
+          "EtapesLegislatives"
+        ],
+        "summary": "Liste des étapes législatives",
+        "description": "Retourne la liste des étapes législatives dans le format spécifié (json, csv, rss).",
+        "parameters": [
+          {
+            "$ref": "#/parameters/perPageParam"
+          },
+          {
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
@@ -709,54 +1694,72 @@
             "$ref": "#/parameters/includeParam"
           },
           {
-            "in": "path",
-            "name": "uid"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns a etape legislative by uid."
-          }
-        }
-      }
-    },
-    "/etapesLegislatives/format": {
-      "get": {
-        "tags": [
-          "EtapesLegislatives"
-        ],
-        "description": "Returns a list of etapes legislatives as a specified format (json, csv, rss).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/distinctParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des étapes législatives retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/EtapeLegislative"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/groupesVotants/format": {
+    "/groupesVotants/{format}": {
       "get": {
         "tags": [
           "Scrutins"
         ],
-        "description": "Returns a list of groupesVotants in the specified format (json, csv, rss).",
+        "summary": "Liste des groupes votants",
+        "description": "Retourne la liste des groupes parlementaires votants lors des scrutins dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -775,11 +1778,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of groupesVotants in the specified format (json, csv, rss)."
+            "description": "Liste des groupes votants retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/GroupeVotant"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -789,11 +1841,17 @@
         "tags": [
           "Scrutins"
         ],
-        "description": "Returns a groupeVotant by uid.",
+        "summary": "Détails d'un groupe votant",
+        "description": "Retourne les informations détaillées d'un groupe votant par son identifiant unique.",
         "parameters": [
           {
             "in": "path",
-            "name": "uid"
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du groupe votant"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -804,17 +1862,36 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a groupeVotant by uid."
+            "description": "Groupe votant trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/GroupeVotant"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Groupe votant non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/interventions/format": {
+    "/interventions/{format}": {
       "get": {
         "tags": [
           "Débats"
         ],
-        "description": "Returns a list of interventions in the specified format (json, csv, rss).",
+        "summary": "Liste des interventions parlementaires",
+        "description": "Retourne la liste des interventions (paragraphes) lors des débats parlementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -836,11 +1913,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of interventions in the specified format (json, csv, rss)."
+            "description": "Liste des interventions retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Paragraphe"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -850,32 +1976,57 @@
         "tags": [
           "Débats"
         ],
-        "description": "Returns a paragraphe by id.",
+        "summary": "Détails d'une intervention parlementaire",
+        "description": "Retourne les informations détaillées d'une intervention (paragraphe) par son identifiant.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de l'intervention"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "id"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns an intervention by id."
+            "description": "Intervention trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Paragraphe"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Intervention non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/mandats/format": {
+    "/mandats/{format}": {
       "get": {
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns a list of mandats in the specified format (json, csv, rss).",
+        "summary": "Liste des mandats parlementaires",
+        "description": "Retourne la liste des mandats (mandats de députés, sénateurs, etc.) dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -897,11 +2048,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of mandats in the specified format (json, csv, rss)."
+            "description": "Liste des mandats retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Mandat"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -911,32 +2111,57 @@
         "tags": [
           "Acteurs"
         ],
-        "description": "Returns a mandat by uid.",
+        "summary": "Détails d'un mandat parlementaire",
+        "description": "Retourne les informations détaillées d'un mandat par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du mandat"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "uid"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a mandat by uid."
+            "description": "Mandat trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Mandat"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Mandat non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/metriques/format": {
+    "/metriques/{format}": {
       "get": {
         "tags": [
           "Stats"
         ],
-        "description": "Returns a list of metriques in the specified format (json, csv, rss).",
+        "summary": "Liste des métriques",
+        "description": "Retourne la liste des métriques de performance et d'activité parlementaire dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -955,11 +2180,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of metriques in the specified format (json, csv, rss)."
+            "description": "Liste des métriques retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Metrique"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -969,8 +2243,70 @@
         "tags": [
           "Stats"
         ],
-        "description": "Returns a metrique by id.",
+        "summary": "Détails d'une métrique",
+        "description": "Retourne les informations détaillées d'une métrique par son identifiant.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la métrique"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Métrique trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Metrique"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Métrique non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
+          }
+        }
+      }
+    },
+    "/organes/{format}": {
+      "get": {
+        "tags": [
+          "Organes"
+        ],
+        "summary": "Liste des organes parlementaires",
+        "description": "Retourne la liste des organes (groupes politiques, commissions, etc.) dans le format spécifié (json, csv, rss).",
+        "parameters": [
+          {
+            "$ref": "#/parameters/perPageParam"
+          },
+          {
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
@@ -978,44 +2314,61 @@
             "$ref": "#/parameters/includeParam"
           },
           {
-            "in": "path",
-            "name": "id"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns a metrique by id."
-          }
-        }
-      }
-    },
-    "/organes/format": {
-      "get": {
-        "tags": [
-          "Organes"
-        ],
-        "description": "Returns a list of organes as a specified format (json, csv, rss).",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/distinctParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des organes retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Organe"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1025,11 +2378,17 @@
         "tags": [
           "Organes"
         ],
-        "description": "Returns an organe by uid.",
+        "summary": "Détails d'un organe parlementaire",
+        "description": "Retourne les informations détaillées d'un organe par son identifiant unique.",
         "parameters": [
           {
             "in": "path",
-            "name": "uid"
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de l'organe"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -1040,17 +2399,36 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns an organe by uid."
+            "description": "Organe trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Organe"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Organe non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/participants_reunions/format": {
+    "/participants_reunions/{format}": {
       "get": {
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a list of reunion participants in the specified format (json, csv, rss).",
+        "summary": "Liste des participants aux réunions",
+        "description": "Retourne la liste des participants aux réunions parlementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1069,11 +2447,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of reunion participants (agendas) in the specified format (json, csv, rss)."
+            "description": "Liste des participants retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/ParticipantReunion"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1083,11 +2510,17 @@
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a reunion participant (agenda) by id.",
+        "summary": "Détails d'un participant à une réunion",
+        "description": "Retourne les informations détaillées d'un participant à une réunion par son identifiant.",
         "parameters": [
           {
             "in": "path",
-            "name": "id"
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant du participant"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -1098,17 +2531,36 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a reunion participant (agenda) by id."
+            "description": "Participant trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/ParticipantReunion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Participant non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/personnes_auditionnees_reunions/format": {
+    "/personnes_auditionnees_reunions/{format}": {
       "get": {
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a list of interviewed people in reunions in the specified format (json, csv, rss).",
+        "summary": "Liste des personnes auditionnées en réunion",
+        "description": "Retourne la liste des personnes auditionnées lors des réunions parlementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1127,11 +2579,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of interviewed people in reunions in the specified format (json, csv, rss)."
+            "description": "Liste des personnes auditionnées retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/PersonneAuditionneeReunion"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1141,11 +2642,17 @@
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a reunion interviewed person by id.",
+        "summary": "Détails d'une personne auditionnée",
+        "description": "Retourne les informations détaillées d'une personne auditionnée par son identifiant.",
         "parameters": [
           {
             "in": "path",
-            "name": "id"
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la personne auditionnée"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -1156,17 +2663,36 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a reunion interviewed person by id."
+            "description": "Personne auditionnée trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/PersonneAuditionneeReunion"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Personne auditionnée non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/points_odj/format": {
+    "/points_odj": {
       "get": {
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a list of points odj in the specified format (json, csv, rss).",
+        "summary": "Liste des points à l'ordre du jour",
+        "description": "Retourne la liste des points à l'ordre du jour des réunions parlementaires.",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1189,7 +2715,42 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of points odj in the specified format (json, csv, rss)."
+            "description": "Liste des points ODJ retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/PointOdj"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1199,11 +2760,17 @@
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a point odj by uid.",
+        "summary": "Détails d'un point à l'ordre du jour",
+        "description": "Retourne les informations détaillées d'un point à l'ordre du jour par son identifiant unique.",
         "parameters": [
           {
             "in": "path",
-            "name": "uid"
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du point ODJ"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -1214,17 +2781,36 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a point odj by uid."
+            "description": "Point ODJ trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/PointOdj"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Point ODJ non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/questions/format": {
+    "/questions/{format}": {
       "get": {
         "tags": [
           "Questions"
         ],
-        "description": "Returns a list of questions in the specified format (json, csv, rss).",
+        "summary": "Liste des questions parlementaires",
+        "description": "Retourne la liste des questions écrites et orales posées par les parlementaires dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1246,11 +2832,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of questions in the specified format (json, csv, rss)."
+            "description": "Liste des questions retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Question"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1260,32 +2895,57 @@
         "tags": [
           "Questions"
         ],
-        "description": "Returns a question by uid.",
+        "summary": "Détails d'une question parlementaire",
+        "description": "Retourne les informations détaillées d'une question parlementaire par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de la question"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "uid"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a question by uid."
+            "description": "Question trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Question"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Question non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/reunions/format": {
+    "/reunions/{format}": {
       "get": {
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a list of reunions (agendas) in the specified format (json, csv, rss).",
+        "summary": "Liste des réunions parlementaires",
+        "description": "Retourne la liste des réunions (agendas) des commissions et autres organes dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1307,11 +2967,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of reunions (agendas) in the specified format (json, csv, rss)."
+            "description": "Liste des réunions retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Agenda"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1321,11 +3030,17 @@
         "tags": [
           "Réunions"
         ],
-        "description": "Returns a reunion (agenda) by uid.",
+        "summary": "Détails d'une réunion parlementaire",
+        "description": "Retourne les informations détaillées d'une réunion (agenda) par son identifiant unique.",
         "parameters": [
           {
             "in": "path",
-            "name": "uid"
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique de la réunion"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -1336,38 +3051,111 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a reunion (agenda) by uid."
+            "description": "Réunion trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Agenda"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Réunion non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/scrutins/format": {
+    "/scrutins/{format}": {
       "get": {
         "tags": [
           "Scrutins"
         ],
-        "description": "Returns a list of scrutins as a specified format (json, csv, rss).",
+        "summary": "Liste des scrutins publics",
+        "description": "Retourne la liste des scrutins publics de l'Assemblée nationale et du Sénat dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
-            "in": "query",
-            "name": "filters",
-            "schema": {
-              "type": "string"
-            },
-            "description": "JSON string of filters to apply"
+            "$ref": "#/parameters/perPageParam"
           },
           {
-            "in": "query",
-            "name": "fields",
+            "$ref": "#/parameters/pageParam"
+          },
+          {
+            "$ref": "#/parameters/sortParam"
+          },
+          {
+            "$ref": "#/parameters/searchParam"
+          },
+          {
+            "$ref": "#/parameters/selectParam"
+          },
+          {
+            "$ref": "#/parameters/includeParam"
+          },
+          {
+            "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
             },
-            "description": "Comma-separated list of fields to export"
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "data in the specified format"
+            "description": "Liste des scrutins retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Scrutin"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1377,11 +3165,17 @@
         "tags": [
           "Scrutins"
         ],
-        "description": "Returns a scrutin by uid.",
+        "summary": "Détails d'un scrutin public",
+        "description": "Retourne les informations détaillées d'un scrutin public par son identifiant unique.",
         "parameters": [
           {
             "in": "path",
-            "name": "uid"
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant unique du scrutin"
           },
           {
             "$ref": "#/parameters/selectParam"
@@ -1392,17 +3186,36 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns a scrutin by uid."
+            "description": "Scrutin trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Scrutin"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Scrutin non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/statistiqueHebdomadaire/format": {
+    "/statistiqueHebdomadaire/{format}": {
       "get": {
         "tags": [
           "Stats"
         ],
-        "description": "Returns a list of statistiqueHebdomadaire in the specified format (json, csv, rss).",
+        "summary": "Liste des statistiques hebdomadaires",
+        "description": "Retourne la liste des statistiques hebdomadaires d'activité parlementaire dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1421,21 +3234,71 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of statistiqueHebdomadaire in the specified format (json, csv, rss)."
+            "description": "Liste des statistiques hebdomadaires retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/StatistiqueHebdomadaire"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/stats/format": {
+    "/stats/{format}": {
       "get": {
         "tags": [
           "Stats"
         ],
-        "description": "Returns a list of stats in the specified format (json, csv, rss).",
+        "summary": "Liste des statistiques",
+        "description": "Retourne la liste des statistiques d'activité parlementaire dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1454,11 +3317,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of stats in the specified format (json, csv, rss)."
+            "description": "Liste des statistiques retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Stats"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1468,32 +3380,57 @@
         "tags": [
           "Stats"
         ],
-        "description": "Returns a stat by id.",
+        "summary": "Détails d'une statistique",
+        "description": "Retourne les informations détaillées d'une statistique par son identifiant.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Identifiant de la statistique"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "id"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a stat by id."
+            "description": "Statistique trouvée et retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Stats"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Statistique non trouvée"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/subdivisions/format": {
+    "/subdivisions/{format}": {
       "get": {
         "tags": [
           "Documents"
         ],
-        "description": "Returns a list of document subdivisions in the specified format (json, csv, rss).",
+        "summary": "Liste des subdivisions de documents",
+        "description": "Retourne la liste des subdivisions (articles, titres, chapitres, etc.) des documents législatifs dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1512,21 +3449,71 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of document subdivisions in the specified format (json, csv, rss)."
+            "description": "Liste des subdivisions retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Subdivision"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
     },
-    "/votes/format": {
+    "/votes/{format}": {
       "get": {
         "tags": [
           "Scrutins"
         ],
-        "description": "Returns a list of votes in the specified format (json, csv, rss).",
+        "summary": "Liste des votes individuels",
+        "description": "Retourne la liste des votes individuels des parlementaires lors des scrutins publics dans le format spécifié (json, csv, rss).",
         "parameters": [
           {
             "$ref": "#/parameters/perPageParam"
@@ -1545,11 +3532,60 @@
           },
           {
             "$ref": "#/parameters/distinctParam"
+          },
+          {
+            "in": "path",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "json",
+                "csv",
+                "rss"
+              ]
+            },
+            "required": false,
+            "description": "Format de sortie (json par défaut)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns a list of votes in the specified format (json, csv, rss)."
+            "description": "Liste des votes retournée avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/definitions/Vote"
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "type": "integer"
+                        },
+                        "perPage": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres de requête invalides"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -1559,22 +3595,46 @@
         "tags": [
           "Scrutins"
         ],
-        "description": "Returns an vote by uid.",
+        "summary": "Détails d'un vote individuel",
+        "description": "Retourne les informations détaillées d'un vote individuel par son identifiant unique.",
         "parameters": [
+          {
+            "in": "path",
+            "name": "uid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Hash unique du vote"
+          },
           {
             "$ref": "#/parameters/selectParam"
           },
           {
             "$ref": "#/parameters/includeParam"
-          },
-          {
-            "in": "path",
-            "name": "uid"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns an vote by uid."
+            "description": "Vote trouvé et retourné avec succès",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/definitions/Vote"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Vote non trouvé"
+          },
+          "500": {
+            "description": "Erreur serveur interne"
           }
         }
       }
@@ -3790,7 +5850,7 @@
         },
         "pdfUrl": {
           "type": "string",
-          "description": "URL of the PDF of this document.",
+          "description": "URL du PDF de ce document.",
           "nullable": true
         },
         "xsiType": {
@@ -6601,7 +8661,7 @@
     "perPageParam": {
       "name": "perPage",
       "in": "query",
-      "description": "Number of elements per page",
+      "description": "Nombre d'éléments par page",
       "required": false,
       "type": "integer",
       "format": "int32"
@@ -6609,7 +8669,7 @@
     "pageParam": {
       "name": "page",
       "in": "query",
-      "description": "Page number",
+      "description": "Numéro de page",
       "required": false,
       "type": "integer",
       "format": "int32"
@@ -6617,35 +8677,35 @@
     "sortParam": {
       "name": "sort",
       "in": "query",
-      "description": "Comma-separated string defining sort attributes, ex: 'nom.asc'",
+      "description": "Chaîne séparée par des virgules définissant les attributs de tri, ex: 'nom.asc'",
       "required": false,
       "type": "string"
     },
     "selectParam": {
       "name": "select",
       "in": "query",
-      "description": "Comma-separated string of attributes to return in the response",
+      "description": "Chaîne séparée par des virgules des attributs à retourner dans la réponse",
       "required": false,
       "type": "string"
     },
     "includeParam": {
       "name": "include",
       "in": "query",
-      "description": "Comma-separated string of relations to include in the query, with nested includes separated by a dot, ex: 'user.post,category'",
+      "description": "Chaîne séparée par des virgules des relations à inclure dans la requête, avec les inclusions imbriquées séparées par un point, ex: 'user.post,category'",
       "required": false,
       "type": "string"
     },
     "distinctParam": {
       "name": "distinct",
       "in": "query",
-      "description": "Name of column to retrieve distinct results from",
+      "description": "Nom de la colonne pour récupérer des résultats distincts",
       "required": false,
       "type": "string"
     },
     "searchParam": {
       "name": "search",
       "in": "query",
-      "description": "Search query",
+      "description": "Requête de recherche",
       "required": false,
       "type": "string"
     }
@@ -8785,7 +10845,7 @@
           },
           "pdfUrl": {
             "type": "string",
-            "description": "URL of the PDF of this document."
+            "description": "URL du PDF de ce document."
           },
           "estDisponible": {
             "type": "boolean",

@@ -26,17 +26,20 @@ const sessions = new Map<
 >()
 
 // Cleanup old sessions (older than 1 hour)
-setInterval(() => {
-  const now = Date.now()
-  const ONE_HOUR = 60 * 60 * 1000
-  for (const [sessionId, session] of sessions.entries()) {
-    if (now - session.created > ONE_HOUR) {
-      console.log(`Cleaning up expired session: ${sessionId}`)
-      session.transport.close()
-      sessions.delete(sessionId)
+setInterval(
+  () => {
+    const now = Date.now()
+    const ONE_HOUR = 60 * 60 * 1000
+    for (const [sessionId, session] of sessions.entries()) {
+      if (now - session.created > ONE_HOUR) {
+        console.log(`Cleaning up expired session: ${sessionId}`)
+        session.transport.close()
+        sessions.delete(sessionId)
+      }
     }
-  }
-}, 5 * 60 * 1000) // Check every 5 minutes
+  },
+  5 * 60 * 1000,
+) // Check every 5 minutes
 
 // Schema pour les requêtes SQL
 const QueryAssembleeSchema = z.object({

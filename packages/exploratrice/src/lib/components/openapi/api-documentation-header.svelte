@@ -22,13 +22,16 @@
   </p>
 
   {#if openApiSpec}
-    <Alert class="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20">
+    <Alert
+      class="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20"
+    >
       <Info class="h-4 w-4" />
       <AlertDescription class="ml-2">
         <p class="text-sm">
           <strong>Base URL:</strong>
           <Badge variant="secondary" class="ml-2 font-mono">
-            {openApiSpec.schemes?.[0] || "https"}://{openApiSpec.host}{openApiSpec.basePath || ""}
+            {openApiSpec.schemes?.[0] ||
+              "https"}://{openApiSpec.host}{openApiSpec.basePath || ""}
           </Badge>
         </p>
         <p class="mt-2 text-sm">

@@ -24,9 +24,7 @@
             {getTypeDisplay(propSchema as any)}
           </Badge>
           {#if schema.required?.includes(propName)}
-            <Badge variant="destructive" class="text-xs">
-              requis
-            </Badge>
+            <Badge variant="destructive" class="text-xs">requis</Badge>
           {/if}
           {#if (propSchema as any).$ref}
             <a
@@ -65,7 +63,9 @@
         {#if (propSchema as any).type === "array" && (propSchema as any).items}
           {#if (propSchema as any).items.properties}
             <div class="mt-2">
-              <div class="mb-1 text-xs text-muted-foreground">Éléments du tableau:</div>
+              <div class="mb-1 text-xs text-muted-foreground">
+                Éléments du tableau:
+              </div>
               <SchemaPropertyRenderer
                 schema={(propSchema as any).items}
                 depth={depth + 1}

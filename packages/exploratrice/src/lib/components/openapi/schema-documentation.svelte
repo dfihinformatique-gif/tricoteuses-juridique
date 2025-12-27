@@ -1,8 +1,19 @@
 <script lang="ts">
   import type { Snippet } from "svelte"
-  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "$lib/components/ui/card"
+  import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+  } from "$lib/components/ui/card"
   import { Badge } from "$lib/components/ui/badge"
-  import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "$lib/components/ui/accordion"
+  import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+  } from "$lib/components/ui/accordion"
   import { Separator } from "$lib/components/ui/separator"
   import FormattedDescription from "./formatted-description.svelte"
 
@@ -51,7 +62,11 @@
 
   <Accordion type="multiple" class="space-y-4">
     {#each sortedDefinitions as [schemaName, schema] (schemaName)}
-      <AccordionItem value={schemaName} id={schemaName} class="rounded-lg border">
+      <AccordionItem
+        value={schemaName}
+        id={schemaName}
+        class="rounded-lg border"
+      >
         <AccordionTrigger class="px-4 hover:no-underline">
           <div class="text-left">
             <h3 class="text-lg font-semibold">{schemaName}</h3>
@@ -73,7 +88,9 @@
                 <div class="mb-2 flex items-baseline gap-2">
                   <Badge variant="outline" class="text-xs">enum</Badge>
                   {#if s.type}
-                    <span class="text-xs text-muted-foreground">Type: {s.type}</span>
+                    <span class="text-xs text-muted-foreground"
+                      >Type: {s.type}</span
+                    >
                   {/if}
                 </div>
                 <div class="ml-1 text-xs">
@@ -122,10 +139,15 @@
                     {/if}
                     {#if (propSchema as any).enum}
                       <div class="mt-1 ml-1 text-xs">
-                        <span class="text-muted-foreground">Valeurs possibles:</span>
+                        <span class="text-muted-foreground"
+                          >Valeurs possibles:</span
+                        >
                         <div class="mt-1 flex flex-wrap gap-1">
                           {#each (propSchema as any).enum as enumValue}
-                            <Badge variant="secondary" class="font-mono text-xs">
+                            <Badge
+                              variant="secondary"
+                              class="font-mono text-xs"
+                            >
                               {enumValue}
                             </Badge>
                           {/each}
@@ -147,10 +169,14 @@
                         </div>
                       {:else if (propSchema as any).items.$ref}
                         <a
-                          href="#{extractRefName((propSchema as any).items.$ref)}"
+                          href="#{extractRefName(
+                            (propSchema as any).items.$ref,
+                          )}"
                           class="ml-1 text-xs text-purple-600 hover:underline dark:text-purple-400"
                         >
-                          → Voir {extractRefName((propSchema as any).items.$ref)}
+                          → Voir {extractRefName(
+                            (propSchema as any).items.$ref,
+                          )}
                         </a>
                       {/if}
                     {/if}
@@ -176,7 +202,7 @@
                   </p>
                 {/if}
                 {#if !s.type && !s.format && !s.pattern}
-                  <p class="text-xs italic text-muted-foreground">
+                  <p class="text-xs text-muted-foreground italic">
                     Schéma sans propriétés définies
                   </p>
                 {/if}

@@ -45,7 +45,7 @@
             // Add the schema name as title if not already present
             return {
               ...schema,
-              title: schema.title || schemaName
+              title: schema.title || schemaName,
             }
           }
         }

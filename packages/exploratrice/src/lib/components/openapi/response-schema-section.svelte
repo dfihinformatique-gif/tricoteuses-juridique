@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "$lib/components/ui/card"
+  import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+  } from "$lib/components/ui/card"
   import { Badge } from "$lib/components/ui/badge"
   import { Separator } from "$lib/components/ui/separator"
   import FormattedDescription from "./formatted-description.svelte"
@@ -18,9 +24,13 @@
     <h4 class="text-sm font-semibold">Structure de la réponse</h4>
 
     <!-- Common response fields -->
-    <Card class="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20">
+    <Card
+      class="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20"
+    >
       <CardHeader>
-        <CardTitle class="text-sm">Champs communs (tous les endpoints)</CardTitle>
+        <CardTitle class="text-sm"
+          >Champs communs (tous les endpoints)</CardTitle
+        >
       </CardHeader>
       <CardContent class="space-y-3">
         <div class="text-sm">
@@ -38,9 +48,7 @@
 
         <div class="text-sm">
           <div class="flex items-baseline gap-2">
-            <span class="font-mono font-semibold text-primary">
-              data
-            </span>
+            <span class="font-mono font-semibold text-primary"> data </span>
             <Badge variant="outline" class="text-xs">object</Badge>
             <Badge variant="destructive" class="text-xs">requis</Badge>
           </div>
@@ -106,7 +114,7 @@
                 data
               </span>
               <Badge variant="outline" class="text-xs">
-                {schema.type || 'object'}
+                {schema.type || "object"}
               </Badge>
               {#if schema.title}
                 <span class="text-sm text-muted-foreground">

@@ -39,11 +39,13 @@ LEGI_DB_PASSWORD=votre_mot_de_passe
 ### 2. Build de l'image
 
 **Avec Podman :**
+
 ```bash
 podman build --build-context=root=../../ -t moulineuse:latest .
 ```
 
 **Avec Docker :**
+
 ```bash
 docker build --build-context=root=../../ -t moulineuse:latest .
 ```
@@ -51,6 +53,7 @@ docker build --build-context=root=../../ -t moulineuse:latest .
 ### 3. Démarrer le conteneur
 
 **Avec Podman :**
+
 ```bash
 podman run -d \
   --name moulineuse-mcp \
@@ -61,6 +64,7 @@ podman run -d \
 ```
 
 **Avec Docker :**
+
 ```bash
 docker run -d \
   --name moulineuse-mcp \
@@ -132,6 +136,7 @@ git pull
 ### 2. Rebuild et redémarrer
 
 **Avec Podman :**
+
 ```bash
 podman stop moulineuse-mcp
 podman rm moulineuse-mcp
@@ -145,6 +150,7 @@ podman run -d \
 ```
 
 **Avec Docker Compose :**
+
 ```bash
 docker-compose down
 docker-compose build
@@ -209,6 +215,7 @@ curl http://localhost:3000/health
 ```
 
 Réponse attendue :
+
 ```json
 {
   "status": "ok",
@@ -283,11 +290,13 @@ podman inspect moulineuse-mcp
 ### Erreur de connexion à la base de données
 
 1. Vérifiez les variables d'environnement :
+
    ```bash
    podman exec moulineuse-mcp env | grep DB_
    ```
 
 2. Testez la connexion depuis le conteneur :
+
    ```bash
    podman exec -it moulineuse-mcp sh
    # Depuis le conteneur :

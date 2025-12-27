@@ -9,7 +9,7 @@
  */
 
 interface FormattedSegment {
-  type: 'text' | 'link' | 'external-link' | 'deprecated' | 'example'
+  type: "text" | "link" | "external-link" | "deprecated" | "example"
   content: string
   linkTarget?: string
   linkText?: string
@@ -28,12 +28,17 @@ export function parseDescription(description: string): FormattedSegment[] {
   // Regex patterns for different tags
   // Match {@link URL|text} or {@link URL text} with optional extra spaces
   // Handles multiple spaces between @link and URL, and between URL and text
-  const linkPattern = /{@link\s+(https?:\/\/[^\s|}]+|\w+)(?:(?:\s*\|\s*|\s+)([^}]+))?}/g
+  const linkPattern =
+    /{@link\s+(https?:\/\/[^\s|}]+|\w+)(?:(?:\s*\|\s*|\s+)([^}]+))?}/g
   const deprecatedPattern = /@deprecated\b/g
   const examplePattern = /@example\b/g
 
   // Find all matches
-  const matches: Array<{ index: number; length: number; segment: FormattedSegment }> = []
+  const matches: Array<{
+    index: number
+    length: number
+    segment: FormattedSegment
+  }> = []
 
   // Find @link tags
   let match: RegExpExecArray | null
@@ -46,7 +51,7 @@ export function parseDescription(description: string): FormattedSegment[] {
       index: match.index,
       length: match[0].length,
       segment: {
-        type: isExternal ? 'external-link' : 'link',
+        type: isExternal ? "external-link" : "link",
         content: match[0],
         linkTarget: target,
         linkText: text,
@@ -61,7 +66,7 @@ export function parseDescription(description: string): FormattedSegment[] {
       index: match.index,
       length: match[0].length,
       segment: {
-        type: 'deprecated',
+        type: "deprecated",
         content: match[0],
       },
     })
@@ -73,7 +78,7 @@ export function parseDescription(description: string): FormattedSegment[] {
       index: match.index,
       length: match[0].length,
       segment: {
-        type: 'example',
+        type: "example",
         content: match[0],
       },
     })
@@ -88,7 +93,7 @@ export function parseDescription(description: string): FormattedSegment[] {
     if (currentPos < match.index) {
       const text = description.slice(currentPos, match.index)
       if (text) {
-        segments.push({ type: 'text', content: text })
+        segments.push({ type: "text", content: text })
       }
     }
 
@@ -101,13 +106,13 @@ export function parseDescription(description: string): FormattedSegment[] {
   if (currentPos < description.length) {
     const text = description.slice(currentPos)
     if (text) {
-      segments.push({ type: 'text', content: text })
+      segments.push({ type: "text", content: text })
     }
   }
 
   // If no matches were found, return the whole text as a single segment
   if (segments.length === 0 && description) {
-    segments.push({ type: 'text', content: description })
+    segments.push({ type: "text", content: description })
   }
 
   return segments
@@ -118,5 +123,9 @@ export function parseDescription(description: string): FormattedSegment[] {
  */
 export function hasSpecialTags(description: string): boolean {
   if (!description) return false
-  return /{@link\s+/.test(description) || /@deprecated\b/.test(description) || /@example\b/.test(description)
+  return (
+    /{@link\s+/.test(description) ||
+    /@deprecated\b/.test(description) ||
+    /@example\b/.test(description)
+  )
 }

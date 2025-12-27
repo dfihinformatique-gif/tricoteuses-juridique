@@ -87,7 +87,6 @@ LEGI_DB_USER="legi"
 LEGI_DB_PASSWORD="your_password"
 ```
 
-
 ## Usage
 
 Moulineuse supports two modes of operation:
@@ -143,6 +142,7 @@ The HTTP server will be available at:
 For production deployment with Docker or Podman:
 
 **Build the image:**
+
 ```bash
 podman build -t moulineuse:latest .
 # or
@@ -150,6 +150,7 @@ docker build -t moulineuse:latest .
 ```
 
 **Run the container:**
+
 ```bash
 podman run -d \
   --name moulineuse-mcp \
@@ -160,6 +161,7 @@ podman run -d \
 ```
 
 **Or use Docker Compose:**
+
 ```bash
 docker-compose up -d
 # or
@@ -167,11 +169,11 @@ podman-compose up -d
 ```
 
 📖 **Full deployment guide:** See [DEPLOY.md](DEPLOY.md) for detailed instructions including:
+
 - Reverse proxy configuration (Nginx, Traefik)
 - Systemd integration
 - Monitoring and troubleshooting
 - Security best practices
-
 
 ### MCP Client Configuration
 

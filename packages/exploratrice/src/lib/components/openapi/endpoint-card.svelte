@@ -2,9 +2,18 @@
   import type { OpenAPIV2 } from "openapi-types"
   import type { Endpoint } from "$lib/openapi/helpers"
   import { getMethodColor } from "$lib/openapi/helpers"
-  import { Card, CardContent, CardHeader, CardTitle } from "$lib/components/ui/card"
+  import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+  } from "$lib/components/ui/card"
   import { Badge } from "$lib/components/ui/badge"
-  import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "$lib/components/ui/collapsible"
+  import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+  } from "$lib/components/ui/collapsible"
   import { ChevronDown } from "@lucide/svelte"
   import ParametersTable from "./parameters-table.svelte"
   import ResponseSchemaSection from "./response-schema-section.svelte"
@@ -36,7 +45,7 @@
 <Card>
   <CardHeader>
     <CardTitle>
-      <code class="text-sm font-mono text-primary">{endpoint.path}</code>
+      <code class="font-mono text-sm text-primary">{endpoint.path}</code>
     </CardTitle>
   </CardHeader>
   <CardContent class="space-y-3">
@@ -51,11 +60,15 @@
           }
         }}
       >
-        <CollapsibleTrigger class="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent">
+        <CollapsibleTrigger
+          class="flex w-full items-center justify-between gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-accent"
+        >
           <div class="flex items-center gap-3">
             <Badge
               variant="outline"
-              class="{getMethodColor(method)} border-0 font-mono text-xs font-bold text-white uppercase"
+              class="{getMethodColor(
+                method,
+              )} border-0 font-mono text-xs font-bold text-white uppercase"
             >
               {method}
             </Badge>
@@ -63,10 +76,17 @@
               {details.summary || details.description || "No description"}
             </span>
           </div>
-          <ChevronDown class="h-4 w-4 shrink-0 transition-transform duration-200 {selectedEndpoint === endpoint.path && selectedMethod === method ? 'rotate-180' : ''}" />
+          <ChevronDown
+            class="h-4 w-4 shrink-0 transition-transform duration-200 {selectedEndpoint ===
+              endpoint.path && selectedMethod === method
+              ? 'rotate-180'
+              : ''}"
+          />
         </CollapsibleTrigger>
 
-        <CollapsibleContent class="mt-4 space-y-4 rounded-lg border bg-muted/50 p-4">
+        <CollapsibleContent
+          class="mt-4 space-y-4 rounded-lg border bg-muted/50 p-4"
+        >
           <!-- Description -->
           {#if details.description}
             <div>
@@ -89,7 +109,9 @@
                   <div class="rounded-lg border bg-card p-3">
                     <div class="flex items-center gap-2">
                       <Badge
-                        variant={code.startsWith('2') ? 'default' : 'destructive'}
+                        variant={code.startsWith("2")
+                          ? "default"
+                          : "destructive"}
                         class="font-mono text-xs"
                       >
                         {code}

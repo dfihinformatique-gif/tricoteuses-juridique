@@ -17,13 +17,9 @@
 <div class="mb-6">
   <Label for="search" class="sr-only">Rechercher</Label>
   <div class="relative">
-    <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-    <Input
-      id="search"
-      type="text"
-      bind:value
-      {placeholder}
-      class="pl-10"
+    <Search
+      class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
     />
+    <Input id="search" type="text" bind:value {placeholder} class="pl-10" />
   </div>
 </div>

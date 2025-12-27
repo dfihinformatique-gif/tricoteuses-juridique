@@ -27,7 +27,8 @@ export function convertOpenAPI3to2(
   }
 
   // Handle parameters from either root level (OpenAPI 3.0 extended) or components
-  const parameters = (spec as any).parameters || spec.components?.parameters || {}
+  const parameters =
+    (spec as any).parameters || spec.components?.parameters || {}
 
   // Convert the specification
   const swagger: OpenAPIV2.Document = {
@@ -37,7 +38,9 @@ export function convertOpenAPI3to2(
     basePath,
     schemes,
     paths: convertPaths(spec.paths || {}),
-    definitions: ((spec as any).definitions || spec.components?.schemas || {}) as OpenAPIV2.DefinitionsObject,
+    definitions: ((spec as any).definitions ||
+      spec.components?.schemas ||
+      {}) as OpenAPIV2.DefinitionsObject,
     parameters: parameters as OpenAPIV2.ParametersDefinitionsObject,
   }
 
@@ -54,9 +57,7 @@ export function convertOpenAPI3to2(
 /**
  * Converts OpenAPI 3.0 paths to OpenAPI 2.0 format
  */
-function convertPaths(
-  paths: OpenAPIV3.PathsObject,
-): OpenAPIV2.PathsObject {
+function convertPaths(paths: OpenAPIV3.PathsObject): OpenAPIV2.PathsObject {
   const converted: OpenAPIV2.PathsObject = {}
 
   for (const [path, pathItem] of Object.entries(paths)) {
@@ -241,7 +242,10 @@ function extractProducesFromResponses(
  * Converts OpenAPI 3.0 security schemes to OpenAPI 2.0 format
  */
 function convertSecuritySchemes(
-  schemes: Record<string, OpenAPIV3.SecuritySchemeObject | OpenAPIV3.ReferenceObject>,
+  schemes: Record<
+    string,
+    OpenAPIV3.SecuritySchemeObject | OpenAPIV3.ReferenceObject
+  >,
 ): OpenAPIV2.SecurityDefinitionsObject {
   const converted: OpenAPIV2.SecurityDefinitionsObject = {}
 

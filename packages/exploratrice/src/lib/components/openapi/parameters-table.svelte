@@ -39,9 +39,13 @@
         <TableBody>
           {#each resolvedParams as param, i (`${param.name || ""}-${param.in || ""}-${i}`)}
             <TableRow>
-              <TableCell class="font-mono text-xs">{param.name || "-"}</TableCell>
+              <TableCell class="font-mono text-xs"
+                >{param.name || "-"}</TableCell
+              >
               <TableCell>
-                <Badge variant="outline" class="text-xs">{param.in || "-"}</Badge>
+                <Badge variant="outline" class="text-xs"
+                  >{param.in || "-"}</Badge
+                >
               </TableCell>
               <TableCell>
                 {#if param.required}

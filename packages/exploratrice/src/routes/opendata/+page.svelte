@@ -359,11 +359,34 @@
       <CardContent class="space-y-4">
         <div>
           <p class="mb-2 text-sm font-medium">
-            Configuration recommandée (HTTP) :
+            Configuration HTTP (selon votre client) :
           </p>
-          <pre
-            class="overflow-x-auto rounded-lg border bg-muted p-3 text-xs"><code
-              >{`{
+
+          <div class="space-y-3">
+            <div>
+              <p class="mb-1 text-xs text-muted-foreground">
+                Pour Claude Code :
+              </p>
+              <pre
+                class="overflow-x-auto rounded-lg border bg-muted p-3 text-xs"><code
+                  >{`{
+  "mcpServers": {
+    "tricoteuses": {
+      "type": "http",
+      "url": "https://mcp.code4code.eu/mcp"
+    }
+  }
+}`}</code
+                ></pre>
+            </div>
+
+            <div>
+              <p class="mb-1 text-xs text-muted-foreground">
+                Pour d'autres clients MCP (Cline, LibreChat, etc)
+              </p>
+              <pre
+                class="overflow-x-auto rounded-lg border bg-muted p-3 text-xs"><code
+                  >{`{
   "mcpServers": {
     "tricoteuses": {
       "url": "https://mcp.code4code.eu/mcp",
@@ -371,12 +394,14 @@
     }
   }
 }`}</code
-            ></pre>
+                ></pre>
+            </div>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-2">
           <Badge variant="secondary">MCP Protocol</Badge>
-          <Badge variant="secondary">Streamable HTTP</Badge>
+          <Badge variant="secondary">HTTP Transport</Badge>
           <Badge variant="secondary">PostgreSQL</Badge>
         </div>
 

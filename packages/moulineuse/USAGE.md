@@ -26,20 +26,42 @@ Moulineuse propose **deux modes d'utilisation** :
 - ✅ **Sécurisé** - Connexion HTTPS chiffrée
 - ✅ **Transport moderne** - Utilise le protocole Streamable HTTP MCP
 
-### Configuration (3 lignes !)
+### Configuration
 
-Ajoutez simplement ceci à votre configuration MCP (ex: Claude Desktop) :
+La configuration varie légèrement selon votre client MCP :
+
+#### Pour Claude Code
 
 ```json
 {
   "mcpServers": {
-    "moulineuse": {
+    "tricoteuses": {
+      "type": "http",
+      "url": "https://mcp.code4code.eu/mcp"
+    }
+  }
+}
+```
+
+Ou via la ligne de commande :
+```bash
+claude mcp add --transport http tricoteuses https://mcp.code4code.eu/mcp
+```
+
+#### Pour d'autres clients MCP (Cline, LibreChat, etc.)
+
+```json
+{
+  "mcpServers": {
+    "tricoteuses": {
       "url": "https://mcp.code4code.eu/mcp",
       "transport": "streamable-http"
     }
   }
 }
 ```
+
+> **💡 Note :** Claude Code utilise la syntaxe `"type": "http"` tandis que d'autres clients utilisent `"transport": "streamable-http"`. Les deux syntaxes permettent d'accéder au même serveur HTTP MCP.
 
 **C'est tout !** Vous pouvez maintenant utiliser Moulineuse immédiatement.
 

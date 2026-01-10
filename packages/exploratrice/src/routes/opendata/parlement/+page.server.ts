@@ -14,7 +14,7 @@ export const load: PageServerLoad = async () => {
     // Convert OpenAPI 3.0 to 2.0 for compatibility with existing components
     const openApiSpec = convertOpenAPI3to2(
       openApiSpec3,
-      "https://app.tricoteuses.fr/",
+      "https://parlement.tricoteuses.fr/",
     )
 
     // Extract JSON schemas from the OpenAPI 3.0 components

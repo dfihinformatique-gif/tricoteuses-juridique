@@ -416,6 +416,75 @@
         </a>
       </CardContent>
     </Card>
+
+    <!-- Serveur MCP Parlement -->
+    <Card class="border-l-4 border-l-teal-500">
+      <CardHeader>
+        <div class="flex items-center gap-3">
+          <div
+            class="flex h-12 w-12 items-center justify-center rounded-lg bg-teal-100 dark:bg-teal-900/30"
+          >
+            <Terminal class="h-6 w-6 text-teal-600 dark:text-teal-400" />
+          </div>
+          <CardTitle class="text-2xl">Serveur MCP Parlement</CardTitle>
+        </div>
+        <CardDescription>
+          Serveur MCP dédié spécifiquement aux données du Parlement français
+          (Assemblée Nationale et Sénat). Permet aux chats IA d'accéder
+          directement aux acteurs, amendements, dossiers législatifs, débats,
+          scrutins et questions parlementaires.
+        </CardDescription>
+      </CardHeader>
+      <CardContent class="space-y-4">
+        <div>
+          <p class="mb-2 text-sm font-medium">
+            Configuration HTTP (selon votre client) :
+          </p>
+
+          <div class="space-y-3">
+            <div>
+              <p class="mb-1 text-xs text-muted-foreground">
+                Pour Claude Code :
+              </p>
+              <pre
+                class="overflow-x-auto rounded-lg border bg-muted p-3 text-xs"><code
+                  >{`{
+  "mcpServers": {
+    "parlement": {
+      "type": "http",
+      "url": "https://parlement.tricoteuses.fr/mcp"
+    }
+  }
+}`}</code
+                ></pre>
+            </div>
+
+            <div>
+              <p class="mb-1 text-xs text-muted-foreground">
+                Pour d'autres clients MCP (Cline, LibreChat, etc)
+              </p>
+              <pre
+                class="overflow-x-auto rounded-lg border bg-muted p-3 text-xs"><code
+                  >{`{
+  "mcpServers": {
+    "parlement": {
+      "url": "https://parlement.tricoteuses.fr/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}`}</code
+                ></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <Badge variant="secondary">MCP Protocol</Badge>
+          <Badge variant="secondary">HTTP Transport</Badge>
+          <Badge variant="secondary">Assemblée & Sénat</Badge>
+        </div>
+      </CardContent>
+    </Card>
   </div>
 
   <!-- Note sur les fournisseurs de services -->
@@ -431,7 +500,7 @@
       </p>
       <ul class="space-y-1 text-sm text-blue-900 dark:text-blue-100">
         <li>
-          • L'API Parlement par
+          • L'API Parlement et le serveur MCP Parlement par
           <a
             href="https://www.legiwatch.fr/"
             target="_blank"

@@ -5,7 +5,7 @@ import type { OpenAPIV2, OpenAPIV3 } from "openapi-types"
  * for compatibility with existing components.
  *
  * @param spec - The OpenAPI 3.0 specification
- * @param baseUrl - The base URL of the API (e.g., "https://app.tricoteuses.fr/")
+ * @param baseUrl - The base URL of the API (e.g., "https://parlement.tricoteuses.fr/")
  * @returns An OpenAPI 2.0 (Swagger) specification
  */
 export function convertOpenAPI3to2(

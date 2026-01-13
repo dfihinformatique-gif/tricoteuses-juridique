@@ -18,6 +18,7 @@ import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
   simplifyHtml,
+  simplifyPlainText,
   TextParserContext,
   urlFromLegalId,
 } from "$lib"
@@ -30,17 +31,21 @@ async function addLinksToAssembleeParsedDocuments({
   commit,
   datasets: dataDir,
   force,
+  html,
   legislature,
   pull,
   remote,
+  text,
   uid: firstUid,
 }: {
   commit?: boolean
   datasets: string
   force?: boolean
+  html?: boolean
   legislature: string
   pull?: boolean
   remote?: string
+  text?: boolean
   uid?: string
 }): Promise<number> {
   assert(!commit || !firstUid, 'Options "commit" & "uid" are incompatible')
@@ -94,7 +99,7 @@ async function addLinksToAssembleeParsedDocuments({
           continue
         }
         for (const alinea of alineas) {
-          if (
+          if (html &&
             alinea.html !== undefined &&
             (force || alinea.html_avec_liens === undefined)
           ) {
@@ -325,6 +330,239 @@ async function addLinksToAssembleeParsedDocuments({
             alinea.html_avec_liens = output === alinea.html ? null : output
             changed = true
           }
+
+          if (text &&
+            alinea.texte !== undefined &&
+            (force || alinea.texte_avec_liens === undefined)
+          ) {
+            const transformation = simplifyPlainText(
+              alinea.texte,
+            )
+            const context = new TextParserContext(transformation.output)
+            let output = alinea.texte
+            let outputOffset = 0
+
+            for await (const link of parseTextLinks({
+              context,
+              date,
+              legiDb,
+              // logIgnoredReferencesTypes,
+              // logPartialReferences,
+              // logReferences,
+              // state: { defaultTextId },
+              transformation,
+            })) {
+              switch (link.type) {
+                case "article_definition": {
+                  // TODO: We could use an HTML span to set an ID, butI don't know if Legiwatch will support it.
+                  // const {
+                  //   article,
+                  //   originalTransformation: articleOriginalTransformation,
+                  //   textId,
+                  // } = link
+                  // if (articleOriginalTransformation === undefined) {
+                  //   throw new Error(
+                  //     `Missing originalTransformation attribute in article definition: ${JSON.stringify(link, null, 2)}`,
+                  //   )
+                  // }
+                  // const original = reverseTransformedInnerFragment(
+                  //   output,
+                  //   articleOriginalTransformation,
+                  //   outputOffset,
+                  // )
+                  // const replacement = reverseTransformedReplacement(
+                  //   articleOriginalTransformation,
+                  //   `<span class="definition_article" id="definition_article_${textId}_${article.num!}">${original}</span>`,
+                  // )
+                  // output =
+                  //   output.slice(
+                  //     0,
+                  //     articleOriginalTransformation.position.start +
+                  //       outputOffset,
+                  //   ) +
+                  //   replacement +
+                  //   output.slice(
+                  //     articleOriginalTransformation.position.stop +
+                  //       outputOffset,
+                  //   )
+                  // outputOffset +=
+                  //   replacement.length -
+                  //   (articleOriginalTransformation.position.stop -
+                  //     articleOriginalTransformation.position.start)
+                  break
+                }
+
+                case "external_article": {
+                  const {
+                    articleId,
+                    originalTransformation: articleOriginalTransformation,
+                  } = link
+                  if (articleId !== undefined) {
+                    if (articleOriginalTransformation === undefined) {
+                      throw new Error(
+                        `Missing originalTransformation attribute in external article link: ${JSON.stringify(link, null, 2)}`,
+                      )
+                    }
+                    const original = reverseTransformedInnerFragment(
+                      output,
+                      articleOriginalTransformation,
+                      outputOffset,
+                    )
+                    const replacement = reverseTransformedReplacement(
+                      articleOriginalTransformation,
+                      `[${escapeMarkdownLinkTitle(original)}](${urlFromLegalId(linkType, linkBaseUrl, articleId)})`,
+                    )
+                    output =
+                      output.slice(
+                        0,
+                        articleOriginalTransformation.position.start +
+                          outputOffset,
+                      ) +
+                      replacement +
+                      output.slice(
+                        articleOriginalTransformation.position.stop +
+                          outputOffset,
+                      )
+                    outputOffset +=
+                      replacement.length -
+                      (articleOriginalTransformation.position.stop -
+                        articleOriginalTransformation.position.start)
+                  }
+                  break
+                }
+
+                case "external_division": {
+                  const {
+                    originalTransformation: divisionOriginalTransformation,
+                    sectionTaId,
+                  } = link
+                  if (sectionTaId !== undefined) {
+                    if (divisionOriginalTransformation === undefined) {
+                      throw new Error(
+                        `Missing originalTransformation attribute in external division link: ${JSON.stringify(link, null, 2)}`,
+                      )
+                    }
+                    const original = reverseTransformedInnerFragment(
+                      output,
+                      divisionOriginalTransformation,
+                      outputOffset,
+                    )
+                    const replacement = reverseTransformedReplacement(
+                      divisionOriginalTransformation,
+                      `[${escapeMarkdownLinkTitle(original)}](${urlFromLegalId(linkType, linkBaseUrl, sectionTaId)})`,
+                    )
+                    output =
+                      output.slice(
+                        0,
+                        divisionOriginalTransformation.position.start +
+                          outputOffset,
+                      ) +
+                      replacement +
+                      output.slice(
+                        divisionOriginalTransformation.position.stop +
+                          outputOffset,
+                      )
+                    outputOffset +=
+                      replacement.length -
+                      (divisionOriginalTransformation.position.stop -
+                        divisionOriginalTransformation.position.start)
+                  }
+                  break
+                }
+
+                case "external_text": {
+                  const {
+                    originalTransformation: texteOriginalTransformation,
+                    text,
+                  } = link
+                  if (text.cid === undefined) {
+                    if (text.relative !== 0) {
+                      // It is not "la présente loi".
+                      // Note: Don't throw an exception because it occurs for all kinds of non handled texts (conventions,
+                      // décrets, etc).
+                      console.error(
+                        `Link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
+                      )
+                    }
+                    continue
+                  }
+
+                  if (texteOriginalTransformation === undefined) {
+                    throw new Error(
+                      `Missing originalTransformation attribute in external text link: ${JSON.stringify(link, null, 2)}`,
+                    )
+                  }
+                  const original = reverseTransformedInnerFragment(
+                    output,
+                    texteOriginalTransformation,
+                    outputOffset,
+                  )
+                  const replacement = reverseTransformedReplacement(
+                    texteOriginalTransformation,
+                      `[${escapeMarkdownLinkTitle(original)}](${urlFromLegalId(linkType, linkBaseUrl, text.cid!)})`,
+                  )
+                  output =
+                    output.slice(
+                      0,
+                      texteOriginalTransformation.position.start + outputOffset,
+                    ) +
+                    replacement +
+                    output.slice(
+                      texteOriginalTransformation.position.stop + outputOffset,
+                    )
+                  outputOffset +=
+                    replacement.length -
+                    (texteOriginalTransformation.position.stop -
+                      texteOriginalTransformation.position.start)
+                  break
+                }
+
+                case "internal_article": {
+                  const {
+                    definition,
+                    originalTransformation: articleOriginalTransformation,
+                  } = link
+                  if (articleOriginalTransformation === undefined) {
+                    throw new Error(
+                      `Missing originalTransformation attribute in internal article link: ${JSON.stringify(link, null, 2)}`,
+                    )
+                  }
+                  const original = reverseTransformedInnerFragment(
+                    output,
+                    articleOriginalTransformation,
+                    outputOffset,
+                  )
+                  const replacement = reverseTransformedReplacement(
+                    articleOriginalTransformation,
+                      `[${escapeMarkdownLinkTitle(original)}](#definition_article_${definition.textId}_${definition.article.num!})`,
+                  )
+                  output =
+                    output.slice(
+                      0,
+                      articleOriginalTransformation.position.start +
+                        outputOffset,
+                    ) +
+                    replacement +
+                    output.slice(
+                      articleOriginalTransformation.position.stop +
+                        outputOffset,
+                    )
+                  outputOffset +=
+                    replacement.length -
+                    (articleOriginalTransformation.position.stop -
+                      articleOriginalTransformation.position.start)
+                  break
+                }
+
+                default: {
+                  assertNever("Link", link)
+                }
+              }
+            }
+
+            alinea.texte_avec_liens = output === alinea.texte ? null : output
+            changed = true
+          }
         }
       }
 
@@ -349,6 +587,16 @@ async function addLinksToAssembleeParsedDocuments({
   return 0
 }
 
+// Taken from Tricoteuses Légifrance
+function escapeMarkdownLinkTitle<
+  StringOrUndefined extends string | undefined,
+>(s: StringOrUndefined): StringOrUndefined {
+  return s
+    ?.replace(/\s+/g, " ")
+    .replaceAll("[", "\\[")
+    .replaceAll("]", "\\]") as StringOrUndefined
+}
+
 sade("add_links_to_assemblee_parsed_documents", true)
   .describe(
     "Add links to HTML fragments (articles) of parsed Assemblée HTML documents",
@@ -356,9 +604,11 @@ sade("add_links_to_assemblee_parsed_documents", true)
   .option("-c, --commit", "Commit links added to HTML fragments")
   .option("-d, --datasets", "Path of directory containing Assemblée datasets")
   .option("-f, --force", "Force generation of links even if they already exist")
+  .option("-h, --html", "Add links to HTML of alineas")
   .option("-l, --legislature", "Legislature of dataset to use")
   .option("-p, --pull", "Pull dataset before adding links to it")
   .option("-r, --remote", "Name of upstream repository to push to")
+  .option("-t, --text", "Add links to texts of alineas")
   .option("-u, --uid", "Resume script at document with given UID")
   .action(async (options) => {
     process.exit(await addLinksToAssembleeParsedDocuments(options))

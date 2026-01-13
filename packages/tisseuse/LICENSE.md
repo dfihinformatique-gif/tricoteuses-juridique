@@ -4,7 +4,7 @@ _Find links in/to French legislative documents_
 
 By: Emmanuel Raviart <mailto:emmanuel@raviart.com>
 
-Copyright (C) 2025 Emmanuel Raviart
+Copyright (C) 2025, 2026 Emmanuel Raviart
 
 https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/src/branch/main/packages/tisseuse
 

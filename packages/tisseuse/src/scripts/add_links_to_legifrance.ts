@@ -726,7 +726,7 @@ async function upsertExtractedLink(
 
 sade("add_links_to_legifrance", true)
   .describe("Add links to Légifrance texts and articles")
-  .option("-c, --text-cid", "Common ID of a Légifrance text")
+  .option("-c, --cid", "Common ID of a Légifrance text")
   .option("-I, --log-ignored", "Log ignored references types")
   .option(
     "-l, --cid-list",

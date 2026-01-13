@@ -93,6 +93,8 @@ async function addLinksToAssembleeParsedDocuments({
         documentOrDivision.cycleDeVie.chrono.datePublicationWeb
       )?.toString() as string
       assert.notStrictEqual(date, undefined)
+      let previousHtmlContext: TextParserContext | undefined = undefined
+      let previousTextContext: TextParserContext | undefined = undefined
       for (const subdivision of subdivisions) {
         const { alineas } = subdivision
         if (alineas == null) {
@@ -107,6 +109,9 @@ async function addLinksToAssembleeParsedDocuments({
               alinea.html,
             )
             const context = new TextParserContext(transformation.output)
+            context.currentArticle = previousHtmlContext?.currentArticle
+            context.currentText = previousHtmlContext?.currentText
+            previousHtmlContext = context
             let output = alinea.html
             let outputOffset = 0
 
@@ -339,6 +344,9 @@ async function addLinksToAssembleeParsedDocuments({
               alinea.texte,
             )
             const context = new TextParserContext(transformation.output)
+            context.currentArticle = previousTextContext?.currentArticle
+            context.currentText = previousTextContext?.currentText
+            previousTextContext = context
             let output = alinea.texte
             let outputOffset = 0
 

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button/index.js"
-	import { ReuseCard, ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import { ReuseCard, SeeAllCard, ServiceCard } from "$lib/components/tricoteuses/index.js"
 	import {
 		getFeaturedReuses,
 		getFeaturedServices,
@@ -79,6 +79,7 @@
 			{#each featuredServices as service (service.id)}
 				<ServiceCard {service} />
 			{/each}
+			<SeeAllCard href="/services" label="Voir tous les services" />
 		</div>
 	</section>
 
@@ -105,6 +106,7 @@
 					{#each featuredExternalReuses as reuse (reuse.id)}
 						<ReuseCard {reuse} />
 					{/each}
+					<SeeAllCard href="/reuses" label="Voir toutes les réutilisations" />
 				</div>
 			{/if}
 
@@ -115,6 +117,7 @@
 					{#each featuredDemos as reuse (reuse.id)}
 						<ReuseCard {reuse} />
 					{/each}
+					<SeeAllCard href="/reuses" label="Voir toutes les réutilisations" />
 				</div>
 			{/if}
 		</div>

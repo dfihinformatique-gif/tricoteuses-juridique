@@ -1,26 +1,15 @@
 import "dotenv/config"
 
-import { validateConfig } from "$lib/server/auditors/config.js"
+import {
+  validateConfigSafe,
+  type Config,
+  type DatabaseConfig,
+} from "$lib/zod/config.js"
 
-export interface Config {
-  allowRobots: boolean
-  assembleeDb: DatabaseConfig
-  assembleeDocumentsDir: string
-  legiDb: DatabaseConfig
-  linkUrlOriginReplacement?: string
-  tisseuseDb: DatabaseConfig
-  title: string
-}
+// Re-export types for backward compatibility
+export type { Config, DatabaseConfig }
 
-export interface DatabaseConfig {
-  host: string
-  port: number
-  database: string
-  user: string
-  password: string
-}
-
-const [config, error] = validateConfig({
+const result = validateConfigSafe({
   allowRobots: process.env.ALLOW_ROBOTS,
   assembleeDb: {
     host: process.env.ASSEMBLEE_DB_HOST,
@@ -46,15 +35,18 @@ const [config, error] = validateConfig({
     password: process.env.TISSEUSE_DB_PASSWORD,
   },
   title: process.env.TITLE,
-}) as [Config, unknown]
-if (error !== null) {
+})
+
+if (!result.success) {
   console.error(
     `Error in server configuration:\n${JSON.stringify(
-      config,
+      result.error.format(),
       null,
       2,
-    )}\nError:\n${JSON.stringify(error, null, 2)}`,
+    )}`,
   )
   process.exit(-1)
 }
+
+const config = result.data
 export default config

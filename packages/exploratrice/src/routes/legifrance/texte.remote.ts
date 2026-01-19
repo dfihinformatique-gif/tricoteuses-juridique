@@ -1,14 +1,4 @@
-import {
-  auditEmptyToNull,
-  auditRequire,
-  auditTrimString,
-  strictAudit,
-} from "@auditors/core"
-import {
-  auditLegalId,
-  type JorfTexteVersion,
-  type LegiTexteVersion,
-} from "@tricoteuses/legifrance"
+import type { JorfTexteVersion, LegiTexteVersion } from "@tricoteuses/legifrance"
 import {
   getOrLoadTextelr,
   getOrLoadTextesVersions,
@@ -16,19 +6,14 @@ import {
 } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
-import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { zodToStandardSchema } from "$lib/zod/standardschema.js"
+import { legalId } from "$lib/zod/legifrance.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
 import type { TextePageInfos } from "./texte.js"
 
 export const queryTextePageInfos = query(
-  standardSchemaV1<string>(
-    strictAudit,
-    auditTrimString,
-    auditEmptyToNull,
-    auditLegalId,
-    auditRequire,
-  ),
+  zodToStandardSchema(legalId()),
   async (id): Promise<TextePageInfos | undefined> => {
     const legifranceObjectCache = newLegifranceObjectCache()
     const [textelr, texteVersionWithLinks, dossierLegislatifAssembleeUid] =

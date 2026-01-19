@@ -1,12 +1,5 @@
+import { z } from "zod"
 import {
-  auditArray,
-  auditEmptyToNull,
-  auditRequire,
-  auditTrimString,
-  strictAudit,
-} from "@auditors/core"
-import {
-  auditLegalId,
   type JorfArticle,
   type LegiArticle,
 } from "@tricoteuses/legifrance"
@@ -23,7 +16,8 @@ import {
 import type { JSONValue } from "postgres"
 
 import { query } from "$app/server"
-import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { zodToStandardSchema } from "$lib/zod/standardschema.js"
+import { legalId } from "$lib/zod/legifrance.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
 import type { ArticlePageInfos, ArticleWithLinks } from "./article.js"
@@ -141,24 +135,14 @@ const loadArticleWithLinks = async (
 }
 
 // export const queryArticle = query(
-//   standardSchemaV1<string>(
-//     strictAudit,
-//     auditTrimString,
-//     auditEmptyToNull,
-//     auditLegalId,
-//     auditRequire,
+//   zodToStandardSchema(legalId()
 //   ),
 //   async (id): Promise<JorfArticle | LegiArticle | undefined> =>
 //     await getOrLoadArticle(legiDb, newLegifranceObjectCache(), id),
 // )
 
 // export const queryArticleContenuAvecLiens = query(
-//   standardSchemaV1<string>(
-//     strictAudit,
-//     auditTrimString,
-//     auditEmptyToNull,
-//     auditLegalId,
-//     auditRequire,
+//   zodToStandardSchema(legalId()
 //   ),
 //   async (id): Promise<{ blocTextuel?: string; nota?: string }> => {
 //     const contenuAvecLiens = (
@@ -183,12 +167,7 @@ const loadArticleWithLinks = async (
 // )
 
 export const queryArticlePageInfos = query(
-  standardSchemaV1<string>(
-    strictAudit,
-    auditTrimString,
-    auditEmptyToNull,
-    auditLegalId,
-    auditRequire,
+  zodToStandardSchema(legalId()
   ),
   async (id): Promise<ArticlePageInfos | undefined> => {
     const legifranceObjectCache = newLegifranceObjectCache()
@@ -252,23 +231,14 @@ export const queryArticlePageInfos = query(
 )
 
 export const queryArticlesWithLinks = query(
-  standardSchemaV1<string[]>(
-    strictAudit,
-    auditArray(auditTrimString, auditEmptyToNull, auditLegalId, auditRequire),
-    auditEmptyToNull,
-    auditRequire,
+  zodToStandardSchema(z.array(legalId()).min(1, "An empty array is not allowed")
   ),
   async (ids): Promise<{ [id: string]: ArticleWithLinks }> =>
     await loadArticlesWithLinks(newLegifranceObjectCache(), ids),
 )
 
 export const queryArticleWithLinks = query(
-  standardSchemaV1<string>(
-    strictAudit,
-    auditTrimString,
-    auditEmptyToNull,
-    auditLegalId,
-    auditRequire,
+  zodToStandardSchema(legalId()
   ),
   async (id): Promise<ArticleWithLinks | undefined> =>
     await loadArticleWithLinks(newLegifranceObjectCache(), id),

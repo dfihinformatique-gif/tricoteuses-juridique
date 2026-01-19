@@ -1,11 +1,4 @@
-import {
-  auditArray,
-  auditEmptyToNull,
-  auditRequire,
-  auditTest,
-  auditTrimString,
-  strictAudit,
-} from "@auditors/core"
+import { z } from "zod"
 import type { Document, DocumentFilesIndex } from "@tricoteuses/assemblee"
 import { pathFromDocumentUid } from "@tricoteuses/assemblee/loaders"
 import { slugify } from "@tricoteuses/legifrance"
@@ -26,8 +19,8 @@ import fs from "fs-extra"
 import path from "node:path"
 
 import { query } from "$app/server"
-import { auditDocumentUid } from "$lib/auditors/assemblee.js"
-import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { DocumentUidSchema } from "$lib/zod/assemblee.js"
+import { zodToStandardSchema } from "$lib/zod/standardschema.js"
 import config from "$lib/server/config.js"
 import { assembleeDb } from "$lib/server/databases/index.js"
 
@@ -196,32 +189,17 @@ const loadDocumentPageInfos = async (
 }
 
 export const queryDocumentPageInfos = query(
-  standardSchemaV1<string>(
-    strictAudit,
-    auditTrimString,
-    auditEmptyToNull,
-    auditDocumentUid,
-    auditRequire,
-  ),
+  zodToStandardSchema(DocumentUidSchema),
   async (uid): Promise<DocumentPageInfos | undefined> =>
     await loadDocumentPageInfos(uid),
 )
 
 export const queryDocumentsDiffPageInfos = query(
-  standardSchemaV1<[string, string]>(
-    strictAudit,
-    auditArray(
-      auditTrimString,
-      auditEmptyToNull,
-      auditDocumentUid,
-      auditRequire,
-    ),
-    auditTest(
-      (value) => value.length === 2,
-      (value: string[]) =>
-        `Expected a couple, got an array of size ${value.length}`,
-    ),
-    auditRequire,
+  zodToStandardSchema(
+    z
+      .array(DocumentUidSchema)
+      .length(2, "Expected a couple, got an array of different size")
+      .transform((arr) => arr as [string, string])
   ),
   async ([previousUid, currentUid]): Promise<DocumentsDiffPageInfos> => {
     const [previous, current] = await Promise.all([

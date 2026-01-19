@@ -1,241 +1,134 @@
 <script lang="ts">
-  import { onDestroy, onMount } from "svelte"
+	import { Button } from "$lib/components/ui/button/index.js"
+	import { ReuseCard, ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import {
+		getFeaturedReuses,
+		getFeaturedServices,
+		getReusesByType,
+	} from "$lib/data/tricoteuses-ecosystem.js"
+	import { ChevronRight } from "@lucide/svelte"
+	import { onDestroy, onMount } from "svelte"
 
-  import type { Suggestion } from "$lib/autocompletion.js"
-  import { Badge } from "$lib/components/ui/badge/index.js"
-  import * as Item from "$lib/components/ui/item/index.js"
-  import * as Card from "$lib/components/ui/card/index.js"
-  import { fullDateFormatter } from "$lib/dates.js"
-  import { urlPathFromId } from "$lib/urls.js"
-  import {
-    FileTextIcon,
-    FolderOpenIcon,
-    NewspaperIcon,
-    ScaleIcon,
-  } from "@lucide/svelte"
+	const featuredServices = getFeaturedServices()
+	const featuredExternalReuses = getReusesByType("external").filter((r) => r.featured)
+	const featuredDemos = getReusesByType("demo").filter((r) => r.featured)
 
-  import { queryHomePageInfos } from "./home.remote.js"
-  import { cn } from "$lib/utils.js"
+	let intervalId: NodeJS.Timeout | undefined = $state(undefined)
+	let tagline = $state("")
+	let taglineIndex = 0
+	const taglines = [
+		"",
+		", la loi sous git.",
+		", la loi en liens.",
+		", la loi en diffs.",
+		", la loi et sa genèse.",
+		", la loi en données publiques.",
+		", la loi en logiciel libre.",
+		", la loi en temps réel.",
+	] as const
 
-  let intervalId: NodeJS.Timeout | undefined = $state(undefined)
-  let { documents, dossiersParlementaires, jos, textes } = $derived(
-    await queryHomePageInfos(),
-  )
-  let tagline = $state("")
-  let taglineIndex = 0
-  const taglines = [
-    "",
-    ", la loi sous git.",
-    ", la loi en liens.",
-    ", la loi en diffs.",
-    ", la loi et sa genèse.",
-    ", la loi en données publiques.",
-    ", la loi en logiciel libre.",
-    ", la loi en temps réel.",
-  ] as const
+	onMount(() => {
+		intervalId = setInterval(() => {
+			taglineIndex++
+			if (taglineIndex >= taglines.length) {
+				taglineIndex = 0
+			}
+			tagline = taglines[taglineIndex]
+		}, 3000)
+	})
 
-  onMount(() => {
-    // Start the interval and store its ID to clear it later
-    intervalId = setInterval(() => {
-      taglineIndex++
-      if (taglineIndex >= taglines.length) {
-        taglineIndex = 0
-      }
-      tagline = taglines[taglineIndex]
-    }, 3000)
-  })
-
-  onDestroy(() => {
-    if (intervalId) {
-      clearInterval(intervalId)
-    }
-  })
+	onDestroy(() => {
+		if (intervalId !== undefined) {
+			clearInterval(intervalId)
+		}
+	})
 </script>
 
-{#snippet suggestionItemContent({ autocompletion, badge, date }: Suggestion)}
-  <Item.Content class="overflow-x-auto">
-    <Item.Title class="flex w-full justify-between">
-      {#if date !== undefined}
-        <time datetime={date} class="text-sm font-bold first-letter:uppercase"
-          >{fullDateFormatter(date)}</time
-        >
-      {/if}
+<svelte:head>
+	<title>Tricoteuses - Données publiques juridiques françaises</title>
+</svelte:head>
 
-      {#if badge !== undefined}
-        {@const commonStyles = "font-bold"}
+<div class="container mx-auto max-w-7xl px-4 py-8">
+	<!-- Hero Section -->
+	<header class="mb-16 text-center">
+		<h1 class="mb-4 text-5xl font-bold">
+			Tricoteuses<span class="italic text-primary">{tagline}</span>
+		</h1>
+		<p class="mx-auto max-w-3xl text-xl text-muted-foreground">
+			Démocratiser l'accès aux données publiques juridiques françaises à travers des services
+			ouverts, des APIs modernes et une communauté de contributeurs.
+		</p>
+	</header>
 
-        {#if badge === "JO"}
-          <Badge
-            class={cn(
-              commonStyles,
-              "bg-badge-jo text-badge-jo-foreground hover:bg-badge-jo/90",
-            )}
-          >
-            <NewspaperIcon />
-            {badge}
-          </Badge>
-        {:else if ["loi", "ordonnance"].includes(badge.toLowerCase())}
-          <Badge
-            class={cn(
-              commonStyles,
-              "bg-badge-law text-badge-law-foreground hover:bg-badge-law/90",
-            )}
-          >
-            <ScaleIcon />
-            {badge}
-          </Badge>
-        {:else if badge === "Résolution" || badge.startsWith("Projet")}
-          <Badge
-            class={cn(
-              commonStyles,
-              "bg-badge-folder text-badge-folder-foreground hover:bg-badge-folder/90",
-            )}
-          >
-            <FolderOpenIcon />
-            {badge}
-          </Badge>
-        {:else if badge === "Rapport"}
-          <Badge
-            class={cn(
-              commonStyles,
-              "bg-badge-report text-badge-report-foreground hover:bg-badge-report/90",
-            )}
-          >
-            <FileTextIcon />
-            {badge}
-          </Badge>
-        {/if}
-      {/if}
-    </Item.Title>
+	<!-- Services Section -->
+	<section class="mb-16">
+		<div class="mb-8 flex items-center justify-between">
+			<div>
+				<h2 class="mb-2 text-3xl font-bold">Services et données</h2>
+				<p class="text-muted-foreground">
+					APIs, dépôts de données et services pour accéder aux données juridiques françaises
+				</p>
+			</div>
+			<Button href="/services" variant="outline">
+				Voir tous les services
+				<ChevronRight class="ml-2 h-4 w-4" />
+			</Button>
+		</div>
 
-    <Item.Description>
-      {autocompletion}
-    </Item.Description>
-  </Item.Content>
-{/snippet}
+		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+			{#each featuredServices as service (service.id)}
+				<ServiceCard {service} />
+			{/each}
+		</div>
+	</section>
 
-<!-- Hero Card.Root -->
-<div class="mb-6 lg:mb-8">
-  <h1 class="mb-0">
-    Tricoteuses<span class="text-primary italic">{tagline}</span>
-  </h1>
-  <p class="text-muted-foreground">
-    Explorez les documents législatifs français : journaux officiels, lois,
-    dossiers parlementaires et leurs liens.
-  </p>
+	<!-- Reuses Section -->
+	<section class="mb-16">
+		<div class="mb-8">
+			<div class="mb-4 flex items-center justify-between">
+				<div>
+					<h2 class="mb-2 text-3xl font-bold">Réutilisations</h2>
+					<p class="text-muted-foreground">
+						Services et applications qui utilisent les données Tricoteuses
+					</p>
+				</div>
+				<Button href="/reuses" variant="outline">
+					Voir toutes les réutilisations
+					<ChevronRight class="ml-2 h-4 w-4" />
+				</Button>
+			</div>
+
+			<!-- External Reuses -->
+			{#if featuredExternalReuses.length > 0}
+				<h3 class="mb-4 text-xl font-semibold">Services externes</h3>
+				<div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+					{#each featuredExternalReuses as reuse (reuse.id)}
+						<ReuseCard {reuse} />
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Demos -->
+			{#if featuredDemos.length > 0}
+				<h3 class="mb-4 text-xl font-semibold">Démonstrations Tricoteuses</h3>
+				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+					{#each featuredDemos as reuse (reuse.id)}
+						<ReuseCard {reuse} />
+					{/each}
+				</div>
+			{/if}
+		</div>
+	</section>
+
+	<!-- CTA Section -->
+	<section class="rounded-lg border bg-muted p-8 text-center">
+		<h2 class="mb-4 text-2xl font-bold">Vous utilisez les données Tricoteuses ?</h2>
+		<p class="mb-6 text-muted-foreground">
+			Partagez votre projet avec la communauté et inspirez d'autres développeurs !
+		</p>
+		<Button href="/reuses/proposer" size="lg">
+			Proposer une réutilisation
+			<ChevronRight class="ml-2 h-4 w-4" />
+		</Button>
+	</section>
 </div>
-
-<!-- Grid Container -->
-<div class="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
-  <!-- Card.Root: Journaux Officiels -->
-  <Card.Root>
-    <Card.Content>
-      <h2>
-        <NewspaperIcon size={20} />
-        Les derniers journaux officiels
-      </h2>
-      <Item.Group>
-        {#each jos.slice(0, 6) as suggestion}
-          {@const urlPath = urlPathFromId(suggestion.id)}
-          <Item.Root variant="muted" size="sm">
-            {#snippet child({ props })}
-              {#if urlPath === null}
-                {@render suggestionItemContent(suggestion)}
-              {:else}
-                <a data-sveltekit-reload href={urlPath} {...props}>
-                  {@render suggestionItemContent(suggestion)}
-                </a>
-              {/if}
-            {/snippet}
-          </Item.Root>
-        {/each}
-      </Item.Group>
-    </Card.Content>
-  </Card.Root>
-
-  <!-- Card.Root: Textes Promulgués -->
-  <Card.Root>
-    <Card.Content>
-      <h2>
-        <ScaleIcon size={20} />
-        Les derniers textes promulgués
-      </h2>
-      <Item.Group>
-        {#each textes.slice(0, 6) as suggestion}
-          {@const urlPath = urlPathFromId(suggestion.id)}
-          <Item.Root variant="muted" size="sm">
-            {#snippet child({ props })}
-              {#if urlPath === null}
-                {@render suggestionItemContent(suggestion)}
-              {:else}
-                <a data-sveltekit-reload href={urlPath} {...props}>
-                  {@render suggestionItemContent(suggestion)}
-                </a>
-              {/if}
-            {/snippet}
-          </Item.Root>
-        {/each}
-      </Item.Group>
-    </Card.Content>
-  </Card.Root>
-
-  <!-- Card.Root: Dossiers Législatifs -->
-  <Card.Root>
-    <Card.Content>
-      <h2>
-        <FolderOpenIcon size={20} />
-        Les derniers dossiers législatifs en cours
-      </h2>
-      <Item.Group>
-        {#each dossiersParlementaires.slice(0, 6) as suggestion}
-          {@const urlPath = urlPathFromId(suggestion.id)}
-          <Item.Root variant="muted" size="sm">
-            {#snippet child({ props })}
-              {#if urlPath === null}
-                {@render suggestionItemContent(suggestion)}
-              {:else}
-                <a data-sveltekit-reload href={urlPath} {...props}>
-                  {@render suggestionItemContent(suggestion)}
-                </a>
-              {/if}
-            {/snippet}
-          </Item.Root>
-        {/each}
-      </Item.Group>
-    </Card.Content>
-  </Card.Root>
-
-  <!-- Card.Root: Documents Assemblée -->
-  <Card.Root>
-    <Card.Content>
-      <h2>
-        <FileTextIcon size={20} />
-        Les derniers textes publiés
-      </h2>
-      <Item.Group>
-        {#each documents.slice(0, 6) as suggestion}
-          {@const urlPath = urlPathFromId(suggestion.id)}
-          <Item.Root variant="muted" size="sm">
-            {#snippet child({ props })}
-              {#if urlPath === null}
-                {@render suggestionItemContent(suggestion)}
-              {:else}
-                <a data-sveltekit-reload href={urlPath} {...props}>
-                  {@render suggestionItemContent(suggestion)}
-                </a>
-              {/if}
-            {/snippet}
-          </Item.Root>
-        {/each}
-      </Item.Group>
-    </Card.Content>
-  </Card.Root>
-</div>
-
-<style>
-  h2 {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-</style>

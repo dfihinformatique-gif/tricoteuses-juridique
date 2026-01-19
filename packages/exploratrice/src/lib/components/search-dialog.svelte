@@ -1,16 +1,5 @@
 <script lang="ts">
-  import {
-    auditArray,
-    auditEmptyToNull,
-    auditFunction,
-    auditOptions,
-    auditSetNullish,
-    auditString,
-    auditTest,
-    auditTrimString,
-    strictAudit,
-    type Audit,
-  } from "@auditors/core"
+  import { z } from "zod"
   import ChevronDownIcon from "@lucide/svelte/icons/chevron-down"
   import SearchIcon from "@lucide/svelte/icons/search"
   import type { Component } from "svelte"
@@ -18,7 +7,7 @@
 
   import { goto } from "$app/navigation"
   import { page } from "$app/state"
-  import { auditQuerySingleton } from "$lib/auditors/queries"
+  import { parseSearchParams, querySingleton, queryQ } from "$lib/zod/query.js"
   import {
     possibleTypes,
     type PossibleType,
@@ -37,69 +26,33 @@
   import { urlPathFromId } from "$lib/urls.js"
   import { cn } from "$lib/utils.js"
 
-  const auditQuery = (
-    audit: Audit,
-    query: URLSearchParams,
-  ): [{ q: string; type?: PossibleType }, unknown] => {
-    if (query == null) {
-      return [query, null]
-    }
-    if (!(query instanceof URLSearchParams)) {
-      return audit.unexpectedType(query, "URLSearchParams")
+  // Define the query schema for search parameters
+  const SearchQuerySchema = z.object({
+    q: queryQ(),
+    type: querySingleton(
+      z
+        .string()
+        .trim()
+        .transform((val) => (val === "" ? undefined : val))
+        .pipe(z.enum(possibleTypes).optional())
+    ),
+  })
+
+  type SearchQuery = z.infer<typeof SearchQuerySchema>
+
+  const parseQuery = (query: URLSearchParams): SearchQuery => {
+    const data = parseSearchParams(query)
+    const result = SearchQuerySchema.safeParse(data)
+
+    if (result.success) {
+      return result.data
     }
 
-    const data: { [key: string]: string[] } = {}
-    for (const [key, value] of query.entries()) {
-      let values = data[key]
-      if (values === undefined) {
-        values = data[key] = []
-      }
-      values.push(value)
-    }
-    const errors: { [key: string]: unknown } = {}
-    const remainingKeys = new Set(Object.keys(data))
-
-    audit.attribute(
-      data,
-      "q",
-      true,
-      errors,
-      remainingKeys,
-      // Like auditQuerySingleton, but sets q to undefined
-      // when q is not present in URL and set it to empty string
-      // when q is present in URL but is empty.
-      auditArray(),
-      auditTest(
-        (values) => values.length <= 1,
-        "Parameter must be present only once in query",
-      ),
-      auditFunction((value) => value[0] ?? ""),
-      auditString,
-    )
-    audit.attribute(
-      data,
-      "type",
-      true,
-      errors,
-      remainingKeys,
-      auditQuerySingleton(
-        auditTrimString,
-        auditEmptyToNull,
-        auditOptions(possibleTypes),
-      ),
-    )
-
-    return audit.reduceRemaining(
-      data,
-      errors,
-      remainingKeys,
-      auditSetNullish({}),
-    )
+    // Return default values on parse error
+    return { q: undefined, type: undefined }
   }
 
-  let { q, type: typeFilter } = $state(
-    auditQuery(strictAudit, page.url.searchParams)[0],
-  )
+  let { q, type: typeFilter } = $state(parseQuery(page.url.searchParams))
   const modifierKeyPrefix = useModifierKeyPrefix()
   let open = $derived(q !== undefined || typeFilter !== undefined)
   const sampleSearches = [

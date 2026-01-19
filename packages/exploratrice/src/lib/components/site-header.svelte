@@ -1,12 +1,13 @@
 <script lang="ts">
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
+  import SearchIcon from "@lucide/svelte/icons/search"
 
+  import { Button } from "$lib/components/ui/button/index.js"
   import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js"
   import { Separator } from "$lib/components/ui/separator/index.js"
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
 
   import ModeSwitcher from "./mode-switcher.svelte"
-  import SearchDialog from "./search-dialog.svelte"
 </script>
 
 <header class="sticky top-0 z-50 mb-6 border-b bg-background py-5">
@@ -24,9 +25,14 @@
                 <li>
                   <NavigationMenu.Link href="/">Accueil</NavigationMenu.Link>
                 </li>
+                <li>
+                  <NavigationMenu.Link href="/services"
+                    >Services et données</NavigationMenu.Link
+                  >
+                </li>
                 <li class="border-b">
-                  <NavigationMenu.Link href="/opendata"
-                    >Données ouvertes, API et IA</NavigationMenu.Link
+                  <NavigationMenu.Link href="/reuses"
+                    >Réutilisations</NavigationMenu.Link
                   >
                 </li>
                 <li>
@@ -78,9 +84,14 @@
         </NavigationMenu.List>
       </NavigationMenu.Root>
       <div class="ml-auto flex items-center gap-2 md:flex-1 md:justify-end">
-        <div class="hidden w-full flex-1 md:flex md:w-auto md:flex-none">
-          <SearchDialog />
-        </div>
+        <Button
+          variant="secondary"
+          href="/recherche"
+          class="hidden md:inline-flex"
+        >
+          <SearchIcon class="mr-2 h-4 w-4" />
+          Recherche
+        </Button>
         <Separator orientation="vertical" />
         <ModeSwitcher />
       </div>

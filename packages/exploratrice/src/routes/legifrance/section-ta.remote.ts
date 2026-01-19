@@ -1,31 +1,16 @@
-import {
-  auditEmptyToNull,
-  auditRequire,
-  auditTrimString,
-  strictAudit,
-} from "@auditors/core"
-import {
-  auditLegalId,
-  type JorfSectionTa,
-  type LegiSectionTa,
-} from "@tricoteuses/legifrance"
+import type { JorfSectionTa, LegiSectionTa } from "@tricoteuses/legifrance"
 import {
   getOrLoadSectionTa,
   newLegifranceObjectCache,
 } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
-import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { zodToStandardSchema } from "$lib/zod/standardschema.js"
+import { legalId } from "$lib/zod/legifrance.js"
 import { legiDb } from "$lib/server/databases/index.js"
 
 export const querySectionTa = query(
-  standardSchemaV1<string>(
-    strictAudit,
-    auditTrimString,
-    auditEmptyToNull,
-    auditLegalId,
-    auditRequire,
-  ),
+  zodToStandardSchema(legalId()),
   async (id): Promise<JorfSectionTa | LegiSectionTa | undefined> =>
     await getOrLoadSectionTa(legiDb, newLegifranceObjectCache(), id),
 )

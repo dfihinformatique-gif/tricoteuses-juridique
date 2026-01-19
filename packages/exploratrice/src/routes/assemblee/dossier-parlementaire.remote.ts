@@ -1,9 +1,3 @@
-import {
-  auditEmptyToNull,
-  auditRequire,
-  auditTrimString,
-  strictAudit,
-} from "@auditors/core"
 import type { Document, DossierParlementaire } from "@tricoteuses/assemblee"
 import {
   getOrLoadDocumentsByDossierParlementaireUid,
@@ -12,20 +6,14 @@ import {
 } from "@tricoteuses/tisseuse"
 
 import { query } from "$app/server"
-import { auditDossierParlementaireUid } from "$lib/auditors/assemblee.js"
-import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { DossierParlementaireUidSchema } from "$lib/zod/assemblee.js"
+import { zodToStandardSchema } from "$lib/zod/standardschema.js"
 import { assembleeDb, legiDb } from "$lib/server/databases/index.js"
 
 import type { DossierParlementairePageInfos } from "./dossiers-parlementaires.js"
 
 export const queryDossierParlementairePageInfos = query(
-  standardSchemaV1<string>(
-    strictAudit,
-    auditTrimString,
-    auditEmptyToNull,
-    auditDossierParlementaireUid,
-    auditRequire,
-  ),
+  zodToStandardSchema(DossierParlementaireUidSchema),
   async (uid): Promise<DossierParlementairePageInfos | undefined> => {
     const [dossierParlementaire, documents, legifranceTexteId] =
       await Promise.all([

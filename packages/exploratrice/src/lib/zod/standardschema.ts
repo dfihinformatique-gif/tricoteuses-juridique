@@ -1,13 +1,10 @@
 /**
+ * Standard Schema v1 adapter for Zod
  * See https://standardschema.dev/
+ * Replaces auditors-based standardschema implementation
  */
 
-import {
-  iterAuditors,
-  type Audit,
-  type AuditSwitchError,
-  type NestedAuditors,
-} from "@auditors/core"
+import type { z } from "zod"
 
 /** The Standard Schema interface. */
 export interface StandardSchemaV1<Input = unknown, Output = Input> {
@@ -81,51 +78,39 @@ export declare namespace StandardSchemaV1 {
   >["output"]
 }
 
-function* iterIssuesFromAuditError(
-  error: unknown,
-  path: ReadonlyArray<PropertyKey> = [],
-): Generator<StandardSchemaV1.Issue, void> {
-  if (error != null) {
-    if (typeof error === "object") {
-      if ((error as AuditSwitchError)["@auditors/error"] === "switch") {
-        // Use only best error of swith to generate issues.
-        yield* iterIssuesFromAuditError(
-          (error as AuditSwitchError).errors[(error as AuditSwitchError).index],
-          path,
-        )
-      } else {
-        // `error` is a standard object.
-        for (const [key, itemError] of Object.entries(
-          error as { [key: PropertyKey]: unknown },
-        )) {
-          yield* iterIssuesFromAuditError(itemError, [...path, key])
-        }
-      }
-    } else {
-      yield {
-        message: error.toString(),
-        path: path.length === 0 ? undefined : path,
-      }
-    }
+/**
+ * Converts Zod issues to Standard Schema issues
+ */
+function zodIssueToStandardIssue(
+  issue: z.ZodIssue
+): StandardSchemaV1.Issue {
+  return {
+    message: issue.message,
+    path: issue.path.length > 0 ? issue.path : undefined,
   }
 }
 
-export const standardSchemaV1 = <Output>(
-  audit: Audit,
-  ...auditors: NestedAuditors[]
-): StandardSchemaV1<Output> => ({
-  "~standard": {
-    validate(value: unknown): StandardSchemaV1.Result<Output> {
-      let error = null
-      for (const auditor of iterAuditors(auditors)) {
-        ;[value, error] = auditor(audit, value)
-        if (error !== null) {
-          return { issues: [...iterIssuesFromAuditError(error)] }
+/**
+ * Creates a Standard Schema v1 wrapper around a Zod schema
+ */
+export function zodToStandardSchema<Output>(
+  schema: z.ZodType<Output>
+): StandardSchemaV1<Output> {
+  return {
+    "~standard": {
+      validate(value: unknown): StandardSchemaV1.Result<Output> {
+        const result = schema.safeParse(value)
+
+        if (result.success) {
+          return { value: result.data }
+        } else {
+          return {
+            issues: result.error.issues.map(zodIssueToStandardIssue),
+          }
         }
-      }
-      return { value: value as Output }
+      },
+      vendor: "zod",
+      version: 1,
     },
-    vendor: "auditors",
-    version: 1,
-  },
-})
+  }
+}

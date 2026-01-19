@@ -1,12 +1,5 @@
-import {
-  auditEmptyToNull,
-  auditOptions,
-  auditTrimString,
-  auditTuple,
-  strictAudit,
-} from "@auditors/core"
+import { z } from "zod"
 import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
-import { auditLegalId } from "@tricoteuses/legifrance"
 import {
   iterReferenceLinks,
   listeReferencesSeules,
@@ -18,7 +11,8 @@ import {
 import type { PendingQuery, Row } from "postgres"
 
 import { query } from "$app/server"
-import { standardSchemaV1 } from "$lib/auditors/standardschema.js"
+import { zodToStandardSchema } from "$lib/zod/standardschema.js"
+import { legalId } from "$lib/zod/legifrance.js"
 import {
   possibleTypes,
   suggestionFromSuggestionDb,
@@ -28,15 +22,34 @@ import {
 } from "$lib/autocompletion.js"
 import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
 
+const AutocompleteInputSchema = z.tuple([
+  z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((val) => {
+      if (val === null || val === undefined) return null
+      const trimmed = val.trim()
+      return trimmed === "" ? null : trimmed
+    })
+    .nullable(),
+  z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((val) => {
+      if (val === null || val === undefined) return null
+      const trimmed = val.trim()
+      return trimmed === "" ? null : trimmed
+    })
+    .pipe(z.enum(possibleTypes).nullable().catch(null)),
+  z
+    .union([z.string(), z.null(), z.undefined()])
+    .transform((val) => {
+      if (val === null || val === undefined) return undefined
+      return val
+    })
+    .pipe(legalId().optional().catch(undefined)),
+])
+
 export const autocomplete = query(
-  standardSchemaV1<[string, PossibleType | null, string | undefined]>(
-    strictAudit,
-    auditTuple(
-      [auditTrimString, auditEmptyToNull],
-      [auditTrimString, auditEmptyToNull, auditOptions(possibleTypes)],
-      [auditLegalId],
-    ),
-  ),
+  zodToStandardSchema(AutocompleteInputSchema),
   async ([q, typeFilter, defaultTextId]): Promise<Array<Suggestion>> => {
     if (q !== null) {
       const context = new TextParserContext(simplifyPlainText(q).output)

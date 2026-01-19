@@ -3,6 +3,7 @@
 	import * as Card from "$lib/components/ui/card/index.js"
 	import type { Service } from "$lib/data/tricoteuses-ecosystem.js"
 	import { Book, Building, Database, Folder, Terminal } from "@lucide/svelte"
+	import DatabaseIcon from "@lucide/svelte/icons/database"
 
 	interface ServiceCardProps {
 		class?: string
@@ -19,8 +20,12 @@
 				return "border-l-amber-500"
 			case "mcp":
 				return "border-l-green-500"
-			case "code":
+			case "consolidation":
 				return "border-l-slate-500"
+			case "database":
+				return "border-l-purple-500"
+			default:
+				return "border-l-gray-500"
 		}
 	})
 
@@ -32,8 +37,12 @@
 				return "bg-amber-100 dark:bg-amber-900/30"
 			case "mcp":
 				return "bg-green-100 dark:bg-green-900/30"
-			case "code":
+			case "consolidation":
 				return "bg-slate-100 dark:bg-slate-900/30"
+			case "database":
+				return "bg-purple-100 dark:bg-purple-900/30"
+			default:
+				return "bg-gray-100 dark:bg-gray-900/30"
 		}
 	})
 
@@ -45,8 +54,12 @@
 				return "text-amber-600 dark:text-amber-400"
 			case "mcp":
 				return "text-green-600 dark:text-green-400"
-			case "code":
+			case "consolidation":
 				return "text-slate-600 dark:text-slate-400"
+			case "database":
+				return "text-purple-600 dark:text-purple-400"
+			default:
+				return "text-gray-600 dark:text-gray-400"
 		}
 	})
 
@@ -58,8 +71,12 @@
 				return Folder
 			case "mcp":
 				return Terminal
-			case "code":
+			case "consolidation":
 				return Book
+			case "database":
+				return DatabaseIcon
+			default:
+				return Building
 		}
 	})
 
@@ -71,8 +88,12 @@
 				return "Dépôt Git"
 			case "mcp":
 				return "Serveur MCP"
-			case "code":
+			case "consolidation":
 				return "Code juridique"
+			case "database":
+				return "Base de données"
+			default:
+				return service.type
 		}
 	})
 </script>

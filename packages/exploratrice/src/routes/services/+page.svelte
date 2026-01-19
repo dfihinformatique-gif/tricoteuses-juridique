@@ -19,9 +19,10 @@
 	const filterButtons: Array<{ label: string; type: Service["type"] | "all" }> = [
 		{ label: "Tous", type: "all" },
 		{ label: "API REST", type: "api" },
+		{ label: "Bases de données", type: "database" },
 		{ label: "Dépôts Git", type: "git" },
 		{ label: "Serveurs MCP", type: "mcp" },
-		{ label: "Codes juridiques", type: "code" },
+		{ label: "Textes consolidés", type: "consolidation" },
 	]
 </script>
 

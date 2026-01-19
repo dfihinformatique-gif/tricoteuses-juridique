@@ -14,8 +14,9 @@ export interface Service {
     name: string
     url: string
   }
+  serviceIds?: string[]
   technicalDocUrl?: string
-  type: "api" | "git" | "mcp" | "code"
+  type: "api" | "git" | "mcp" | "consolidation" | "database"
   url?: string
 }
 
@@ -48,6 +49,7 @@ export const services: Service[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
+    serviceIds: ["database-canutes-assemblee"],
     technicalDocUrl: "/services/api-canutes-assemblee/documentation",
     type: "api",
     url: "https://db.code4code.eu/canutes_assemblee/",
@@ -62,6 +64,7 @@ export const services: Service[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
+    serviceIds: ["database-canutes-legifrance"],
     technicalDocUrl: "/services/api-canutes-legifrance/documentation",
     type: "api",
     url: "https://db.code4code.eu/canutes_legifrance/",
@@ -76,9 +79,51 @@ export const services: Service[] = [
       name: "Legiwatch",
       url: "https://www.legiwatch.fr/",
     },
+    serviceIds: ["database-canutes-parlement"],
     technicalDocUrl: "/services/api-parlement/documentation",
     type: "api",
     url: "https://parlement.tricoteuses.fr/api/v1",
+  },
+
+  // Bases de données
+  {
+    description:
+      "Base de données PostgreSQL contenant les données structurées de l'Assemblée Nationale : acteurs, amendements, dossiers législatifs, documents, organes, réunions, scrutins. Construite quotidiennement à partir des dépôts Git de l'Assemblée.",
+    featured: false,
+    id: "database-canutes-assemblee",
+    name: "Base de données Canutes Assemblée",
+    provider: {
+      name: "Code4code.eu",
+      url: "https://code4code.eu",
+    },
+    serviceIds: ["depots-assemblee"],
+    type: "database",
+  },
+  {
+    description:
+      "Base de données PostgreSQL contenant les données structurées de Légifrance : articles de loi, textes légaux, sections, dossiers législatifs, journaux officiels. Construite quotidiennement à partir des dépôts Git DILA.",
+    featured: false,
+    id: "database-canutes-legifrance",
+    name: "Base de données Canutes Légifrance",
+    provider: {
+      name: "Code4code.eu",
+      url: "https://code4code.eu",
+    },
+    serviceIds: ["depots-dila"],
+    type: "database",
+  },
+  {
+    description:
+      "Base de données PostgreSQL contenant les données unifiées du Parlement français (Assemblée Nationale et Sénat) : acteurs, amendements, dossiers, documents, débats, scrutins, questions. Construite quotidiennement à partir des dépôts Git de l'Assemblée et du Sénat.",
+    featured: false,
+    id: "database-canutes-parlement",
+    name: "Base de données Canutes Parlement",
+    provider: {
+      name: "Code4code.eu",
+      url: "https://code4code.eu",
+    },
+    serviceIds: ["depots-assemblee", "depots-senat"],
+    type: "database",
   },
 
   // Dépôts Git
@@ -133,7 +178,7 @@ export const services: Service[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
-    type: "code",
+    type: "consolidation",
     url: "https://git.tricoteuses.fr/codes",
   },
   {
@@ -146,7 +191,7 @@ export const services: Service[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
-    type: "code",
+    type: "consolidation",
     url: "https://git.tricoteuses.fr/constitution/constitution_du_4_octobre_1958",
   },
 
@@ -162,6 +207,7 @@ export const services: Service[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
+    serviceIds: ["database-canutes-assemblee", "database-canutes-legifrance"],
     technicalDocUrl:
       "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/src/branch/main/packages/moulineuse/USAGE.md",
     type: "mcp",
@@ -178,6 +224,7 @@ export const services: Service[] = [
       name: "Legiwatch",
       url: "https://www.legiwatch.fr/",
     },
+    serviceIds: ["database-canutes-parlement"],
     type: "mcp",
     url: "https://parlement.tricoteuses.fr/mcp",
   },
@@ -340,6 +387,23 @@ export function getReuseById(id: string): Reuse | undefined {
  */
 export function getReusesByServiceId(serviceId: string): Reuse[] {
   return reuses.filter((r) => r.serviceIds.includes(serviceId))
+}
+
+/**
+ * Récupère tous les services dont dépend un service donné
+ */
+export function getServiceDependencies(serviceId: string): Service[] {
+  const service = getServiceById(serviceId)
+  if (service == null || service.serviceIds == null) return []
+
+  return service.serviceIds.map(getServiceById).filter((s) => s !== undefined)
+}
+
+/**
+ * Récupère tous les services qui dépendent d'un service donné
+ */
+export function getDependentServices(serviceId: string): Service[] {
+  return services.filter((s) => s.serviceIds?.includes(serviceId))
 }
 
 /**

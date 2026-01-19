@@ -2,11 +2,17 @@
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import { Button } from "$lib/components/ui/button/index.js"
 	import * as Card from "$lib/components/ui/card/index.js"
-	import { PageBreadcrumb, ReuseCard } from "$lib/components/tricoteuses/index.js"
-	import { getReusesByServiceId, type Service } from "$lib/data/tricoteuses-ecosystem.js"
+	import { PageBreadcrumb, ReuseCard, ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import {
+		getDependentServices,
+		getReusesByServiceId,
+		getServiceDependencies,
+		type Service,
+	} from "$lib/data/tricoteuses-ecosystem.js"
 	import {
 		BookIcon,
 		BuildingIcon,
+		DatabaseIcon,
 		ExternalLinkIcon,
 		FolderIcon,
 		TerminalIcon,
@@ -16,8 +22,10 @@
 
 	let { data }: { data: PageData } = $props()
 
-	const service: Service = data.service
-	const reuses = getReusesByServiceId(service.id)
+	const service: Service = $derived(data.service)
+	const reuses = $derived(getReusesByServiceId(service.id))
+	const dependencies = $derived(getServiceDependencies(service.id))
+	const dependents = $derived(getDependentServices(service.id))
 
 	const serviceIcon = $derived.by(() => {
 		switch (service.type) {
@@ -27,8 +35,12 @@
 				return FolderIcon
 			case "mcp":
 				return TerminalIcon
-			case "code":
+			case "consolidation":
 				return BookIcon
+			case "database":
+				return DatabaseIcon
+			default:
+				return BuildingIcon
 		}
 	})
 
@@ -40,8 +52,10 @@
 				return "border-l-amber-500"
 			case "mcp":
 				return "border-l-green-500"
-			case "code":
+			case "consolidation":
 				return "border-l-slate-500"
+			case "database":
+				return "border-l-purple-500"
 			default:
 				return "border-l-gray-500"
 		}
@@ -55,8 +69,10 @@
 				return "bg-amber-500 hover:bg-amber-600"
 			case "mcp":
 				return "bg-green-500 hover:bg-green-600"
-			case "code":
+			case "consolidation":
 				return "bg-slate-500 hover:bg-slate-600"
+			case "database":
+				return "bg-purple-500 hover:bg-purple-600"
 			default:
 				return "bg-gray-500 hover:bg-gray-600"
 		}
@@ -70,8 +86,10 @@
 				return "Dépôt Git"
 			case "mcp":
 				return "Serveur MCP"
-			case "code":
+			case "consolidation":
 				return "Code juridique"
+			case "database":
+				return "Base de données"
 			default:
 				return type
 		}
@@ -120,15 +138,14 @@
 				<!-- Provider -->
 				{#if service.provider !== undefined}
 					<p class="mb-6 text-sm text-muted-foreground">
-						Ce service vous est proposé gracieusement par <a
+						Ce service vous est proposé par <a
 							href={service.provider.url}
 							target="_blank"
 							rel="noopener noreferrer"
 							class="font-semibold underline hover:text-foreground"
 						>
 							{service.provider.name}
-						</a>, dans le cadre de l'engagement des Tricoteuses pour l'ouverture et l'accessibilité
-						des données publiques juridiques françaises.
+						</a>.
 					</p>
 				{/if}
 
@@ -141,24 +158,65 @@
 						</Button>
 					{/if}
 					{#if service.technicalDocUrl !== undefined}
-						<Button
-							href={service.technicalDocUrl}
-							variant="outline"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<ExternalLinkIcon class="mr-2 h-4 w-4" />
-							Documentation technique
-						</Button>
+						{#if service.technicalDocUrl.startsWith("/")}
+							<Button href={service.technicalDocUrl} variant="outline">
+								Documentation technique
+							</Button>
+						{:else}
+							<Button
+								href={service.technicalDocUrl}
+								variant="outline"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<ExternalLinkIcon class="mr-2 h-4 w-4" />
+								Documentation technique
+							</Button>
+						{/if}
 					{/if}
 				</div>
 			</Card.Content>
 		</Card.Root>
 
+		<!-- Dependencies section -->
+		{#if dependencies.length > 0}
+			<section class="mb-8">
+				<h2 class="mb-4 text-2xl font-bold">Dépendances</h2>
+				<p class="mb-6 text-muted-foreground">
+					Ce service dépend de {dependencies.length} autre{dependencies.length > 1
+						? "s"
+						: ""} service{dependencies.length > 1 ? "s" : ""}.
+				</p>
+				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+					{#each dependencies as dependency (dependency.id)}
+						<ServiceCard service={dependency} />
+					{/each}
+				</div>
+			</section>
+		{/if}
+
+		<!-- Dependents section -->
+		{#if dependents.length > 0}
+			<section class="mb-8">
+				<h2 class="mb-4 text-2xl font-bold">Utilisé par d'autres services</h2>
+				<p class="mb-6 text-muted-foreground">
+					{dependents.length} autre{dependents.length > 1 ? "s" : ""} service{dependents.length >
+					1
+						? "s"
+						: ""} dépend{dependents.length > 1 ? "ent" : ""} de ce service.
+				</p>
+				<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+					{#each dependents as dependent (dependent.id)}
+						<ServiceCard service={dependent} />
+					{/each}
+				</div>
+			</section>
+		{/if}
+
 		<!-- Used by section -->
 		{#if reuses.length > 0}
 			<section class="mb-8">
-				<h2 class="mb-4 text-2xl font-bold">Utilisé par</h2>
+				<h2 class="mb-4 text-2xl font-bold">Utilisé par des réutilisations</h2>
 				<p class="mb-6 text-muted-foreground">
 					Ce service est utilisé par {reuses.length} réutilisation{reuses.length > 1
 						? "s"
@@ -182,15 +240,21 @@
 						endpoints disponibles, consultez la documentation technique.
 					</p>
 					{#if service.technicalDocUrl !== undefined}
-						<Button
-							href={service.technicalDocUrl}
-							variant="outline"
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<ExternalLinkIcon class="mr-2 h-4 w-4" />
-							Voir la documentation complète
-						</Button>
+						{#if service.technicalDocUrl.startsWith("/")}
+							<Button href={service.technicalDocUrl} variant="outline">
+								Voir la documentation complète
+							</Button>
+						{:else}
+							<Button
+								href={service.technicalDocUrl}
+								variant="outline"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
+								<ExternalLinkIcon class="mr-2 h-4 w-4" />
+								Voir la documentation complète
+							</Button>
+						{/if}
 					{/if}
 				</Card.Content>
 			</Card.Root>

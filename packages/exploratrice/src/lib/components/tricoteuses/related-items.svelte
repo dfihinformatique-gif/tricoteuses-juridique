@@ -10,7 +10,7 @@
 	let { items }: RelatedItemsProps = $props()
 
 	function isService(item: Reuse | Service): item is Service {
-		return "type" in item && ["api", "git", "mcp", "code"].includes(item.type)
+		return "type" in item && ["api", "git", "mcp", "consolidation", "database"].includes(item.type)
 	}
 
 	function getItemUrl(item: Reuse | Service): string {
@@ -30,8 +30,12 @@
 					return "Git"
 				case "mcp":
 					return "MCP"
-				case "code":
+				case "consolidation":
 					return "Code"
+				case "database":
+					return "BDD"
+				default:
+					return service.type
 			}
 		}
 		const reuse = item as Reuse

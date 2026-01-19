@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button/index.js"
-	import { ReuseCard, SeeAllCard, ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import ReuseCard from "$lib/components/reuse-card.svelte"
+	import SeeAllCard from "$lib/components/see-all-card.svelte"
+	import ServiceCard from "$lib/components/service-card.svelte"
 	import {
 		getFeaturedReuses,
 		getFeaturedServices,

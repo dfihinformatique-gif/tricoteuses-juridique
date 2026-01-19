@@ -2,7 +2,8 @@
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import { Button } from "$lib/components/ui/button/index.js"
 	import * as Card from "$lib/components/ui/card/index.js"
-	import { PageBreadcrumb, ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
+	import ServiceCard from "$lib/components/service-card.svelte"
 	import { getServicesByReuseId, type Reuse } from "$lib/data/tricoteuses-ecosystem.js"
 	import { ExternalLinkIcon, FlaskConicalIcon, UserIcon } from "@lucide/svelte"
 

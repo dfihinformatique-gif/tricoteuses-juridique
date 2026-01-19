@@ -16,7 +16,7 @@
 	import * as Command from "$lib/components/ui/command/index.js"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
 	import * as InputGroup from "$lib/components/ui/input-group/index.js"
-	import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
+	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
 	import { fullDateFormatter } from "$lib/dates.js"
 	import { searchContext } from "$lib/hooks/search-context.svelte.js"
 	import { autocomplete } from "$lib/autocompletion.remote.js"

@@ -2,7 +2,7 @@
   import AlertCircleIcon from "@lucide/svelte/icons/alert-circle"
 
   import * as Alert from "$lib/components/ui/alert/index.js"
-  import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
+  import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
 
   import { queryTextePageInfos } from "../../texte.remote.js"
   import Texte from "../../texte.svelte"

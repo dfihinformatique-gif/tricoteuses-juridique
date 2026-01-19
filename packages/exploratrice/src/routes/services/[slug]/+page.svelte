@@ -2,7 +2,9 @@
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import { Button } from "$lib/components/ui/button/index.js"
 	import * as Card from "$lib/components/ui/card/index.js"
-	import { PageBreadcrumb, ReuseCard, ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
+	import ReuseCard from "$lib/components/reuse-card.svelte"
+	import ServiceCard from "$lib/components/service-card.svelte"
 	import {
 		getDependentServices,
 		getReusesByServiceId,

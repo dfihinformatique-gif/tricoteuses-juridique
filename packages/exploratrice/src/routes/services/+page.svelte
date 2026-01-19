@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import { Button } from "$lib/components/ui/button/index.js"
-	import { PageBreadcrumb, ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
+	import ServiceCard from "$lib/components/service-card.svelte"
 	import {
 		getServicesByType,
 		services,

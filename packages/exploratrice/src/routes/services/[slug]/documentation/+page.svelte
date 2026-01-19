@@ -8,7 +8,7 @@
 		SchemaDocumentation,
 		SearchBar,
 	} from "$lib/components/openapi/index.js"
-	import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
+	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
 	import type { Service } from "$lib/data/tricoteuses-ecosystem.js"
 	import {
 		categorizeEndpoints,

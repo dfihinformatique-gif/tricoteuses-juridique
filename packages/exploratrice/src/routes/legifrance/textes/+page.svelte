@@ -3,7 +3,7 @@
   import { Button } from "$lib/components/ui/button/index.js"
   import * as Card from "$lib/components/ui/card/index.js"
   import * as Item from "$lib/components/ui/item/index.js"
-  import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
+  import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { cn } from "$lib/utils.js"
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"

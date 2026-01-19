@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button/index.js"
-	import { PageBreadcrumb, ReuseCard } from "$lib/components/tricoteuses/index.js"
+	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
+	import ReuseCard from "$lib/components/reuse-card.svelte"
 	import {
 		getReusesByType,
 		reuses,

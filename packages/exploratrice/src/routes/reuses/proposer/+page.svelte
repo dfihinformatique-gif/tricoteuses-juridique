@@ -5,7 +5,7 @@
 	import { Input } from "$lib/components/ui/input/index.js"
 	import { Label } from "$lib/components/ui/label/index.js"
 	import { Textarea } from "$lib/components/ui/textarea/index.js"
-	import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
+	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
 	import { getAllServices } from "$lib/data/tricoteuses-ecosystem.js"
 	import { CheckIcon, CopyIcon } from "@lucide/svelte"
 

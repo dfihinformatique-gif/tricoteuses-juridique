@@ -8,6 +8,7 @@
 		SchemaDocumentation,
 		SearchBar,
 	} from "$lib/components/openapi/index.js"
+	import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
 	import type { Service } from "$lib/data/tricoteuses-ecosystem.js"
 	import {
 		categorizeEndpoints,
@@ -139,16 +140,13 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-	<!-- Breadcrumb navigation -->
-	<nav class="mb-6 text-sm text-muted-foreground">
-		<a href="/" class="hover:text-foreground">Accueil</a>
-		<span class="mx-2">/</span>
-		<a href="/services" class="hover:text-foreground">Services</a>
-		<span class="mx-2">/</span>
-		<a href="/services/{service.id}" class="hover:text-foreground">{service.name}</a>
-		<span class="mx-2">/</span>
-		<span class="text-foreground">Documentation</span>
-	</nav>
+	<PageBreadcrumb
+		segments={[
+			{ label: "Services", href: "/services" },
+			{ label: service.name, href: `/services/${service.id}` },
+			{ label: "Documentation" },
+		]}
+	/>
 
 	<ApiDocumentationHeader
 		title={serviceConfig.title}

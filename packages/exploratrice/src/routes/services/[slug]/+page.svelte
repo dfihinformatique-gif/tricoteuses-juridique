@@ -2,7 +2,7 @@
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import { Button } from "$lib/components/ui/button/index.js"
 	import * as Card from "$lib/components/ui/card/index.js"
-	import { ReuseCard } from "$lib/components/tricoteuses/index.js"
+	import { PageBreadcrumb, ReuseCard } from "$lib/components/tricoteuses/index.js"
 	import { getReusesByServiceId, type Service } from "$lib/data/tricoteuses-ecosystem.js"
 	import {
 		BookIcon,
@@ -83,14 +83,9 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-	<!-- Breadcrumb navigation -->
-	<nav class="mb-6 text-sm text-muted-foreground">
-		<a href="/" class="hover:text-foreground">Accueil</a>
-		<span class="mx-2">/</span>
-		<a href="/services" class="hover:text-foreground">Services</a>
-		<span class="mx-2">/</span>
-		<span class="text-foreground">{service.name}</span>
-	</nav>
+	<PageBreadcrumb
+		segments={[{ label: "Services", href: "/services" }, { label: service.name }]}
+	/>
 
 	<!-- Service details -->
 		<Card.Root class="mb-8 border-l-4 {getServiceColor(service.type)}">

@@ -3,6 +3,7 @@
   import { Button } from "$lib/components/ui/button/index.js"
   import * as Card from "$lib/components/ui/card/index.js"
   import * as Item from "$lib/components/ui/item/index.js"
+  import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
   import { cn } from "$lib/utils.js"
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
@@ -69,14 +70,7 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-  <!-- Breadcrumb navigation -->
-  <nav class="mb-6 text-sm text-muted-foreground">
-    <a href="/" class="hover:text-foreground">Accueil</a>
-    <span class="mx-2">/</span>
-    <a href="/reuses" class="hover:text-foreground">Réutilisations</a>
-    <span class="mx-2">/</span>
-    <span class="text-foreground">Dossiers législatifs</span>
-  </nav>
+  <PageBreadcrumb segments={[{ label: "Dossiers législatifs" }]} />
 
   <div class="mb-8">
     <h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">

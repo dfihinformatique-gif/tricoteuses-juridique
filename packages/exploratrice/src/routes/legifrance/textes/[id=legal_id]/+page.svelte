@@ -2,6 +2,7 @@
   import AlertCircleIcon from "@lucide/svelte/icons/alert-circle"
 
   import * as Alert from "$lib/components/ui/alert/index.js"
+  import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
 
   import { queryTextePageInfos } from "../../texte.remote.js"
   import Texte from "../../texte.svelte"
@@ -14,10 +15,22 @@
 </script>
 
 {#if textePageInfos === undefined}
+  <PageBreadcrumb
+    segments={[
+      { label: "Textes promulgués", href: "/legifrance/textes" },
+      { label: `Texte ${params.id}` },
+    ]}
+  />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
     <Alert.Title>Texte {params.id} non trouvé !</Alert.Title>
   </Alert.Root>
 {:else}
+  <PageBreadcrumb
+    segments={[
+      { label: "Textes promulgués", href: "/legifrance/textes" },
+      { label: textePageInfos.texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ?? "" },
+    ]}
+  />
   <Texte bind:displayMode bind:showIds {textePageInfos} />
 {/if}

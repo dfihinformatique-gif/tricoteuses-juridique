@@ -5,6 +5,7 @@
 	import { Input } from "$lib/components/ui/input/index.js"
 	import { Label } from "$lib/components/ui/label/index.js"
 	import { Textarea } from "$lib/components/ui/textarea/index.js"
+	import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
 	import { getAllServices } from "$lib/data/tricoteuses-ecosystem.js"
 	import { CheckIcon, CopyIcon } from "@lucide/svelte"
 
@@ -79,14 +80,12 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
-	<!-- Breadcrumb navigation -->
-	<nav class="mb-6 text-sm text-muted-foreground">
-		<a href="/" class="hover:text-foreground">Accueil</a>
-		<span class="mx-2">/</span>
-		<a href="/reuses" class="hover:text-foreground">Réutilisations</a>
-		<span class="mx-2">/</span>
-		<span class="text-foreground">Proposer une réutilisation</span>
-	</nav>
+	<PageBreadcrumb
+		segments={[
+			{ label: "Réutilisations", href: "/reuses" },
+			{ label: "Proposer une réutilisation" },
+		]}
+	/>
 
 	<!-- Header -->
 	<div class="mb-8 text-center">

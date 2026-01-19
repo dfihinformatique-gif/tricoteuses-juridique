@@ -2,7 +2,7 @@
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import { Button } from "$lib/components/ui/button/index.js"
 	import * as Card from "$lib/components/ui/card/index.js"
-	import { ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import { PageBreadcrumb, ServiceCard } from "$lib/components/tricoteuses/index.js"
 	import { getServicesByReuseId, type Reuse } from "$lib/data/tricoteuses-ecosystem.js"
 	import { ExternalLinkIcon, FlaskConicalIcon, UserIcon } from "@lucide/svelte"
 
@@ -61,14 +61,9 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-	<!-- Breadcrumb navigation -->
-	<nav class="mb-6 text-sm text-muted-foreground">
-		<a href="/" class="hover:text-foreground">Accueil</a>
-		<span class="mx-2">/</span>
-		<a href="/reuses" class="hover:text-foreground">Réutilisations</a>
-		<span class="mx-2">/</span>
-		<span class="text-foreground">{reuse.name}</span>
-	</nav>
+	<PageBreadcrumb
+		segments={[{ label: "Réutilisations", href: "/reuses" }, { label: reuse.name }]}
+	/>
 
 	<!-- Reuse details -->
 		<Card.Root class="mb-8 border-l-4 {getReuseColor(reuse.type)}">

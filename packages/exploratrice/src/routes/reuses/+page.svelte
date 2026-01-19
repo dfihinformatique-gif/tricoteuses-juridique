@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button } from "$lib/components/ui/button/index.js"
-	import { ReuseCard } from "$lib/components/tricoteuses/index.js"
+	import { PageBreadcrumb, ReuseCard } from "$lib/components/tricoteuses/index.js"
 	import {
 		getReusesByType,
 		reuses,
@@ -27,6 +27,8 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
+	<PageBreadcrumb segments={[{ label: "Réutilisations" }]} />
+
 	<!-- Header -->
 	<header class="mb-12">
 		<div class="flex items-start justify-between gap-4">

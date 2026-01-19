@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import { Button } from "$lib/components/ui/button/index.js"
-	import { ServiceCard } from "$lib/components/tricoteuses/index.js"
+	import { PageBreadcrumb, ServiceCard } from "$lib/components/tricoteuses/index.js"
 	import {
 		getServicesByType,
 		services,
@@ -30,6 +30,8 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
+	<PageBreadcrumb segments={[{ label: "Services" }]} />
+
 	<!-- Header -->
 	<header class="mb-12">
 		<h1 class="mb-4 text-4xl font-bold">Services et données</h1>

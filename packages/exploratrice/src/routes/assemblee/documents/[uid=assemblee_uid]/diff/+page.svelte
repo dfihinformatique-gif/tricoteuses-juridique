@@ -2,6 +2,8 @@
   import AlertCircleIcon from "@lucide/svelte/icons/alert-circle"
 
   import * as Alert from "$lib/components/ui/alert/index.js"
+  import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
+  import { urlPathFromId } from "$lib/urls.js"
 
   import { queryDocumentsDiffPageInfos } from "../../../document.remote.js"
   import DocumentsDiff from "../../../documents-diff.svelte"
@@ -16,11 +18,26 @@
 </script>
 
 {#if current === undefined}
+  <PageBreadcrumb
+    segments={[
+      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      { label: `Document ${params.uid}` },
+      { label: "Diff" },
+    ]}
+  />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
     <Alert.Title>Document {params.uid} non trouvé !</Alert.Title>
   </Alert.Root>
 {:else if current.documentSegmentation === undefined}
+  <PageBreadcrumb
+    segments={[
+      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
+      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      { label: "Diff" },
+    ]}
+  />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
     <Alert.Title
@@ -28,11 +45,27 @@
     >
   </Alert.Root>
 {:else if previous === undefined}
+  <PageBreadcrumb
+    segments={[
+      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
+      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      { label: "Diff" },
+    ]}
+  />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
     <Alert.Title>Document {previousUid} non trouvé !</Alert.Title>
   </Alert.Root>
 {:else if previous.documentSegmentation === undefined}
+  <PageBreadcrumb
+    segments={[
+      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
+      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      { label: "Diff" },
+    ]}
+  />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
     <Alert.Title
@@ -40,5 +73,13 @@
     >
   </Alert.Root>
 {:else}
+  <PageBreadcrumb
+    segments={[
+      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
+      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      { label: "Diff" },
+    ]}
+  />
   <DocumentsDiff {current} {previous} />
 {/if}

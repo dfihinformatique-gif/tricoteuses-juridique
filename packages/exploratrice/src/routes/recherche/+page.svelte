@@ -16,6 +16,7 @@
 	import * as Command from "$lib/components/ui/command/index.js"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js"
 	import * as InputGroup from "$lib/components/ui/input-group/index.js"
+	import { PageBreadcrumb } from "$lib/components/tricoteuses/index.js"
 	import { fullDateFormatter } from "$lib/dates.js"
 	import { searchContext } from "$lib/hooks/search-context.svelte.js"
 	import { autocomplete } from "$lib/autocompletion.remote.js"
@@ -93,12 +94,7 @@
 {/snippet}
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-	<!-- Breadcrumb navigation -->
-	<nav class="mb-6 text-sm text-muted-foreground">
-		<a href="/" class="hover:text-foreground">Accueil</a>
-		<span class="mx-2">/</span>
-		<span class="text-foreground">Recherche législative</span>
-	</nav>
+	<PageBreadcrumb segments={[{ label: "Recherche législative" }]} />
 
 	<div class="mb-8">
 		<h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">

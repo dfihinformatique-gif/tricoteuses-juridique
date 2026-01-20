@@ -16,6 +16,118 @@ import {
 } from "./transformers.js"
 
 describe("parseTextLinks", () => {
+  test("Du même article", async () => {
+    const input = dedent`
+      en application de l'article 1649 A du code général des impôts
+      en application du même article 1649 A
+    `
+    const context = new TextParserContext(input)
+    const links = await Array.fromAsync(
+      parseTextLinks({
+        context,
+        date: "2025-12-17",
+        legiDb,
+      }),
+    )
+    expect(links.length).toBe(2)
+    expect(links).toStrictEqual([
+      {
+        article: {
+          num: "1649 A",
+          position: {
+            start: 20,
+            stop: 34,
+          },
+          type: "article",
+        },
+        articleId: "LEGIARTI000045764822",
+        position: {
+          start: 20,
+          stop: 61,
+        },
+        reference: {
+          child: {
+            num: "1649 A",
+            position: {
+              start: 20,
+              stop: 34,
+            },
+            type: "article",
+          },
+          parent: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 38,
+              stop: 61,
+            },
+            title: "Code général des impôts",
+            titleRest: "général des impôts",
+            type: "texte",
+          },
+          position: {
+            start: 18,
+            stop: 61,
+          },
+          type: "parent-enfant",
+        },
+        type: "external_article",
+      },
+      {
+        article: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 38,
+              stop: 61,
+            },
+            title: "Code général des impôts",
+            titleRest: "général des impôts",
+            type: "texte",
+          },
+          num: "1649 A",
+          position: {
+            start: 77,
+            stop: 99,
+          },
+          relative: 0,
+          type: "article",
+        },
+        articleId: "LEGIARTI000045764822",
+        position: {
+          start: 77,
+          stop: 99,
+        },
+        reference: {
+          implicitText: {
+            cid: "LEGITEXT000006069577",
+            nature: "CODE",
+            position: {
+              start: 38,
+              stop: 61,
+            },
+            title: "Code général des impôts",
+            titleRest: "général des impôts",
+            type: "texte",
+          },
+          num: "1649 A",
+          position: {
+            start: 77,
+            stop: 99,
+          },
+          relative: 0,
+          type: "article",
+        },
+        type: "external_article",
+      },
+    ])
+    expect(context.text(links[0].position)).toBe(
+      "article 1649 A du code général des impôts",
+    )
+    expect(context.text(links[1].position)).toBe("du même article 1649 A")
+  })
+
   test("L'article 10 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié :", async ({
     task,
   }) => {

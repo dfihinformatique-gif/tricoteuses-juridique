@@ -57,7 +57,7 @@ function addCartouche(cartouches: Cartouche[], cartouche: Cartouche): void {
 }
 
 async function extractLegifranceTextsDescriptions(
-  anomalies: Anomalies,
+  anomalies?: Anomalies,
 ): Promise<Map<string, LegifranceTextDescription>> {
   const legifranceTextDescriptionByCid = new Map<
     string,
@@ -102,7 +102,7 @@ async function extractLegifranceTextsDescriptions(
       //   // sur l'interdiction de la mise au point, de la fabrication, du stockage et de
       //   // l'emploi des armes chimiques et sur leur destruction
       //   // => Ignore it.
-      //   await anomalies.add({
+      //   await anomalies?.add({
       //     category: "texte différent",
       //     id,
       //     message: `Le texte a changé pour le même CID ${cid}`,
@@ -124,7 +124,7 @@ async function extractLegifranceTextsDescriptions(
           if (legifranceTextDescription.date === "2999-01-01") {
             legifranceTextDescription.date = date
           } else if (date !== legifranceTextDescription.date) {
-            await anomalies.add({
+            await anomalies?.add({
               category: "date du texte différente",
               id,
               message: `La date du texte a changé pour le même CID ${cid}: ${legifranceTextDescription.date} et ${date}`,
@@ -133,7 +133,7 @@ async function extractLegifranceTextsDescriptions(
           }
         }
         if (nature !== legifranceTextDescription.nature) {
-          await anomalies.add({
+          await anomalies?.add({
             category: "nature du texte différente",
             id,
             message: `La nature du texte a changé pour le même CID ${cid}: ${legifranceTextDescription.nature} et ${nature}`,
@@ -144,7 +144,7 @@ async function extractLegifranceTextsDescriptions(
           if (legifranceTextDescription.num === undefined) {
             legifranceTextDescription.num = num
           } else if (num !== legifranceTextDescription.num) {
-            await anomalies.add({
+            await anomalies?.add({
               category: "num du texte différent",
               id,
               message: `Le num du texte a changé pour le même CID ${cid}: ${legifranceTextDescription.num} et ${num}`,
@@ -254,7 +254,7 @@ async function extractLegifranceTextsDescriptions(
           }
 
           case "Loi n° 77-1423 du 27 décembre 1977 77-1423 du 27 décembre 1977 autorisant l'approbation de la convention sur le commerce international des espèces de faune et de flore sauvages menacées d'extinction, ensemble quatre annexes, ouverte à la signature à Washington jusqu'au 30 avril 1973 et, après cette date, à Berne jusqu'au 31 décembre 1974": {
-            anomalies.add({
+            anomalies?.add({
               category: "format du titre du texte non reconnu",
               id,
               message:
@@ -291,7 +291,7 @@ async function extractLegifranceTextsDescriptions(
             | TextAstText
             | undefined
           if (titleParsing == null) {
-            anomalies.add({
+            anomalies?.add({
               category: "format du titre du texte non reconnu",
               id,
               message: `Le titre de ${nature} n° ${num} du ${date} (${cid}) a probablement une erreur : "${titleToParse}"`,
@@ -303,7 +303,7 @@ async function extractLegifranceTextsDescriptions(
             if (legifranceTextDescription.date === "2999-01-01") {
               legifranceTextDescription.date = titleParsing.date
             } else if (titleParsing.date !== legifranceTextDescription.date) {
-              anomalies.add({
+              anomalies?.add({
                 category: "date du texte différente",
                 id,
                 message: `La date "${titleParsing.date}" extraite du titre diffère de la date du texte "${legifranceTextDescription.date}"`,
@@ -315,7 +315,7 @@ async function extractLegifranceTextsDescriptions(
             titleParsing.nature !== undefined &&
             titleParsing.nature !== legifranceTextDescription.nature
           ) {
-            anomalies.add({
+            anomalies?.add({
               category: "nature du texte différente",
               id,
               message: `La nature "${titleParsing.nature}" extraite du titre diffère de la nature du texte "${legifranceTextDescription.nature}"`,
@@ -329,7 +329,7 @@ async function extractLegifranceTextsDescriptions(
             if (legifranceTextDescription.num === undefined) {
               legifranceTextDescription.num = titleParsing.num
             } else {
-              anomalies.add({
+              anomalies?.add({
                 category: "num du texte différent",
                 id,
                 message: `Le num "${titleParsing.num}" extrait du titre diffère du num du texte "${legifranceTextDescription.num}"`,
@@ -417,20 +417,24 @@ async function extractLegifranceTextsDescriptions(
 }
 
 async function extractTextsInfos({
+  anomalies: logAnomalies,
   autocompletion: generateAutocompletions,
   json: generateTextsInfosJson,
 }: {
+  anomalies?: boolean
   autocompletion?: boolean
   json?: boolean
 }): Promise<number> {
-  const anomalies = new Anomalies(legiAnomaliesDb, [
-    "date du texte différente",
-    "format du titre du texte non reconnu",
-    "nature du texte différente",
-    "num du texte différent",
-    // "texte différent",
-  ])
-  await anomalies.load()
+  const anomalies = logAnomalies
+    ? new Anomalies(legiAnomaliesDb, [
+        "date du texte différente",
+        "format du titre du texte non reconnu",
+        "nature du texte différente",
+        "num du texte différent",
+        // "texte différent",
+      ])
+    : undefined
+  await anomalies?.load()
 
   const legifranceTextDescriptionByCid =
     await extractLegifranceTextsDescriptions(anomalies)
@@ -505,7 +509,7 @@ async function extractTextsInfos({
     )
   }
 
-  await anomalies.save()
+  await anomalies?.save()
 
   return 0
 }
@@ -514,6 +518,7 @@ sade("extract_texts_infos", true)
   .describe(
     "Extract names of codes, laws, etc and convert them to JSON structures used for links, search, etc",
   )
+  .option("-A, --anomalies", "Log anomalies into canutes_anomalies database")
   .option("-a, --autocompletion", "Generate cartouches SQL table")
   .option("-j, --json", "Generate texts infos JSON file")
   .action(async (options) => {

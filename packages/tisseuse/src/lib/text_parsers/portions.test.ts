@@ -226,6 +226,57 @@ describe("numeroPortion", () => {
     expect(context.remaining()).toBe("")
     expect(context.text(result.position)).toBe(task.name)
   })
+
+  test("ne reconnaît pas '1er janvier' comme une portion", () => {
+    const context = new TextParserContext("1er janvier 2024")
+    const result = numeroPortion(context)
+    expect(result).toBeUndefined()
+  })
+
+  test("ne reconnaît pas '14 juillet' comme une portion", () => {
+    const context = new TextParserContext("14 juillet 1789")
+    const result = numeroPortion(context)
+    expect(result).toBeUndefined()
+  })
+
+  test("ne reconnaît pas '3 mars' comme une portion", () => {
+    const context = new TextParserContext("3 mars 2023")
+    const result = numeroPortion(context)
+    expect(result).toBeUndefined()
+  })
+
+  test("ne reconnaît pas '25 décembre' comme une portion", () => {
+    const context = new TextParserContext("25 décembre 2024")
+    const result = numeroPortion(context)
+    expect(result).toBeUndefined()
+  })
+
+  test("ne reconnaît pas '1 août' comme une portion", () => {
+    const context = new TextParserContext("1 août 2024")
+    const result = numeroPortion(context)
+    expect(result).toBeUndefined()
+  })
+
+  test("ne reconnaît pas '30 février' (date invalide) comme une portion", () => {
+    const context = new TextParserContext("30 février 2024")
+    const result = numeroPortion(context)
+    expect(result).toBeUndefined()
+  })
+
+  test("reconnaît '1° ' suivi d'autre chose comme une portion", () => {
+    const context = new TextParserContext("1° de l'article")
+    const result = numeroPortion(context) as TextAstPortion
+    expect(result).toStrictEqual({
+      index: 1,
+      num: "1°",
+      position: {
+        start: 0,
+        stop: 2,
+      },
+      type: "item",
+    })
+    expect(context.remaining()).toBe(" de l'article")
+  })
 })
 
 describe("portions", () => {

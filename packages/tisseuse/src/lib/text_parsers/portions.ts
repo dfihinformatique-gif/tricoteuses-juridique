@@ -7,6 +7,7 @@ import {
   type TextAstPortion,
   type TextAstReference,
 } from "./ast.js"
+import { mois } from "./dates.js"
 import {
   createEnumerationOrBoundedInterval,
   createParentChildTreeFromReferences,
@@ -26,6 +27,8 @@ import {
   optional,
   regExp,
   repeat,
+  type TextParser,
+  type TextParserContext,
 } from "./parsers.js"
 import {
   ditPluriel,
@@ -60,10 +63,41 @@ export const naturePortionPluriel = chain(
 )
 
 /**
+ * Parser qui vérifie qu'on n'est pas suivi d'un espace puis d'un mois (pour éviter les dates)
+ */
+const pasSuiviDeMois: TextParser = (
+  context: TextParserContext,
+): string | undefined => {
+  // Sauvegarder l'offset actuel
+  const savedOffset = context.offset
+
+  // Essayer de parser espace + mois
+  const espaceResult = optional([espace], { default: null })(context)
+  if (espaceResult !== null) {
+    const moisResult = mois(context)
+    // Restaurer l'offset
+    context.offset = savedOffset
+    context.length = 0
+
+    if (moisResult !== undefined) {
+      // On a trouvé un mois, donc échec de la vérification
+      return undefined
+    }
+  } else {
+    // Restaurer l'offset
+    context.offset = savedOffset
+    context.length = 0
+  }
+
+  // Pas de mois trouvé, succès
+  return ""
+}
+
+/**
  * Numéro de portion d'article, par exemple « III » ou « c » ou « 3° »
  *
  * Au sein d'un article, une portion peut contenir des sous-…-portions ou des alinéas
- * NB: s’il s’avère plus utile lors de la réutilisation de mieux séparer et structurer
+ * NB: s'il s'avère plus utile lors de la réutilisation de mieux séparer et structurer
  *  ces différents cas, il faudrait découper cette règle en trois.
  */
 export const numeroPortion = chain(
@@ -93,6 +127,7 @@ export const numeroPortion = chain(
     ),
     optional([espace, adverbeMultiplicatifLatin], { default: null }),
     nonLettre,
+    pasSuiviDeMois,
   ],
   {
     value: (results, context) => {

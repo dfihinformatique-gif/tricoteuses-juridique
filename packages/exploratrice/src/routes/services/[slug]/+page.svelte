@@ -6,10 +6,11 @@
 	import ReuseCard from "$lib/components/reuse-card.svelte"
 	import ServiceCard from "$lib/components/service-card.svelte"
 	import {
-		getDependentServices,
+		getCopyrightHolders,
+		getDependentDataServices,
 		getReusesByServiceId,
-		getServiceDependencies,
-		type Service,
+		getDataServiceDependencies,
+		type DataService,
 	} from "$lib/data/tricoteuses-ecosystem.js"
 	import {
 		BookIcon,
@@ -24,10 +25,11 @@
 
 	let { data }: { data: PageData } = $props()
 
-	const service: Service = $derived(data.service)
+	const service: DataService = $derived(data.service)
 	const reuses = $derived(getReusesByServiceId(service.id))
-	const dependencies = $derived(getServiceDependencies(service.id))
-	const dependents = $derived(getDependentServices(service.id))
+	const dependencies = $derived(getDataServiceDependencies(service.id))
+	const dependents = $derived(getDependentDataServices(service.id))
+	const copyrightHolders = $derived(getCopyrightHolders(service.id))
 
 	const serviceIcon = $derived.by(() => {
 		switch (service.type) {
@@ -46,7 +48,7 @@
 		}
 	})
 
-	function getServiceColor(type: Service["type"]) {
+	function getServiceColor(type: DataService["type"]) {
 		switch (type) {
 			case "api":
 				return "border-l-blue-500"
@@ -63,7 +65,7 @@
 		}
 	}
 
-	function getTypeBadgeColor(type: Service["type"]) {
+	function getTypeBadgeColor(type: DataService["type"]) {
 		switch (type) {
 			case "api":
 				return "bg-blue-500 hover:bg-blue-600"
@@ -80,7 +82,7 @@
 		}
 	}
 
-	function getTypeLabel(type: Service["type"]) {
+	function getTypeLabel(type: DataService["type"]) {
 		switch (type) {
 			case "api":
 				return "API REST"
@@ -150,6 +152,51 @@
 						</a>.
 					</p>
 				{/if}
+
+			<!-- License and Copyright Holders -->
+			<div class="mb-6 space-y-3 rounded-lg border bg-muted/50 p-4">
+				<div>
+					<h3 class="mb-1 text-sm font-semibold">Licence</h3>
+					<a
+						href={service.license.url}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-sm text-muted-foreground underline hover:text-foreground"
+					>
+						{service.license.name}
+					</a>
+				</div>
+				<div>
+					<h3 class="mb-1 text-sm font-semibold">
+						Détenteurs de droits d'auteur
+					</h3>
+					<div class="flex flex-wrap gap-2">
+						{#each copyrightHolders as holder (holder.id)}
+							{#if holder.url}
+								<a
+									href={holder.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-sm text-muted-foreground underline hover:text-foreground"
+								>
+									{holder.name}
+								</a>
+							{:else if holder.email}
+								<a
+									href="mailto:{holder.email}"
+									class="text-sm text-muted-foreground underline hover:text-foreground"
+								>
+									{holder.name}
+								</a>
+							{:else}
+								<span class="text-sm text-muted-foreground">
+									{holder.name}
+								</span>
+							{/if}
+						{/each}
+					</div>
+				</div>
+			</div>
 
 				<!-- Links -->
 				<div class="flex flex-wrap gap-3">

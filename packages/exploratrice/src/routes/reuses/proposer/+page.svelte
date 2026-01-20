@@ -6,10 +6,10 @@
 	import { Label } from "$lib/components/ui/label/index.js"
 	import { Textarea } from "$lib/components/ui/textarea/index.js"
 	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
-	import { getAllServices } from "$lib/data/tricoteuses-ecosystem.js"
+	import { getAllDataServices } from "$lib/data/tricoteuses-ecosystem.js"
 	import { CheckIcon, CopyIcon } from "@lucide/svelte"
 
-	const services = getAllServices()
+	const services = getAllDataServices()
 
 	let authorName = $state("")
 	let contactEmail = $state("")

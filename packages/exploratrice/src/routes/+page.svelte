@@ -5,13 +5,13 @@
 	import ServiceCard from "$lib/components/service-card.svelte"
 	import {
 		getFeaturedReuses,
-		getFeaturedServices,
+		getFeaturedDataServices,
 		getReusesByType,
 	} from "$lib/data/tricoteuses-ecosystem.js"
 	import { ChevronRight } from "@lucide/svelte"
 	import { onDestroy, onMount } from "svelte"
 
-	const featuredServices = getFeaturedServices()
+	const featuredServices = getFeaturedDataServices()
 	const featuredExternalReuses = getReusesByType("external").filter((r) => r.featured)
 	const featuredDemos = getReusesByType("demo").filter((r) => r.featured)
 

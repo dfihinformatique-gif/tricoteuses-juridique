@@ -3,13 +3,13 @@ import { readFileSync } from "fs"
 import { join } from "path"
 import type { OpenAPIV2, OpenAPIV3 } from "openapi-types"
 
-import { getServiceById } from "$lib/data/tricoteuses-ecosystem.js"
+import { getDataServiceById } from "$lib/data/tricoteuses-ecosystem.js"
 import { convertOpenAPI3to2 } from "$lib/openapi/converters.js"
 
 import type { PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
-	const service = getServiceById(params.slug)
+	const service = getDataServiceById(params.slug)
 
 	if (service === undefined) {
 		throw error(404, {

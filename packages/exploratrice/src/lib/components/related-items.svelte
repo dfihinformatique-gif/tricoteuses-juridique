@@ -1,28 +1,28 @@
 <script lang="ts">
 	import { Badge } from "$lib/components/ui/badge/index.js"
-	import type { Reuse, Service } from "$lib/data/tricoteuses-ecosystem.js"
+	import type { Reuse, DataService } from "$lib/data/tricoteuses-ecosystem.js"
 	import { ChevronRight } from "@lucide/svelte"
 
 	interface RelatedItemsProps {
-		items: Array<Reuse | Service>
+		items: Array<Reuse | DataService>
 	}
 
 	let { items }: RelatedItemsProps = $props()
 
-	function isService(item: Reuse | Service): item is Service {
+	function isDataService(item: Reuse | DataService): item is DataService {
 		return "type" in item && ["api", "git", "mcp", "consolidation", "database"].includes(item.type)
 	}
 
-	function getItemUrl(item: Reuse | Service): string {
-		if (isService(item)) {
+	function getItemUrl(item: Reuse | DataService): string {
+		if (isDataService(item)) {
 			return `/services/${item.id}`
 		}
 		return `/reuses/${item.id}`
 	}
 
-	function getItemBadge(item: Reuse | Service): string {
-		if (isService(item)) {
-			const service = item as Service
+	function getItemBadge(item: Reuse | DataService): string {
+		if (isDataService(item)) {
+			const service = item as DataService
 			switch (service.type) {
 				case "api":
 					return "API"

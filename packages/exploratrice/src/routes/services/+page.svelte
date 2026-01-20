@@ -4,20 +4,20 @@
 	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
 	import ServiceCard from "$lib/components/service-card.svelte"
 	import {
-		getServicesByType,
-		services,
-		type Service,
+		getDataServicesByType,
+		dataServices,
+		type DataService,
 	} from "$lib/data/tricoteuses-ecosystem.js"
 	import { Filter } from "@lucide/svelte"
 
-	let selectedType = $state<Service["type"] | "all">("all")
+	let selectedType = $state<DataService["type"] | "all">("all")
 
 	const filteredServices = $derived.by(() => {
-		if (selectedType === "all") return services
-		return getServicesByType(selectedType)
+		if (selectedType === "all") return dataServices
+		return getDataServicesByType(selectedType)
 	})
 
-	const filterButtons: Array<{ label: string; type: Service["type"] | "all" }> = [
+	const filterButtons: Array<{ label: string; type: DataService["type"] | "all" }> = [
 		{ label: "Tous", type: "all" },
 		{ label: "API REST", type: "api" },
 		{ label: "Bases de données", type: "database" },

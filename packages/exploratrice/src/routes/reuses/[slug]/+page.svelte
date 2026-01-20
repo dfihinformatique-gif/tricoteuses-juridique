@@ -4,7 +4,7 @@
 	import * as Card from "$lib/components/ui/card/index.js"
 	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
 	import ServiceCard from "$lib/components/service-card.svelte"
-	import { getServicesByReuseId, type Reuse } from "$lib/data/tricoteuses-ecosystem.js"
+	import { getDataServicesByReuseId, type Reuse } from "$lib/data/tricoteuses-ecosystem.js"
 	import { ExternalLinkIcon, FlaskConicalIcon, UserIcon } from "@lucide/svelte"
 
 	import type { PageData } from "./$types"
@@ -12,7 +12,7 @@
 	let { data }: { data: PageData } = $props()
 
 	const reuse: Reuse = data.reuse
-	const services = getServicesByReuseId(reuse.id)
+	const services = getDataServicesByReuseId(reuse.id)
 
 	const reuseIcon = $derived.by(() => {
 		switch (reuse.type) {

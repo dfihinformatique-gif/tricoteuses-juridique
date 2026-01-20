@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { Badge } from "$lib/components/ui/badge/index.js"
 	import * as Card from "$lib/components/ui/card/index.js"
-	import type { Service } from "$lib/data/tricoteuses-ecosystem.js"
+	import type { DataService } from "$lib/data/tricoteuses-ecosystem.js"
 	import { Book, Building, Database, Folder, Terminal } from "@lucide/svelte"
 	import DatabaseIcon from "@lucide/svelte/icons/database"
 
 	interface ServiceCardProps {
 		class?: string
-		service: Service
+		service: DataService
 	}
 
 	let { class: className, service }: ServiceCardProps = $props()

@@ -3,12 +3,24 @@
  * Source unique de vérité pour tous les services, données, APIs et réutilisations
  */
 
-export interface Service {
+export interface Entity {
+  email?: string
+  id: string
+  name: string
+  url?: string
+}
+
+export interface DataService {
   author?: string
   description: string
+  directCopyrightHolderIds: string[]
   featured: boolean
   icon?: string
   id: string
+  license: {
+    name: string
+    url: string
+  }
   name: string
   provider?: {
     name: string
@@ -34,16 +46,39 @@ export interface Reuse {
 }
 
 // ============================================================================
-// SERVICES
+// ENTITIES
 // ============================================================================
 
-export const services: Service[] = [
+export const entities: Entity[] = [
+  {
+    email: "emmanuel@raviart.com",
+    id: "emmanuel-raviart",
+    name: "Emmanuel Raviart",
+  },
+  {
+    email: "contact@logora.fr",
+    id: "logora",
+    name: "Logora",
+    url: "https://www.logora.com",
+  },
+]
+
+// ============================================================================
+// SERVICES DE DONNÉES
+// ============================================================================
+
+export const dataServices: DataService[] = [
   // APIs REST
   {
     description:
       "API REST pour accéder aux données de l'Assemblée Nationale (acteurs, amendements, dossiers législatifs, documents, organes, réunions, scrutins) via PostgREST avec spécification OpenAPI 2.0.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: true,
     id: "api-canutes-assemblee",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "API Canutes Assemblée",
     provider: {
       name: "Code4code.eu",
@@ -57,8 +92,13 @@ export const services: Service[] = [
   {
     description:
       "API REST pour accéder aux données législatives françaises de Légifrance (articles de loi, textes légaux, sections, dossiers législatifs, journaux officiels) via PostgREST avec spécification OpenAPI 2.0.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: true,
     id: "api-canutes-legifrance",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "API Canutes Légifrance",
     provider: {
       name: "Code4code.eu",
@@ -72,8 +112,13 @@ export const services: Service[] = [
   {
     description:
       "API REST pour accéder aux données unifiées du Parlement français (Assemblée Nationale et Sénat) : acteurs, amendements, dossiers, documents, débats, scrutins, questions et bien plus. Utilise Express avec spécification OpenAPI 3.0.",
+    directCopyrightHolderIds: ["logora"],
     featured: true,
     id: "api-parlement",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "API Parlement",
     provider: {
       name: "Legiwatch",
@@ -89,8 +134,13 @@ export const services: Service[] = [
   {
     description:
       "Base de données PostgreSQL contenant les données structurées de l'Assemblée Nationale : acteurs, amendements, dossiers législatifs, documents, organes, réunions, scrutins. Construite quotidiennement à partir des dépôts Git de l'Assemblée.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: false,
     id: "database-canutes-assemblee",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Base de données Canutes Assemblée",
     provider: {
       name: "Code4code.eu",
@@ -102,8 +152,13 @@ export const services: Service[] = [
   {
     description:
       "Base de données PostgreSQL contenant les données structurées de Légifrance : articles de loi, textes légaux, sections, dossiers législatifs, journaux officiels. Construite quotidiennement à partir des dépôts Git DILA.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: false,
     id: "database-canutes-legifrance",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Base de données Canutes Légifrance",
     provider: {
       name: "Code4code.eu",
@@ -115,8 +170,13 @@ export const services: Service[] = [
   {
     description:
       "Base de données PostgreSQL contenant les données unifiées du Parlement français (Assemblée Nationale et Sénat) : acteurs, amendements, dossiers, documents, débats, scrutins, questions. Construite quotidiennement à partir des dépôts Git de l'Assemblée et du Sénat.",
+    directCopyrightHolderIds: ["logora"],
     featured: false,
     id: "database-canutes-parlement",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Base de données Canutes Parlement",
     provider: {
       name: "Code4code.eu",
@@ -130,8 +190,13 @@ export const services: Service[] = [
   {
     description:
       "Dépôts Git contenant les données brutes de Légifrance publiées par la DILA, récupérées plusieurs fois par jour, converties en JSON, nettoyées et versionnées sous Git par Tricoteuses. Mises à jour quotidiennes.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: false,
     id: "depots-dila",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Dépôts de données DILA",
     provider: {
       name: "Code4code.eu",
@@ -143,8 +208,13 @@ export const services: Service[] = [
   {
     description:
       "Dépôts Git contenant les données brutes de l'Assemblée nationale, récupérées plusieurs fois par jour, converties en JSON, nettoyées et versionnées sous Git par Tricoteuses. Mises à jour quotidiennes.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: false,
     id: "depots-assemblee",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Dépôts de données Assemblée",
     provider: {
       name: "Code4code.eu",
@@ -156,8 +226,13 @@ export const services: Service[] = [
   {
     description:
       "Dépôts Git contenant les données brutes du Sénat, récupérées plusieurs fois par jour, converties en JSON, nettoyées et versionnées sous Git par Tricoteuses. Mises à jour quotidiennes.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: false,
     id: "depots-senat",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Dépôts de données Sénat",
     provider: {
       name: "Code4code.eu",
@@ -171,8 +246,13 @@ export const services: Service[] = [
   {
     description:
       "Dépôts Git contenant l'ensemble des codes juridiques français (Code civil, Code général des impôts, etc.) avec leur historique complet des modifications, versionnés sous Git.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: false,
     id: "codes-juridiques",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Codes juridiques",
     provider: {
       name: "Code4code.eu",
@@ -184,8 +264,13 @@ export const services: Service[] = [
   {
     description:
       "Texte intégral de la Constitution du 4 octobre 1958 avec son historique complet des modifications, versionné sous Git.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: false,
     id: "constitution",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Constitution de 1958",
     provider: {
       name: "Code4code.eu",
@@ -200,8 +285,13 @@ export const services: Service[] = [
     author: "Code4code.eu",
     description:
       "Serveur MCP (Model Context Protocol) permettant d'interroger directement les bases de données juridiques de Tricoteuses. Parfait pour permettre aux chats IA d'avoir une connaissance approfondie, exacte et à jour de la loi et de sa fabrique.",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
     featured: true,
     id: "mcp-moulineuse",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Serveur MCP Moulineuse",
     provider: {
       name: "Code4code.eu",
@@ -217,8 +307,13 @@ export const services: Service[] = [
     author: "Legiwatch",
     description:
       "Serveur MCP dédié spécifiquement aux données du Parlement français (Assemblée Nationale et Sénat). Permet aux chats IA d'accéder directement aux acteurs, amendements, dossiers législatifs, débats, scrutins et questions parlementaires.",
+    directCopyrightHolderIds: ["logora"],
     featured: false,
     id: "mcp-parlement",
+    license: {
+      name: "Open Database License (ODbL)",
+      url: "https://opendatacommons.org/licenses/odbl/",
+    },
     name: "Serveur MCP Parlement",
     provider: {
       name: "Legiwatch",
@@ -369,10 +464,17 @@ export const reuses: Reuse[] = [
 // ============================================================================
 
 /**
- * Récupère un service par son ID
+ * Récupère une entity par son ID
  */
-export function getServiceById(id: string): Service | undefined {
-  return services.find((s) => s.id === id)
+export function getEntityById(id: string): Entity | undefined {
+  return entities.find((e) => e.id === id)
+}
+
+/**
+ * Récupère un service de données par son ID
+ */
+export function getDataServiceById(id: string): DataService | undefined {
+  return dataServices.find((s) => s.id === id)
 }
 
 /**
@@ -392,35 +494,61 @@ export function getReusesByServiceId(serviceId: string): Reuse[] {
 /**
  * Récupère tous les services dont dépend un service donné
  */
-export function getServiceDependencies(serviceId: string): Service[] {
-  const service = getServiceById(serviceId)
+export function getDataServiceDependencies(serviceId: string): DataService[] {
+  const service = getDataServiceById(serviceId)
   if (service == null || service.serviceIds == null) return []
 
-  return service.serviceIds.map(getServiceById).filter((s) => s !== undefined)
+  return service.serviceIds.map(getDataServiceById).filter((s) => s !== undefined)
 }
 
 /**
  * Récupère tous les services qui dépendent d'un service donné
  */
-export function getDependentServices(serviceId: string): Service[] {
-  return services.filter((s) => s.serviceIds?.includes(serviceId))
+export function getDependentDataServices(serviceId: string): DataService[] {
+  return dataServices.filter((s) => s.serviceIds?.includes(serviceId))
 }
 
 /**
  * Récupère tous les services utilisés par une réutilisation donnée
  */
-export function getServicesByReuseId(reuseId: string): Service[] {
+export function getDataServicesByReuseId(reuseId: string): DataService[] {
   const reuse = getReuseById(reuseId)
   if (reuse == null) return []
 
-  return reuse.serviceIds.map(getServiceById).filter((s) => s !== undefined)
+  return reuse.serviceIds.map(getDataServiceById).filter((s) => s !== undefined)
+}
+
+/**
+ * Récupère tous les copyright holders (directs + transitifs via dépendances) d'un service
+ */
+export function getCopyrightHolders(serviceId: string): Entity[] {
+  const service = getDataServiceById(serviceId)
+  if (service == null) return []
+
+  // Set pour éviter les doublons
+  const copyrightHolderIds = new Set<string>()
+
+  // Ajouter les copyright holders directs
+  service.directCopyrightHolderIds.forEach((id) => copyrightHolderIds.add(id))
+
+  // Récupérer récursivement les copyright holders des dépendances
+  const dependencies = getDataServiceDependencies(serviceId)
+  dependencies.forEach((dep) => {
+    const depHolders = getCopyrightHolders(dep.id)
+    depHolders.forEach((holder) => copyrightHolderIds.add(holder.id))
+  })
+
+  // Convertir les IDs en entities
+  return Array.from(copyrightHolderIds)
+    .map(getEntityById)
+    .filter((e) => e !== undefined)
 }
 
 /**
  * Récupère tous les services featured (pour la page d'accueil)
  */
-export function getFeaturedServices(): Service[] {
-  return services.filter((s) => s.featured)
+export function getFeaturedDataServices(): DataService[] {
+  return dataServices.filter((s) => s.featured)
 }
 
 /**
@@ -433,8 +561,8 @@ export function getFeaturedReuses(): Reuse[] {
 /**
  * Récupère tous les services d'un type donné
  */
-export function getServicesByType(type: Service["type"]): Service[] {
-  return services.filter((s) => s.type === type)
+export function getDataServicesByType(type: DataService["type"]): DataService[] {
+  return dataServices.filter((s) => s.type === type)
 }
 
 /**
@@ -447,8 +575,8 @@ export function getReusesByType(type: Reuse["type"]): Reuse[] {
 /**
  * Récupère tous les services
  */
-export function getAllServices(): Service[] {
-  return services
+export function getAllDataServices(): DataService[] {
+  return dataServices
 }
 
 /**

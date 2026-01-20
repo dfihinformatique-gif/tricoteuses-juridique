@@ -9,7 +9,7 @@
 		SearchBar,
 	} from "$lib/components/openapi/index.js"
 	import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
-	import type { Service } from "$lib/data/tricoteuses-ecosystem.js"
+	import type { DataService } from "$lib/data/tricoteuses-ecosystem.js"
 	import {
 		categorizeEndpoints,
 		deriveEndpoints,
@@ -21,7 +21,7 @@
 
 	let { data }: { data: PageData } = $props()
 
-	const service: Service = data.service
+	const service: DataService = data.service
 
 	// State for UI interactions
 	let selectedEndpoint = $state<string | null>(null)

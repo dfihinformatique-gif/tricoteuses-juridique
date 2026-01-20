@@ -10,6 +10,32 @@ export interface Entity {
   url?: string
 }
 
+export interface Software {
+  description: string
+  directCopyrightHolderIds: string[]
+  id: string
+  license: {
+    name: string
+    spdxId?: string
+    url?: string
+  }
+  name: string
+  repositoryUrl: string
+  sourceDataIds?: string[]
+}
+
+export interface DataSource {
+  description: string
+  id: string
+  license?: {
+    name: string
+    url?: string
+  }
+  name: string
+  provider: string
+  url: string
+}
+
 export interface DataService {
   author?: string
   description: string
@@ -27,6 +53,7 @@ export interface DataService {
     url: string
   }
   serviceIds?: string[]
+  softwareIds?: string[]
   technicalDocUrl?: string
   type: "api" | "git" | "mcp" | "consolidation" | "database"
   url?: string
@@ -56,10 +83,122 @@ export const entities: Entity[] = [
     name: "Emmanuel Raviart",
   },
   {
+    email: "h.boisgibault@gmail.com",
+    id: "henry-boisgibault",
+    name: "Henry Boisgibault",
+  },
+  {
+    email: "loic@dachary.org",
+    id: "loic-dachary",
+    name: "Loïc Dachary",
+  },
+  {
     email: "contact@logora.fr",
     id: "logora",
     name: "Logora",
     url: "https://www.logora.com",
+  },
+]
+
+// ============================================================================
+// SOURCES DE DONNÉES
+// ============================================================================
+
+export const dataSources: DataSource[] = [
+  {
+    description:
+      "Données ouvertes de l'Assemblée Nationale (amendements, dossiers législatifs, documents, scrutins, etc.)",
+    id: "assemblee-nationale-opendata",
+    license: {
+      name: "Licence Ouverte / Open License",
+      url: "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    },
+    name: "Open Data Assemblée Nationale",
+    provider: "Assemblée Nationale",
+    url: "https://data.assemblee-nationale.fr/",
+  },
+  {
+    description:
+      "Données ouvertes du Sénat (amendements, dossiers législatifs, scrutins, etc.)",
+    id: "senat-opendata",
+    license: {
+      name: "Licence Ouverte / Open License",
+      url: "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    },
+    name: "Open Data Sénat",
+    provider: "Sénat",
+    url: "https://data.senat.fr/",
+  },
+  {
+    description:
+      "Données juridiques françaises de Légifrance (codes, lois, décrets, journaux officiels, etc.) publiées par la DILA",
+    id: "legifrance-dila",
+    license: {
+      name: "Licence Ouverte / Open License",
+      url: "https://www.etalab.gouv.fr/licence-ouverte-open-licence/",
+    },
+    name: "Légifrance (DILA)",
+    provider: "Direction de l'information légale et administrative (DILA)",
+    url: "https://www.legifrance.gouv.fr/",
+  },
+]
+
+// ============================================================================
+// LOGICIELS
+// ============================================================================
+
+export const software: Software[] = [
+  {
+    description:
+      "Logiciel libre pour récupérer, nettoyer et traiter les données ouvertes de l'Assemblée nationale (amendements, dossiers législatifs, documents, scrutins, etc.)",
+    directCopyrightHolderIds: ["emmanuel-raviart", "henry-boisgibault", "loic-dachary"],
+    id: "tricoteuses-assemblee",
+    license: {
+      name: "GNU Affero General Public License v3.0 ou ultérieure",
+      spdxId: "AGPL-3.0-or-later",
+    },
+    name: "Tricoteuses Assemblée",
+    repositoryUrl: "https://git.tricoteuses.fr/logiciels/tricoteuses-assemblee",
+    sourceDataIds: ["assemblee-nationale-opendata"],
+  },
+  {
+    description:
+      "Logiciel libre pour récupérer, nettoyer et traiter les données ouvertes du Sénat (amendements, scrutins, dossiers législatifs, etc.)",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
+    id: "tricoteuses-senat",
+    license: {
+      name: "GNU Affero General Public License v3.0 ou ultérieure",
+      spdxId: "AGPL-3.0-or-later",
+    },
+    name: "Tricoteuses Sénat",
+    repositoryUrl: "https://git.tricoteuses.fr/logiciels/tricoteuses-senat",
+    sourceDataIds: ["senat-opendata"],
+  },
+  {
+    description:
+      "Bibliothèque et outils libres pour parcourir et traiter les données juridiques ouvertes de Légifrance (codes, lois, décrets, journaux officiels) publiées par la DILA",
+    directCopyrightHolderIds: ["emmanuel-raviart"],
+    id: "tricoteuses-legifrance",
+    license: {
+      name: "GNU Affero General Public License v3.0 ou ultérieure",
+      spdxId: "AGPL-3.0-or-later",
+    },
+    name: "Tricoteuses Légifrance",
+    repositoryUrl: "https://git.tricoteuses.fr/logiciels/tricoteuses-legifrance",
+    sourceDataIds: ["legifrance-dila"],
+  },
+  {
+    description:
+      "API REST et chargeur de base de données SQL basés sur les données ouvertes du Parlement français (Assemblée Nationale et Sénat)",
+    directCopyrightHolderIds: ["henry-boisgibault"],
+    id: "tricoteuses-api-parlement",
+    license: {
+      name: "GNU Affero General Public License v3.0 ou ultérieure",
+      spdxId: "AGPL-3.0-or-later",
+    },
+    name: "Tricoteuses API Parlement",
+    repositoryUrl: "https://git.tricoteuses.fr/logiciels/tricoteuses-api-parlement",
+    sourceDataIds: ["assemblee-nationale-opendata", "senat-opendata"],
   },
 ]
 
@@ -125,6 +264,7 @@ export const dataServices: DataService[] = [
       url: "https://www.legiwatch.fr/",
     },
     serviceIds: ["database-canutes-parlement"],
+    softwareIds: ["tricoteuses-api-parlement"],
     technicalDocUrl: "/services/api-parlement/documentation",
     type: "api",
     url: "https://parlement.tricoteuses.fr/api/v1",
@@ -202,6 +342,7 @@ export const dataServices: DataService[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
+    softwareIds: ["tricoteuses-legifrance"],
     type: "git",
     url: "https://git.tricoteuses.fr/dila",
   },
@@ -220,6 +361,7 @@ export const dataServices: DataService[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
+    softwareIds: ["tricoteuses-assemblee"],
     type: "git",
     url: "https://git.tricoteuses.fr/assemblee",
   },
@@ -238,6 +380,7 @@ export const dataServices: DataService[] = [
       name: "Code4code.eu",
       url: "https://code4code.eu",
     },
+    softwareIds: ["tricoteuses-senat"],
     type: "git",
     url: "https://git.tricoteuses.fr/senat",
   },
@@ -584,4 +727,77 @@ export function getAllDataServices(): DataService[] {
  */
 export function getAllReuses(): Reuse[] {
   return reuses
+}
+
+/**
+ * Récupère un logiciel par son ID
+ */
+export function getSoftwareById(id: string): Software | undefined {
+  return software.find((s) => s.id === id)
+}
+
+/**
+ * Récupère une source de données par son ID
+ */
+export function getDataSourceById(id: string): DataSource | undefined {
+  return dataSources.find((s) => s.id === id)
+}
+
+/**
+ * Récupère tous les logiciels utilisés par un service de données
+ */
+export function getSoftwareByDataServiceId(serviceId: string): Software[] {
+  const service = getDataServiceById(serviceId)
+  if (service == null || service.softwareIds == null) return []
+
+  return service.softwareIds.map(getSoftwareById).filter((s) => s !== undefined)
+}
+
+/**
+ * Récupère toutes les sources de données utilisées par un logiciel
+ */
+export function getDataSourcesBySoftwareId(softwareId: string): DataSource[] {
+  const soft = getSoftwareById(softwareId)
+  if (soft == null || soft.sourceDataIds == null) return []
+
+  return soft.sourceDataIds.map(getDataSourceById).filter((s) => s !== undefined)
+}
+
+/**
+ * Récupère tous les services de données générés par un logiciel
+ */
+export function getDataServicesBySoftwareId(softwareId: string): DataService[] {
+  return dataServices.filter((s) => s.softwareIds?.includes(softwareId))
+}
+
+/**
+ * Récupère tous les copyright holders d'un logiciel (directs + ceux des sources de données)
+ */
+export function getSoftwareCopyrightHolders(softwareId: string): Entity[] {
+  const soft = getSoftwareById(softwareId)
+  if (soft == null) return []
+
+  const copyrightHolderIds = new Set<string>()
+
+  // Ajouter les copyright holders directs du logiciel
+  soft.directCopyrightHolderIds.forEach((id) => copyrightHolderIds.add(id))
+
+  // Convertir les IDs en entities
+  return Array.from(copyrightHolderIds)
+    .map(getEntityById)
+    .filter((e) => e !== undefined)
+}
+
+/**
+ * Récupère tous les logiciels
+ */
+export function getAllSoftware(): Software[] {
+  return software
+}
+
+/**
+ * Récupère toutes les sources de données
+ */
+export function getAllDataSources(): DataSource[] {
+  return dataSources
 }

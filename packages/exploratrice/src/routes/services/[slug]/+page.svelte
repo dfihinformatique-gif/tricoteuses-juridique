@@ -7,9 +7,11 @@
 	import ServiceCard from "$lib/components/service-card.svelte"
 	import {
 		getCopyrightHolders,
+		getDataServiceDependencies,
+		getDataSourcesBySoftwareId,
 		getDependentDataServices,
 		getReusesByServiceId,
-		getDataServiceDependencies,
+		getSoftwareByDataServiceId,
 		type DataService,
 	} from "$lib/data/tricoteuses-ecosystem.js"
 	import {
@@ -30,6 +32,18 @@
 	const dependencies = $derived(getDataServiceDependencies(service.id))
 	const dependents = $derived(getDependentDataServices(service.id))
 	const copyrightHolders = $derived(getCopyrightHolders(service.id))
+	const softwareList = $derived(getSoftwareByDataServiceId(service.id))
+
+	// Get all data sources from all software used by this service
+	const dataSources = $derived.by(() => {
+		const sources = new Map()
+		softwareList.forEach(soft => {
+			getDataSourcesBySoftwareId(soft.id).forEach(source => {
+				sources.set(source.id, source)
+			})
+		})
+		return Array.from(sources.values())
+	})
 
 	const serviceIcon = $derived.by(() => {
 		switch (service.type) {
@@ -243,6 +257,86 @@
 				</div>
 			</section>
 		{/if}
+
+	<!-- Software section -->
+	{#if softwareList.length > 0}
+		<section class="mb-8">
+			<h2 class="mb-4 text-2xl font-bold">Logiciels</h2>
+			<p class="mb-6 text-muted-foreground">
+				Ce service est généré par {softwareList.length} logiciel{softwareList.length > 1 ? "s" : ""} libre{softwareList.length > 1 ? "s" : ""}.
+			</p>
+			<div class="space-y-4">
+				{#each softwareList as soft (soft.id)}
+					<Card.Root>
+						<Card.Header>
+							<Card.Title class="text-lg">{soft.name}</Card.Title>
+							<Card.Description>{soft.description}</Card.Description>
+						</Card.Header>
+						<Card.Content class="space-y-3">
+							<div class="flex flex-wrap gap-2">
+								<Badge variant="secondary">{soft.license.spdxId || soft.license.name}</Badge>
+								<a
+									href={soft.repositoryUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="text-sm text-blue-600 hover:underline dark:text-blue-400"
+								>
+									<ExternalLinkIcon class="mr-1 inline h-3 w-3" />
+									Code source
+								</a>
+							</div>
+						</Card.Content>
+					</Card.Root>
+				{/each}
+			</div>
+		</section>
+	{/if}
+
+	<!-- Data Sources section -->
+	{#if dataSources.length > 0}
+		<section class="mb-8">
+			<h2 class="mb-4 text-2xl font-bold">Sources de données</h2>
+			<p class="mb-6 text-muted-foreground">
+				Ce service utilise {dataSources.length} source{dataSources.length > 1 ? "s" : ""} de données publiques.
+			</p>
+			<div class="space-y-4">
+				{#each dataSources as source (source.id)}
+					<Card.Root>
+						<Card.Header>
+							<Card.Title class="text-lg">{source.name}</Card.Title>
+							<Card.Description>{source.description}</Card.Description>
+						</Card.Header>
+						<Card.Content class="space-y-3">
+							<div class="text-sm text-muted-foreground">
+								Fournisseur : <strong>{source.provider}</strong>
+							</div>
+							{#if source.license}
+								<div class="text-sm text-muted-foreground">
+									Licence : <a
+										href={source.license.url}
+										target="_blank"
+										rel="noopener noreferrer"
+										class="text-blue-600 hover:underline dark:text-blue-400"
+									>
+										{source.license.name}
+									</a>
+								</div>
+							{/if}
+							<a
+								href={source.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
+							>
+								<ExternalLinkIcon class="mr-1 inline h-3 w-3" />
+								Accéder à la source
+							</a>
+						</Card.Content>
+					</Card.Root>
+				{/each}
+			</div>
+		</section>
+	{/if}
 
 		<!-- Dependents section -->
 		{#if dependents.length > 0}

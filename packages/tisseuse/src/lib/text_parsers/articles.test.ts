@@ -21,6 +21,22 @@ import {
 } from "./articles.js"
 
 describe("article", () => {
+  test("ancien article L.O. 111-3", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = article(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      num: "LO111-3",
+      newOrOld: "old",
+      position: {
+        start: 0,
+        stop: 25,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("article L. 325-3", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = article(context) as TextAstArticle
@@ -110,6 +126,22 @@ describe("article", () => {
         stop: 21,
       },
       relative: 0,
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("nouvel article L.O. 111-3-13", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = article(context) as TextAstArticle
+    expect(result).toStrictEqual({
+      num: "LO111-3-13",
+      newOrOld: "new",
+      position: {
+        start: 0,
+        stop: 28,
+      },
       type: "article",
     })
     expect(context.remaining()).toBe("")

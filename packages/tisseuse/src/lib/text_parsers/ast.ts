@@ -55,6 +55,7 @@ export type TextAstArticle = {
   definitionSuffix?: string
   implicitText?: TextAstText | undefined
   localizationAdverb?: LocalizationAdverb
+  newOrOld?: "new" | "old"
   ofTheSaid?: boolean
   type: "article"
 } & TextAstLocalization &

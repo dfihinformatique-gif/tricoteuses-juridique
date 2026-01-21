@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest"
 
 import { optional, TextParserContext } from "./parsers.js"
 import {
+  adjectifTemporelSingulier,
   ditPluriel,
   ditSingulier,
   introPluriel,
@@ -9,6 +10,36 @@ import {
   liaisonPluriel,
   liaisonSingulier,
 } from "./prepositions.js"
+
+describe("adjectifTemporelSingulier", () => {
+  test("ancien ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = adjectifTemporelSingulier(context)
+    expect(result).toBe("old")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("ancienne ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = adjectifTemporelSingulier(context)
+    expect(result).toBe("old")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("nouveau ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = adjectifTemporelSingulier(context)
+    expect(result).toBe("new")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("nouvel ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = adjectifTemporelSingulier(context)
+    expect(result).toBe("new")
+    expect(context.remaining()).toBe("")
+  })
+})
 
 describe("ditPluriel", () => {
   test("dits ", ({ task }) => {

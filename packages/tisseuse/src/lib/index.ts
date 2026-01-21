@@ -180,6 +180,7 @@ export {
   unePortion,
 } from "./text_parsers/portions.js"
 export {
+  adjectifTemporelSingulier,
   ditPluriel,
   ditSingulier,
   introPluriel,

@@ -22,7 +22,11 @@ import {
   repeat,
 } from "./parsers.js"
 import { portionsEntreParenthesesOuVirgules } from "./portions.js"
-import { ditPluriel, ditSingulier } from "./prepositions.js"
+import {
+  adjectifTemporelSingulier,
+  ditPluriel,
+  ditSingulier,
+} from "./prepositions.js"
 import {
   adjectifRelatifPluriel,
   adjectifRelatifSingulier,
@@ -380,16 +384,18 @@ export const article1Internal = alternatives(
     [
       relatifSingulierPrepose,
       espace,
+      optional(adjectifTemporelSingulier, { default: null }),
       regExp("article", { flags: "i" }),
       optional([espace, designationArticle], { default: [] }),
     ],
     {
       value: (results, context) => {
-        const base = (results[3] as [string, TextAstReference])[1] ?? {
+        const newOrOld = results[2] as "new" | "old" | null
+        const base = (results[4] as [string, TextAstReference])[1] ?? {
           position: context.position(),
           type: "article",
         }
-        // Que faire d’une éventuelle expression « aux mêmes articles suivants » ?
+        // Que faire d'une éventuelle expression « aux mêmes articles suivants » ?
         // Tel que codé ci-dessous, le « mêmes » est ignoré au profit du « suivants »
         for (const article of iterAtomicFirstParentReferences<
           TextAstArticle | TextAstIncompleteHeader
@@ -400,17 +406,39 @@ export const article1Internal = alternatives(
           if (article.index === undefined && article.relative === undefined) {
             Object.assign(article, results[0] as TextAstLocalization)
           }
+          if (newOrOld !== null) {
+            ;(article as TextAstArticle).newOrOld = newOrOld
+          }
         }
         return { ...base, position: context.position() }
       },
     },
   ),
-  chain([regExp("article", { flags: "i" }), espace, designationArticle], {
-    value: (results, context) => ({
-      ...(results[2] as TextAstReference),
-      position: context.position(),
-    }),
-  }),
+  chain(
+    [
+      optional(adjectifTemporelSingulier, { default: null }),
+      regExp("article", { flags: "i" }),
+      espace,
+      designationArticle,
+    ],
+    {
+      value: (results, context) => {
+        const newOrOld = results[0] as "new" | "old" | null
+        const base = results[3] as TextAstReference
+        if (newOrOld !== null) {
+          for (const article of iterAtomicFirstParentReferences<TextAstArticle>(
+            base,
+          )) {
+            article.newOrOld = newOrOld
+          }
+        }
+        return {
+          ...base,
+          position: context.position(),
+        }
+      },
+    },
+  ),
 )
 
 /**

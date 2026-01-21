@@ -43,3 +43,10 @@ export const liaisonSingulier = convert(
 export const ditPluriel = regExp("dite?s ", { flags: "i", value: true })
 
 export const ditSingulier = regExp("dite? ", { flags: "i", value: true })
+
+// Adjectifs temporels pour distinguer les nouveaux articles des anciens
+
+export const adjectifTemporelSingulier = alternatives(
+  regExp("(nouvel|nouveau|nouvelle) ", { flags: "i", value: "new" }),
+  regExp("(ancien|ancienne) ", { flags: "i", value: "old" }),
+)

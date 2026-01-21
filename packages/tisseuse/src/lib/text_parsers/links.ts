@@ -196,151 +196,153 @@ async function* iterArticleLinks({
   reference: TextAstReference
   state: TextLinksParserState
 }): AsyncGenerator<ArticleLink, void> {
-  if (state.articleId === undefined && !article.present) {
-    // if (state.textId !== undefined && article.num !== undefined) {
-    //   const articleDefinition =
-    //     articleDefinitionByNumByTextId[state.textId]?.[article.num]
-    //   if (articleDefinition !== undefined) {
-    //     const position =
-    //       ancestors === undefined
-    //         ? article.position!
-    //         : article.position!.start < ancestors[0].position!.start
-    //           ? {
-    //               start: article.position.start,
-    //               stop: ancestors[0].position.stop,
-    //             }
-    //           : {
-    //               start: ancestors[0].position.start,
-    //               stop: article.position.stop,
-    //             }
-    //     yield Object.fromEntries(
-    //       Object.entries({
-    //         article,
-    //         definition: articleDefinition,
-    //         originalTransformation:
-    //           originalPositionsFromTransformedIterator === undefined
-    //             ? undefined
-    //             : reverseTransformationFromPosition(
-    //                 originalPositionsFromTransformedIterator,
-    //                 position,
-    //               ),
-    //         position,
-    //         reference,
-    //         type: "internal_article",
-    //       }).filter(([, value]) => value !== undefined),
-    //     ) as unknown as ArticleLink
-    //     return
-    //   }
-    // }
+  if (article.present) {
+    // Ignore "le présent article", etc
+    return
+  }
 
-    let articlesInfos: Array<{
-      data: JorfArticle | LegiArticle
-      id: string
-    }> = []
-    if (state.textId !== undefined) {
-      articlesInfos = [
-        ...(await legiDb<
-          {
-            data: JorfArticle | LegiArticle
-            id: string
-          }[]
-        >`
+  // if (state.textId !== undefined && article.num !== undefined) {
+  //   const articleDefinition =
+  //     articleDefinitionByNumByTextId[state.textId]?.[article.num]
+  //   if (articleDefinition !== undefined) {
+  //     const position =
+  //       ancestors === undefined
+  //         ? article.position!
+  //         : article.position!.start < ancestors[0].position!.start
+  //           ? {
+  //               start: article.position.start,
+  //               stop: ancestors[0].position.stop,
+  //             }
+  //           : {
+  //               start: ancestors[0].position.start,
+  //               stop: article.position.stop,
+  //             }
+  //     yield Object.fromEntries(
+  //       Object.entries({
+  //         article,
+  //         definition: articleDefinition,
+  //         originalTransformation:
+  //           originalPositionsFromTransformedIterator === undefined
+  //             ? undefined
+  //             : reverseTransformationFromPosition(
+  //                 originalPositionsFromTransformedIterator,
+  //                 position,
+  //               ),
+  //         position,
+  //         reference,
+  //         type: "internal_article",
+  //       }).filter(([, value]) => value !== undefined),
+  //     ) as unknown as ArticleLink
+  //     return
+  //   }
+  // }
+
+  let articlesInfos: Array<{
+    data: JorfArticle | LegiArticle
+    id: string
+  }> = []
+  if (state.textId !== undefined) {
+    articlesInfos = [
+      ...(await legiDb<
+        {
+          data: JorfArticle | LegiArticle
+          id: string
+        }[]
+      >`
           SELECT data, id
           FROM article
           WHERE
             data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.textId}
             AND num = ${article.num ?? null}
         `),
-      ]
-    }
-    if (
-      articlesInfos.length === 0 &&
-      state.defaultTextId !== undefined &&
-      state.defaultTextId !== state.textId
-    ) {
-      articlesInfos = [
-        ...(await legiDb<
-          {
-            data: JorfArticle | LegiArticle
-            id: string
-          }[]
-        >`
+    ]
+  }
+  if (
+    articlesInfos.length === 0 &&
+    state.defaultTextId !== undefined &&
+    state.defaultTextId !== state.textId
+  ) {
+    articlesInfos = [
+      ...(await legiDb<
+        {
+          data: JorfArticle | LegiArticle
+          id: string
+        }[]
+      >`
           SELECT data, id
           FROM article
           WHERE
             data -> 'CONTEXTE' -> 'TEXTE' ->> '@cid' = ${state.defaultTextId}
             AND num = ${article.num ?? null}
         `),
-      ]
-    }
-    if (articlesInfos.length === 0 && article.num !== undefined) {
-      // Look whether there exists only one text with this article number.
-      articlesInfos = [
-        ...(await legiDb<
-          {
-            data: JorfArticle | LegiArticle
-            id: string
-          }[]
-        >`
+    ]
+  }
+  if (articlesInfos.length === 0 && article.num !== undefined) {
+    // Look whether there exists only one text with this article number.
+    articlesInfos = [
+      ...(await legiDb<
+        {
+          data: JorfArticle | LegiArticle
+          id: string
+        }[]
+      >`
           SELECT data, id
           FROM article
           WHERE
             num = ${article.num}
           LIMIT 100
         `),
-      ]
-      if (articlesInfos.length !== 0) {
-        const textsIds = articlesInfos.reduce((textsIds, { data }) => {
-          const textId = data.CONTEXTE.TEXTE["@cid"]
-          if (textId !== undefined) {
-            textsIds.add(textId)
-          }
-          return textsIds
-        }, new Set<string>())
-        if (textsIds.size > 1) {
-          // Different texts have an article with the same number.
-          // So try another method.
-          articlesInfos = []
+    ]
+    if (articlesInfos.length !== 0) {
+      const textsIds = articlesInfos.reduce((textsIds, { data }) => {
+        const textId = data.CONTEXTE.TEXTE["@cid"]
+        if (textId !== undefined) {
+          textsIds.add(textId)
         }
+        return textsIds
+      }, new Set<string>())
+      if (textsIds.size > 1) {
+        // Different texts have an article with the same number.
+        // So try another method.
+        articlesInfos = []
       }
     }
-    if (articlesInfos.length === 0) {
-      console.warn(
-        `In "${context.input.slice(article.position.start, article.position.stop)}": Unknown article ${article.num ?? null} of text ${state.textId} for reference ${JSON.stringify(article, null, 2)}`,
-      )
-      delete state.articleId
-    } else if (articlesInfos.length === 1) {
-      state.articleId = articlesInfos[0].id
+  }
+  if (articlesInfos.length === 0) {
+    console.warn(
+      `In "${context.input.slice(article.position.start, article.position.stop)}": Unknown article ${article.num ?? null} of text ${state.textId} for reference ${JSON.stringify(article, null, 2)}`,
+    )
+    delete state.articleId
+  } else if (articlesInfos.length === 1) {
+    state.articleId = articlesInfos[0].id
+  } else {
+    let filteredArticlesInfos = articlesInfos.filter(({ data }) => {
+      const metaArticle = data.META.META_SPEC.META_ARTICLE
+      return metaArticle.DATE_DEBUT <= date && metaArticle.DATE_FIN > date
+    })
+    if (filteredArticlesInfos.length === 1) {
+      state.articleId = filteredArticlesInfos[0].id
     } else {
-      let filteredArticlesInfos = articlesInfos.filter(({ data }) => {
-        const metaArticle = data.META.META_SPEC.META_ARTICLE
-        return metaArticle.DATE_DEBUT <= date && metaArticle.DATE_FIN > date
-      })
+      if (filteredArticlesInfos.length !== 0) {
+        articlesInfos = filteredArticlesInfos
+      }
+      filteredArticlesInfos = articlesInfos.filter(
+        ({ id }) => !state.textId?.startsWith("JORF") || id.startsWith("JORF"),
+      )
       if (filteredArticlesInfos.length === 1) {
         state.articleId = filteredArticlesInfos[0].id
       } else {
         if (filteredArticlesInfos.length !== 0) {
           articlesInfos = filteredArticlesInfos
         }
-        filteredArticlesInfos = articlesInfos.filter(
-          ({ id }) =>
-            !state.textId?.startsWith("JORF") || id.startsWith("JORF"),
+        console.warn(
+          `In "${context.input.slice(article.position.start, article.position.stop)}": Unable to filter article ${article.num ?? null} of text ${state.textId ?? null} among IDs ${JSON.stringify(
+            articlesInfos.map(({ id }) => id),
+            null,
+            2,
+          )} for reference ${JSON.stringify(article, null, 2)}`,
         )
-        if (filteredArticlesInfos.length === 1) {
-          state.articleId = filteredArticlesInfos[0].id
-        } else {
-          if (filteredArticlesInfos.length !== 0) {
-            articlesInfos = filteredArticlesInfos
-          }
-          console.warn(
-            `In "${context.input.slice(article.position.start, article.position.stop)}": Unable to filter article ${article.num ?? null} of text ${state.textId ?? null} among IDs ${JSON.stringify(
-              articlesInfos.map(({ id }) => id),
-              null,
-              2,
-            )} for reference ${JSON.stringify(article, null, 2)}`,
-          )
-          delete state.articleId
-        }
+        delete state.articleId
       }
     }
   }
@@ -535,8 +537,8 @@ async function* iterDivisionLinks({
   reference: TextAstReference
   state: TextLinksParserState
 }): AsyncGenerator<ArticleLink | DivisionLink, void> {
-  if (state.sectionTaId !== undefined || division.present) {
-    // Do nothing.
+  if (division.present) {
+    // Ignore "la présente section", etc.
     return
   }
 

@@ -101,7 +101,8 @@ async function addLinksToAssembleeParsedDocuments({
           continue
         }
         for (const alinea of alineas) {
-          if (html &&
+          if (
+            html &&
             alinea.html !== undefined &&
             (force || alinea.html_avec_liens === undefined)
           ) {
@@ -336,13 +337,12 @@ async function addLinksToAssembleeParsedDocuments({
             changed = true
           }
 
-          if (text &&
+          if (
+            text &&
             alinea.texte !== undefined &&
             (force || alinea.texte_avec_liens === undefined)
           ) {
-            const transformation = simplifyPlainText(
-              alinea.texte,
-            )
+            const transformation = simplifyPlainText(alinea.texte)
             const context = new TextParserContext(transformation.output)
             context.currentArticle = previousTextContext?.currentArticle
             context.currentText = previousTextContext?.currentText
@@ -507,7 +507,7 @@ async function addLinksToAssembleeParsedDocuments({
                   )
                   const replacement = reverseTransformedReplacement(
                     texteOriginalTransformation,
-                      `[${escapeMarkdownLinkTitle(original)}](${urlFromLegalId(linkType, linkBaseUrl, text.cid!)})`,
+                    `[${escapeMarkdownLinkTitle(original)}](${urlFromLegalId(linkType, linkBaseUrl, text.cid!)})`,
                   )
                   output =
                     output.slice(
@@ -542,7 +542,7 @@ async function addLinksToAssembleeParsedDocuments({
                   )
                   const replacement = reverseTransformedReplacement(
                     articleOriginalTransformation,
-                      `[${escapeMarkdownLinkTitle(original)}](#definition_article_${definition.textId}_${definition.article.num!})`,
+                    `[${escapeMarkdownLinkTitle(original)}](#definition_article_${definition.textId}_${definition.article.num!})`,
                   )
                   output =
                     output.slice(
@@ -596,9 +596,9 @@ async function addLinksToAssembleeParsedDocuments({
 }
 
 // Taken from Tricoteuses Légifrance
-function escapeMarkdownLinkTitle<
-  StringOrUndefined extends string | undefined,
->(s: StringOrUndefined): StringOrUndefined {
+function escapeMarkdownLinkTitle<StringOrUndefined extends string | undefined>(
+  s: StringOrUndefined,
+): StringOrUndefined {
   return s
     ?.replace(/\s+/g, " ")
     .replaceAll("[", "\\[")

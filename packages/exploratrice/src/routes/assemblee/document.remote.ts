@@ -76,7 +76,7 @@ const loadDocumentPageInfos = async (
     return undefined
   }
   for (const currentDocumentDir of [
-    documentDir.replace("/Documents/", "/Documents_enrichi/"),
+    documentDir.replace("/Documents/", "/Documents_enrichis/"),
     documentDir,
   ]) {
     const documentPath = path.join(
@@ -199,7 +199,7 @@ export const queryDocumentsDiffPageInfos = query(
     z
       .array(DocumentUidSchema)
       .length(2, "Expected a couple, got an array of different size")
-      .transform((arr) => arr as [string, string])
+      .transform((arr) => arr as [string, string]),
   ),
   async ([previousUid, currentUid]): Promise<DocumentsDiffPageInfos> => {
     const [previous, current] = await Promise.all([

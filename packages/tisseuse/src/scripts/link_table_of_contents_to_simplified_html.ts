@@ -1,10 +1,10 @@
 /**
  * TODO;
- * Ce script devrait travailler sur Documents_enrichi, mais ce n'est pas le seul.
+ * Ce script devrait travailler sur Documents_enrichis, mais ce n'est pas le seul.
  * Car il y a un script qui met les liens, etc.
- * Documents_enrichi doit contenir tout ce que contient Documents (sauf éventuellement des formats inutiles).
- * Il faut donc un script de syncronisation entre Documents et Documents_enrichi, qui (re)lance plusieurs scripts
- * quand quelque chose a changé entre les fichiers d'un Documents et ceux d'un Documents_enrichi.
+ * Documents_enrichis doit contenir tout ce que contient Documents (sauf éventuellement des formats inutiles).
+ * Il faut donc un script de syncronisation entre Documents et Documents_enrichis, qui (re)lance plusieurs scripts
+ * quand quelque chose a changé entre les fichiers d'un Documents et ceux d'un Documents_enrichis.
  * Problème : le script de synchronisation devrait faire partie de @tricoteuses/assemblee.
  * Mais les scripts qui mettent les liens et ce script qui détecte la structure doit faire partie de @tricoteuses/tisseuse.
  * Quand le script de synchronisation détecte qu'une document (quelque soit son format a changé ou a été ajouté ou…) il devrait
@@ -12,7 +12,7 @@
  * Pas de problème car c'est tricoteuses-assemblee-update qui gère tout cela et tricoteuses-assemblee-update peut aussi bien
  * lancer des scripts assemblee que des scripts tisseuse.
  *
- * Ce script parse_bill_structure travaille sur un seul document (dans Documents_enrichi) dont le chemin lui est fourni.
+ * Ce script parse_bill_structure travaille sur un seul document (dans Documents_enrichis) dont le chemin lui est fourni.
  * Il suppose que le script simplify_assemblee_document, qui simplifie le document (et qui créé les fichiers intermédiaires
  * dans le répertoire) est déjà passé.
  *

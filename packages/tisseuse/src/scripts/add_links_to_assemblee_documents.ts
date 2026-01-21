@@ -66,10 +66,11 @@ async function addLinksToAssembleeDocuments({
         documentOrDivision.cycleDeVie.chrono.dateDepot ??
         documentOrDivision.cycleDeVie.chrono.datePublication ??
         documentOrDivision.cycleDeVie.chrono.datePublicationWeb
-      )?.toString() as string
+      )
+        ?.toISOString()
+        .split("T")[0] as string
       assert.notStrictEqual(date, undefined)
 
-      const documentsFilesDir = path.join(dataDir, "Documents")
       const documentOrDivisionFilesDir = pathFromDocumentUid(
         documentsFilesDir,
         documentOrDivision.uid,

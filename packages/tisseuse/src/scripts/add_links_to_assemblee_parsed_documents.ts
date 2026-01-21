@@ -91,7 +91,9 @@ async function addLinksToAssembleeParsedDocuments({
         documentOrDivision.cycleDeVie.chrono.dateDepot ??
         documentOrDivision.cycleDeVie.chrono.datePublication ??
         documentOrDivision.cycleDeVie.chrono.datePublicationWeb
-      )?.toString() as string
+      )
+        ?.toISOString()
+        .split("T")[0] as string
       assert.notStrictEqual(date, undefined)
       let previousHtmlContext: TextParserContext | undefined = undefined
       let previousTextContext: TextParserContext | undefined = undefined

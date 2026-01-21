@@ -1487,6 +1487,261 @@ describe("reference", () => {
     expect(context.text(result.position)).toBe(task.name)
   })
 
+  test("l'article 49, alinéas 2 et 3, de la Constitution", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          coordinator: "et",
+          left: {
+            index: 2,
+            position: {
+              start: 14,
+              stop: 23,
+            },
+            type: "alinéa",
+          },
+          position: {
+            start: 14,
+            stop: 28,
+          },
+          right: {
+            index: 3,
+            position: {
+              start: 27,
+              stop: 28,
+            },
+            type: "alinéa",
+          },
+          type: "enumeration",
+        },
+        parent: {
+          num: "49",
+          position: {
+            start: 10,
+            stop: 12,
+          },
+          type: "article",
+        },
+        position: {
+          start: 2,
+          stop: 29,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "JORFTEXT000000571356",
+        nature: "CONSTITUTION",
+        position: {
+          start: 36,
+          stop: 48,
+        },
+        title: "Constitution du 4 octobre 1958",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 48,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("article 49, alinéa 3, de la Constitution", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = referenceSeule(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          index: 3,
+          position: {
+            start: 12,
+            stop: 20,
+          },
+          type: "alinéa",
+        },
+        parent: {
+          num: "49",
+          position: {
+            start: 8,
+            stop: 10,
+          },
+          type: "article",
+        },
+        position: {
+          start: 0,
+          stop: 21,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "JORFTEXT000000571356",
+        nature: "CONSTITUTION",
+        position: {
+          start: 28,
+          stop: 40,
+        },
+        title: "Constitution du 4 octobre 1958",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 40,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("article 49, alinéas 1, 2 et 3, de la Constitution", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = referenceSeule(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          coordinator: "et",
+          left: {
+            coordinator: ",",
+            left: {
+              index: 1,
+              position: {
+                start: 12,
+                stop: 21,
+              },
+              type: "alinéa",
+            },
+            position: {
+              start: 12,
+              stop: 24,
+            },
+            right: {
+              index: 2,
+              position: {
+                start: 23,
+                stop: 24,
+              },
+              type: "alinéa",
+            },
+            type: "enumeration",
+          },
+          position: {
+            start: 12,
+            stop: 29,
+          },
+          right: {
+            index: 3,
+            position: {
+              start: 28,
+              stop: 29,
+            },
+            type: "alinéa",
+          },
+          type: "enumeration",
+        },
+        parent: {
+          num: "49",
+          position: {
+            start: 8,
+            stop: 10,
+          },
+          type: "article",
+        },
+        position: {
+          start: 0,
+          stop: 30,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "JORFTEXT000000571356",
+        nature: "CONSTITUTION",
+        position: {
+          start: 37,
+          stop: 49,
+        },
+        title: "Constitution du 4 octobre 1958",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 49,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("article L. 123-4, phrases 1 et 2, du code de l'éducation", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = referenceSeule(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          coordinator: "et",
+          left: {
+            index: 1,
+            position: {
+              start: 18,
+              stop: 27,
+            },
+            type: "phrase",
+          },
+          position: {
+            start: 18,
+            stop: 32,
+          },
+          right: {
+            index: 2,
+            position: {
+              start: 31,
+              stop: 32,
+            },
+            type: "phrase",
+          },
+          type: "enumeration",
+        },
+        parent: {
+          num: "L123-4",
+          position: {
+            start: 8,
+            stop: 16,
+          },
+          type: "article",
+        },
+        position: {
+          start: 0,
+          stop: 33,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "LEGITEXT000006071191",
+        nature: "CODE",
+        position: {
+          start: 37,
+          stop: 56,
+        },
+        title: "Code de l'éducation",
+        titleRest: "de l'éducation",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 56,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
   test("l'article 61 de la loi du 31 décembre 1937, l'article 57 de la loi du 31 décembre 1938", ({
     task,
   }) => {

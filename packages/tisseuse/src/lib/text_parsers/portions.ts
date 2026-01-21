@@ -212,6 +212,57 @@ export const unePortion = alternatives(
   ),
 )
 
+/**
+ * Parser pour gérer des formes comme "alinéas 2 et 3" ou "phrases 1, 2 et 3"
+ * C'est-à-dire: naturePortionPluriel suivi d'une énumération de numéros
+ */
+export const quelquesPortionsNumerotees = chain(
+  [
+    naturePortionPluriel,
+    espace,
+    numeroPortion,
+    repeat(
+      [alternatives(separateurEnumeration, separateurPlage), numeroPortion],
+      { min: 1 },
+    ),
+  ],
+  {
+    value: (results, context) => {
+      const portionType = results[0] as PortionType
+      const firstItem = results[2] as TextAstReference & { num?: string }
+      const restItems = results[3] as Array<
+        [CompoundReferencesSeparator, TextAstReference & { num?: string }]
+      >
+
+      // Position globale incluant "alinéas" / "phrases"
+      const globalPosition = context.position()
+
+      // Convertir tous les items pour leur donner le bon type et supprimer le champ num
+      // Ajuster la position du premier item pour inclure le mot "alinéas"/"phrases"
+      const { num: _firstNum, ...firstItemWithoutNum } = firstItem
+      const typedFirstItem = {
+        ...firstItemWithoutNum,
+        type: portionType,
+        position: {
+          start: globalPosition.start,
+          stop: firstItemWithoutNum.position.stop,
+        },
+      }
+
+      const typedRestItems = restItems.map(([separator, item]) => {
+        const { num: _itemNum, ...itemWithoutNum } = item
+        return [separator, { ...itemWithoutNum, type: portionType }]
+      }) as Array<[CompoundReferencesSeparator, TextAstReference]>
+
+      return createEnumerationOrBoundedInterval(
+        typedFirstItem,
+        typedRestItems,
+        globalPosition,
+      )
+    },
+  },
+)
+
 export const numeroPortionOuUnePortion = alternatives(unePortion, numeroPortion)
 
 export const plusieursPortions = chain(
@@ -271,7 +322,11 @@ export const listePlusieursPortions = chain(
  */
 export const listePortion = chain(
   [
-    alternatives(numeroPortionOuUnePortion, plusieursPortions),
+    alternatives(
+      numeroPortionOuUnePortion,
+      plusieursPortions,
+      quelquesPortionsNumerotees,
+    ),
     repeat([
       alternatives(separateurEnumeration, separateurPlage),
       alternatives(numeroPortionOuUnePortion, plusieursPortions),

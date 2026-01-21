@@ -1930,6 +1930,88 @@ describe("reference", () => {
     ).toBe("l'article 61 de la loi du 31 décembre 1937")
   })
 
+  test("Le II de la section II du chapitre III du titre II du livre des procédures fiscales", ({
+    task,
+  }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstParentChild
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          child: {
+            child: {
+              index: 2,
+              num: "II",
+              position: {
+                start: 3,
+                stop: 5,
+              },
+              type: "item",
+            },
+            parent: {
+              index: 2,
+              num: "II",
+              position: {
+                start: 12,
+                stop: 22,
+              },
+              type: "section",
+            },
+            position: {
+              start: 3,
+              stop: 22,
+            },
+            type: "parent-enfant",
+          },
+          parent: {
+            index: 3,
+            num: "III",
+            position: {
+              start: 26,
+              stop: 38,
+            },
+            type: "chapitre",
+          },
+          position: {
+            start: 3,
+            stop: 38,
+          },
+          type: "parent-enfant",
+        },
+        parent: {
+          index: 2,
+          num: "II",
+          position: {
+            start: 42,
+            stop: 50,
+          },
+          type: "titre",
+        },
+        position: {
+          start: 3,
+          stop: 50,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "LEGITEXT000006069583",
+        nature: "CODE",
+        position: {
+          start: 54,
+          stop: 83,
+        },
+        title: "Livre des procédures fiscales",
+        titleRest: "des procédures fiscales",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 83,
+      },
+      type: "parent-enfant",
+    })
+  })
+
   test("Le livre III de la partie législative du code des impositions sur les biens et services", ({
     task,
   }) => {

@@ -22,7 +22,7 @@ export const adjectifRelatifPluriel = alternatives(
   }),
   regExp("présente?s", {
     flags: "i",
-    value: { relative: 0 },
+    value: { present: true },
   }),
   regExp("suivante?s", {
     flags: "i",
@@ -76,7 +76,7 @@ export const adjectifRelatifSingulier = alternatives(
   }),
   regExp("présente?", {
     flags: "i",
-    value: { relative: 0 },
+    value: { present: true },
   }),
   regExp("suivante?", {
     flags: "i",

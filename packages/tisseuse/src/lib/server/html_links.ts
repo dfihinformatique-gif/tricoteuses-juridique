@@ -285,8 +285,8 @@ export async function addLinksOrReferencesToHtmlFile(
           )
         }
         if (text.cid === undefined) {
-          if (text.relative !== 0) {
-            // It is not "la présente loi".
+          if (!text.present) {
+            // It is not "la présente loi" or "le présent code".
             // Note: Don't throw an exception because it occurs for all kinds of non handled texts (conventions,
             // décrets, etc).
             console.error(

@@ -196,9 +196,7 @@ async function* iterArticleLinks({
   reference: TextAstReference
   state: TextLinksParserState
 }): AsyncGenerator<ArticleLink, void> {
-  if (article.relative !== 0 || state.articleId === undefined) {
-    // Not "le même article", "le présent article", etc
-
+  if (state.articleId === undefined && !article.present) {
     // if (state.textId !== undefined && article.num !== undefined) {
     //   const articleDefinition =
     //     articleDefinitionByNumByTextId[state.textId]?.[article.num]
@@ -537,8 +535,7 @@ async function* iterDivisionLinks({
   reference: TextAstReference
   state: TextLinksParserState
 }): AsyncGenerator<ArticleLink | DivisionLink, void> {
-  if (division.relative === 0 && state.sectionTaId !== undefined) {
-    // "le même chapitre", "la présente section", etc
+  if (state.sectionTaId !== undefined || division.present) {
     // Do nothing.
     return
   }

@@ -138,6 +138,7 @@ export type TextAstIncompleteHeader = {
 export interface TextAstLocalization {
   index?: number
   num?: string
+  present?: boolean
   relative?: number | "+∞"
 }
 

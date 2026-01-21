@@ -205,7 +205,8 @@ export const division1Internal = alternatives(
             results[2] as DivisionType
           if (
             reference.index === undefined &&
-            reference.relative === undefined
+            reference.relative === undefined &&
+            !reference.present
           ) {
             Object.assign(reference, results[0] as TextAstLocalization)
           }

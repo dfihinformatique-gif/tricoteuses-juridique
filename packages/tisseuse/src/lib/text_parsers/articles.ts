@@ -329,7 +329,11 @@ export const articles1Internal = alternatives(
           if (article.type === "incomplete-header") {
             ;(article as unknown as TextAstArticle).type = "article"
           }
-          if (article.index === undefined && article.relative === undefined) {
+          if (
+            article.index === undefined &&
+            article.relative === undefined &&
+            !article.present
+          ) {
             Object.assign(article, results[0] as TextAstLocalization)
           }
         }
@@ -403,7 +407,11 @@ export const article1Internal = alternatives(
           if (article.type === "incomplete-header") {
             ;(article as unknown as TextAstArticle).type = "article"
           }
-          if (article.index === undefined && article.relative === undefined) {
+          if (
+            article.index === undefined &&
+            article.relative === undefined &&
+            !article.present
+          ) {
             Object.assign(article, results[0] as TextAstLocalization)
           }
           if (newOrOld !== null) {

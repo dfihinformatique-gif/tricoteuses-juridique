@@ -817,7 +817,7 @@ describe("getParsedReferences, test spécifiques", () => {
           start: 336,
           stop: 352,
         },
-        relative: 0,
+        present: true,
         type: "titre",
       },
       {
@@ -834,7 +834,7 @@ describe("getParsedReferences, test spécifiques", () => {
           start: 392,
           stop: 408,
         },
-        relative: 0,
+        present: true,
         type: "titre",
       },
       {
@@ -1218,7 +1218,7 @@ describe("getParsedReferences, test spécifiques", () => {
             start: 36,
             stop: 51,
           },
-          relative: 0,
+          present: true,
           type: "article",
         },
         position: {

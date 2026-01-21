@@ -802,7 +802,7 @@ describe("reference", () => {
           start: 9,
           stop: 24,
         },
-        relative: 0,
+        present: true,
         type: "article",
       },
       position: {
@@ -951,7 +951,7 @@ describe("reference", () => {
           start: 25,
           stop: 37,
         },
-        relative: 0,
+        present: true,
         type: "texte",
       },
       position: {
@@ -985,7 +985,7 @@ describe("reference", () => {
           start: 24,
           stop: 36,
         },
-        relative: 0,
+        present: true,
         type: "texte",
       },
       position: {

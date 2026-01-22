@@ -128,7 +128,7 @@ async function addLinksToAssembleeDocuments({
 
   if (commit) {
     return git.commitAndPush(
-      documentsFilesDir,
+      enrichedDocumentsFilesDir,
       "Ajout des liens et des références à Légifrance",
       remote === undefined ? undefined : [remote],
     )

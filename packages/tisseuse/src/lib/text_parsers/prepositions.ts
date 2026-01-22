@@ -19,8 +19,8 @@ export const introSingulier = alternatives(
 export const liaisonPluriel = chain(
   [
     alternatives(
-      regExp(" de (?=ce(tte)?s )", { flags: "i" }),
-      regExp(" des( |(?=dite?s ))", { flags: "i" }),
+      regExp(String.raw`[ \n]de (?=ce(tte)?s )`, { flags: "i" }),
+      regExp(String.raw`[ \n]des( |(?=dite?s ))`, { flags: "i" }),
     ),
   ],
   { value: "des" },
@@ -28,10 +28,10 @@ export const liaisonPluriel = chain(
 
 export const liaisonSingulier = convert(
   alternatives(
-    regExp(" de (?=ce(tte|t)? )", { flags: "i" }),
-    regExp(" de l'", { flags: "i" }),
-    regExp(" de la( |(?=dite ))", { flags: "i" }),
-    regExp(" du( |(?=dit ))", { flags: "i" }),
+    regExp(String.raw`[ \n]de (?=ce(tte|t)? )`, { flags: "i" }),
+    regExp(String.raw`[ \n]de l'`, { flags: "i" }),
+    regExp(String.raw`[ \n]de la( |(?=dite ))`, { flags: "i" }),
+    regExp(String.raw`[ \n]du( |(?=dit ))`, { flags: "i" }),
   ),
   { value: "de" },
 )

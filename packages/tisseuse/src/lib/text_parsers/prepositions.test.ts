@@ -169,6 +169,18 @@ describe("liaisonPluriel", () => {
     expect(liaisonPluriel(context)).toBe("des")
     expect(context.remaining()).toBe("dites ")
   })
+
+  test("\ndes ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(liaisonPluriel(context)).toBe("des")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("\nde ces ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(liaisonPluriel(context)).toBe("des")
+    expect(context.remaining()).toBe("ces ")
+  })
 })
 
 describe("liaisonSingulier", () => {
@@ -206,5 +218,29 @@ describe("liaisonSingulier", () => {
     const context = new TextParserContext(task.name)
     expect(liaisonSingulier(context)).toBe("de")
     expect(context.remaining()).toBe("dit ")
+  })
+
+  test("\nde la ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(liaisonSingulier(context)).toBe("de")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("\nde l'", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(liaisonSingulier(context)).toBe("de")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("\ndu ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(liaisonSingulier(context)).toBe("de")
+    expect(context.remaining()).toBe("")
+  })
+
+  test("\nde ce ", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    expect(liaisonSingulier(context)).toBe("de")
+    expect(context.remaining()).toBe("ce ")
   })
 })

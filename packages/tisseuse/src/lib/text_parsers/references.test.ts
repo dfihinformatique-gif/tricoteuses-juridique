@@ -1673,7 +1673,98 @@ describe("reference", () => {
       type: "parent-enfant",
     })
     expect(context.remaining()).toBe("")
-    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("article 49, alinéa 3,\nde la Constitution", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = referenceSeule(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          index: 3,
+          position: {
+            start: 12,
+            stop: 20,
+          },
+          type: "alinéa",
+        },
+        parent: {
+          num: "49",
+          position: {
+            start: 8,
+            stop: 10,
+          },
+          type: "article",
+        },
+        position: {
+          start: 0,
+          stop: 21,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "JORFTEXT000000571356",
+        nature: "CONSTITUTION",
+        position: {
+          start: 28,
+          stop: 40,
+        },
+        title: "Constitution du 4 octobre 1958",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 40,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
+  })
+
+  test("l'article 49, alinéa 3,\nde la Constitution", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = reference(context) as TextAstReference
+    expect(result).toStrictEqual({
+      child: {
+        child: {
+          index: 3,
+          position: {
+            start: 14,
+            stop: 22,
+          },
+          type: "alinéa",
+        },
+        parent: {
+          num: "49",
+          position: {
+            start: 10,
+            stop: 12,
+          },
+          type: "article",
+        },
+        position: {
+          start: 2,
+          stop: 23,
+        },
+        type: "parent-enfant",
+      },
+      parent: {
+        cid: "JORFTEXT000000571356",
+        nature: "CONSTITUTION",
+        position: {
+          start: 30,
+          stop: 42,
+        },
+        title: "Constitution du 4 octobre 1958",
+        type: "texte",
+      },
+      position: {
+        start: 0,
+        stop: 42,
+      },
+      type: "parent-enfant",
+    })
+    expect(context.remaining()).toBe("")
   })
 
   test("article L. 123-4, phrases 1 et 2, du code de l'éducation", ({

@@ -879,6 +879,22 @@ describe("getParsedReferences, test spécifiques", () => {
     )
   })
 
+  test("Saut de ligne autorisé entre article/alinéa et texte de loi", () => {
+    const input = dedent`
+      à l'article 49, alinéa 3,
+      de la Constitution
+    `
+    const context = new TextParserContext(input)
+    const references = getParsedReferences(context)
+    expect(references.length).toBe(1)
+    const reference = references[0] as TextAstParentChild
+    expect(context.text(reference.position)).toBe(
+      "à l'article 49, alinéa 3,\nde la Constitution",
+    )
+    expect(context.text(reference.parent.position)).toBe("Constitution")
+    expect((reference.parent as TextAstText).nature).toBe("CONSTITUTION")
+  })
+
   test("Références avant et dans citation", () => {
     const input = dedent`
       I. - Le code général des impôts est ainsi modifié :

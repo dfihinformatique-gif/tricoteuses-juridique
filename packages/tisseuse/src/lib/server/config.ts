@@ -5,6 +5,7 @@ import { validateConfig } from "$lib/server/auditors/config.js"
 
 export interface Config {
   assembleeDb: DatabaseConfig
+  europeDb: DatabaseConfig
   legiAnomaliesDb: DatabaseConfig
   legiDb: DatabaseConfig
   linkBaseUrl: string
@@ -27,6 +28,13 @@ const [config, error] = validateConfig({
     database: process.env.ASSEMBLEE_DB_NAME,
     user: process.env.ASSEMBLEE_DB_USER,
     password: process.env.ASSEMBLEE_DB_PASSWORD,
+  },
+  europeDb: {
+    host: process.env.EUROPE_DB_HOST,
+    port: process.env.EUROPE_DB_PORT,
+    database: process.env.EUROPE_DB_NAME,
+    user: process.env.EUROPE_DB_USER,
+    password: process.env.EUROPE_DB_PASSWORD,
   },
   legiAnomaliesDb: {
     host: process.env.LEGI_ANOMALIES_DB_HOST,

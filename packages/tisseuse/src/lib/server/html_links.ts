@@ -283,6 +283,38 @@ export async function addLinksOrReferencesToHtmlFile({
         break
       }
 
+      case "european_text": {
+        const { link: href, originalTransformation, text } = link
+        if (originalTransformation === undefined) {
+          throw new Error(
+            `Missing originalTransformation attribute in external text link: ${JSON.stringify(link, null, 2)}`,
+          )
+        }
+        addExternalLinkToOutputs({
+          attributes: {
+            class: "lien_texte_european",
+            href,
+          },
+          originalTransformation,
+          outputByType,
+        })
+        // if (referredLegifranceTextsInfosFilePath !== undefined) {
+        //   referredLegifranceTextCountByCid[text.cid] =
+        //     (referredLegifranceTextCountByCid[text.cid] ?? 0) + 1
+        // }
+        // addReferenceToOutputs({
+        //   attributes: {
+        //     class: "reference_texte",
+        //     style: "background-color: #eae462",
+        //     title: JSON.stringify(text),
+        //   },
+        //   id: text.cid,
+        //   originalTransformation,
+        //   outputByType,
+        // })
+        break
+      }
+
       case "external_text": {
         const { originalTransformation, text } = link
         if (originalTransformation === undefined) {

@@ -44,6 +44,7 @@ import {
   extractReferences,
   extractReferencesWithOriginalTransformations,
 } from "./references.js"
+import { europeDb } from "$lib/server/databases/index.js"
 
 export type DefinitionOrLink =
   | ArticleDefinition
@@ -1371,15 +1372,39 @@ export async function* iterReferenceLinks({
               `Position missing in atomic reference: ${atomicReference}`,
             )
           }
-          yield Object.fromEntries(
-            Object.entries({
-              originalTransformation: atomicReference.originalTransformation,
-              position: atomicReference.position,
-              reference,
-              text: atomicReference,
-              type: "external_text",
-            }).filter(([, value]) => value !== undefined),
-          ) as unknown as TextLink
+          if (atomicReference.legislation === "UE") {
+            console.log(atomicReference)
+            const link = (
+              await europeDb<{ link: string }[]>`
+              SELECT link
+              FROM titre_lien
+              WHERE id = ${atomicReference.num ?? null}
+            `
+            )[0]?.link
+            if (link !== undefined) {
+              yield Object.fromEntries(
+                Object.entries({
+                  link,
+                  originalTransformation:
+                    atomicReference.originalTransformation,
+                  position: atomicReference.position,
+                  reference,
+                  text: atomicReference,
+                  type: "european_text",
+                }).filter(([, value]) => value !== undefined),
+              ) as unknown as TextLink
+            }
+          } else {
+            yield Object.fromEntries(
+              Object.entries({
+                originalTransformation: atomicReference.originalTransformation,
+                position: atomicReference.position,
+                reference,
+                text: atomicReference,
+                type: "external_text",
+              }).filter(([, value]) => value !== undefined),
+            ) as unknown as TextLink
+          }
         }
         break
       }

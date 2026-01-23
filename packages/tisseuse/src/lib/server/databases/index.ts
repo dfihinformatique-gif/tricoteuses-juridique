@@ -16,6 +16,15 @@ export const assembleeDb = postgres({
 })
 export const assembleeVersionNumber = 7
 
+export const europeDb = postgres({
+  database: config.europeDb.database,
+  host: config.europeDb.host,
+  password: config.europeDb.password,
+  port: config.europeDb.port,
+  user: config.europeDb.user,
+})
+// export const europeVersionNumber = 0
+
 export const legiAnomaliesDb = postgres({
   database: config.legiAnomaliesDb.database,
   host: config.legiAnomaliesDb.host,

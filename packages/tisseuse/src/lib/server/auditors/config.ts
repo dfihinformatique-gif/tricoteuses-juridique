@@ -30,6 +30,7 @@ export function auditConfig(
 
   for (const key of [
     "assembleeDb",
+    "europeDb",
     "legiAnomaliesDb",
     "legiDb",
     "tisseuseDb",

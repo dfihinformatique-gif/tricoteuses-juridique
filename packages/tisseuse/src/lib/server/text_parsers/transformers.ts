@@ -47,9 +47,7 @@ export function readTransformation(
           encoding: "utf-8",
         },
       ) as { sourceMap?: SourceMapSegment[]; title: string }
-      if (sourceMap !== undefined) {
-        ;(currentTransformation as TransformationLeaf).sourceMap = sourceMap
-      }
+      ;(currentTransformation as TransformationLeaf).sourceMap = sourceMap ?? []
       currentTransformation.title = title
     }
   }

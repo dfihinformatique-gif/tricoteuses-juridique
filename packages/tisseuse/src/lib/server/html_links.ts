@@ -15,7 +15,7 @@ import {
   writeTransformation,
 } from "$lib/server/text_parsers/transformers.js"
 import { type FragmentReverseTransformation } from "$lib/text_parsers/fragments.js"
-import { parseTextLinks } from "$lib/text_parsers/links.js"
+import { extractTextLinks } from "$lib/extractors/links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
@@ -144,7 +144,7 @@ export async function addLinksOrReferencesToHtmlFile(
     }
   }
 
-  for await (const link of parseTextLinks({
+  for await (const link of extractTextLinks({
     context,
     date,
     legiDb,

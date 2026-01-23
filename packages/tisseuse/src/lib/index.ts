@@ -15,6 +15,40 @@ export {
   type ObjectCache,
 } from "./cache.js"
 export { formatLongDate } from "./dates.js"
+export { extractBillDefinitions } from "./extractors/definitions.js"
+export {
+  iterReferenceLinks,
+  extractTextLinks,
+  type ArticleDefinition,
+  type ArticleExternalLink,
+  type ArticleInternalLink,
+  type ArticleLink,
+  type DefinitionOrLink,
+  type DivisionExternalLink,
+  type DivisionLink,
+  type ExtractedLinkDb,
+  type TextExternalLink,
+  type TextLink,
+  type TextLinksParserState,
+} from "./extractors/links.js"
+export {
+  extractCitationReferences,
+  extractReferences,
+  extractReferencesWithOriginalTransformations,
+  getExtractedReferences,
+  getExtractedReferencesWithOriginalTransformations,
+} from "./extractors/references.js"
+export {
+  addPositionsToTableOfContentsItems,
+  getExtractedTableOfContentsFromTextBill,
+  walkTableOfContents,
+  type TableOfContents,
+  type TableOfContentsArticle,
+  type TableOfContentsArticlePositioned,
+  type TableOfContentsDivision,
+  type TableOfContentsDivisionPositioned,
+  type TableOfContentsPositioned,
+} from "./extractors/table_of_contents.js"
 export { jsonReplacer } from "./json.js"
 export { linkTypes, urlFromLegalId, type LinkType } from "./links.js"
 export {
@@ -37,15 +71,6 @@ export {
   type JorfArticleExtended,
   type LegiArticleExtended,
 } from "./loaders/legifrance.js"
-export {
-  walkTableOfContents,
-  type TableOfContents,
-  type TableOfContentsArticle,
-  type TableOfContentsArticlePositioned,
-  type TableOfContentsDivision,
-  type TableOfContentsDivisionPositioned,
-  type TableOfContentsPositioned,
-} from "./table_of_contents.js"
 export { action } from "./text_parsers/actions.js"
 export {
   article,
@@ -129,28 +154,6 @@ export {
   iterAtomicReferences,
   iterIncludedReferences,
 } from "./text_parsers/helpers.js"
-export {
-  getParsedReferences,
-  getParsedReferencesWithOriginalTransformations,
-  parseCitationReferences,
-  parseReferences,
-  parseReferencesWithOriginalTransformations,
-} from "./text_parsers/index.js"
-export {
-  iterReferenceLinks,
-  parseTextLinks,
-  type ArticleDefinition,
-  type ArticleExternalLink,
-  type ArticleInternalLink,
-  type ArticleLink,
-  type DefinitionOrLink,
-  type DivisionExternalLink,
-  type DivisionLink,
-  type ExtractedLinkDb,
-  type TextExternalLink,
-  type TextLink,
-  type TextLinksParserState,
-} from "./text_parsers/links.js"
 export {
   adjectifNumeralOrdinalCourt,
   adverbeMultiplicatifLatin,

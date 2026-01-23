@@ -6,21 +6,22 @@ import type {
   TextAstParentChild,
   TextAstPosition,
   TextAstText,
-} from "./ast.js"
-import {
-  getParsedReferences,
-  getParsedReferencesWithOriginalTransformations,
-} from "./index.js"
-import { TextParserContext } from "./parsers.js"
-import { simplifyHtml } from "./simplifiers.js"
-import { reverseTransformedInnerFragment } from "./transformers.js"
+} from "$lib/text_parsers/ast.js"
+import { TextParserContext } from "$lib/text_parsers/parsers.js"
+import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
+import { reverseTransformedInnerFragment } from "$lib/text_parsers/transformers.js"
 
-describe("getParsedReferences", () => {
+import {
+  getExtractedReferences,
+  getExtractedReferencesWithOriginalTransformations,
+} from "./references.js"
+
+describe("getExtractedReferences", () => {
   test("à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020", ({
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -34,7 +35,7 @@ describe("getParsedReferences", () => {
 
   test("À l'avant-dernier alinéa de l'article 193", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -46,7 +47,7 @@ describe("getParsedReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -94,7 +95,7 @@ describe("getParsedReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -126,7 +127,7 @@ describe("getParsedReferences", () => {
 
   test("au I de l'article 7 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -144,7 +145,7 @@ describe("getParsedReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -192,7 +193,7 @@ describe("getParsedReferences", () => {
 
   test("au premier alinéa du I et au II du présent article", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -222,7 +223,7 @@ describe("getParsedReferences", () => {
 
   test("au second alinéa du 4", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -234,7 +235,7 @@ describe("getParsedReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -308,13 +309,13 @@ describe("getParsedReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references).toStrictEqual([])
   })
 
   test("l'article 3 de la convention", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -324,7 +325,7 @@ describe("getParsedReferences", () => {
 
   test("l'article 7 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -338,7 +339,7 @@ describe("getParsedReferences", () => {
       A. - A la première phrase du second alinéa de l'article 196 B, le montant : « 6 674 € » est remplacé par le montant : « 6 807 € » ;
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(2)
     expect(references).toStrictEqual([
       {
@@ -452,7 +453,7 @@ describe("getParsedReferences", () => {
 
   test("les articles 111-1 et 111-2 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -472,7 +473,7 @@ describe("getParsedReferences", () => {
     task,
   }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(2)
     expect(context.text(references[0].position)).toBe(
       "les articles 135-7 et 135-9 bis de la loi n°94-839 du 9 janvier 1994",
@@ -484,7 +485,7 @@ describe("getParsedReferences", () => {
 
   test("les articles 7 et 9 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -500,7 +501,7 @@ describe("getParsedReferences", () => {
 
   test("les I et II de l'article 111-1 du code pénal", ({ task }) => {
     const context = new TextParserContext(task.name)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(task.name)
@@ -529,14 +530,14 @@ describe("getParsedReferences", () => {
   })
 })
 
-describe("getParsedReferences, test spécifiques", () => {
+describe("getExtractedReferences, test spécifiques", () => {
   test("Définition d'un nouvel article", () => {
     const input = dedent`
       22° Après l'article 223 WA quinquies, il est inséré un article 223 WA quinquies A ainsi rédigé :
       « Art. 223 WA quinquies A. - Les charges de personnel et les actifs corporels d'une entité soumise à un régime de dividendes déductibles mentionnée au I de l'article 223 WR bis ou détenue dans les conditions du V du même article, sont réduits proportionnellement au bénéfice exclu du calcul du bénéfice qualifié de l'entité conformément aux II et III de l'article 223 WR bis. » ;
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references).toStrictEqual([
       {
         action: {
@@ -681,7 +682,7 @@ describe("getParsedReferences, test spécifiques", () => {
       « Art. L. 321-2. - Pour l'application du présent titre, les cinq territoires mentionnés à l'article L. 112-4 sont regardés comme un territoire de taxation unique. »
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references).toStrictEqual([
       {
         action: {
@@ -862,14 +863,14 @@ describe("getParsedReferences, test spécifiques", () => {
     expect(context.text(references[9].position)).toBe("à l'article L. 112-4")
   })
 
-  test("Gestion des offsets dans parseReferences", () => {
+  test("Gestion des offsets dans extractReferences", () => {
     const input = dedent`
       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
       l'article 47 de la Constitution.
       l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012 et par la loi de finances de l'année ;
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(2)
     expect(context.text(references[0].position)).toBe(
       "l'article 47 de la Constitution",
@@ -885,7 +886,7 @@ describe("getParsedReferences, test spécifiques", () => {
       de la Constitution
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(1)
     const reference = references[0] as TextAstParentChild
     expect(context.text(reference.position)).toBe(
@@ -904,7 +905,7 @@ describe("getParsedReferences, test spécifiques", () => {
       « Art. 223 VO quindecies. - Sur option exercée par l'entité constitutive déclarante, et par dérogation au 3° de l'article 223 VO bis, les plus ou moins-values sur participations sont incluses dans le résultat qualifié d'une entité constitutive.
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references).toStrictEqual([
       {
         action: {
@@ -1090,7 +1091,7 @@ describe("getParsedReferences, test spécifiques", () => {
       « En cas de renonciation, une nouvelle option ne peut pas être exercée au titre des cinq exercices suivant le dernier exercice d'application de l'option. La renonciation ne peut porter sur des participations pour lesquelles une perte ou une moins-value a été prise en compte dans le résultat qualifié. » ;
            `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references).toStrictEqual([
       {
         definition: true,
@@ -1171,7 +1172,7 @@ describe("getParsedReferences, test spécifiques", () => {
   test("Référence de type parent-child dans citation simple", async () => {
     const input = "« aux deux derniers alinéas de l'article 223 WA ter »"
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references).toStrictEqual([
       {
         child: {
@@ -1217,7 +1218,7 @@ describe("getParsedReferences, test spécifiques", () => {
       « III bis. - Par dérogation au I du présent article, le taux prévu à l'article 278 [...] »
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references).toStrictEqual([
       {
         child: {
@@ -1262,7 +1263,7 @@ describe("getParsedReferences, test spécifiques", () => {
       l'article 46 de la loi n° 2011-1977 du 28 décembre 2011 de finances pour 2012 et par la loi de finances de l'année ;
     `
     const context = new TextParserContext(input)
-    const references = getParsedReferences(context)
+    const references = getExtractedReferences(context)
     expect(references.length).toBe(2)
     expect(context.text(references[0].position)).toBe(
       "l'article 47 de la Constitution",
@@ -1301,7 +1302,7 @@ describe("getParsedReferences, test spécifiques", () => {
   })
 })
 
-describe("getParsedReferencesWithOriginalTransformations", () => {
+describe("getExtractedReferencesWithOriginalTransformations", () => {
   test("<span>au <i>I</i> de l'article 7 du <b>code pénal</b></span>", ({
     task,
   }) => {
@@ -1311,7 +1312,7 @@ describe("getParsedReferencesWithOriginalTransformations", () => {
     expect(text).toBe("au I de l'article 7 du code pénal")
 
     const context = new TextParserContext(text)
-    const references = getParsedReferencesWithOriginalTransformations(
+    const references = getExtractedReferencesWithOriginalTransformations(
       context,
       transformation,
     )
@@ -1427,7 +1428,7 @@ describe("getParsedReferencesWithOriginalTransformations", () => {
     expect(text).toBe("au I de l'article 7 du code pénal")
 
     const context = new TextParserContext(text)
-    const references = getParsedReferencesWithOriginalTransformations(
+    const references = getExtractedReferencesWithOriginalTransformations(
       context,
       transformation,
     )

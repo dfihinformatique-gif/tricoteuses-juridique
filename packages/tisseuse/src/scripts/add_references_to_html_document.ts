@@ -10,7 +10,7 @@ import sade from "sade"
 
 import {
   iterIncludedReferences,
-  parseReferencesWithOriginalTransformations,
+  extractReferencesWithOriginalTransformations,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
   simplifyHtml,
@@ -46,7 +46,7 @@ async function addReferencesToHtmlDocument(
     const context = new TextParserContext(inputText)
     let outputHtml = inputHtml
     let outputOffset = 0
-    for await (const reference of parseReferencesWithOriginalTransformations(
+    for await (const reference of extractReferencesWithOriginalTransformations(
       context,
       transformation,
     )) {

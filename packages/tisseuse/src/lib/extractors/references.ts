@@ -1,23 +1,23 @@
-import { definitionArticleDansCitation } from "./articles.js"
+import { definitionArticleDansCitation } from "$lib/text_parsers/articles.js"
 import type {
   TextAstArticle,
   TextAstCitation,
   TextAstDivision,
   TextAstPosition,
   TextAstReference,
-} from "./ast.js"
-import { citation, convertCitationToText } from "./citations.js"
-import { definitionDivision } from "./divisions.js"
-import { iterIncludedReferences } from "./helpers.js"
-import { TextParserContext } from "./parsers.js"
-import { reference } from "./references.js"
+} from "$lib/text_parsers/ast.js"
+import { citation, convertCitationToText } from "$lib/text_parsers/citations.js"
+import { definitionDivision } from "$lib/text_parsers/divisions.js"
+import { iterIncludedReferences } from "$lib/text_parsers/helpers.js"
+import { TextParserContext } from "$lib/text_parsers/parsers.js"
+import { reference } from "$lib/text_parsers/references.js"
 import {
   newReverseTransformationsMergedFromPositionsIterator,
   reverseTransformationFromPosition,
   type Transformation,
-} from "./transformers.js"
+} from "$lib/text_parsers/transformers.js"
 
-export function* parseCitationReferences(
+export function* extractCitationReferences(
   context: TextParserContext,
   citation: TextAstCitation,
 ): Generator<TextAstReference, void> {
@@ -25,7 +25,7 @@ export function* parseCitationReferences(
   const citationContext = new TextParserContext(citationTransformation.output)
   const originalPositionsFromTransformedIterator =
     newReverseTransformationsMergedFromPositionsIterator(citationTransformation)
-  for (let reference of parseReferences(citationContext)) {
+  for (let reference of extractReferences(citationContext)) {
     // Convert position of reference in citation to an absolute position.
     reference = structuredClone(reference)
     if (citation.references === undefined) {
@@ -49,7 +49,7 @@ export function* parseCitationReferences(
   }
 }
 
-export function* parseReferences(
+export function* extractReferences(
   context: TextParserContext,
 ): Generator<TextAstReference, void> {
   let candidate: RegExpExecArray | null
@@ -107,7 +107,7 @@ export function* parseReferences(
       if (citationAst === undefined) {
         continue
       }
-      yield* parseCitationReferences(context, citationAst)
+      yield* extractCitationReferences(context, citationAst)
       candidateRegExp.lastIndex = citationAst.position.stop
     } else if (candidate[0].toLowerCase() === "art.") {
       const definitionArticleAst = definitionArticleDansCitation(context) as
@@ -151,7 +151,7 @@ export function* parseReferences(
           if (originalCitations !== undefined) {
             for (const originalCitation of originalCitations) {
               // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              for (const _ of parseCitationReferences(
+              for (const _ of extractCitationReferences(
                 context,
                 originalCitation,
               )) {
@@ -167,13 +167,13 @@ export function* parseReferences(
   }
 }
 
-export function* parseReferencesWithOriginalTransformations(
+export function* extractReferencesWithOriginalTransformations(
   context: TextParserContext,
   transformation: Transformation,
 ): Generator<TextAstReference, void> {
   const originalPositionsFromTransformedIterator =
     newReverseTransformationsMergedFromPositionsIterator(transformation)
-  for (const reference of parseReferences(context)) {
+  for (const reference of extractReferences(context)) {
     for (const includedReference of iterIncludedReferences(reference, {
       citations: true,
     })) {
@@ -189,13 +189,13 @@ export function* parseReferencesWithOriginalTransformations(
   }
 }
 
-export const getParsedReferences = (
+export const getExtractedReferences = (
   context: TextParserContext,
-): TextAstReference[] => [...parseReferences(context)]
+): TextAstReference[] => [...extractReferences(context)]
 
-export const getParsedReferencesWithOriginalTransformations = (
+export const getExtractedReferencesWithOriginalTransformations = (
   context: TextParserContext,
   transformation: Transformation,
 ): TextAstReference[] => [
-  ...parseReferencesWithOriginalTransformations(context, transformation),
+  ...extractReferencesWithOriginalTransformations(context, transformation),
 ]

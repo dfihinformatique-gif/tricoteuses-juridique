@@ -2,20 +2,20 @@ import dedent from "dedent-js"
 import { describe, expect, test } from "vitest"
 
 import { legiDb } from "$lib/server/databases/index.js"
-
-import {
-  parseTextLinks,
-  type ArticleExternalLink,
-  type DivisionExternalLink,
-} from "./links.js"
-import { TextParserContext } from "./parsers.js"
-import { simplifyHtml } from "./simplifiers.js"
+import { TextParserContext } from "$lib/text_parsers/parsers.js"
+import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
-} from "./transformers.js"
+} from "$lib/text_parsers/transformers.js"
 
-describe("parseTextLinks", () => {
+import {
+  extractTextLinks,
+  type ArticleExternalLink,
+  type DivisionExternalLink,
+} from "./links.js"
+
+describe("extractTextLinks", () => {
   test("Du même article", async () => {
     const input = dedent`
       en application de l'article 1649 A du code général des impôts
@@ -23,7 +23,7 @@ describe("parseTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({
+      extractTextLinks({
         context,
         date: "2025-12-17",
         legiDb,
@@ -133,7 +133,7 @@ describe("parseTextLinks", () => {
   }) => {
     const context = new TextParserContext(task.name)
     const links = await Array.fromAsync(
-      parseTextLinks({
+      extractTextLinks({
         context,
         date: "2025-10-15",
         legiDb,
@@ -204,7 +204,7 @@ describe("parseTextLinks", () => {
       "Le livre III de la partie législative du code des impositions sur les biens et services"
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({
+      extractTextLinks({
         context,
         date: "2025-07-14",
         legiDb,
@@ -282,7 +282,7 @@ describe("parseTextLinks", () => {
       "Le livre III du code des impositions sur les biens et services"
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({
+      extractTextLinks({
         context,
         date: "2025-07-14",
         legiDb,
@@ -345,7 +345,7 @@ describe("parseTextLinks", () => {
       "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020"
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", legiDb }),
     )
     expect(links.length).toBe(5)
     const link3 = links[3]
@@ -473,7 +473,7 @@ describe("parseTextLinks", () => {
     `)
     const context = new TextParserContext(transformation.output)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", legiDb }),
     )
     expect(links.length).toBe(2)
     const link0 = links[0]
@@ -631,7 +631,7 @@ describe("parseTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", legiDb }),
     )
     expect(links.length).toBe(2)
     const link0 = links[0]
@@ -789,7 +789,7 @@ describe("parseTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -916,7 +916,7 @@ describe("parseTextLinks", () => {
     const input = "l'article 223 VO bis"
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -953,7 +953,7 @@ describe("parseTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -1074,7 +1074,7 @@ describe("parseTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -1367,7 +1367,7 @@ describe("parseTextLinks", () => {
   })
 })
 
-describe("parseTextLinks with transformation", () => {
+describe("extractTextLinks with transformation", () => {
   test("LI HTML avec des SPAN dans le lien", async () => {
     const inputHtml = dedent`
       <li>
@@ -1381,7 +1381,7 @@ describe("parseTextLinks with transformation", () => {
     )
     const context = new TextParserContext(inputText)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2016-10-07", legiDb, transformation }),
+      extractTextLinks({ context, date: "2016-10-07", legiDb, transformation }),
     )
     expect(links).toStrictEqual([
       {
@@ -1554,7 +1554,7 @@ describe("parseTextLinks with transformation", () => {
     const inputText = transformation.output
     const context = new TextParserContext(inputText)
     const links = await Array.fromAsync(
-      parseTextLinks({ context, date: "2016-10-07", legiDb, transformation }),
+      extractTextLinks({ context, date: "2016-10-07", legiDb, transformation }),
     )
     expect(links).toStrictEqual([
       {

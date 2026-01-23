@@ -15,7 +15,7 @@ import {
   extendLoadedArticle,
   getArticleDateSignature,
   getTexteVersionDateSignature,
-  parseTextLinks,
+  extractTextLinks,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
   simplifyHtml,
@@ -60,7 +60,7 @@ async function addLinksToHtml({
   let outputOffset = 0
 
   let index = -1
-  for await (const link of parseTextLinks({
+  for await (const link of extractTextLinks({
     context,
     date,
     legiDb,

@@ -14,7 +14,7 @@ import sade from "sade"
 
 import {
   assertNever,
-  parseTextLinks,
+  extractTextLinks,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
   simplifyHtml,
@@ -118,7 +118,7 @@ async function addLinksToAssembleeParsedDocuments({
             let output = alinea.html
             let outputOffset = 0
 
-            for await (const link of parseTextLinks({
+            for await (const link of extractTextLinks({
               context,
               date,
               legiDb,
@@ -352,7 +352,7 @@ async function addLinksToAssembleeParsedDocuments({
             let output = alinea.texte
             let outputOffset = 0
 
-            for await (const link of parseTextLinks({
+            for await (const link of extractTextLinks({
               context,
               date,
               legiDb,

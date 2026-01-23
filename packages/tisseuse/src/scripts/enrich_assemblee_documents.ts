@@ -10,8 +10,12 @@ import path from "node:path"
 import sade from "sade"
 
 import { addLinksOrReferencesToHtmlFile } from "$lib/server/html_links.js"
+import {
+  addPositionsToTableOfContentsFile,
+  simplifiedHtmlBillFileToTableOfContentsFile,
+} from "$lib/server"
 
-async function addLinksToAssembleeDocuments({
+async function enrichAssembleeDocuments({
   commit,
   datasets: dataDir,
   force,
@@ -19,6 +23,7 @@ async function addLinksToAssembleeDocuments({
   pull,
   remote,
   uid: firstUid,
+  verbose,
 }: {
   commit?: boolean
   datasets: string
@@ -27,6 +32,7 @@ async function addLinksToAssembleeDocuments({
   pull?: boolean
   remote?: string
   uid?: string
+  verbose?: boolean
 }): Promise<number> {
   assert(!commit || !firstUid, 'Options "commit" & "uid" are incompatible')
 
@@ -95,13 +101,24 @@ async function addLinksToAssembleeDocuments({
         await fs.ensureDir(enrichedDocumentOrDivisionFilesDir)
       }
 
+      if (verbose) {
+        console.log(
+          `Enriching ${documentOrDivision.uid} at ${enrichedDocumentOrDivisionFilesDir}…`,
+        )
+      }
+
+      const htmlWithLinksFilePath = path.join(
+        enrichedDocumentOrDivisionFilesDir,
+        "dyn-opendata_avec_liens.html",
+      )
+      const htmlTransformationsDir = path.join(
+        enrichedDocumentOrDivisionFilesDir,
+        "dyn-opendata_transformations",
+      )
       await addLinksOrReferencesToHtmlFile(htmlPath, {
         date,
         // defaultTextId,
-        htmlWithLinksFilePath: path.join(
-          enrichedDocumentOrDivisionFilesDir,
-          "dyn-opendata_avec_liens.html",
-        ),
+        htmlWithLinksFilePath,
         htmlWithLinksOrReferencesFilePath: path.join(
           enrichedDocumentOrDivisionFilesDir,
           "dyn-opendata_avec_liens_ou_references.html",
@@ -118,11 +135,27 @@ async function addLinksToAssembleeDocuments({
           "textes_references.json",
         ),
         // transformationsInputDir,
-        transformationsOutputDir: path.join(
-          enrichedDocumentOrDivisionFilesDir,
-          "dyn-opendata_transformations",
-        ),
+        transformationsOutputDir: htmlTransformationsDir,
       })
+
+      const tableOfContentsFilePath = path.join(
+        enrichedDocumentOrDivisionFilesDir,
+        "sommaire.json",
+      )
+      await simplifiedHtmlBillFileToTableOfContentsFile(
+        htmlWithLinksFilePath,
+        htmlTransformationsDir,
+        tableOfContentsFilePath,
+      )
+      await addPositionsToTableOfContentsFile(
+        htmlWithLinksFilePath,
+        htmlTransformationsDir,
+        tableOfContentsFilePath,
+        path.join(
+          enrichedDocumentOrDivisionFilesDir,
+          "dyn-opendata_segmentation.json",
+        ),
+      )
     }
   }
 
@@ -137,8 +170,8 @@ async function addLinksToAssembleeDocuments({
   return 0
 }
 
-sade("add_links_to_assemblee_documents", true)
-  .describe("Add links & references to Assemblée HTML documents")
+sade("enrich_assemblee_documents", true)
+  .describe("Enrich Assemblée HTML documents")
   .option("-c, --commit", "Commit links added to HTML fragments")
   .option("-d, --datasets", "Path of directory containing Assemblée datasets")
   .option(
@@ -150,6 +183,6 @@ sade("add_links_to_assemblee_documents", true)
   .option("-r, --remote", "Name of upstream repository to push to")
   .option("-u, --uid", "Resume script at document with given UID")
   .action(async (options) => {
-    process.exit(await addLinksToAssembleeDocuments(options))
+    process.exit(await enrichAssembleeDocuments(options))
   })
   .parse(process.argv)

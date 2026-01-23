@@ -2,7 +2,7 @@
   import { cleanHtmlContenu } from "$lib/strings"
   import {
     iterIncludedReferences,
-    parseReferencesWithOriginalTransformations,
+    extractReferencesWithOriginalTransformations,
     reverseTransformedInnerFragment,
     reverseTransformedReplacement,
     simplifyHtml,
@@ -27,7 +27,7 @@
     let outputHtml = inputHtml
     let outputOffset = 0
 
-    for await (const reference of parseReferencesWithOriginalTransformations(
+    for await (const reference of extractReferencesWithOriginalTransformations(
       context,
       transformation,
     )) {

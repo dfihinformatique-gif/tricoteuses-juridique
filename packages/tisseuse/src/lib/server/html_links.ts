@@ -78,46 +78,56 @@ function addExternalLinkToOutputs({
   }
 }
 
-export async function addLinksOrReferencesToHtmlFile(
-  htmlFilePath: string,
-  {
-    date,
-    defaultTextId,
-    htmlWithLinksFilePath,
-    htmlWithLinksOrReferencesFilePath,
-    htmlWithReferencesFilePath,
-    transformationsInputDir,
-    transformationsOutputDir,
-    logIgnoredReferencesTypes,
-    logPartialReferences,
-    logReferences,
-    referredLegifranceTextsInfosFilePath,
-  }: {
-    date: string
-    defaultTextId?: string
-    htmlWithLinksFilePath?: string
-    htmlWithLinksOrReferencesFilePath?: string
-    htmlWithReferencesFilePath?: string
-    transformationsInputDir?: string
-    transformationsOutputDir?: string
-    logIgnoredReferencesTypes?: boolean
-    logPartialReferences?: boolean
-    logReferences?: boolean
-    referredLegifranceTextsInfosFilePath?: string
-  },
-): Promise<void> {
+export async function addLinksOrReferencesToHtmlFile({
+  date,
+  defaultTextId,
+  htmlFilePath,
+  htmlTransformationsInputDir,
+  htmlTransformationsOutputDir,
+  htmlWithLinksFilePath,
+  htmlWithLinksOrReferencesFilePath,
+  htmlWithLinksTransformationsOutputDir,
+  htmlWithReferencesFilePath,
+  logIgnoredReferencesTypes,
+  logPartialReferences,
+  logReferences,
+  referredLegifranceTextsInfosFilePath,
+}: {
+  date: string
+  defaultTextId?: string
+  htmlFilePath: string
+  htmlTransformationsInputDir?: string
+  htmlTransformationsOutputDir?: string
+  htmlWithLinksFilePath?: string
+  htmlWithLinksOrReferencesFilePath?: string
+  htmlWithLinksTransformationsOutputDir?: string
+  htmlWithReferencesFilePath?: string
+  logIgnoredReferencesTypes?: boolean
+  logPartialReferences?: boolean
+  logReferences?: boolean
+  referredLegifranceTextsInfosFilePath?: string
+}): Promise<void> {
+  // Create or reuse a transformation, that simplifies HTML to text,
+  // to be able to add links to articles, divisions & texts.
+  // Configure the transformation to remove links from generated text,
+  // because we don't want links to be added to existing links.
   const inputHtml = await fs.readFile(htmlFilePath, { encoding: "utf-8" })
-  let transformation: Transformation
-  if (transformationsInputDir === undefined) {
-    transformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
-    if (transformationsOutputDir !== undefined) {
-      writeTransformation(transformation, transformationsOutputDir)
+  let htmlTransformation: Transformation
+  if (htmlTransformationsInputDir === undefined) {
+    htmlTransformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
+    if (htmlTransformationsOutputDir !== undefined) {
+      writeTransformation(htmlTransformation, htmlTransformationsOutputDir)
     }
   } else {
-    transformation = readTransformation(inputHtml, transformationsInputDir)
+    htmlTransformation = readTransformation(
+      inputHtml,
+      htmlTransformationsInputDir,
+    )
   }
-  const inputText = transformation.output
-  const context = new TextParserContext(inputText)
+
+  // Add links to HTML.
+
+  const context = new TextParserContext(htmlTransformation.output)
   const legifranceObjectCache = newLegifranceObjectCache()
   const referredLegifranceTextCountByCid: Record<string, number> = {}
 
@@ -152,7 +162,7 @@ export async function addLinksOrReferencesToHtmlFile(
     logPartialReferences,
     logReferences,
     state: { defaultTextId },
-    transformation,
+    transformation: htmlTransformation,
   })) {
     switch (link.type) {
       case "article_definition": {
@@ -359,8 +369,23 @@ export async function addLinksOrReferencesToHtmlFile(
     }
   }
 
+  // Write files.
+
   for (const output of Object.values(outputByType)) {
     await fs.writeFile(output.filePath, output.html, { encoding: "utf-8" })
+  }
+  if (
+    outputByType.links !== undefined &&
+    htmlWithLinksTransformationsOutputDir !== undefined
+  ) {
+    // Create a transformation that simplifies HTML with links to text,
+    // to be able to extract table of contents, etc.
+    // Configure the transformation to keep content of links from generated text,
+    const htmlWithLinksTransformation = simplifyHtml()(outputByType.links.html)
+    writeTransformation(
+      htmlWithLinksTransformation,
+      htmlWithLinksTransformationsOutputDir,
+    )
   }
   if (referredLegifranceTextsInfosFilePath !== undefined) {
     await fs.writeJson(

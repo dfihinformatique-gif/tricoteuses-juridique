@@ -7,27 +7,30 @@ async function addLinksToHtmlDocument(
   {
     date,
     "default-text-id": defaultTextId,
+    "generate-html-transformations": htmlTransformationsOutputDir,
+    "generate-html-with-links-transformations":
+      htmlWithLinksTransformationsOutputDir,
     "generate-links": htmlWithLinksFilePath,
     "generate-links-or-references": htmlWithLinksOrReferencesFilePath,
     "generate-references": htmlWithReferencesFilePath,
-    "generate-transformations": transformationsOutputDir,
     "log-ignored": logIgnoredReferencesTypes,
     "log-partial": logPartialReferences,
     "log-references": logReferences,
     referred: referredLegifranceTextsInfosFilePath,
-    "use-transformations": transformationsInputDir,
+    "use-html-transformations": htmlTransformationsInputDir,
   }: {
     date: string
     "default-text-id"?: string
+    "generate-html-transformations"?: string
+    "generate-html-with-links-transformations"?: string
     "generate-links"?: string
     "generate-links-or-references"?: string
     "generate-references"?: string
-    "generate-transformations"?: string
     "log-ignored"?: boolean
     "log-partial"?: boolean
     "log-references"?: boolean
     referred?: string
-    "use-transformations"?: string
+    "use-html-transformations"?: string
   },
 ): Promise<number> {
   if (
@@ -35,18 +38,20 @@ async function addLinksToHtmlDocument(
     htmlWithLinksOrReferencesFilePath !== undefined ||
     htmlWithReferencesFilePath !== undefined
   ) {
-    await addLinksOrReferencesToHtmlFile(inputDocumentPath, {
+    await addLinksOrReferencesToHtmlFile({
       date,
       defaultTextId,
+      htmlFilePath: inputDocumentPath,
+      htmlTransformationsInputDir,
+      htmlTransformationsOutputDir,
       htmlWithLinksFilePath,
       htmlWithLinksOrReferencesFilePath,
+      htmlWithLinksTransformationsOutputDir,
       htmlWithReferencesFilePath,
       logIgnoredReferencesTypes,
       logPartialReferences,
       logReferences,
       referredLegifranceTextsInfosFilePath,
-      transformationsInputDir,
-      transformationsOutputDir,
     })
   }
 
@@ -77,12 +82,16 @@ sade("add_links_to_html_document <input_document>", true)
   )
   .option("-r, --referred", "Save IDs of Legifrance texts to given file")
   .option(
-    "-t, --generate-transformations",
-    "Store HTML to text transformations to given dir",
+    "-t, --generate-html-with-links-transformations",
+    "Store HTML (with links) to text transformations to given dir",
   )
   .option(
-    "-u, --use-transformations",
-    "Use text transformations at given dir instead of HTML document",
+    "-U, --use-html-transformations",
+    "Use text transformations (generated from HTML without links) at given dir instead of HTML document",
+  )
+  .option(
+    "-W, --generate-html-transformations",
+    "Store HTML (without links) to text transformations to given dir",
   )
   .action(async (inputDocumentPath, options) => {
     process.exit(await addLinksToHtmlDocument(inputDocumentPath, options))

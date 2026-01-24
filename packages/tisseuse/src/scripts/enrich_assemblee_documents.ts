@@ -81,11 +81,11 @@ async function enrichAssembleeDocuments({
         documentsFilesDir,
         documentOrDivision.uid,
       )
-      const htmlPath = path.join(
+      const htmlFilePath = path.join(
         documentOrDivisionFilesDir,
         "dyn-opendata.html",
       )
-      if (!(await fs.pathExists(htmlPath))) {
+      if (!(await fs.pathExists(htmlFilePath))) {
         continue
       }
 
@@ -111,18 +111,20 @@ async function enrichAssembleeDocuments({
         enrichedDocumentOrDivisionFilesDir,
         "dyn-opendata_avec_liens.html",
       )
-      const htmlTransformationsDir = path.join(
+      const htmlWithLinksTransformationsOutputDir = path.join(
         enrichedDocumentOrDivisionFilesDir,
-        "dyn-opendata_transformations",
+        "dyn-opendata_avec_liens_transformations",
       )
-      await addLinksOrReferencesToHtmlFile(htmlPath, {
+      await addLinksOrReferencesToHtmlFile({
         date,
         // defaultTextId,
+        htmlFilePath,
         htmlWithLinksFilePath,
         htmlWithLinksOrReferencesFilePath: path.join(
           enrichedDocumentOrDivisionFilesDir,
           "dyn-opendata_avec_liens_ou_references.html",
         ),
+        htmlWithLinksTransformationsOutputDir,
         htmlWithReferencesFilePath: path.join(
           enrichedDocumentOrDivisionFilesDir,
           "dyn-opendata_avec_references.html",
@@ -134,8 +136,6 @@ async function enrichAssembleeDocuments({
           enrichedDocumentOrDivisionFilesDir,
           "textes_references.json",
         ),
-        // transformationsInputDir,
-        transformationsOutputDir: htmlTransformationsDir,
       })
 
       const tableOfContentsFilePath = path.join(
@@ -144,16 +144,16 @@ async function enrichAssembleeDocuments({
       )
       await simplifiedHtmlBillFileToTableOfContentsFile(
         htmlWithLinksFilePath,
-        htmlTransformationsDir,
+        htmlWithLinksTransformationsOutputDir,
         tableOfContentsFilePath,
       )
       await addPositionsToTableOfContentsFile(
         htmlWithLinksFilePath,
-        htmlTransformationsDir,
+        htmlWithLinksTransformationsOutputDir,
         tableOfContentsFilePath,
         path.join(
           enrichedDocumentOrDivisionFilesDir,
-          "dyn-opendata_segmentation.json",
+          "dyn-opendata_avec_liens_segmentation.json",
         ),
       )
     }

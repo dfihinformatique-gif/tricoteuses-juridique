@@ -101,7 +101,7 @@ const loadDocumentPageInfos = async (
 
     const documentSegmentationPath = path.join(
       enrichedDocumentDir,
-      documentFileInfos.filename.replace(/\.html$/, "_segmentation.json"),
+      documentFilename.replace(/\.html$/, "_segmentation.json"),
     )
     const documentSegmentation = (await fs.pathExists(documentSegmentationPath))
       ? ((await fs.readJson(documentSegmentationPath, {
@@ -153,7 +153,7 @@ const loadDocumentPageInfos = async (
     let documentTransformation: Transformation | undefined = undefined
     const documentTransformationPath = path.join(
       enrichedDocumentDir,
-      documentFileInfos.filename.replace(/\.html$/, "_transformation"),
+      documentFilename.replace(/\.html$/, "_transformation"),
     )
     if (transformation && (await fs.pathExists(documentTransformationPath))) {
       documentTransformation = readTransformation(

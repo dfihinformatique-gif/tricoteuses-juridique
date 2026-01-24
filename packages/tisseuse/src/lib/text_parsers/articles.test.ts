@@ -514,6 +514,15 @@ describe("definitionArticleDansProjetOuPropositionLoi", () => {
     )
   })
 
+  test("Article 1 A", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual(undefined)
+    expect(context.remaining()).toBe(task.name)
+  })
+
   test("Article 1 bis", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = definitionArticleDansProjetOuPropositionLoi(
@@ -553,15 +562,6 @@ describe("definitionArticleDansProjetOuPropositionLoi", () => {
     )
   })
 
-  test("Article 1 A", ({ task }) => {
-    const context = new TextParserContext(task.name)
-    const result = definitionArticleDansProjetOuPropositionLoi(
-      context,
-    ) as TextAstArticle
-    expect(result).toStrictEqual(undefined)
-    expect(context.remaining()).toBe(task.name)
-  })
-
   test("Article 1er", ({ task }) => {
     const context = new TextParserContext(task.name)
     const result = definitionArticleDansProjetOuPropositionLoi(
@@ -573,6 +573,24 @@ describe("definitionArticleDansProjetOuPropositionLoi", () => {
       position: {
         start: 0,
         stop: 11,
+      },
+      type: "article",
+    })
+    expect(context.remaining()).toBe("")
+    expect(context.text(result.position)).toBe(task.name)
+  })
+
+  test("Article 1er bis (nouveau)", ({ task }) => {
+    const context = new TextParserContext(task.name)
+    const result = definitionArticleDansProjetOuPropositionLoi(
+      context,
+    ) as TextAstArticle
+    expect(result).toStrictEqual({
+      definition: true,
+      num: "1 bis (nouveau)",
+      position: {
+        start: 0,
+        stop: 25,
       },
       type: "article",
     })

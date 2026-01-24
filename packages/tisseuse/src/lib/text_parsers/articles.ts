@@ -1,6 +1,7 @@
 import {
   type CompoundReferencesSeparator,
   type LocalizationAdverb,
+  type TextAst,
   type TextAstArticle,
   type TextAstIncompleteHeader,
   type TextAstLocalization,
@@ -150,15 +151,14 @@ export const nomArticleProjetOuPropositionLoi = alternatives(
   chain(
     [
       regExp(String.raw`\d+`),
-      optional(
-        alternatives(
-          chain([espace, adverbeMultiplicatifLatin], {
-            value: (results) => " " + (results[1] as TextAstNumber).text,
-          }),
-          regExp("(ème|er|e|r)", { value: "" }),
-        ),
-        { default: "" },
-      ),
+      optional(regExp("(ème|er|e|r)", { value: "" }), { default: "" }),
+      optional([espace, adverbeMultiplicatifLatin], {
+        default: "",
+        value: (results) => " " + (results as [string, TextAstNumber])[1].text,
+      }),
+      optional(regExp(String.raw` \(nouveau\)`, { flags: "i" }), {
+        default: "",
+      }),
     ],
     { value: (results, context) => context.textFromResults(results) },
   ),

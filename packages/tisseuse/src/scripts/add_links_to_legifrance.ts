@@ -235,7 +235,7 @@ async function addLinksToHtml({
         )
         const replacement = reverseTransformedReplacement(
           articleOriginalTransformation,
-          `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!}" style="background-color: #eae462">${original}</a>`,
+          `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!.replaceAll(" ", "_")}" style="background-color: #eae462">${original}</a>`,
         )
         output =
           output.slice(

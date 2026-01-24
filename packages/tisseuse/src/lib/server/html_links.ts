@@ -156,12 +156,8 @@ export async function addLinksOrReferencesToHtmlFile(
   })) {
     switch (link.type) {
       case "article_definition": {
-        const {
-          article,
-          originalTransformation: articleOriginalTransformation,
-          textId,
-        } = link
-        if (articleOriginalTransformation === undefined) {
+        const { article, originalTransformation, textId } = link
+        if (originalTransformation === undefined) {
           throw new Error(
             `Missing originalTransformation attribute in article definition: ${JSON.stringify(link, null, 2)}`,
           )
@@ -169,26 +165,26 @@ export async function addLinksOrReferencesToHtmlFile(
         for (const output of Object.values(outputByType)) {
           const original = reverseTransformedInnerFragment(
             output.html,
-            articleOriginalTransformation,
+            originalTransformation,
             output.offset,
           )
           const replacement = reverseTransformedReplacement(
-            articleOriginalTransformation,
-            `<span class="definition_article" id="definition_article_${textId}_${article.num!}">${original}</span>`,
+            originalTransformation,
+            `<span class="definition_article" id="definition_article_${textId}_${article.num!.replaceAll(" ", "_")}">${original}</span>`,
           )
           output.html =
             output.html.slice(
               0,
-              articleOriginalTransformation.position.start + output.offset,
+              originalTransformation.position.start + output.offset,
             ) +
             replacement +
             output.html.slice(
-              articleOriginalTransformation.position.stop + output.offset,
+              originalTransformation.position.stop + output.offset,
             )
           output.offset +=
             replacement.length -
-            (articleOriginalTransformation.position.stop -
-              articleOriginalTransformation.position.start)
+            (originalTransformation.position.stop -
+              originalTransformation.position.start)
         }
         break
       }
@@ -338,7 +334,7 @@ export async function addLinksOrReferencesToHtmlFile(
           )
           const replacement = reverseTransformedReplacement(
             articleOriginalTransformation,
-            `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!}" style="background-color: #eae462">${original}</a>`,
+            `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!.replaceAll(" ", "_")}" style="background-color: #eae462">${original}</a>`,
           )
           output.html =
             output.html.slice(

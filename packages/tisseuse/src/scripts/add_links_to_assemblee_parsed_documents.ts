@@ -147,7 +147,7 @@ async function addLinksToAssembleeParsedDocuments({
                   )
                   const replacement = reverseTransformedReplacement(
                     articleOriginalTransformation,
-                    `<span class="definition_article" id="definition_article_${textId}_${article.num!}">${original}</span>`,
+                    `<span class="definition_article" id="definition_article_${textId}_${article.num!.replaceAll(" ", "_")}">${original}</span>`,
                   )
                   output =
                     output.slice(
@@ -309,7 +309,7 @@ async function addLinksToAssembleeParsedDocuments({
                   )
                   const replacement = reverseTransformedReplacement(
                     articleOriginalTransformation,
-                    `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!}" style="background-color: #eae462">${original}</a>`,
+                    `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!.replaceAll(" ", "_")}" style="background-color: #eae462">${original}</a>`,
                   )
                   output =
                     output.slice(
@@ -382,7 +382,7 @@ async function addLinksToAssembleeParsedDocuments({
                   // )
                   // const replacement = reverseTransformedReplacement(
                   //   articleOriginalTransformation,
-                  //   `<span class="definition_article" id="definition_article_${textId}_${article.num!}">${original}</span>`,
+                  //   `<span class="definition_article" id="definition_article_${textId}_${article.num!.replaceAll(" ", "_")}">${original}</span>`,
                   // )
                   // output =
                   //   output.slice(
@@ -544,7 +544,7 @@ async function addLinksToAssembleeParsedDocuments({
                   )
                   const replacement = reverseTransformedReplacement(
                     articleOriginalTransformation,
-                    `[${escapeMarkdownLinkTitle(original)}](#definition_article_${definition.textId}_${definition.article.num!})`,
+                    `[${escapeMarkdownLinkTitle(original)}](#definition_article_${definition.textId}_${definition.article.num!.replaceAll(" ", "_")})`,
                   )
                   output =
                     output.slice(

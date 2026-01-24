@@ -10,7 +10,8 @@
   import ModeSwitcher from "./mode-switcher.svelte"
 </script>
 
-<header class="sticky top-0 z-50 mb-6 border-b bg-background py-5">
+<!-- Use a z-index higher than those of Assemblée "pastillages". -->
+<header class="sticky top-0 z-999999 mb-6 border-b bg-background py-5">
   <div class="3xl:fixed:px-0 container mx-auto px-6">
     <div
       class="3xl:fixed:container flex h-(--header-height) items-center gap-2 **:data-[slot=separator]:h-4"

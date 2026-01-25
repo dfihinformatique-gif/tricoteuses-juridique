@@ -1,7 +1,20 @@
 {
   "name": "@tricoteuses/exploratrice",
-  "description": "Web application to navigate between French legislative documents",
+  "description": "Web application to showcase French legislative datasets, software & APIs from Tricoteuses",
   "version": "0.0.1",
+  "author": "Emmanuel Raviart <emmanuel@raviart.com>",
+  "contributors": [
+    "Paul-Henry Ngounou <ngpaulhenry@gmail.com>"
+  ],
+  "bugs": {
+    "url": "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/issues"
+  },
+  "homepage": "https://tricoteuses.fr/",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite dev",

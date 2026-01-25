@@ -1,20 +1,22 @@
-# GNU AFFERO GENERAL PUBLIC LICENSE
+# Tricoteuses Moulineuse
 
-Version 3, 19 November 2007
+_MCP server for querying French legislative databases (Assemblée, Légifrance & Sénat)_
 
-See https://www.gnu.org/licenses/agpl-3.0.html for the full license text.
+By: Emmanuel Raviart <mailto:emmanuel@raviart.com>
 
-Copyright (C) 2024, 2025, 2026 Emmanuel Raviart
+Copyright © 2025, 2026 Emmanuel Raviart
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Affero General Public License as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/src/branch/main/packages/moulineuse
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU Affero General Public License for more details.
-
-You should have received a copy of the GNU Affero General Public License
-along with this program. If not, see <https://www.gnu.org/licenses/>.
+> Tricoteuses Moulineuse is free software; you can redistribute it and/or modify
+> it under the terms of the GNU Affero General Public License as
+> published by the Free Software Foundation, either version 3 of the
+> License, or (at your option) any later version.
+>
+> Tricoteuses Moulineuse is distributed in the hope that it will be useful,
+> but WITHOUT ANY WARRANTY; without even the implied warranty of
+> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+> GNU Affero General Public License for more details.
+>
+> You should have received a copy of the GNU Affero General Public License
+> along with this program. If not, see <http://www.gnu.org/licenses/>.

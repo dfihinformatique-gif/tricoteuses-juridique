@@ -1,10 +1,13 @@
 # Tricoteuses Exploratrice
 
-_Web application to navigate between French legislative documents_
+_Web application to showcase French legislative datasets, software & APIs from Tricoteuses_
 
-By: Emmanuel Raviart <mailto:emmanuel@raviart.com>
+By:
 
-Copyright (C) 2025, 2026 Emmanuel Raviart
+- Paul-Henry Ngounou <mailto:ngpaulhenry@gmail.com>
+- Emmanuel Raviart <mailto:emmanuel@raviart.com>
+
+Copyright © 2025, 2026 Paul-Henry Ngounou & Emmanuel Raviart
 
 https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/src/branch/main/packages/exploratrice
 

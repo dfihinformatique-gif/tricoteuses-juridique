@@ -1,6 +1,6 @@
 {
   "name": "@tricoteuses/moulineuse",
-  "description": "MCP server for querying French legislative databases (Assemblée, Légifrance)",
+  "description": "MCP server for querying French legislative databases (Assemblée, Légifrance & Sénat)",
   "version": "0.1.0",
   "keywords": [
     "Assemblée nationale",

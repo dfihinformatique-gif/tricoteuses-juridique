@@ -12,6 +12,9 @@
     "Sénat"
   ],
   "author": "Emmanuel Raviart <emmanuel@raviart.com>",
+  "contributors": [
+    "Camille Moulin <public_commits@proton.me>"
+  ],
   "bugs": {
     "url": "https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/issues"
   },

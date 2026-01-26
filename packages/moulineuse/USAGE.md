@@ -22,7 +22,7 @@ Moulineuse propose **deux modes d'utilisation** :
 
 - ✅ **Aucune installation complexe** - Pas besoin de configurer des bases de données
 - ✅ **Accès immédiat** - Connectez-vous directement à https://mcp.code4code.eu
-- ✅ **Toujours à jour** - Les données sont maintenues par l'équipe Tricoteuses
+- ✅ **Toujours à jour** - Les données sont maintenues par les Tricoteuses
 - ✅ **Sécurisé** - Connexion HTTPS chiffrée
 - ✅ **Transport moderne** - Utilise le protocole Streamable HTTP MCP
 

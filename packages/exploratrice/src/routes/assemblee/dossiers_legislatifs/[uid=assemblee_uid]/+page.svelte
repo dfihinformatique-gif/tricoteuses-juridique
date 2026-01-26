@@ -17,7 +17,10 @@
 {#if dossierParlementairePageInfos === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
       { label: `Dossier ${params.uid}` },
     ]}
   />
@@ -28,8 +31,14 @@
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
-      { label: dossierParlementairePageInfos.dossierParlementaire.titreDossier.titre },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
+      {
+        label:
+          dossierParlementairePageInfos.dossierParlementaire.titreDossier.titre,
+      },
     ]}
   />
   <DossierParlementaire {...dossierParlementairePageInfos} />

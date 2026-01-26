@@ -29,7 +29,11 @@
   <PageBreadcrumb
     segments={[
       { label: "Textes promulgués", href: "/legifrance/textes" },
-      { label: textePageInfos.texteVersion.META.META_SPEC.META_TEXTE_VERSION.TITREFULL ?? "" },
+      {
+        label:
+          textePageInfos.texteVersion.META.META_SPEC.META_TEXTE_VERSION
+            .TITREFULL ?? "",
+      },
     ]}
   />
   <Texte bind:displayMode bind:showIds {textePageInfos} />

@@ -1,4 +1,7 @@
-import type { JorfTexteVersion, LegiTexteVersion } from "@tricoteuses/legifrance"
+import type {
+  JorfTexteVersion,
+  LegiTexteVersion,
+} from "@tricoteuses/legifrance"
 import {
   getOrLoadTextelr,
   getOrLoadTextesVersions,

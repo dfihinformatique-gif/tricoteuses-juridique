@@ -16,7 +16,10 @@
 {#if documentPageInfos === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
       { label: `Document ${params.uid}` },
     ]}
   />
@@ -27,8 +30,14 @@
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
-      { label: "Dossier législatif", href: urlPathFromId(documentPageInfos.document.dossierRef) },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
+      {
+        label: "Dossier législatif",
+        href: urlPathFromId(documentPageInfos.document.dossierRef),
+      },
       { label: documentPageInfos.document.titres.titrePrincipal },
     ]}
   />

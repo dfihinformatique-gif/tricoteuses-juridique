@@ -68,7 +68,8 @@
       Les derniers textes promulgués
     </h1>
     <p class="text-lg text-muted-foreground">
-      Explorez les lois, ordonnances et autres textes législatifs récemment promulgués.
+      Explorez les lois, ordonnances et autres textes législatifs récemment
+      promulgués.
     </p>
   </div>
 
@@ -96,10 +97,7 @@
   {#if totalPages > 1}
     <div class="mt-8 flex items-center justify-center gap-4">
       {#if currentPage > 1}
-        <Button
-          variant="outline"
-          href="?page={currentPage - 1}"
-        >
+        <Button variant="outline" href="?page={currentPage - 1}">
           <ChevronLeftIcon class="mr-2 h-4 w-4" />
           Précédent
         </Button>
@@ -110,10 +108,7 @@
       </span>
 
       {#if currentPage < totalPages}
-        <Button
-          variant="outline"
-          href="?page={currentPage + 1}"
-        >
+        <Button variant="outline" href="?page={currentPage + 1}">
           Suivant
           <ChevronRightIcon class="ml-2 h-4 w-4" />
         </Button>

@@ -28,10 +28,11 @@ export function dateIso8601() {
       (val) => {
         // Check if it's a valid ISO 8601 date or datetime
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/
-        const datetimeRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
+        const datetimeRegex =
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/
         return dateRegex.test(val) || datetimeRegex.test(val)
       },
-      { message: "Invalid ISO 8601 date format" }
+      { message: "Invalid ISO 8601 date format" },
     )
 }
 
@@ -58,8 +59,7 @@ export function stringToBoolean() {
  * Transforms single values to arrays
  */
 export function ensureArray<T extends z.ZodTypeAny>(schema: T) {
-  return z.union([schema, z.array(schema)]).transform((val) =>
-    Array.isArray(val) ? val : [val]
-  )
+  return z
+    .union([schema, z.array(schema)])
+    .transform((val) => (Array.isArray(val) ? val : [val]))
 }
-

@@ -29,7 +29,7 @@ export const AssembleeUidSchema = z
         reunionUidRegex,
         scrutinUidRegex,
       ].some((regex) => regex.test(uid)),
-    { message: "Invalid format for Assemblée UID" }
+    { message: "Invalid format for Assemblée UID" },
   )
 
 export type AssembleeUid = z.infer<typeof AssembleeUidSchema>
@@ -50,9 +50,14 @@ export type DocumentUid = z.infer<typeof DocumentUidSchema>
 export const DossierParlementaireUidSchema = z
   .string()
   .trim()
-  .regex(dossierUidRegex, "Invalid format for Assemblée DossierParlementaire UID")
+  .regex(
+    dossierUidRegex,
+    "Invalid format for Assemblée DossierParlementaire UID",
+  )
 
-export type DossierParlementaireUid = z.infer<typeof DossierParlementaireUidSchema>
+export type DossierParlementaireUid = z.infer<
+  typeof DossierParlementaireUidSchema
+>
 
 /**
  * Validates Assemblée compte rendu UID format

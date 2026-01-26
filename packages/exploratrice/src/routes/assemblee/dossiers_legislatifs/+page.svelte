@@ -8,7 +8,12 @@
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
   import type { Suggestion } from "$lib/autocompletion.js"
-  import { ChevronLeftIcon, ChevronRightIcon, FileTextIcon, FolderOpenIcon } from "@lucide/svelte"
+  import {
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    FileTextIcon,
+    FolderOpenIcon,
+  } from "@lucide/svelte"
 
   import type { PageData } from "./$types"
 
@@ -106,10 +111,7 @@
   {#if totalPages > 1}
     <div class="mt-8 flex items-center justify-center gap-4">
       {#if currentPage > 1}
-        <Button
-          variant="outline"
-          href="?page={currentPage - 1}"
-        >
+        <Button variant="outline" href="?page={currentPage - 1}">
           <ChevronLeftIcon class="mr-2 h-4 w-4" />
           Précédent
         </Button>
@@ -120,10 +122,7 @@
       </span>
 
       {#if currentPage < totalPages}
-        <Button
-          variant="outline"
-          href="?page={currentPage + 1}"
-        >
+        <Button variant="outline" href="?page={currentPage + 1}">
           Suivant
           <ChevronRightIcon class="ml-2 h-4 w-4" />
         </Button>

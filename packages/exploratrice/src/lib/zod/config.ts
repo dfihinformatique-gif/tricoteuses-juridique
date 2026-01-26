@@ -37,7 +37,7 @@ export const ConfigSchema = z
       .describe("Whether to allow search engine robots"),
 
     assembleeDb: DatabaseConfigSchema.describe(
-      "Database configuration for Assemblée data"
+      "Database configuration for Assemblée data",
     ),
 
     assembleeDocumentsDir: z
@@ -47,7 +47,7 @@ export const ConfigSchema = z
       .describe("Path to Assemblée documents directory"),
 
     legiDb: DatabaseConfigSchema.describe(
-      "Database configuration for Légifrance data"
+      "Database configuration for Légifrance data",
     ),
 
     linkUrlOriginReplacement: httpUrl()
@@ -56,7 +56,7 @@ export const ConfigSchema = z
       .describe("Optional URL origin replacement for links"),
 
     tisseuseDb: DatabaseConfigSchema.describe(
-      "Database configuration for Tisseuse data"
+      "Database configuration for Tisseuse data",
     ),
 
     title: z

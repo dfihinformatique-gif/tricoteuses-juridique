@@ -20,7 +20,10 @@
 {#if current === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
       { label: `Document ${params.uid}` },
       { label: "Diff" },
     ]}
@@ -32,9 +35,18 @@
 {:else if current.documentSegmentation === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
-      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
-      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
+      {
+        label: "Dossier législatif",
+        href: urlPathFromId(current.document.dossierRef),
+      },
+      {
+        label: current.document.titres.titrePrincipal,
+        href: urlPathFromId(params.uid),
+      },
       { label: "Diff" },
     ]}
   />
@@ -47,9 +59,18 @@
 {:else if previous === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
-      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
-      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
+      {
+        label: "Dossier législatif",
+        href: urlPathFromId(current.document.dossierRef),
+      },
+      {
+        label: current.document.titres.titrePrincipal,
+        href: urlPathFromId(params.uid),
+      },
       { label: "Diff" },
     ]}
   />
@@ -60,9 +81,18 @@
 {:else if previous.documentSegmentation === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
-      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
-      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
+      {
+        label: "Dossier législatif",
+        href: urlPathFromId(current.document.dossierRef),
+      },
+      {
+        label: current.document.titres.titrePrincipal,
+        href: urlPathFromId(params.uid),
+      },
       { label: "Diff" },
     ]}
   />
@@ -75,9 +105,18 @@
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: "Dossiers législatifs", href: "/assemblee/dossiers_legislatifs" },
-      { label: "Dossier législatif", href: urlPathFromId(current.document.dossierRef) },
-      { label: current.document.titres.titrePrincipal, href: urlPathFromId(params.uid) },
+      {
+        label: "Dossiers législatifs",
+        href: "/assemblee/dossiers_legislatifs",
+      },
+      {
+        label: "Dossier législatif",
+        href: urlPathFromId(current.document.dossierRef),
+      },
+      {
+        label: current.document.titres.titrePrincipal,
+        href: urlPathFromId(params.uid),
+      },
       { label: "Diff" },
     ]}
   />

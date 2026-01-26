@@ -81,9 +81,7 @@ export declare namespace StandardSchemaV1 {
 /**
  * Converts Zod issues to Standard Schema issues
  */
-function zodIssueToStandardIssue(
-  issue: z.ZodIssue
-): StandardSchemaV1.Issue {
+function zodIssueToStandardIssue(issue: z.ZodIssue): StandardSchemaV1.Issue {
   return {
     message: issue.message,
     path: issue.path.length > 0 ? issue.path : undefined,
@@ -94,7 +92,7 @@ function zodIssueToStandardIssue(
  * Creates a Standard Schema v1 wrapper around a Zod schema
  */
 export function zodToStandardSchema<Output>(
-  schema: z.ZodType<Output>
+  schema: z.ZodType<Output>,
 ): StandardSchemaV1<Output> {
   return {
     "~standard": {

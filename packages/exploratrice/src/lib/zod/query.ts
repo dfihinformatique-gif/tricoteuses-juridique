@@ -9,7 +9,7 @@ import { z } from "zod"
  * Parses URLSearchParams into a Record<string, string[]>
  */
 export function parseSearchParams(
-  params: URLSearchParams
+  params: URLSearchParams,
 ): Record<string, string[]> {
   const data: Record<string, string[]> = {}
 

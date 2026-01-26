@@ -1,8 +1,5 @@
 import { z } from "zod"
-import {
-  type JorfArticle,
-  type LegiArticle,
-} from "@tricoteuses/legifrance"
+import { type JorfArticle, type LegiArticle } from "@tricoteuses/legifrance"
 import {
   extendLoadedArticle,
   getOrLoadArticleSiblingId,
@@ -167,8 +164,7 @@ const loadArticleWithLinks = async (
 // )
 
 export const queryArticlePageInfos = query(
-  zodToStandardSchema(legalId()
-  ),
+  zodToStandardSchema(legalId()),
   async (id): Promise<ArticlePageInfos | undefined> => {
     const legifranceObjectCache = newLegifranceObjectCache()
     const articleWithLinks = await loadArticleWithLinks(
@@ -231,15 +227,15 @@ export const queryArticlePageInfos = query(
 )
 
 export const queryArticlesWithLinks = query(
-  zodToStandardSchema(z.array(legalId()).min(1, "An empty array is not allowed")
+  zodToStandardSchema(
+    z.array(legalId()).min(1, "An empty array is not allowed"),
   ),
   async (ids): Promise<{ [id: string]: ArticleWithLinks }> =>
     await loadArticlesWithLinks(newLegifranceObjectCache(), ids),
 )
 
 export const queryArticleWithLinks = query(
-  zodToStandardSchema(legalId()
-  ),
+  zodToStandardSchema(legalId()),
   async (id): Promise<ArticleWithLinks | undefined> =>
     await loadArticleWithLinks(newLegifranceObjectCache(), id),
 )

@@ -34,7 +34,7 @@
         .string()
         .trim()
         .transform((val) => (val === "" ? undefined : val))
-        .pipe(z.enum(possibleTypes).optional())
+        .pipe(z.enum(possibleTypes).optional()),
     ),
   })
 

@@ -15,23 +15,26 @@ export async function queryTextes(
 
   const textes = (
     await tisseuseDb<Array<SuggestionDb>>`
-      SELECT
-        autocompletion,
-        badge,
-        date,
-        0 AS distance,
-        id
-      FROM titre_texte_autocompletion
-      WHERE
-        type = 'Légifrance texte'
-        AND date <= ${today}
+      SELECT * FROM (
+        SELECT DISTINCT ON (id)
+          autocompletion,
+          badge,
+          date,
+          0 AS distance,
+          id
+        FROM titre_texte_autocompletion
+        WHERE
+          type = 'Légifrance texte'
+          AND date <= ${today}
+        ORDER BY id, date DESC NULLS LAST, autocompletion
+      ) AS sub
       ORDER BY date DESC NULLS LAST
       LIMIT ${limit} OFFSET ${offset}
     `
   ).map(suggestionFromSuggestionDb)
 
   const [{ count }] = await tisseuseDb<Array<{ count: number }>>`
-    SELECT COUNT(*) as count
+    SELECT COUNT(DISTINCT id) as count
     FROM titre_texte_autocompletion
     WHERE
       type = 'Légifrance texte'

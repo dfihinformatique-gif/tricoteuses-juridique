@@ -101,7 +101,7 @@ function createMcpServer() {
     },
     async ({ query, params }) => {
       try {
-        const results = await assembleeDb.unsafe(query, params || [])
+        const results = await assembleeDb.unsafe(query, params ?? [])
         return {
           content: [
             {
@@ -136,7 +136,7 @@ function createMcpServer() {
     },
     async ({ query, params }) => {
       try {
-        const results = await legiDb.unsafe(query, params || [])
+        const results = await legiDb.unsafe(query, params ?? [])
         return {
           content: [
             {

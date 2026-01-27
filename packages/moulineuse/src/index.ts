@@ -163,7 +163,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (request.params.name) {
       case "query_assemblee": {
         const args = QueryAssembleeSchema.parse(request.params.arguments)
-        const results = await assembleeDb.unsafe(args.query, args.params || [])
+        const results = await assembleeDb.unsafe(args.query, args.params ?? [])
         return {
           content: [
             {
@@ -176,7 +176,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case "query_legifrance": {
         const args = QueryLegifranceSchema.parse(request.params.arguments)
-        const results = await legiDb.unsafe(args.query, args.params || [])
+        const results = await legiDb.unsafe(args.query, args.params ?? [])
         return {
           content: [
             {

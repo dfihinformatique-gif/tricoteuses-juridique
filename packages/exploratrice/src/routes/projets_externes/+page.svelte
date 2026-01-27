@@ -5,6 +5,8 @@
   import { externalProjects } from "$lib/data/tricoteuses-ecosystem.js"
   import Filter from "@lucide/svelte/icons/filter"
   import Plus from "@lucide/svelte/icons/plus"
+  import * as m from "$lib/paraglide/messages.js"
+  import { localizedHref } from "$lib/i18n.js"
 
   let selectedFeatured = $state<boolean | "all">("all")
 
@@ -13,35 +15,39 @@
     return externalProjects.filter((p) => p.featured === selectedFeatured)
   })
 
-  const filterButtons: Array<{ label: string; type: boolean | "all" }> = [
-    { label: "Tous", type: "all" },
-    { label: "En vedette", type: true },
-    { label: "Autres", type: false },
-  ]
+  const filterButtons = $derived<
+    Array<{ label: string; type: boolean | "all" }>
+  >([
+    { label: m.external_projects_filter_all(), type: "all" },
+    { label: m.external_projects_filter_featured(), type: true },
+    { label: m.external_projects_filter_others(), type: false },
+  ])
 </script>
 
 <svelte:head>
-  <title>Projets externes complémentaires - Tricoteuses</title>
+  <title>{m.external_projects_page_title()}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-  <PageBreadcrumb segments={[{ label: "Projets externes complémentaires" }]} />
+  <PageBreadcrumb segments={[{ label: m.external_projects_title() }]} />
 
   <!-- Header -->
   <header class="mb-12">
     <div class="flex items-start justify-between gap-4">
       <div class="flex-1">
         <h1 class="mb-4 text-4xl font-bold">
-          Projets externes complémentaires
+          {m.external_projects_title()}
         </h1>
         <p class="text-lg text-muted-foreground">
-          Découvrez les projets open source externes qui complètent l'écosystème
-          Tricoteuses pour manipuler l'opendata législatif et juridique.
+          {m.external_projects_description()}
         </p>
       </div>
-      <Button href="/projets-externes/proposer" class="flex-none">
+      <Button
+        href={localizedHref("/projets_externes/proposer")}
+        class="flex-none"
+      >
         <Plus class="mr-2 h-4 w-4" />
-        Proposer un projet externe
+        {m.external_projects_propose_button()}
       </Button>
     </div>
   </header>
@@ -50,7 +56,7 @@
   <div class="mb-8 flex flex-wrap items-center gap-2">
     <div class="flex items-center gap-2 text-sm font-medium">
       <Filter class="h-4 w-4" />
-      <span>Filtrer :</span>
+      <span>{m.external_projects_filter()}</span>
     </div>
     {#each filterButtons as filter}
       <Button
@@ -66,7 +72,9 @@
   <!-- Results count -->
   <div class="mb-4 text-sm text-muted-foreground">
     {filteredProjects.length}
-    {filteredProjects.length === 1 ? "projet" : "projets"}
+    {filteredProjects.length === 1
+      ? m.external_projects_count_single()
+      : m.external_projects_count_plural()}
     {selectedFeatured !== "all"
       ? `(${filterButtons.find((f) => f.type === selectedFeatured)?.label})`
       : ""}
@@ -82,7 +90,7 @@
   {#if filteredProjects.length === 0}
     <div class="py-12 text-center">
       <p class="text-lg text-muted-foreground">
-        Aucun projet trouvé pour ce filtre.
+        {m.external_projects_no_results()}
       </p>
     </div>
   {/if}

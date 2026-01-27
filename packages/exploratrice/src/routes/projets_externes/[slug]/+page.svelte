@@ -4,27 +4,41 @@
   import * as Card from "$lib/components/ui/card/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { type ExternalProject } from "$lib/data/tricoteuses-ecosystem.js"
+  import {
+    getExternalProjectName,
+    getExternalProjectDescription,
+    getExternalProjectAuthor,
+  } from "$lib/data/tricoteuses-ecosystem-i18n.js"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import GitBranchIcon from "@lucide/svelte/icons/git-branch"
   import UserIcon from "@lucide/svelte/icons/user"
+  import * as m from "$lib/paraglide/messages.js"
+  import { localizedHref } from "$lib/i18n.js"
 
   import type { PageData } from "./$types"
 
   let { data }: { data: PageData } = $props()
 
   const project: ExternalProject = $derived(data.project)
+  const localizedName = $derived(getExternalProjectName(project.id))
+  const localizedDescription = $derived(
+    getExternalProjectDescription(project.id),
+  )
+  const localizedAuthor = $derived(getExternalProjectAuthor(project.id))
 </script>
 
-packages/exploratrice/src/routes/external-projects/[slug]/+page.svelte
 <svelte:head>
-  <title>{project.name} - Projets externes - Tricoteuses</title>
+  <title>{m.external_project_detail_page_title({ name: localizedName })}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: "Projets externes complémentaires", href: "/projets-externes" },
-      { label: project.name },
+      {
+        label: m.external_project_detail_breadcrumb(),
+        href: localizedHref("/projets_externes"),
+      },
+      { label: localizedName },
     ]}
   />
 
@@ -38,18 +52,18 @@ packages/exploratrice/src/routes/external-projects/[slug]/+page.svelte
             <ExternalLinkIcon size={32}></ExternalLinkIcon>
           </div>
           <div>
-            <h1 class="mb-2 text-4xl font-bold">{project.name}</h1>
+            <h1 class="mb-2 text-4xl font-bold">{localizedName}</h1>
             <div class="flex flex-wrap gap-2">
               <Badge class="bg-blue-500 hover:bg-blue-600">
-                Projet externe complémentaire
+                {m.external_project_detail_badge()}
               </Badge>
               <Badge
                 variant="outline"
                 class="max-w-64 truncate!"
-                title={project.author}
+                title={localizedAuthor}
               >
                 <UserIcon class="mr-1 h-3 w-3 shrink-0" />
-                <span class="truncate">{project.author}</span>
+                <span class="truncate">{localizedAuthor}</span>
               </Badge>
               {#if project.license}
                 <Badge variant="outline">
@@ -63,7 +77,7 @@ packages/exploratrice/src/routes/external-projects/[slug]/+page.svelte
 
       <!-- Description -->
       <p class="mb-6 text-lg text-muted-foreground">
-        {project.description}
+        {localizedDescription}
       </p>
 
       <!-- Screenshot -->
@@ -71,7 +85,9 @@ packages/exploratrice/src/routes/external-projects/[slug]/+page.svelte
         <div class="mb-6">
           <img
             src={project.screenshot}
-            alt="Capture d'écran de {project.name}"
+            alt={m.external_project_detail_screenshot_alt({
+              name: localizedName,
+            })}
             class="rounded-lg border shadow-lg"
           />
         </div>
@@ -82,7 +98,7 @@ packages/exploratrice/src/routes/external-projects/[slug]/+page.svelte
         {#if project.url !== undefined}
           <Button href={project.url} target="_blank" rel="noopener noreferrer">
             <ExternalLinkIcon class="mr-2 h-4 w-4" />
-            Visiter le site
+            {m.external_project_detail_visit_site()}
           </Button>
         {/if}
         {#if project.repositoryUrl !== undefined}
@@ -93,7 +109,7 @@ packages/exploratrice/src/routes/external-projects/[slug]/+page.svelte
             variant="outline"
           >
             <GitBranchIcon class="mr-2 h-4 w-4" />
-            Code source
+            {m.external_project_detail_source_code()}
           </Button>
         {/if}
       </div>
@@ -103,20 +119,23 @@ packages/exploratrice/src/routes/external-projects/[slug]/+page.svelte
   <!-- About this project section -->
   <Card.Root>
     <Card.Content class="py-6">
-      <h2 class="mb-4 text-2xl font-bold">À propos de ce projet</h2>
+      <h2 class="mb-4 text-2xl font-bold">
+        {m.external_project_detail_about_title()}
+      </h2>
       <p class="mb-4 text-muted-foreground">
-        Ce projet a été développé par <strong>{project.author}</strong>. Il est
-        complémentaire à l'écosystème des Tricoteuses pour manipuler l'opendata
-        législatif et juridique.
+        {@html m.external_project_detail_about_description({
+          author: localizedAuthor,
+        })}
       </p>
       <p class="text-sm text-muted-foreground">
-        Vous aussi, vous pouvez proposer des projets externes complémentaires
-        qui enrichissent l'écosystème libre et open source autour des données
-        publiques juridiques françaises.
+        {m.external_project_detail_about_contribute()}
       </p>
       <div class="mt-4">
-        <Button href="/projets-externes/proposer" variant="outline">
-          Proposer un projet externe
+        <Button
+          href={localizedHref("/projets_externes/proposer")}
+          variant="outline"
+        >
+          {m.external_project_detail_propose_button()}
         </Button>
       </div>
     </Card.Content>

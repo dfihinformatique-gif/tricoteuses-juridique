@@ -7,6 +7,8 @@
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import CheckIcon from "@lucide/svelte/icons/check"
   import CopyIcon from "@lucide/svelte/icons/copy"
+  import * as m from "$lib/paraglide/messages.js"
+  import { localizedHref } from "$lib/i18n.js"
 
   let authorName = $state("")
   let contactEmail = $state("")
@@ -76,23 +78,27 @@
 </script>
 
 <svelte:head>
-  <title>Proposer un projet externe - Tricoteuses</title>
+  <title>{m.external_project_propose_page_title()}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: "Projets externes complémentaires", href: "/projets-externes" },
-      { label: "Proposer un projet externe" },
+      {
+        label: m.external_project_detail_breadcrumb(),
+        href: localizedHref("/projets_externes"),
+      },
+      { label: m.external_project_propose_breadcrumb() },
     ]}
   />
 
   <!-- Header -->
   <div class="mb-8 text-center">
-    <h1 class="mb-4 text-4xl font-bold">Proposer un projet externe</h1>
+    <h1 class="mb-4 text-4xl font-bold">
+      {m.external_project_propose_title()}
+    </h1>
     <p class="text-lg text-muted-foreground">
-      Vous avez créé un projet open source complémentaire à Tricoteuses ?
-      Partagez-le avec la communauté !
+      {m.external_project_propose_description()}
     </p>
   </div>
 
@@ -108,96 +114,114 @@
       >
         <!-- Project information -->
         <div class="space-y-4">
-          <h2 class="text-xl font-semibold">Informations sur le projet</h2>
+          <h2 class="text-xl font-semibold">
+            {m.external_project_propose_project_info_title()}
+          </h2>
 
           <div class="space-y-2">
-            <Label for="projectName">Nom du projet *</Label>
+            <Label for="projectName"
+              >{m.external_project_propose_project_name_label()}</Label
+            >
             <Input
               id="projectName"
               bind:value={projectName}
-              placeholder="Mon Projet Open Source"
+              placeholder={m.external_project_propose_project_name_placeholder()}
               required
             />
           </div>
 
           <div class="space-y-2">
-            <Label for="projectDescription">Description *</Label>
+            <Label for="projectDescription"
+              >{m.external_project_propose_project_description_label()}</Label
+            >
             <Textarea
               id="projectDescription"
               bind:value={projectDescription}
-              placeholder="Décrivez votre projet et comment il complète l'écosystème Tricoteuses..."
+              placeholder={m.external_project_propose_project_description_placeholder()}
               rows={4}
               required
             />
           </div>
 
           <div class="space-y-2">
-            <Label for="projectUrl">URL du projet *</Label>
+            <Label for="projectUrl"
+              >{m.external_project_propose_project_url_label()}</Label
+            >
             <Input
               id="projectUrl"
               bind:value={projectUrl}
               type="url"
-              placeholder="https://mon-projet.fr"
+              placeholder={m.external_project_propose_project_url_placeholder()}
               required
             />
           </div>
 
           <div class="space-y-2">
-            <Label for="repositoryUrl">URL du dépôt Git (optionnel)</Label>
+            <Label for="repositoryUrl"
+              >{m.external_project_propose_repository_url_label()}</Label
+            >
             <Input
               id="repositoryUrl"
               bind:value={repositoryUrl}
               type="url"
-              placeholder="https://github.com/utilisateur/projet"
+              placeholder={m.external_project_propose_repository_url_placeholder()}
             />
           </div>
 
           <div class="space-y-2">
             <Label for="screenshotUrl"
-              >URL de la capture d'écran (optionnel)</Label
+              >{m.external_project_propose_screenshot_url_label()}</Label
             >
             <Input
               id="screenshotUrl"
               bind:value={screenshotUrl}
               type="url"
-              placeholder="https://exemple.fr/capture.png"
+              placeholder={m.external_project_propose_screenshot_url_placeholder()}
             />
           </div>
         </div>
 
         <!-- License information -->
         <div class="space-y-4">
-          <h2 class="text-xl font-semibold">Licence (optionnel)</h2>
+          <h2 class="text-xl font-semibold">
+            {m.external_project_propose_license_title()}
+          </h2>
           <p class="text-sm text-muted-foreground">
-            Si votre projet est sous licence open source, précisez-la.
+            {m.external_project_propose_license_description()}
           </p>
 
           <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div class="space-y-2">
-              <Label for="licenseName">Nom de la licence</Label>
+              <Label for="licenseName"
+                >{m.external_project_propose_license_name_label()}</Label
+              >
               <Input
                 id="licenseName"
                 bind:value={licenseName}
-                placeholder="MIT, GPL-3.0, BSD-3-Clause, etc."
+                placeholder={m.external_project_propose_license_name_placeholder()}
               />
             </div>
 
             <div class="space-y-2">
-              <Label for="licenseSpdxId">SPDX ID (optionnel)</Label>
+              <Label for="licenseSpdxId"
+                >{m.external_project_propose_license_spdx_label()}</Label
+              >
               <Input
                 id="licenseSpdxId"
                 bind:value={licenseSpdxId}
-                placeholder="MIT, GPL-3.0-only, BSD-3-Clause, etc."
+                placeholder={m.external_project_propose_license_spdx_placeholder()}
               />
             </div>
 
             <div class="space-y-2">
-              <Label for="licenseUrl">URL de la licence</Label>
+              <Label for="licenseUrl"
+                >{m.external_project_propose_license_url_label()}</Label
+              >
               <Input
                 id="licenseUrl"
                 bind:value={licenseUrl}
                 type="url"
-                placeholder="https://opensource.org/licenses/MIT"
+                placeholder={m.external_project_propose_license_url_placeholder()}
               />
             </div>
           </div>
@@ -205,30 +229,35 @@
 
         <!-- Contact information -->
         <div class="space-y-4">
-          <h2 class="text-xl font-semibold">Vos coordonnées</h2>
+          <h2 class="text-xl font-semibold">
+            {m.external_project_propose_contact_title()}
+          </h2>
 
           <div class="space-y-2">
-            <Label for="authorName">Nom ou organisation *</Label>
+            <Label for="authorName"
+              >{m.external_project_propose_author_name_label()}</Label
+            >
             <Input
               id="authorName"
               bind:value={authorName}
-              placeholder="Votre nom ou celui de votre organisation"
+              placeholder={m.external_project_propose_author_name_placeholder()}
               required
             />
           </div>
 
           <div class="space-y-2">
-            <Label for="contactEmail">Email de contact *</Label>
+            <Label for="contactEmail"
+              >{m.external_project_propose_contact_email_label()}</Label
+            >
             <Input
               id="contactEmail"
               bind:value={contactEmail}
               type="email"
-              placeholder="contact@exemple.fr"
+              placeholder={m.external_project_propose_contact_email_placeholder()}
               required
             />
             <p class="text-xs text-muted-foreground">
-              Votre email ne sera utilisé que pour vous contacter au sujet de
-              cette proposition.
+              {m.external_project_propose_contact_email_help()}
             </p>
           </div>
         </div>
@@ -236,7 +265,7 @@
         <!-- Submit button -->
         <div class="flex justify-end">
           <Button type="submit" disabled={!isFormValid}
-            >Générer la proposition</Button
+            >{m.external_project_propose_submit_button()}</Button
           >
         </div>
       </form>
@@ -248,39 +277,32 @@
     <Card.Root class="border-l-4 border-l-green-500">
       <Card.Content class="py-6">
         <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-xl font-semibold">Votre proposition</h2>
+          <h2 class="text-xl font-semibold">
+            {m.external_project_propose_output_title()}
+          </h2>
           <Button variant="outline" size="sm" onclick={copyToClipboard}>
             {#if copied}
               <CheckIcon class="mr-2 h-4 w-4" />
-              Copié !
+              {m.external_project_propose_output_copied()}
             {:else}
               <CopyIcon class="mr-2 h-4 w-4" />
-              Copier
+              {m.external_project_propose_output_copy_button()}
             {/if}
           </Button>
         </div>
 
         <p class="mb-4 text-sm text-muted-foreground">
-          Merci pour votre proposition ! Voici le JSON généré. Pour soumettre
-          votre projet externe, vous pouvez :
+          {m.external_project_propose_output_thanks()}
         </p>
 
         <ul
           class="mb-4 list-inside list-disc space-y-1 text-sm text-muted-foreground"
         >
           <li>
-            Créer une issue sur notre <a
-              href="https://github.com/tricoteuses/tricoteuses-juridique/issues/new"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-primary underline">dépôt GitHub</a
-            > en incluant ce JSON
+            {@html m.external_project_propose_output_option_github()}
           </li>
           <li>
-            Nous envoyer un email à <a
-              href="mailto:contact@tricoteuses.fr"
-              class="text-primary underline">contact@tricoteuses.fr</a
-            > avec ce JSON
+            {@html m.external_project_propose_output_option_email()}
           </li>
         </ul>
 

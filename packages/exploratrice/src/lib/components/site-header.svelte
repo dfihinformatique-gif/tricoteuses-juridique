@@ -6,7 +6,10 @@
   import * as NavigationMenu from "$lib/components/ui/navigation-menu/index.js"
   import { Separator } from "$lib/components/ui/separator/index.js"
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
+  import { localizedHref } from "$lib/i18n.js"
+  import * as m from "$lib/paraglide/messages.js"
 
+  import LanguageSwitcher from "./language-switcher.svelte"
   import ModeSwitcher from "./mode-switcher.svelte"
 </script>
 
@@ -20,25 +23,27 @@
       <NavigationMenu.Root>
         <NavigationMenu.List>
           <NavigationMenu.Item openOnHover={false}>
-            <NavigationMenu.Trigger>Tricoteuses</NavigationMenu.Trigger>
+            <NavigationMenu.Trigger>{m.site_name()}</NavigationMenu.Trigger>
             <NavigationMenu.Content>
               <ul>
                 <li>
-                  <NavigationMenu.Link href="/">Accueil</NavigationMenu.Link>
-                </li>
-                <li>
-                  <NavigationMenu.Link href="/services"
-                    >Services et données</NavigationMenu.Link
+                  <NavigationMenu.Link href={localizedHref("/")}
+                    >{m.nav_home()}</NavigationMenu.Link
                   >
                 </li>
                 <li>
-                  <NavigationMenu.Link href="/reutilisations"
-                    >Réutilisations</NavigationMenu.Link
+                  <NavigationMenu.Link href={localizedHref("/services")}
+                    >{m.nav_services()}</NavigationMenu.Link
+                  >
+                </li>
+                <li>
+                  <NavigationMenu.Link href={localizedHref("/reutilisations")}
+                    >{m.nav_reuses()}</NavigationMenu.Link
                   >
                 </li>
                 <li class="border-b">
-                  <NavigationMenu.Link href="/a_propos"
-                    >À propos des Tricoteuses</NavigationMenu.Link
+                  <NavigationMenu.Link href={localizedHref("/a_propos")}
+                    >{m.nav_about()}</NavigationMenu.Link
                   >
                 </li>
                 <li>
@@ -46,9 +51,8 @@
                     class="flex flex-row whitespace-nowrap"
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/reunions.md"
                     target="_blank"
-                    >Prochaines réunions <ExternalLinkIcon
-                      class="ml-1"
-                    /></NavigationMenu.Link
+                    >{m.nav_upcoming_meetings()}
+                    <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
                   >
                 </li>
                 <li>
@@ -56,9 +60,8 @@
                     class="flex flex-row whitespace-nowrap"
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/FAQ.md"
                     target="_blank"
-                    >Foire aux questions (FAQ) <ExternalLinkIcon
-                      class="ml-1"
-                    /></NavigationMenu.Link
+                    >{m.nav_faq()}
+                    <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
                   >
                 </li>
                 <li>
@@ -66,9 +69,8 @@
                     class="flex flex-row whitespace-nowrap"
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/mentions_legales.md"
                     target="_blank"
-                    >Mentions légales <ExternalLinkIcon
-                      class="ml-1"
-                    /></NavigationMenu.Link
+                    >{m.nav_legal_notices()}
+                    <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
                   >
                 </li>
               </ul>
@@ -82,13 +84,14 @@
       <div class="ml-auto flex items-center gap-2 md:flex-1 md:justify-end">
         <Button
           variant="secondary"
-          href="/recherche"
+          href={localizedHref("/recherche")}
           class="hidden md:inline-flex"
         >
           <SearchIcon class="mr-2 h-4 w-4" />
-          Recherche
+          {m.nav_search()}
         </Button>
         <Separator orientation="vertical" />
+        <LanguageSwitcher />
         <ModeSwitcher />
       </div>
     </div>

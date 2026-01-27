@@ -5,9 +5,16 @@
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import ServiceCard from "$lib/components/service-card.svelte"
   import { type Reuse } from "$lib/data/tricoteuses-ecosystem.js"
+  import {
+    getReuseName,
+    getReuseDescription,
+    getReuseAuthor,
+  } from "$lib/data/tricoteuses-ecosystem-i18n.js"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import FlaskConicalIcon from "@lucide/svelte/icons/flask-conical"
   import UserIcon from "@lucide/svelte/icons/user"
+  import * as m from "$lib/paraglide/messages.js"
+  import { localizedHref } from "$lib/i18n.js"
 
   import type { PageData } from "./$types"
 
@@ -16,6 +23,10 @@
   const reuse: Reuse = $derived(data.reuse)
   const services = $derived(reuse.servicesDependencies)
   const softwareList = $derived(reuse.softwareDependencies ?? [])
+
+  const localizedName = $derived(getReuseName(reuse.id))
+  const localizedDescription = $derived(getReuseDescription(reuse.id))
+  const localizedAuthor = $derived(getReuseAuthor(reuse.id))
 
   function getReuseColor(type: Reuse["type"]) {
     switch (type) {
@@ -42,9 +53,9 @@
   function getTypeLabel(type: Reuse["type"]) {
     switch (type) {
       case "external":
-        return "Réutilisation externe"
+        return m.reuse_detail_type_external()
       case "demo":
-        return "Démonstration Tricoteuses"
+        return m.reuse_detail_type_demo()
       default:
         return type
     }
@@ -52,14 +63,17 @@
 </script>
 
 <svelte:head>
-  <title>{reuse.name} - Tricoteuses</title>
+  <title>{m.reuse_detail_page_title({ name: localizedName })}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: "Réutilisations", href: "/reutilisations" },
-      { label: reuse.name },
+      {
+        label: m.reuse_detail_breadcrumb_reuses(),
+        href: localizedHref("/reutilisations"),
+      },
+      { label: localizedName },
     ]}
   />
 
@@ -70,17 +84,21 @@
       <div class="mb-4 flex items-start justify-between">
         <div class="flex items-start gap-4">
           <div class="rounded-lg bg-muted p-3">
-            <reuseIcon size={32}></reuseIcon>
+            {#if reuse.type === "external"}
+              <ExternalLinkIcon size={32}></ExternalLinkIcon>
+            {:else}
+              <FlaskConicalIcon size={32}></FlaskConicalIcon>
+            {/if}
           </div>
           <div>
-            <h1 class="mb-2 text-4xl font-bold">{reuse.name}</h1>
+            <h1 class="mb-2 text-4xl font-bold">{localizedName}</h1>
             <div class="flex flex-wrap gap-2">
               <Badge class={getTypeBadgeColor(reuse.type)}>
                 {getTypeLabel(reuse.type)}
               </Badge>
               <Badge variant="outline">
                 <UserIcon class="mr-1 h-3 w-3" />
-                {reuse.author}
+                {localizedAuthor}
               </Badge>
             </div>
           </div>
@@ -89,7 +107,7 @@
 
       <!-- Description -->
       <p class="mb-6 text-lg text-muted-foreground">
-        {reuse.description}
+        {localizedDescription}
       </p>
 
       <!-- Screenshot -->
@@ -97,7 +115,7 @@
         <div class="mb-6">
           <img
             src={reuse.screenshot}
-            alt="Capture d'écran de {reuse.name}"
+            alt={m.reuse_detail_screenshot_alt({ name: localizedName })}
             class="rounded-lg border shadow-lg"
           />
         </div>
@@ -108,12 +126,12 @@
         {#if reuse.type === "external" && reuse.url !== undefined}
           <Button href={reuse.url} target="_blank" rel="noopener noreferrer">
             <ExternalLinkIcon class="mr-2 h-4 w-4" />
-            Visiter le site
+            {m.reuse_detail_visit_site()}
           </Button>
         {:else if reuse.type === "demo" && reuse.pathname !== undefined}
-          <Button href={reuse.pathname}>
+          <Button href={localizedHref(reuse.pathname)}>
             <FlaskConicalIcon class="mr-2 h-4 w-4" />
-            Essayer la démonstration
+            {m.reuse_detail_try_demo()}
           </Button>
         {/if}
       </div>
@@ -123,12 +141,11 @@
   <!-- Services used section -->
   {#if services.length > 0}
     <section class="mb-8">
-      <h2 class="mb-4 text-2xl font-bold">Services Tricoteuses utilisés</h2>
+      <h2 class="mb-4 text-2xl font-bold">
+        {m.reuse_detail_services_title()}
+      </h2>
       <p class="mb-6 text-muted-foreground">
-        Cette réutilisation utilise {services.length} service{services.length >
-        1
-          ? "s"
-          : ""} Tricoteuses.
+        {m.reuse_detail_services_description({ count: services.length })}
       </p>
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {#each services as service (service.id)}
@@ -141,19 +158,21 @@
   <!-- Software dependencies section -->
   {#if softwareList.length > 0}
     <section class="mb-8">
-      <h2 class="mb-4 text-2xl font-bold">Logiciels utilisés</h2>
+      <h2 class="mb-4 text-2xl font-bold">
+        {m.reuse_detail_software_title()}
+      </h2>
       <p class="mb-6 text-muted-foreground">
-        Cette réutilisation utilise {softwareList.length} logiciel{softwareList.length >
-        1
-          ? "s"
-          : ""} libre{softwareList.length > 1 ? "s" : ""}.
+        {m.reuse_detail_software_description({ count: softwareList.length })}
       </p>
       <div class="space-y-4">
         {#each softwareList as soft (soft.id)}
           <Card.Root>
             <Card.Header>
               <Card.Title class="text-lg">
-                <a href="/logiciels/{soft.id}" class="hover:underline">
+                <a
+                  href={localizedHref(`/logiciels/${soft.id}`)}
+                  class="hover:underline"
+                >
                   {soft.name}
                 </a>
               </Card.Title>
@@ -171,7 +190,7 @@
                   class="text-sm text-blue-600 hover:underline dark:text-blue-400"
                 >
                   <ExternalLinkIcon class="mr-1 inline h-3 w-3" />
-                  Code source
+                  {m.reuse_detail_source_code()}
                 </a>
               </div>
             </Card.Content>
@@ -185,18 +204,23 @@
   {#if reuse.type === "external"}
     <Card.Root>
       <Card.Content class="py-6">
-        <h2 class="mb-4 text-2xl font-bold">À propos de ce projet</h2>
+        <h2 class="mb-4 text-2xl font-bold">
+          {m.reuse_detail_about_external_title()}
+        </h2>
         <p class="mb-4 text-muted-foreground">
-          Ce projet a été développé par <strong>{reuse.author}</strong> en utilisant
-          les données et services fournis par Tricoteuses.
+          {@html m.reuse_detail_about_external_description({
+            author: localizedAuthor,
+          })}
         </p>
         <p class="text-sm text-muted-foreground">
-          Vous aussi, vous pouvez créer votre propre application en utilisant
-          nos services ouverts et nos APIs modernes.
+          {m.reuse_detail_about_external_cta()}
         </p>
         <div class="mt-4">
-          <Button href="/reutilisations/proposer" variant="outline">
-            Proposer votre réutilisation
+          <Button
+            href={localizedHref("/reutilisations/proposer")}
+            variant="outline"
+          >
+            {m.reuse_detail_about_external_button()}
           </Button>
         </div>
       </Card.Content>
@@ -207,14 +231,14 @@
   {#if reuse.type === "demo"}
     <Card.Root>
       <Card.Content class="py-6">
-        <h2 class="mb-4 text-2xl font-bold">À propos de cette démonstration</h2>
+        <h2 class="mb-4 text-2xl font-bold">
+          {m.reuse_detail_about_demo_title()}
+        </h2>
         <p class="mb-4 text-muted-foreground">
-          Cette démonstration a été développée par les Tricoteuses pour
-          illustrer comment utiliser nos services et APIs.
+          {m.reuse_detail_about_demo_description()}
         </p>
         <p class="text-sm text-muted-foreground">
-          Le code source de cette démonstration est disponible dans notre dépôt
-          Git. Vous pouvez vous en inspirer pour créer vos propres applications.
+          {m.reuse_detail_about_demo_cta()}
         </p>
       </Card.Content>
     </Card.Root>

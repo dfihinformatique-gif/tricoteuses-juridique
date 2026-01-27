@@ -3,33 +3,35 @@
   import { Badge } from "$lib/components/ui/badge/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { software } from "$lib/data/tricoteuses-ecosystem.js"
+  import { getLocalizedSoftware } from "$lib/data/tricoteuses-ecosystem-i18n.js"
   import CodeIcon from "@lucide/svelte/icons/code"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
+  import * as m from "$lib/paraglide/messages.js"
 
-  const allSoftware = $derived(software)
+  const allSoftware = $derived(software.map(getLocalizedSoftware))
 </script>
 
 <svelte:head>
-  <title>Logiciels libres - Tricoteuses</title>
+  <title>{m.software_page_title()}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-  <PageBreadcrumb segments={[{ label: "Logiciels" }]} />
+  <PageBreadcrumb segments={[{ label: m.nav_software() }]} />
 
   <!-- Header -->
   <header class="mb-12">
-    <h1 class="mb-4 text-4xl font-bold">Logiciels libres</h1>
+    <h1 class="mb-4 text-4xl font-bold">{m.software_title()}</h1>
     <p class="text-lg text-muted-foreground">
-      Découvrez l'ensemble des logiciels libres développés par Tricoteuses pour
-      traiter, consolider et diffuser les données publiques juridiques
-      françaises.
+      {m.software_page_description()}
     </p>
   </header>
 
   <!-- Results count -->
   <div class="mb-4 text-sm text-muted-foreground">
     {allSoftware.length}
-    {allSoftware.length === 1 ? "logiciel" : "logiciels"}
+    {allSoftware.length === 1
+      ? m.software_count_single()
+      : m.software_count_plural()}
   </div>
 
   <!-- Software grid -->
@@ -71,25 +73,26 @@
               </Badge>
               {#if soft.authors.length > 0}
                 <Badge variant="outline">
-                  {soft.authors.length} auteur{soft.authors.length > 1
-                    ? "s"
-                    : ""}
+                  {soft.authors.length}
+                  {soft.authors.length > 1
+                    ? m.software_authors().split(" | ")[1]
+                    : m.software_authors().split(" | ")[0]}
                 </Badge>
               {/if}
               {#if soft.servicesDependencies && soft.servicesDependencies.length > 0}
                 <Badge variant="outline">
-                  {soft.servicesDependencies.length} service{soft
-                    .servicesDependencies.length > 1
-                    ? "s"
-                    : ""}
+                  {soft.servicesDependencies.length}
+                  {soft.servicesDependencies.length > 1
+                    ? m.software_services().split(" | ")[1]
+                    : m.software_services().split(" | ")[0]}
                 </Badge>
               {/if}
               {#if soft.sourceDataDependencies && soft.sourceDataDependencies.length > 0}
                 <Badge variant="outline">
-                  {soft.sourceDataDependencies.length} source{soft
-                    .sourceDataDependencies.length > 1
-                    ? "s"
-                    : ""} de données
+                  {soft.sourceDataDependencies.length}
+                  {soft.sourceDataDependencies.length > 1
+                    ? m.software_data_sources().split(" | ")[1]
+                    : m.software_data_sources().split(" | ")[0]}
                 </Badge>
               {/if}
             </div>
@@ -102,7 +105,7 @@
                 onclick={(e) => e.stopPropagation()}
               >
                 <ExternalLinkIcon class="mr-1 h-3 w-3" />
-                Code source
+                {m.common_source_code()}
               </a>
             </div>
           </Card.Content>
@@ -113,7 +116,7 @@
 
   {#if allSoftware.length === 0}
     <div class="py-12 text-center">
-      <p class="text-lg text-muted-foreground">Aucun logiciel trouvé.</p>
+      <p class="text-lg text-muted-foreground">{m.software_no_results()}</p>
     </div>
   {/if}
 </div>

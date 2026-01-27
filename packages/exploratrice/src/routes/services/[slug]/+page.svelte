@@ -12,6 +12,9 @@
     type DataService,
     type DataSource,
   } from "$lib/data/tricoteuses-ecosystem.js"
+  import { getLocalizedDataService } from "$lib/data/tricoteuses-ecosystem-i18n.js"
+  import { localizedHref } from "$lib/i18n.js"
+  import * as m from "$lib/paraglide/messages.js"
   import BookIcon from "@lucide/svelte/icons/book"
   import BuildingIcon from "@lucide/svelte/icons/building"
   import DatabaseIcon from "@lucide/svelte/icons/database"
@@ -23,7 +26,7 @@
 
   let { data }: { data: PageData } = $props()
 
-  const service: DataService = $derived(data.service)
+  const service: DataService = $derived(getLocalizedDataService(data.service))
   const reuses = $derived(getReusesByService(service))
   const dependencies = $derived(service.serviceDependencies ?? [])
   const dependents = $derived(
@@ -102,15 +105,15 @@
   function getTypeLabel(type: DataService["type"]) {
     switch (type) {
       case "api":
-        return "API REST"
+        return m.service_card_type_api()
       case "git":
-        return "Dépôt Git"
+        return m.service_card_type_git()
       case "mcp":
-        return "Serveur MCP"
+        return m.service_card_type_mcp()
       case "consolidation":
-        return "Code juridique"
+        return m.service_card_type_consolidation()
       case "database":
-        return "Base de données"
+        return m.service_card_type_database()
       default:
         return type
     }
@@ -124,7 +127,7 @@
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: "Services", href: "/services" },
+      { label: m.nav_services(), href: localizedHref("/services") },
       { label: service.name },
     ]}
   />
@@ -162,21 +165,24 @@
       <!-- Provider -->
       {#if service.provider !== undefined}
         <p class="mb-6 text-sm text-muted-foreground">
-          Ce service vous est proposé par <a
+          {m.service_detail_provided_by()}
+          <a
             href={service.provider.url}
             target="_blank"
             rel="noopener noreferrer"
             class="font-semibold underline hover:text-foreground"
           >
-            {service.provider.name}
-          </a>.
+            {service.provider.name}</a
+          >.
         </p>
       {/if}
 
       <!-- License and Copyright Holders -->
       <div class="mb-6 space-y-3 rounded-lg border bg-muted/50 p-4">
         <div>
-          <h3 class="mb-1 text-sm font-semibold">Licence</h3>
+          <h3 class="mb-1 text-sm font-semibold">
+            {m.service_detail_license_label()}
+          </h3>
           <a
             href={service.license.url}
             target="_blank"
@@ -188,7 +194,7 @@
         </div>
         <div>
           <h3 class="mb-1 text-sm font-semibold">
-            Détenteurs de droits d'auteur
+            {m.service_detail_copyright_holders()}
           </h3>
           <div class="flex flex-wrap gap-2">
             {#each copyrightHolders as holder (holder.id)}
@@ -223,13 +229,16 @@
         {#if service.url !== undefined}
           <Button href={service.url} target="_blank" rel="noopener noreferrer">
             <ExternalLinkIcon class="mr-2 h-4 w-4" />
-            Accéder au service
+            {m.service_detail_access_service()}
           </Button>
         {/if}
         {#if service.technicalDocUrl !== undefined}
           {#if service.technicalDocUrl.startsWith("/")}
-            <Button href={service.technicalDocUrl} variant="outline">
-              Documentation technique
+            <Button
+              href={localizedHref(service.technicalDocUrl)}
+              variant="outline"
+            >
+              {m.service_detail_technical_doc()}
             </Button>
           {:else}
             <Button
@@ -239,7 +248,7 @@
               rel="noopener noreferrer"
             >
               <ExternalLinkIcon class="mr-2 h-4 w-4" />
-              Documentation technique
+              {m.service_detail_technical_doc()}
             </Button>
           {/if}
         {/if}
@@ -250,11 +259,13 @@
   <!-- Dependencies section -->
   {#if dependencies.length > 0}
     <section class="mb-8">
-      <h2 class="mb-4 text-2xl font-bold">Dépendances</h2>
+      <h2 class="mb-4 text-2xl font-bold">
+        {m.service_detail_dependencies_title()}
+      </h2>
       <p class="mb-6 text-muted-foreground">
-        Ce service dépend de {dependencies.length} autre{dependencies.length > 1
-          ? "s"
-          : ""} service{dependencies.length > 1 ? "s" : ""}.
+        {m.service_detail_dependencies_description({
+          count: dependencies.length,
+        })}
       </p>
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {#each dependencies as dependency (dependency.id)}
@@ -267,19 +278,21 @@
   <!-- Software section -->
   {#if softwareList.length > 0}
     <section class="mb-8">
-      <h2 class="mb-4 text-2xl font-bold">Logiciels</h2>
+      <h2 class="mb-4 text-2xl font-bold">
+        {m.service_detail_software_title()}
+      </h2>
       <p class="mb-6 text-muted-foreground">
-        Ce service est généré par {softwareList.length} logiciel{softwareList.length >
-        1
-          ? "s"
-          : ""} libre{softwareList.length > 1 ? "s" : ""}.
+        {m.service_detail_software_description({ count: softwareList.length })}
       </p>
       <div class="space-y-4">
         {#each softwareList as soft (soft.id)}
           <Card.Root>
             <Card.Header>
               <Card.Title class="text-lg">
-                <a href="/logiciels/{soft.id}" class="hover:underline">
+                <a
+                  href={localizedHref(`/logiciels/${soft.id}`)}
+                  class="hover:underline"
+                >
                   {soft.name}
                 </a>
               </Card.Title>
@@ -310,11 +323,13 @@
   <!-- Data Sources section -->
   {#if dataSources.length > 0}
     <section class="mb-8">
-      <h2 class="mb-4 text-2xl font-bold">Sources de données</h2>
+      <h2 class="mb-4 text-2xl font-bold">
+        {m.service_detail_data_sources_title()}
+      </h2>
       <p class="mb-6 text-muted-foreground">
-        Ce service utilise {dataSources.length} source{dataSources.length > 1
-          ? "s"
-          : ""} de données publiques.
+        {m.service_detail_data_sources_description({
+          count: dataSources.length,
+        })}
       </p>
       <div class="space-y-4">
         {#each dataSources as source (source.id)}
@@ -325,11 +340,13 @@
             </Card.Header>
             <Card.Content class="space-y-3">
               <div class="text-sm text-muted-foreground">
-                Fournisseur : <strong>{source.provider}</strong>
+                {m.service_detail_data_sources_provider_label()}
+                <strong>{source.provider}</strong>
               </div>
               {#if source.license}
                 <div class="text-sm text-muted-foreground">
-                  Licence : <a
+                  {m.service_detail_data_sources_license_label()}
+                  <a
                     href={source.license.url}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -346,7 +363,7 @@
                 class="inline-block text-sm text-blue-600 hover:underline dark:text-blue-400"
               >
                 <ExternalLinkIcon class="mr-1 inline h-3 w-3" />
-                Accéder à la source
+                {m.service_detail_data_sources_access()}
               </a>
             </Card.Content>
           </Card.Root>
@@ -358,12 +375,11 @@
   <!-- Dependents section -->
   {#if dependents.length > 0}
     <section class="mb-8">
-      <h2 class="mb-4 text-2xl font-bold">Utilisé par d'autres services</h2>
+      <h2 class="mb-4 text-2xl font-bold">
+        {m.service_detail_dependents_title()}
+      </h2>
       <p class="mb-6 text-muted-foreground">
-        {dependents.length} autre{dependents.length > 1 ? "s" : ""} service{dependents.length >
-        1
-          ? "s"
-          : ""} dépend{dependents.length > 1 ? "ent" : ""} de ce service.
+        {m.service_detail_dependents_description({ count: dependents.length })}
       </p>
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {#each dependents as dependent (dependent.id)}
@@ -376,12 +392,9 @@
   <!-- Used by section -->
   {#if reuses.length > 0}
     <section class="mb-8">
-      <h2 class="mb-4 text-2xl font-bold">Utilisé par des réutilisations</h2>
+      <h2 class="mb-4 text-2xl font-bold">{m.service_detail_reuses_title()}</h2>
       <p class="mb-6 text-muted-foreground">
-        Ce service est utilisé par {reuses.length} réutilisation{reuses.length >
-        1
-          ? "s"
-          : ""}.
+        {m.service_detail_reuses_description({ count: reuses.length })}
       </p>
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {#each reuses as reuse (reuse.id)}
@@ -395,15 +408,19 @@
   {#if service.type === "api"}
     <Card.Root>
       <Card.Content class="py-6">
-        <h2 class="mb-4 text-2xl font-bold">Documentation technique</h2>
+        <h2 class="mb-4 text-2xl font-bold">
+          {m.service_detail_api_doc_title()}
+        </h2>
         <p class="mb-4 text-muted-foreground">
-          Cette API fournit un accès REST aux données. Pour plus de détails sur
-          les endpoints disponibles, consultez la documentation technique.
+          {m.service_detail_api_doc_description()}
         </p>
         {#if service.technicalDocUrl !== undefined}
           {#if service.technicalDocUrl.startsWith("/")}
-            <Button href={service.technicalDocUrl} variant="outline">
-              Voir la documentation complète
+            <Button
+              href={localizedHref(service.technicalDocUrl)}
+              variant="outline"
+            >
+              {m.service_detail_view_full_doc()}
             </Button>
           {:else}
             <Button
@@ -413,7 +430,7 @@
               rel="noopener noreferrer"
             >
               <ExternalLinkIcon class="mr-2 h-4 w-4" />
-              Voir la documentation complète
+              {m.service_detail_view_full_doc()}
             </Button>
           {/if}
         {/if}

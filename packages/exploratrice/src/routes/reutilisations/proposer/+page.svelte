@@ -9,6 +9,8 @@
   import { dataServices } from "$lib/data/tricoteuses-ecosystem.js"
   import CheckIcon from "@lucide/svelte/icons/check"
   import CopyIcon from "@lucide/svelte/icons/copy"
+  import * as m from "$lib/paraglide/messages.js"
+  import { localizedHref } from "$lib/i18n.js"
 
   const services = Object.values(dataServices)
 
@@ -74,26 +76,41 @@
       contactEmail.trim() !== "" &&
       selectedServiceIds.length > 0,
   )
+
+  function getServiceTypeLabel(type: string): string {
+    switch (type) {
+      case "api":
+        return m.reuse_propose_service_type_api()
+      case "git":
+        return m.reuse_propose_service_type_git()
+      case "mcp":
+        return m.reuse_propose_service_type_mcp()
+      default:
+        return m.reuse_propose_service_type_consolidation()
+    }
+  }
 </script>
 
 <svelte:head>
-  <title>Proposer une réutilisation - Tricoteuses</title>
+  <title>{m.reuse_propose_page_title()}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: "Réutilisations", href: "/reutilisations" },
-      { label: "Proposer une réutilisation" },
+      {
+        label: m.reuse_propose_breadcrumb_reuses(),
+        href: localizedHref("/reutilisations"),
+      },
+      { label: m.reuse_propose_breadcrumb_propose() },
     ]}
   />
 
   <!-- Header -->
   <div class="mb-8 text-center">
-    <h1 class="mb-4 text-4xl font-bold">Proposer une réutilisation</h1>
+    <h1 class="mb-4 text-4xl font-bold">{m.reuse_propose_heading()}</h1>
     <p class="text-lg text-muted-foreground">
-      Vous avez créé un projet utilisant les données Tricoteuses ? Partagez-le
-      avec la communauté !
+      {m.reuse_propose_description()}
     </p>
   </div>
 
@@ -109,59 +126,67 @@
       >
         <!-- Project information -->
         <div class="space-y-4">
-          <h2 class="text-xl font-semibold">Informations sur le projet</h2>
+          <h2 class="text-xl font-semibold">
+            {m.reuse_propose_project_info_title()}
+          </h2>
 
           <div class="space-y-2">
-            <Label for="projectName">Nom du projet *</Label>
+            <Label for="projectName"
+              >{m.reuse_propose_project_name_label()}</Label
+            >
             <Input
               id="projectName"
               bind:value={projectName}
-              placeholder="Mon Application Législative"
+              placeholder={m.reuse_propose_project_name_placeholder()}
               required
             />
           </div>
 
           <div class="space-y-2">
-            <Label for="projectDescription">Description *</Label>
+            <Label for="projectDescription"
+              >{m.reuse_propose_project_description_label()}</Label
+            >
             <Textarea
               id="projectDescription"
               bind:value={projectDescription}
-              placeholder="Décrivez votre projet et ses fonctionnalités principales..."
+              placeholder={m.reuse_propose_project_description_placeholder()}
               rows={4}
               required
             />
           </div>
 
           <div class="space-y-2">
-            <Label for="projectUrl">URL du projet *</Label>
+            <Label for="projectUrl">{m.reuse_propose_project_url_label()}</Label
+            >
             <Input
               id="projectUrl"
               bind:value={projectUrl}
               type="url"
-              placeholder="https://mon-projet.fr"
+              placeholder={m.reuse_propose_project_url_placeholder()}
               required
             />
           </div>
 
           <div class="space-y-2">
             <Label for="screenshotUrl"
-              >URL de la capture d'écran (optionnel)</Label
+              >{m.reuse_propose_screenshot_url_label()}</Label
             >
             <Input
               id="screenshotUrl"
               bind:value={screenshotUrl}
               type="url"
-              placeholder="https://exemple.fr/capture.png"
+              placeholder={m.reuse_propose_screenshot_url_placeholder()}
             />
           </div>
         </div>
 
         <!-- Services used -->
         <div class="space-y-4">
-          <h2 class="text-xl font-semibold">Services Tricoteuses utilisés *</h2>
+          <h2 class="text-xl font-semibold">
+            {m.reuse_propose_services_title()}
+          </h2>
           <p class="text-sm text-muted-foreground">
-            Sélectionnez les services et données Tricoteuses que votre projet
-            utilise.
+            {m.reuse_propose_services_description()}
           </p>
 
           <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -178,13 +203,7 @@
                 <div class="flex-1">
                   <div class="font-medium">{service.name}</div>
                   <div class="text-xs text-muted-foreground">
-                    {service.type === "api"
-                      ? "API REST"
-                      : service.type === "git"
-                        ? "Dépôt Git"
-                        : service.type === "mcp"
-                          ? "Serveur MCP"
-                          : "Code juridique"}
+                    {getServiceTypeLabel(service.type)}
                   </div>
                 </div>
                 {#if selectedServiceIds.includes(service.id)}
@@ -197,7 +216,9 @@
           {#if selectedServiceIds.length > 0}
             <div class="flex flex-wrap gap-2">
               <span class="text-sm text-muted-foreground"
-                >Services sélectionnés ({selectedServiceIds.length}):</span
+                >{m.reuse_propose_services_selected({
+                  count: selectedServiceIds.length,
+                })}</span
               >
               {#each selectedServiceIds as serviceId}
                 {@const service = services.find((s) => s.id === serviceId)}
@@ -211,30 +232,34 @@
 
         <!-- Contact information -->
         <div class="space-y-4">
-          <h2 class="text-xl font-semibold">Vos coordonnées</h2>
+          <h2 class="text-xl font-semibold">
+            {m.reuse_propose_contact_title()}
+          </h2>
 
           <div class="space-y-2">
-            <Label for="authorName">Nom ou organisation *</Label>
+            <Label for="authorName">{m.reuse_propose_author_name_label()}</Label
+            >
             <Input
               id="authorName"
               bind:value={authorName}
-              placeholder="Votre nom ou celui de votre organisation"
+              placeholder={m.reuse_propose_author_name_placeholder()}
               required
             />
           </div>
 
           <div class="space-y-2">
-            <Label for="contactEmail">Email de contact *</Label>
+            <Label for="contactEmail"
+              >{m.reuse_propose_contact_email_label()}</Label
+            >
             <Input
               id="contactEmail"
               bind:value={contactEmail}
               type="email"
-              placeholder="contact@exemple.fr"
+              placeholder={m.reuse_propose_contact_email_placeholder()}
               required
             />
             <p class="text-xs text-muted-foreground">
-              Votre email ne sera utilisé que pour vous contacter au sujet de
-              cette proposition.
+              {m.reuse_propose_contact_email_help()}
             </p>
           </div>
         </div>
@@ -242,7 +267,7 @@
         <!-- Submit button -->
         <div class="flex justify-end">
           <Button type="submit" disabled={!isFormValid}
-            >Générer la proposition</Button
+            >{m.reuse_propose_submit_button()}</Button
           >
         </div>
       </form>
@@ -254,39 +279,32 @@
     <Card.Root class="border-l-4 border-l-green-500">
       <Card.Content class="py-6">
         <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-xl font-semibold">Votre proposition</h2>
+          <h2 class="text-xl font-semibold">
+            {m.reuse_propose_output_title()}
+          </h2>
           <Button variant="outline" size="sm" onclick={copyToClipboard}>
             {#if copied}
               <CheckIcon class="mr-2 h-4 w-4" />
-              Copié !
+              {m.reuse_propose_output_copied()}
             {:else}
               <CopyIcon class="mr-2 h-4 w-4" />
-              Copier
+              {m.reuse_propose_output_copy_button()}
             {/if}
           </Button>
         </div>
 
         <p class="mb-4 text-sm text-muted-foreground">
-          Merci pour votre proposition ! Voici le JSON généré. Pour soumettre
-          votre réutilisation, vous pouvez :
+          {m.reuse_propose_output_thanks()}
         </p>
 
         <ul
           class="mb-4 list-inside list-disc space-y-1 text-sm text-muted-foreground"
         >
           <li>
-            Créer une issue sur notre <a
-              href="https://github.com/tricoteuses/tricoteuses-juridique/issues/new"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-primary underline">dépôt GitHub</a
-            > en incluant ce JSON
+            {@html m.reuse_propose_output_option_github()}
           </li>
           <li>
-            Nous envoyer un email à <a
-              href="mailto:contact@tricoteuses.fr"
-              class="text-primary underline">contact@tricoteuses.fr</a
-            > avec ce JSON
+            {@html m.reuse_propose_output_option_email()}
           </li>
         </ul>
 

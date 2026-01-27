@@ -9,8 +9,10 @@
     externalProjects,
     reuses,
   } from "$lib/data/tricoteuses-ecosystem.js"
+  import { localizedHref } from "$lib/i18n.js"
   import ChevronRight from "@lucide/svelte/icons/chevron-right"
   import { onDestroy, onMount } from "svelte"
+  import * as m from "$lib/paraglide/messages.js"
 
   const featuredServices = Object.values(dataServices).filter((s) => s.featured)
   const featuredExternalReuses = Object.values(reuses).filter(
@@ -24,19 +26,19 @@
   let intervalId: NodeJS.Timeout | undefined = $state(undefined)
   let tagline = $state("")
   let taglineIndex = 0
-  const taglines = [
+  const taglines = $derived([
     "",
-    ", la loi sous git.",
-    ", la loi en bases de données.",
-    ", la loi en API",
-    ", la loi pour les IA",
-    ", la loi en liens.",
-    ", la loi en diffs.",
-    ", la loi et sa fabrique.",
-    ", la loi en données publiques.",
-    ", la loi en logiciel libre.",
-    ", la loi en temps réel.",
-  ] as const
+    m.home_tagline_git(),
+    m.home_tagline_databases(),
+    m.home_tagline_api(),
+    m.home_tagline_ai(),
+    m.home_tagline_links(),
+    m.home_tagline_diffs(),
+    m.home_tagline_making(),
+    m.home_tagline_opendata(),
+    m.home_tagline_opensource(),
+    m.home_tagline_realtime(),
+  ])
 
   onMount(() => {
     intervalId = setInterval(() => {
@@ -56,24 +58,22 @@
 </script>
 
 <svelte:head>
-  <title>Tricoteuses - Données publiques juridiques françaises</title>
+  <title>{m.site_title()}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <!-- Hero Section -->
   <header class="mb-16 text-center">
     <h1 class="mb-4 text-5xl font-bold">
-      Tricoteuses<span class="text-primary italic">{tagline}</span>
+      {m.site_name()}<span class="text-primary italic">{tagline}</span>
     </h1>
     <p class="mx-auto max-w-3xl text-xl text-muted-foreground">
-      Démocratiser l'accès aux données publiques juridiques françaises à travers
-      des données publiques enrichies, des services ouverts, des APIs modernes
-      et une communauté de contributeurs.
+      {m.home_hero_description()}
       <a
-        href="/a_propos"
+        href={localizedHref("/a_propos")}
         class="ml-1 text-sm underline-offset-4 hover:underline"
       >
-        En savoir plus
+        {m.home_hero_learn_more()}
       </a>
     </p>
   </header>
@@ -82,14 +82,13 @@
   <section class="mb-16">
     <div class="mb-8 flex items-center justify-between">
       <div>
-        <h2 class="mb-2 text-3xl font-bold">Services et données</h2>
+        <h2 class="mb-2 text-3xl font-bold">{m.home_services_title()}</h2>
         <p class="text-muted-foreground">
-          APIs, dépôts de données et services pour accéder aux données
-          juridiques françaises
+          {m.home_services_description()}
         </p>
       </div>
-      <Button href="/services" variant="outline">
-        Voir tous les services et données
+      <Button href={localizedHref("/services")} variant="outline">
+        {m.home_services_see_all()}
         <ChevronRight class="ml-2 h-4 w-4" />
       </Button>
     </div>
@@ -98,7 +97,10 @@
       {#each featuredServices as service (service.id)}
         <ServiceCard {service} />
       {/each}
-      <SeeAllCard href="/services" label="Voir tous les services et données" />
+      <SeeAllCard
+        href={localizedHref("/services")}
+        label={m.home_services_see_all()}
+      />
     </div>
   </section>
 
@@ -107,41 +109,41 @@
     <div class="mb-8">
       <div class="mb-4 flex items-center justify-between">
         <div>
-          <h2 class="mb-2 text-3xl font-bold">Réutilisations</h2>
+          <h2 class="mb-2 text-3xl font-bold">{m.home_reuses_title()}</h2>
           <p class="text-muted-foreground">
-            Services et applications qui utilisent les données Tricoteuses
+            {m.home_reuses_description()}
           </p>
         </div>
-        <Button href="/reutilisations" variant="outline">
-          Voir toutes les réutilisations
+        <Button href={localizedHref("/reutilisations")} variant="outline">
+          {m.home_reuses_see_all()}
           <ChevronRight class="ml-2 h-4 w-4" />
         </Button>
       </div>
 
       <!-- External Reuses -->
       {#if featuredExternalReuses.length > 0}
-        <h3 class="mb-4 text-xl font-semibold">Services externes</h3>
+        <h3 class="mb-4 text-xl font-semibold">{m.home_reuses_external()}</h3>
         <div class="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {#each featuredExternalReuses as reuse (reuse.id)}
             <ReuseCard {reuse} />
           {/each}
           <SeeAllCard
-            href="/reutilisations"
-            label="Voir toutes les réutilisations"
+            href={localizedHref("/reutilisations")}
+            label={m.home_reuses_see_all()}
           />
         </div>
       {/if}
 
       <!-- Demos -->
       {#if featuredDemos.length > 0}
-        <h3 class="mb-4 text-xl font-semibold">Démonstrations Tricoteuses</h3>
+        <h3 class="mb-4 text-xl font-semibold">{m.home_reuses_demos()}</h3>
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {#each featuredDemos as reuse (reuse.id)}
             <ReuseCard {reuse} />
           {/each}
           <SeeAllCard
-            href="/reutilisations"
-            label="Voir toutes les réutilisations"
+            href={localizedHref("/reutilisations")}
+            label={m.home_reuses_see_all()}
           />
         </div>
       {/if}
@@ -153,15 +155,14 @@
     <div class="mb-8 flex items-center justify-between">
       <div>
         <h2 class="mb-2 text-3xl font-bold">
-          Projets externes complémentaires
+          {m.home_external_projects_title()}
         </h2>
         <p class="text-muted-foreground">
-          Projets open source externes qui complètent l'écosystème Tricoteuses
-          pour manipuler l'opendata législatif et juridique
+          {m.home_external_projects_description()}
         </p>
       </div>
-      <Button href="/projets-externes" variant="outline">
-        Voir tous les projets externes
+      <Button href={localizedHref("/projets_externes")} variant="outline">
+        {m.home_external_projects_see_all()}
         <ChevronRight class="ml-2 h-4 w-4" />
       </Button>
     </div>
@@ -171,8 +172,8 @@
         <ExternalProjectCard {project} />
       {/each}
       <SeeAllCard
-        href="/projets-externes"
-        label="Voir tous les projets externes"
+        href={localizedHref("/projets_externes")}
+        label={m.home_external_projects_see_all()}
       />
     </div>
   </section>
@@ -180,14 +181,13 @@
   <!-- CTA Section -->
   <section class="rounded-lg border bg-muted p-8 text-center">
     <h2 class="mb-4 text-2xl font-bold">
-      Vous utilisez les données Tricoteuses ?
+      {m.home_cta_title()}
     </h2>
     <p class="mb-6 text-muted-foreground">
-      Partagez votre projet avec la communauté et inspirez d'autres développeurs
-      !
+      {m.home_cta_description()}
     </p>
-    <Button href="/reutilisations/proposer" size="lg">
-      Proposer une réutilisation
+    <Button href={localizedHref("/reutilisations/proposer")} size="lg">
+      {m.home_cta_button()}
       <ChevronRight class="ml-2 h-4 w-4" />
     </Button>
   </section>

@@ -2,11 +2,14 @@
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as Card from "$lib/components/ui/card/index.js"
   import type { DataService } from "$lib/data/tricoteuses-ecosystem.js"
+  import { getLocalizedDataService } from "$lib/data/tricoteuses-ecosystem-i18n.js"
+  import { localizedHref } from "$lib/i18n.js"
   import Book from "@lucide/svelte/icons/book"
   import Building from "@lucide/svelte/icons/building"
   import Database from "@lucide/svelte/icons/database"
   import Folder from "@lucide/svelte/icons/folder"
   import Terminal from "@lucide/svelte/icons/terminal"
+  import * as m from "$lib/paraglide/messages.js"
 
   interface ServiceCardProps {
     class?: string
@@ -14,6 +17,8 @@
   }
 
   let { class: className, service }: ServiceCardProps = $props()
+
+  const localizedService = $derived(getLocalizedDataService(service))
 
   const borderColorClass = $derived.by(() => {
     switch (service.type) {
@@ -86,15 +91,15 @@
   const typeBadgeLabel = $derived.by(() => {
     switch (service.type) {
       case "api":
-        return "API REST"
+        return m.service_card_type_api()
       case "git":
-        return "Dépôt Git"
+        return m.service_card_type_git()
       case "mcp":
-        return "Serveur MCP"
+        return m.service_card_type_mcp()
       case "consolidation":
-        return "Code juridique"
+        return m.service_card_type_consolidation()
       case "database":
-        return "Base de données"
+        return m.service_card_type_database()
       default:
         return service.type
     }
@@ -102,7 +107,7 @@
 </script>
 
 <a
-  href="/services/{service.id}"
+  href={localizedHref(`/services/${service.id}`)}
   class="transition-transform hover:scale-[1.02] {className ?? ''}"
 >
   <Card.Root class="h-full border-l-4 {borderColorClass}">
@@ -113,19 +118,19 @@
         >
           <iconComponent class="h-6 w-6 {iconColorClass}"></iconComponent>
         </div>
-        <Card.Title class="text-xl">{service.name}</Card.Title>
+        <Card.Title class="text-xl">{localizedService.name}</Card.Title>
       </div>
       <Card.Description>
-        {service.description}
+        {localizedService.description}
       </Card.Description>
     </Card.Header>
     <Card.Content class="space-y-4">
       <div class="flex flex-wrap gap-2">
         <Badge variant="secondary">{typeBadgeLabel}</Badge>
-        {#if service.provider}
-          <Badge variant="outline">{service.provider.name}</Badge>
-        {:else if service.author}
-          <Badge variant="outline">{service.author}</Badge>
+        {#if localizedService.provider}
+          <Badge variant="outline">{localizedService.provider.name}</Badge>
+        {:else if localizedService.author}
+          <Badge variant="outline">{localizedService.author}</Badge>
         {/if}
       </div>
     </Card.Content>

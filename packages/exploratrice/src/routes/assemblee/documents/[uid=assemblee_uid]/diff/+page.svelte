@@ -20,6 +20,7 @@
 {#if current === undefined}
   <PageBreadcrumb
     segments={[
+      { label: "Assemblée" },
       {
         label: "Dossiers législatifs",
         href: "/assemblee/dossiers_legislatifs",
@@ -35,6 +36,7 @@
 {:else if current.documentSegmentation === undefined}
   <PageBreadcrumb
     segments={[
+      { label: "Assemblée" },
       {
         label: "Dossiers législatifs",
         href: "/assemblee/dossiers_legislatifs",
@@ -59,6 +61,7 @@
 {:else if previous === undefined}
   <PageBreadcrumb
     segments={[
+      { label: "Assemblée" },
       {
         label: "Dossiers législatifs",
         href: "/assemblee/dossiers_legislatifs",
@@ -81,6 +84,7 @@
 {:else if previous.documentSegmentation === undefined}
   <PageBreadcrumb
     segments={[
+      { label: "Assemblée" },
       {
         label: "Dossiers législatifs",
         href: "/assemblee/dossiers_legislatifs",
@@ -105,6 +109,7 @@
 {:else}
   <PageBreadcrumb
     segments={[
+      { label: "Assemblée" },
       {
         label: "Dossiers législatifs",
         href: "/assemblee/dossiers_legislatifs",

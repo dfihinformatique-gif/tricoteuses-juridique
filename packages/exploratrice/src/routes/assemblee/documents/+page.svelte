@@ -18,7 +18,7 @@
   let { data }: { data: PageData } = $props()
 
   const currentPage = $derived(data.currentPage)
-  const dossiers = $derived(data.dossiers)
+  const documents = $derived(data.documents)
   const totalPages = $derived(data.totalPages)
 </script>
 
@@ -69,28 +69,29 @@
 {/snippet}
 
 <svelte:head>
-  <title>Dossiers législatifs - Tricoteuses</title>
+  <title>Documents - Tricoteuses</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb
-    segments={[{ label: "Assemblée" }, { label: "Dossiers législatifs" }]}
+    segments={[{ label: "Assemblée" }, { label: "Documents" }]}
   />
 
   <div class="mb-8">
     <h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">
-      <FolderOpenIcon size={32} />
-      Les derniers dossiers législatifs
+      <FileTextIcon size={32} />
+      Les derniers documents
     </h1>
     <p class="text-lg text-muted-foreground">
-      Explorez les dossiers législatifs en cours à l'Assemblée nationale.
+      Explorez les documents (projets de lois, rapports, etc.) de l'Assemblée
+      nationale avec leurs liens enrichis vers les articles de lois.
     </p>
   </div>
 
   <Card.Root>
     <Card.Content class="py-6">
       <Item.Group>
-        {#each dossiers as suggestion (suggestion.id)}
+        {#each documents as suggestion (suggestion.id)}
           {@const urlPath = urlPathFromId(suggestion.id)}
           <Item.Root variant="muted" size="sm">
             {#snippet child({ props })}

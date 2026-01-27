@@ -31,19 +31,14 @@
                     >Services et données</NavigationMenu.Link
                   >
                 </li>
-                <li class="border-b">
+                <li>
                   <NavigationMenu.Link href="/reutilisations"
                     >Réutilisations</NavigationMenu.Link
                   >
                 </li>
-                <li>
-                  <NavigationMenu.Link
-                    class="flex flex-row whitespace-nowrap"
-                    href="https://git.tricoteuses.fr/tricoteuses/a_propos"
-                    target="_blank"
-                    >À propos des Tricoteuses <ExternalLinkIcon
-                      class="ml-1"
-                    /></NavigationMenu.Link
+                <li class="border-b">
+                  <NavigationMenu.Link href="/a_propos"
+                    >À propos des Tricoteuses</NavigationMenu.Link
                   >
                 </li>
                 <li>

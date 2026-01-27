@@ -17,6 +17,7 @@
 {#if dossierParlementairePageInfos === undefined}
   <PageBreadcrumb
     segments={[
+      { label: "Assemblée" },
       {
         label: "Dossiers législatifs",
         href: "/assemblee/dossiers_legislatifs",
@@ -31,6 +32,7 @@
 {:else}
   <PageBreadcrumb
     segments={[
+      { label: "Assemblée" },
       {
         label: "Dossiers législatifs",
         href: "/assemblee/dossiers_legislatifs",

@@ -104,7 +104,7 @@
     }
   })
 
-  function getSchemaForEndpoint(path: string): any {
+  function getSchemaForEndpoint(path: string): unknown {
     const config = serviceConfig
 
     // Extract table/endpoint name from path

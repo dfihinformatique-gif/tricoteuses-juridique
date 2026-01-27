@@ -69,6 +69,12 @@
       Démocratiser l'accès aux données publiques juridiques françaises à travers
       des données publiques enrichies, des services ouverts, des APIs modernes
       et une communauté de contributeurs.
+      <a
+        href="/a_propos"
+        class="ml-1 text-sm underline-offset-4 hover:underline"
+      >
+        En savoir plus
+      </a>
     </p>
   </header>
 

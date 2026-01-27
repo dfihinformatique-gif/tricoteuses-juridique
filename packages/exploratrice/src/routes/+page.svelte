@@ -24,8 +24,11 @@
   const featuredExternalProjects = externalProjects.filter((p) => p.featured)
 
   let intervalId: NodeJS.Timeout | undefined = $state(undefined)
+  let typewriterIntervalId: NodeJS.Timeout | undefined = $state(undefined)
   let tagline = $state("")
   let taglineIndex = 0
+  let charIndex = 0
+  let isTyping = $state(false)
   const taglines = $derived([
     "",
     m.home_tagline_git(),
@@ -40,19 +43,53 @@
     m.home_tagline_realtime(),
   ])
 
-  onMount(() => {
-    intervalId = setInterval(() => {
-      taglineIndex++
-      if (taglineIndex >= taglines.length) {
-        taglineIndex = 0
+  function typeWriter() {
+    const currentTagline = taglines[taglineIndex]
+
+    if (charIndex < currentTagline.length) {
+      tagline = currentTagline.slice(0, charIndex + 1)
+      charIndex++
+    } else {
+      // Finished typing, wait before moving to next tagline
+      if (typewriterIntervalId !== undefined) {
+        clearInterval(typewriterIntervalId)
+        typewriterIntervalId = undefined
       }
-      tagline = taglines[taglineIndex]
+      isTyping = false
+    }
+  }
+
+  function nextTagline() {
+    taglineIndex++
+    if (taglineIndex >= taglines.length) {
+      taglineIndex = 0
+    }
+    charIndex = 0
+    tagline = ""
+    isTyping = true
+
+    // Start typewriter effect
+    typewriterIntervalId = setInterval(typeWriter, 80)
+  }
+
+  onMount(() => {
+    // Start with first tagline
+    nextTagline()
+
+    // Change tagline every 3 seconds
+    intervalId = setInterval(() => {
+      if (!isTyping) {
+        nextTagline()
+      }
     }, 3000)
   })
 
   onDestroy(() => {
     if (intervalId !== undefined) {
       clearInterval(intervalId)
+    }
+    if (typewriterIntervalId !== undefined) {
+      clearInterval(typewriterIntervalId)
     }
   })
 </script>

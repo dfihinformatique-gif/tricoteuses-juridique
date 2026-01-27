@@ -30,8 +30,16 @@
   <PageBreadcrumb
     segments={[
       { label: "Textes promulgués", href: "/legifrance/textes" },
-      { label: "Texte", href: urlPathFromId(sectionTa.CONTEXTE.TEXTE["@cid"]) },
-      { label: sectionTa.TITRE_TA?.["#text"] ?? `Section ${params.id}` },
+      {
+        label: "Texte",
+        href: sectionTa.CONTEXTE.TEXTE["@cid"]
+          ? (urlPathFromId(sectionTa.CONTEXTE.TEXTE["@cid"]) ?? undefined)
+          : undefined,
+      },
+      {
+        label:
+          (sectionTa.TITRE_TA as Record)?.["#text"] || `Section ${params.id}`,
+      },
     ]}
   />
   <SectionTa bind:displayMode {sectionTa} bind:showIds />

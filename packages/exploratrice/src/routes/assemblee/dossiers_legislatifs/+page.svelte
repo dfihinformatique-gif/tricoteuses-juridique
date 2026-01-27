@@ -8,12 +8,10 @@
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
   import type { Suggestion } from "$lib/autocompletion.js"
-  import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    FileTextIcon,
-    FolderOpenIcon,
-  } from "@lucide/svelte"
+  import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left"
+  import ChevronRightIcon from "@lucide/svelte/icons/chevron-right"
+  import FileTextIcon from "@lucide/svelte/icons/file-text"
+  import FolderOpenIcon from "@lucide/svelte/icons/folder-open"
 
   import type { PageData } from "./$types"
 

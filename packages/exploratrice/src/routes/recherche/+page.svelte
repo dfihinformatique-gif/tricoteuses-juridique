@@ -1,16 +1,12 @@
 <script lang="ts">
   import { z } from "zod"
-  import { SearchIcon } from "@lucide/svelte"
+  import SearchIcon from "@lucide/svelte/icons/search"
   import ChevronDownIcon from "@lucide/svelte/icons/chevron-down"
 
   import { goto } from "$app/navigation"
   import { page } from "$app/state"
   import { parseSearchParams, querySingleton, queryQ } from "$lib/zod/query.js"
-  import {
-    possibleTypes,
-    type PossibleType,
-    type Suggestion,
-  } from "$lib/autocompletion.js"
+  import { possibleTypes, type Suggestion } from "$lib/autocompletion.js"
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as Card from "$lib/components/ui/card/index.js"
   import * as Command from "$lib/components/ui/command/index.js"
@@ -60,7 +56,7 @@
 
   let suggestions = $derived(
     await autocomplete([
-      q,
+      q ?? null,
       typeFilter ?? null,
       searchContext.legifranceTexteCid,
     ]),

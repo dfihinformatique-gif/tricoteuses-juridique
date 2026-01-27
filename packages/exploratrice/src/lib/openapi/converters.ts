@@ -131,7 +131,7 @@ function convertOperation(
         if (requestBody.description) {
           bodyParam.description = requestBody.description
         }
-        converted.parameters = converted.parameters || []
+        converted.parameters = converted.parameters ?? []
         converted.parameters.push(bodyParam)
       }
     }

@@ -4,27 +4,18 @@
   import * as Card from "$lib/components/ui/card/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import ServiceCard from "$lib/components/service-card.svelte"
-  import {
-    getDataServicesByReuseId,
-    type Reuse,
-  } from "$lib/data/tricoteuses-ecosystem.js"
-  import { ExternalLinkIcon, FlaskConicalIcon, UserIcon } from "@lucide/svelte"
+  import { type Reuse } from "$lib/data/tricoteuses-ecosystem.js"
+  import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
+  import FlaskConicalIcon from "@lucide/svelte/icons/flask-conical"
+  import UserIcon from "@lucide/svelte/icons/user"
 
   import type { PageData } from "./$types"
 
   let { data }: { data: PageData } = $props()
 
-  const reuse: Reuse = data.reuse
-  const services = getDataServicesByReuseId(reuse.id)
-
-  const reuseIcon = $derived.by(() => {
-    switch (reuse.type) {
-      case "external":
-        return ExternalLinkIcon
-      case "demo":
-        return FlaskConicalIcon
-    }
-  })
+  const reuse: Reuse = $derived(data.reuse)
+  const services = $derived(reuse.servicesDependencies)
+  const softwareList = $derived(reuse.softwareDependencies ?? [])
 
   function getReuseColor(type: Reuse["type"]) {
     switch (type) {
@@ -67,7 +58,7 @@
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: "Réutilisations", href: "/reuses" },
+      { label: "Réutilisations", href: "/reutilisations" },
       { label: reuse.name },
     ]}
   />
@@ -147,6 +138,49 @@
     </section>
   {/if}
 
+  <!-- Software dependencies section -->
+  {#if softwareList.length > 0}
+    <section class="mb-8">
+      <h2 class="mb-4 text-2xl font-bold">Logiciels utilisés</h2>
+      <p class="mb-6 text-muted-foreground">
+        Cette réutilisation utilise {softwareList.length} logiciel{softwareList.length >
+        1
+          ? "s"
+          : ""} libre{softwareList.length > 1 ? "s" : ""}.
+      </p>
+      <div class="space-y-4">
+        {#each softwareList as soft (soft.id)}
+          <Card.Root>
+            <Card.Header>
+              <Card.Title class="text-lg">
+                <a href="/logiciels/{soft.id}" class="hover:underline">
+                  {soft.name}
+                </a>
+              </Card.Title>
+              <Card.Description>{soft.description}</Card.Description>
+            </Card.Header>
+            <Card.Content class="space-y-3">
+              <div class="flex flex-wrap gap-2">
+                <Badge variant="secondary"
+                  >{soft.license.spdxId || soft.license.name}</Badge
+                >
+                <a
+                  href={soft.repositoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-sm text-blue-600 hover:underline dark:text-blue-400"
+                >
+                  <ExternalLinkIcon class="mr-1 inline h-3 w-3" />
+                  Code source
+                </a>
+              </div>
+            </Card.Content>
+          </Card.Root>
+        {/each}
+      </div>
+    </section>
+  {/if}
+
   <!-- About this project section (for external reuses) -->
   {#if reuse.type === "external"}
     <Card.Root>
@@ -161,7 +195,7 @@
           nos services ouverts et nos APIs modernes.
         </p>
         <div class="mt-4">
-          <Button href="/reuses/proposer" variant="outline">
+          <Button href="/reutilisations/proposer" variant="outline">
             Proposer votre réutilisation
           </Button>
         </div>

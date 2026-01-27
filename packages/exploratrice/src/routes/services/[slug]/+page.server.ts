@@ -1,11 +1,11 @@
 import { error } from "@sveltejs/kit"
 
-import { getDataServiceById } from "$lib/data/tricoteuses-ecosystem.js"
+import { dataServices } from "$lib/data/tricoteuses-ecosystem.js"
 
 import type { PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ params }) => {
-  const service = getDataServiceById(params.slug)
+  const service = dataServices[params.slug]
 
   if (service === undefined) {
     throw error(404, {

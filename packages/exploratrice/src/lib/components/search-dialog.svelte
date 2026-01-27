@@ -244,7 +244,7 @@
           {#each suggestions as suggestion (`${suggestion.id}_${suggestion.autocompletion}`)}
             {@const urlPath = urlPathFromId(suggestion.id)}
             <Command.Item>
-              {#if urlPath === null}
+              {#if urlPath === undefined}
                 {@render suggestionView(suggestion)}
               {:else}
                 <a data-sveltekit-reload href={urlPath}

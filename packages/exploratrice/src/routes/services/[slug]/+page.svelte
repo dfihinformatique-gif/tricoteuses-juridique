@@ -6,43 +6,43 @@
   import ReuseCard from "$lib/components/reuse-card.svelte"
   import ServiceCard from "$lib/components/service-card.svelte"
   import {
+    dataServices,
     getCopyrightHolders,
-    getDataServiceDependencies,
-    getDataSourcesBySoftwareId,
-    getDependentDataServices,
-    getReusesByServiceId,
-    getSoftwareByDataServiceId,
+    getReusesByService,
     type DataService,
+    type DataSource,
   } from "$lib/data/tricoteuses-ecosystem.js"
-  import {
-    BookIcon,
-    BuildingIcon,
-    DatabaseIcon,
-    ExternalLinkIcon,
-    FolderIcon,
-    TerminalIcon,
-  } from "@lucide/svelte"
+  import BookIcon from "@lucide/svelte/icons/book"
+  import BuildingIcon from "@lucide/svelte/icons/building"
+  import DatabaseIcon from "@lucide/svelte/icons/database"
+  import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
+  import FolderIcon from "@lucide/svelte/icons/folder"
+  import TerminalIcon from "@lucide/svelte/icons/terminal"
 
   import type { PageData } from "./$types"
 
   let { data }: { data: PageData } = $props()
 
   const service: DataService = $derived(data.service)
-  const reuses = $derived(getReusesByServiceId(service.id))
-  const dependencies = $derived(getDataServiceDependencies(service.id))
-  const dependents = $derived(getDependentDataServices(service.id))
-  const copyrightHolders = $derived(getCopyrightHolders(service.id))
-  const softwareList = $derived(getSoftwareByDataServiceId(service.id))
+  const reuses = $derived(getReusesByService(service))
+  const dependencies = $derived(service.serviceDependencies ?? [])
+  const dependents = $derived(
+    Object.values(dataServices).filter((s) =>
+      s.serviceDependencies?.includes(service),
+    ),
+  )
+  const copyrightHolders = $derived(getCopyrightHolders(service))
+  const softwareList = $derived(service.softwareDependencies ?? [])
 
   // Get all data sources from all software used by this service
   const dataSources = $derived.by(() => {
-    const sources = new Map()
+    const sources: Record<string, DataSource> = {}
     softwareList.forEach((soft) => {
-      getDataSourcesBySoftwareId(soft.id).forEach((source) => {
-        sources.set(source.id, source)
+      ;(soft.sourceDataDependencies ?? []).forEach((source: DataSource) => {
+        sources[source.id] = source
       })
     })
-    return Array.from(sources.values())
+    return Object.values(sources) as DataSource[]
   })
 
   const serviceIcon = $derived.by(() => {
@@ -61,6 +61,9 @@
         return BuildingIcon
     }
   })
+
+  // For dynamic component rendering
+  const ServiceIconComponent = $derived(serviceIcon)
 
   function getServiceColor(type: DataService["type"]) {
     switch (type) {
@@ -133,7 +136,7 @@
       <div class="mb-4 flex items-start justify-between">
         <div class="flex items-start gap-4">
           <div class="rounded-lg bg-muted p-3">
-            <serviceIcon size={32}></serviceIcon>
+            <ServiceIconComponent size={32} />
           </div>
           <div>
             <h1 class="mb-2 text-4xl font-bold">{service.name}</h1>
@@ -180,7 +183,7 @@
             rel="noopener noreferrer"
             class="text-sm text-muted-foreground underline hover:text-foreground"
           >
-            {service.license.name}
+            {service.license.spdxId || service.license.name}
           </a>
         </div>
         <div>
@@ -275,7 +278,11 @@
         {#each softwareList as soft (soft.id)}
           <Card.Root>
             <Card.Header>
-              <Card.Title class="text-lg">{soft.name}</Card.Title>
+              <Card.Title class="text-lg">
+                <a href="/logiciels/{soft.id}" class="hover:underline">
+                  {soft.name}
+                </a>
+              </Card.Title>
               <Card.Description>{soft.description}</Card.Description>
             </Card.Header>
             <Card.Content class="space-y-3">
@@ -328,7 +335,7 @@
                     rel="noopener noreferrer"
                     class="text-blue-600 hover:underline dark:text-blue-400"
                   >
-                    {source.license.name}
+                    {source.license.spdxId || source.license.name}
                   </a>
                 </div>
               {/if}

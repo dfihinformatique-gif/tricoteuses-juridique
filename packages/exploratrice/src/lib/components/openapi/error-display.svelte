@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Alert, AlertDescription, AlertTitle } from "$lib/components/ui/alert"
-  import { AlertCircle } from "@lucide/svelte"
+  import AlertCircle from "@lucide/svelte/icons/alert-circle"
 
   interface Props {
     error: string | null | undefined

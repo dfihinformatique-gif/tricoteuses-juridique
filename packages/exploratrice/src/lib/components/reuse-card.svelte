@@ -2,7 +2,8 @@
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as Card from "$lib/components/ui/card/index.js"
   import type { Reuse } from "$lib/data/tricoteuses-ecosystem.js"
-  import { ExternalLink, FlaskConical } from "@lucide/svelte"
+  import ExternalLink from "@lucide/svelte/icons/external-link"
+  import FlaskConical from "@lucide/svelte/icons/flask-conical"
 
   interface ReuseCardProps {
     class?: string
@@ -37,7 +38,7 @@
 </script>
 
 <a
-  href="/reuses/{reuse.id}"
+  href="/reutilisations/{reuse.id}"
   class="group block transition-transform hover:scale-[1.02] {className ?? ''}"
 >
   <Card.Root class="h-full overflow-hidden border-l-4 {borderColorClass}">

@@ -21,7 +21,7 @@
 
   let { data }: { data: PageData } = $props()
 
-  const service: DataService = data.service
+  const service: DataService = $derived(data.service)
 
   // State for UI interactions
   let selectedEndpoint = $state<string | null>(null)

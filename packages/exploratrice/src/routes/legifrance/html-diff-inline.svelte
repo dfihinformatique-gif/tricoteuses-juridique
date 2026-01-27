@@ -228,8 +228,8 @@
 
         default: {
           assertNever(
-            "HtmlDiffInline textPositionsForChange.source",
-            textPositionsForChange,
+            "HtmlDiffInline textPositionForChange.source",
+            textPositionForChange,
           )
         }
       }

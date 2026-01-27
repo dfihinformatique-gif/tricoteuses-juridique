@@ -1,20 +1,19 @@
 <script lang="ts">
-  import { Badge } from "$lib/components/ui/badge/index.js"
   import { Button } from "$lib/components/ui/button/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import ServiceCard from "$lib/components/service-card.svelte"
   import {
-    getDataServicesByType,
     dataServices,
     type DataService,
   } from "$lib/data/tricoteuses-ecosystem.js"
-  import { Filter } from "@lucide/svelte"
+  import Filter from "@lucide/svelte/icons/filter"
 
   let selectedType = $state<DataService["type"] | "all">("all")
 
   const filteredServices = $derived.by(() => {
-    if (selectedType === "all") return dataServices
-    return getDataServicesByType(selectedType)
+    const allServices = Object.values(dataServices)
+    if (selectedType === "all") return allServices
+    return allServices.filter((s) => s.type === selectedType)
   })
 
   const filterButtons: Array<{

@@ -4,11 +4,12 @@ import { defineConfig } from "eslint/config"
 import prettier from "eslint-config-prettier"
 import svelte from "eslint-plugin-svelte"
 import globals from "globals"
-// import { fileURLToPath } from "node:url"
+import { fileURLToPath } from "node:url"
 import ts from "typescript-eslint"
 import svelteConfig from "./svelte.config.js"
 
 // const gitignorePath = fileURLToPath(new URL("./.gitignore", import.meta.url))
+const tsconfigRootDir = fileURLToPath(new URL(".", import.meta.url))
 
 export default defineConfig(
   // Doesn't work because .gitignore is in a parent directory:
@@ -31,6 +32,9 @@ export default defineConfig(
   {
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
+      parserOptions: {
+        tsconfigRootDir,
+      },
     },
     rules: {
       // typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
@@ -39,13 +43,17 @@ export default defineConfig(
       "svelte/no-at-html-tags": "off",
       "svelte/no-navigation-without-resolve": "off",
       "svelte/require-each-key": "off",
+      // Disable TypeScript type checking rules that cause issues with external dependencies
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
     },
   },
   {
     files: ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        tsconfigRootDir,
         extraFileExtensions: [".svelte"],
         parser: ts.parser,
         svelteConfig,

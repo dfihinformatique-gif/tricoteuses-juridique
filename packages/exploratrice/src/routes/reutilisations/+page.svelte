@@ -2,18 +2,16 @@
   import { Button } from "$lib/components/ui/button/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import ReuseCard from "$lib/components/reuse-card.svelte"
-  import {
-    getReusesByType,
-    reuses,
-    type Reuse,
-  } from "$lib/data/tricoteuses-ecosystem.js"
-  import { Filter, Plus } from "@lucide/svelte"
+  import { reuses, type Reuse } from "$lib/data/tricoteuses-ecosystem.js"
+  import Filter from "@lucide/svelte/icons/filter"
+  import Plus from "@lucide/svelte/icons/plus"
 
   let selectedType = $state<Reuse["type"] | "all">("all")
 
   const filteredReuses = $derived.by(() => {
-    if (selectedType === "all") return reuses
-    return getReusesByType(selectedType)
+    const allReuses = Object.values(reuses)
+    if (selectedType === "all") return allReuses
+    return allReuses.filter((r) => r.type === selectedType)
   })
 
   const filterButtons: Array<{ label: string; type: Reuse["type"] | "all" }> = [
@@ -41,7 +39,7 @@
           construire.
         </p>
       </div>
-      <Button href="/reuses/proposer" class="flex-none">
+      <Button href="/reutilisations/proposer" class="flex-none">
         <Plus class="mr-2 h-4 w-4" />
         Proposer une réutilisation
       </Button>

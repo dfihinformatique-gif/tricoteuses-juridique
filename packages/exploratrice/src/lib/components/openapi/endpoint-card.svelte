@@ -14,7 +14,7 @@
     CollapsibleContent,
     CollapsibleTrigger,
   } from "$lib/components/ui/collapsible"
-  import { ChevronDown } from "@lucide/svelte"
+  import ChevronDown from "@lucide/svelte/icons/chevron-down"
   import ParametersTable from "./parameters-table.svelte"
   import ResponseSchemaSection from "./response-schema-section.svelte"
   import EndpointTestInterface from "./endpoint-test-interface.svelte"
@@ -25,7 +25,7 @@
     selectedMethod: string
     openApiSpec: OpenAPIV2.Document
     baseUrl: string
-    getSchemaForEndpoint: (path: string) => any
+    getSchemaForEndpoint: (path: string) => unknown
     onSelectEndpoint: (path: string, method: string) => void
     commonIdFieldName?: string
   }
@@ -117,7 +117,8 @@
                         {code}
                       </Badge>
                       <span class="text-sm">
-                        {(response as any)?.description || ""}
+                        {(response as { description?: string })?.description ||
+                          ""}
                       </span>
                     </div>
                   </div>

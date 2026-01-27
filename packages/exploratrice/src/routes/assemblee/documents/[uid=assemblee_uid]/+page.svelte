@@ -36,7 +36,7 @@
       },
       {
         label: "Dossier législatif",
-        href: urlPathFromId(documentPageInfos.document.dossierRef),
+        href: urlPathFromId(documentPageInfos.document.dossierRef) ?? undefined,
       },
       { label: documentPageInfos.document.titres.titrePrincipal },
     ]}

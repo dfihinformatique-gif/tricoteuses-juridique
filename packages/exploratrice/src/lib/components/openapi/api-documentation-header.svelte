@@ -2,7 +2,7 @@
   import type { OpenAPIV2 } from "openapi-types"
   import { Alert, AlertDescription } from "$lib/components/ui/alert"
   import { Badge } from "$lib/components/ui/badge"
-  import { Info } from "@lucide/svelte"
+  import Info from "@lucide/svelte/icons/info"
 
   interface Props {
     title: string

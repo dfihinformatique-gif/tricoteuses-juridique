@@ -3,13 +3,13 @@ import { readFileSync } from "fs"
 import { join } from "path"
 import type { OpenAPIV2, OpenAPIV3 } from "openapi-types"
 
-import { getDataServiceById } from "$lib/data/tricoteuses-ecosystem.js"
+import { dataServices } from "$lib/data/tricoteuses-ecosystem.js"
 import { convertOpenAPI3to2 } from "$lib/openapi/converters.js"
 
 import type { PageServerLoad } from "./$types"
 
 export const load: PageServerLoad = async ({ params, fetch }) => {
-  const service = getDataServiceById(params.slug)
+  const service = dataServices[params.slug]
 
   if (service === undefined) {
     throw error(404, {
@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
 
   try {
     let openApiSpec: OpenAPIV2.Document
-    let jsonSchema: { definitions: Record<string, any> } | null = null
+    let jsonSchema: { definitions: Record<string, unknown> } | null = null
 
     // Load OpenAPI spec and JSON schemas based on service
     switch (service.id) {
@@ -49,7 +49,7 @@ export const load: PageServerLoad = async ({ params, fetch }) => {
           "scrutins.json",
         ]
 
-        const schemas: Record<string, any> = {}
+        const schemas: Record<string, unknown> = {}
 
         // Fetch all schema files
         await Promise.all(

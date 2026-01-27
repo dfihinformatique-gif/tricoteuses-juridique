@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Alert, AlertDescription } from "$lib/components/ui/alert"
-  import { SearchX } from "@lucide/svelte"
+  import SearchX from "@lucide/svelte/icons/search-x"
 
   interface Props {
     searchQuery: string

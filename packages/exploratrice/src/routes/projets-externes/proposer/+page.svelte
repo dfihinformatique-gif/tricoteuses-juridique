@@ -1,35 +1,36 @@
 <script lang="ts">
-  import { Badge } from "$lib/components/ui/badge/index.js"
   import { Button } from "$lib/components/ui/button/index.js"
   import * as Card from "$lib/components/ui/card/index.js"
   import { Input } from "$lib/components/ui/input/index.js"
   import { Label } from "$lib/components/ui/label/index.js"
   import { Textarea } from "$lib/components/ui/textarea/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
-  import { getAllDataServices } from "$lib/data/tricoteuses-ecosystem.js"
-  import { CheckIcon, CopyIcon } from "@lucide/svelte"
-
-  const services = getAllDataServices()
+  import CheckIcon from "@lucide/svelte/icons/check"
+  import CopyIcon from "@lucide/svelte/icons/copy"
 
   let authorName = $state("")
   let contactEmail = $state("")
   let projectDescription = $state("")
   let projectName = $state("")
   let projectUrl = $state("")
+  let repositoryUrl = $state("")
+  let licenseName = $state("")
+  let licenseSpdxId = $state("")
+  let licenseUrl = $state("")
   let screenshotUrl = $state("")
-  let selectedServiceIds = $state<string[]>([])
   let showJsonOutput = $state(false)
   let copied = $state(false)
 
-  function toggleService(serviceId: string) {
-    if (selectedServiceIds.includes(serviceId)) {
-      selectedServiceIds = selectedServiceIds.filter((id) => id !== serviceId)
-    } else {
-      selectedServiceIds = [...selectedServiceIds, serviceId]
-    }
-  }
-
   function generateJson() {
+    const license =
+      licenseName.trim() !== ""
+        ? {
+            name: licenseName,
+            spdxId: licenseSpdxId.trim() !== "" ? licenseSpdxId : undefined,
+            url: licenseUrl.trim() !== "" ? licenseUrl : undefined,
+          }
+        : undefined
+
     return JSON.stringify(
       {
         id: projectName
@@ -40,10 +41,10 @@
           .replace(/^-+|-+$/g, ""),
         name: projectName,
         description: projectDescription,
-        type: "external",
         author: authorName,
         url: projectUrl,
-        serviceIds: selectedServiceIds,
+        repositoryUrl: repositoryUrl || undefined,
+        license,
         screenshot: screenshotUrl || undefined,
         featured: false,
       },
@@ -70,29 +71,28 @@
       projectDescription.trim() !== "" &&
       projectUrl.trim() !== "" &&
       authorName.trim() !== "" &&
-      contactEmail.trim() !== "" &&
-      selectedServiceIds.length > 0,
+      contactEmail.trim() !== "",
   )
 </script>
 
 <svelte:head>
-  <title>Proposer une réutilisation - Tricoteuses</title>
+  <title>Proposer un projet externe - Tricoteuses</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-4xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: "Réutilisations", href: "/reuses" },
-      { label: "Proposer une réutilisation" },
+      { label: "Projets externes complémentaires", href: "/projets-externes" },
+      { label: "Proposer un projet externe" },
     ]}
   />
 
   <!-- Header -->
   <div class="mb-8 text-center">
-    <h1 class="mb-4 text-4xl font-bold">Proposer une réutilisation</h1>
+    <h1 class="mb-4 text-4xl font-bold">Proposer un projet externe</h1>
     <p class="text-lg text-muted-foreground">
-      Vous avez créé un projet utilisant les données Tricoteuses ? Partagez-le
-      avec la communauté !
+      Vous avez créé un projet open source complémentaire à Tricoteuses ?
+      Partagez-le avec la communauté !
     </p>
   </div>
 
@@ -115,7 +115,7 @@
             <Input
               id="projectName"
               bind:value={projectName}
-              placeholder="Mon Application Législative"
+              placeholder="Mon Projet Open Source"
               required
             />
           </div>
@@ -125,7 +125,7 @@
             <Textarea
               id="projectDescription"
               bind:value={projectDescription}
-              placeholder="Décrivez votre projet et ses fonctionnalités principales..."
+              placeholder="Décrivez votre projet et comment il complète l'écosystème Tricoteuses..."
               rows={4}
               required
             />
@@ -143,6 +143,16 @@
           </div>
 
           <div class="space-y-2">
+            <Label for="repositoryUrl">URL du dépôt Git (optionnel)</Label>
+            <Input
+              id="repositoryUrl"
+              bind:value={repositoryUrl}
+              type="url"
+              placeholder="https://github.com/utilisateur/projet"
+            />
+          </div>
+
+          <div class="space-y-2">
             <Label for="screenshotUrl"
               >URL de la capture d'écran (optionnel)</Label
             >
@@ -155,57 +165,42 @@
           </div>
         </div>
 
-        <!-- Services used -->
+        <!-- License information -->
         <div class="space-y-4">
-          <h2 class="text-xl font-semibold">Services Tricoteuses utilisés *</h2>
+          <h2 class="text-xl font-semibold">Licence (optionnel)</h2>
           <p class="text-sm text-muted-foreground">
-            Sélectionnez les services et données Tricoteuses que votre projet
-            utilise.
+            Si votre projet est sous licence open source, précisez-la.
           </p>
 
-          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {#each services as service (service.id)}
-              <button
-                type="button"
-                onclick={() => toggleService(service.id)}
-                class="flex items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted {selectedServiceIds.includes(
-                  service.id,
-                )
-                  ? 'border-primary bg-primary/10'
-                  : ''}"
-              >
-                <div class="flex-1">
-                  <div class="font-medium">{service.name}</div>
-                  <div class="text-xs text-muted-foreground">
-                    {service.type === "api"
-                      ? "API REST"
-                      : service.type === "git"
-                        ? "Dépôt Git"
-                        : service.type === "mcp"
-                          ? "Serveur MCP"
-                          : "Code juridique"}
-                  </div>
-                </div>
-                {#if selectedServiceIds.includes(service.id)}
-                  <CheckIcon class="h-5 w-5 text-primary" />
-                {/if}
-              </button>
-            {/each}
-          </div>
-
-          {#if selectedServiceIds.length > 0}
-            <div class="flex flex-wrap gap-2">
-              <span class="text-sm text-muted-foreground"
-                >Services sélectionnés ({selectedServiceIds.length}):</span
-              >
-              {#each selectedServiceIds as serviceId}
-                {@const service = services.find((s) => s.id === serviceId)}
-                {#if service !== undefined}
-                  <Badge variant="secondary">{service.name}</Badge>
-                {/if}
-              {/each}
+          <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div class="space-y-2">
+              <Label for="licenseName">Nom de la licence</Label>
+              <Input
+                id="licenseName"
+                bind:value={licenseName}
+                placeholder="MIT, GPL-3.0, BSD-3-Clause, etc."
+              />
             </div>
-          {/if}
+
+            <div class="space-y-2">
+              <Label for="licenseSpdxId">SPDX ID (optionnel)</Label>
+              <Input
+                id="licenseSpdxId"
+                bind:value={licenseSpdxId}
+                placeholder="MIT, GPL-3.0-only, BSD-3-Clause, etc."
+              />
+            </div>
+
+            <div class="space-y-2">
+              <Label for="licenseUrl">URL de la licence</Label>
+              <Input
+                id="licenseUrl"
+                bind:value={licenseUrl}
+                type="url"
+                placeholder="https://opensource.org/licenses/MIT"
+              />
+            </div>
+          </div>
         </div>
 
         <!-- Contact information -->
@@ -267,7 +262,7 @@
 
         <p class="mb-4 text-sm text-muted-foreground">
           Merci pour votre proposition ! Voici le JSON généré. Pour soumettre
-          votre réutilisation, vous pouvez :
+          votre projet externe, vous pouvez :
         </p>
 
         <ul

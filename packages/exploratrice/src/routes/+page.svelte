@@ -1,21 +1,25 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button/index.js"
+  import ExternalProjectCard from "$lib/components/external-project-card.svelte"
   import ReuseCard from "$lib/components/reuse-card.svelte"
   import SeeAllCard from "$lib/components/see-all-card.svelte"
   import ServiceCard from "$lib/components/service-card.svelte"
   import {
-    getFeaturedReuses,
-    getFeaturedDataServices,
-    getReusesByType,
+    dataServices,
+    externalProjects,
+    reuses,
   } from "$lib/data/tricoteuses-ecosystem.js"
-  import { ChevronRight } from "@lucide/svelte"
+  import ChevronRight from "@lucide/svelte/icons/chevron-right"
   import { onDestroy, onMount } from "svelte"
 
-  const featuredServices = getFeaturedDataServices()
-  const featuredExternalReuses = getReusesByType("external").filter(
-    (r) => r.featured,
+  const featuredServices = Object.values(dataServices).filter((s) => s.featured)
+  const featuredExternalReuses = Object.values(reuses).filter(
+    (r) => r.type === "external" && r.featured,
   )
-  const featuredDemos = getReusesByType("demo").filter((r) => r.featured)
+  const featuredDemos = Object.values(reuses).filter(
+    (r) => r.type === "demo" && r.featured,
+  )
+  const featuredExternalProjects = externalProjects.filter((p) => p.featured)
 
   let intervalId: NodeJS.Timeout | undefined = $state(undefined)
   let tagline = $state("")
@@ -23,9 +27,12 @@
   const taglines = [
     "",
     ", la loi sous git.",
+    ", la loi en bases de données.",
+    ", la loi en API",
+    ", la loi pour les IA",
     ", la loi en liens.",
     ", la loi en diffs.",
-    ", la loi et sa genèse.",
+    ", la loi et sa fabrique.",
     ", la loi en données publiques.",
     ", la loi en logiciel libre.",
     ", la loi en temps réel.",
@@ -60,8 +67,8 @@
     </h1>
     <p class="mx-auto max-w-3xl text-xl text-muted-foreground">
       Démocratiser l'accès aux données publiques juridiques françaises à travers
-      des services ouverts, des APIs modernes et une communauté de
-      contributeurs.
+      des données publiques enrichies, des services ouverts, des APIs modernes
+      et une communauté de contributeurs.
     </p>
   </header>
 
@@ -76,7 +83,7 @@
         </p>
       </div>
       <Button href="/services" variant="outline">
-        Voir tous les services
+        Voir tous les services et données
         <ChevronRight class="ml-2 h-4 w-4" />
       </Button>
     </div>
@@ -85,7 +92,7 @@
       {#each featuredServices as service (service.id)}
         <ServiceCard {service} />
       {/each}
-      <SeeAllCard href="/services" label="Voir tous les services" />
+      <SeeAllCard href="/services" label="Voir tous les services et données" />
     </div>
   </section>
 
@@ -99,7 +106,7 @@
             Services et applications qui utilisent les données Tricoteuses
           </p>
         </div>
-        <Button href="/reuses" variant="outline">
+        <Button href="/reutilisations" variant="outline">
           Voir toutes les réutilisations
           <ChevronRight class="ml-2 h-4 w-4" />
         </Button>
@@ -112,7 +119,10 @@
           {#each featuredExternalReuses as reuse (reuse.id)}
             <ReuseCard {reuse} />
           {/each}
-          <SeeAllCard href="/reuses" label="Voir toutes les réutilisations" />
+          <SeeAllCard
+            href="/reutilisations"
+            label="Voir toutes les réutilisations"
+          />
         </div>
       {/if}
 
@@ -123,9 +133,41 @@
           {#each featuredDemos as reuse (reuse.id)}
             <ReuseCard {reuse} />
           {/each}
-          <SeeAllCard href="/reuses" label="Voir toutes les réutilisations" />
+          <SeeAllCard
+            href="/reutilisations"
+            label="Voir toutes les réutilisations"
+          />
         </div>
       {/if}
+    </div>
+  </section>
+
+  <!-- External Projects Section -->
+  <section class="mb-16">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h2 class="mb-2 text-3xl font-bold">
+          Projets externes complémentaires
+        </h2>
+        <p class="text-muted-foreground">
+          Projets open source externes qui complètent l'écosystème Tricoteuses
+          pour manipuler l'opendata législatif et juridique
+        </p>
+      </div>
+      <Button href="/projets-externes" variant="outline">
+        Voir tous les projets externes
+        <ChevronRight class="ml-2 h-4 w-4" />
+      </Button>
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {#each featuredExternalProjects as project (project.id)}
+        <ExternalProjectCard {project} />
+      {/each}
+      <SeeAllCard
+        href="/projets-externes"
+        label="Voir tous les projets externes"
+      />
     </div>
   </section>
 
@@ -138,7 +180,7 @@
       Partagez votre projet avec la communauté et inspirez d'autres développeurs
       !
     </p>
-    <Button href="/reuses/proposer" size="lg">
+    <Button href="/reutilisations/proposer" size="lg">
       Proposer une réutilisation
       <ChevronRight class="ml-2 h-4 w-4" />
     </Button>

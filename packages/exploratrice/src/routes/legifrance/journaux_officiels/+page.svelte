@@ -8,12 +8,9 @@
   import { fullDateFormatter } from "$lib/dates.js"
   import { urlPathFromId } from "$lib/urls.js"
   import type { Suggestion } from "$lib/autocompletion.js"
-  import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    NewspaperIcon,
-    ScaleIcon,
-  } from "@lucide/svelte"
+  import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left"
+  import ChevronRightIcon from "@lucide/svelte/icons/chevron-right"
+  import NewspaperIcon from "@lucide/svelte/icons/newspaper"
 
   import type { PageData } from "./$types"
 

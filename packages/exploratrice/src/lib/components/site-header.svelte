@@ -32,7 +32,7 @@
                   >
                 </li>
                 <li class="border-b">
-                  <NavigationMenu.Link href="/reuses"
+                  <NavigationMenu.Link href="/reutilisations"
                     >Réutilisations</NavigationMenu.Link
                   >
                 </li>

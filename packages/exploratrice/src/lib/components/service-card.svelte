@@ -2,8 +2,11 @@
   import { Badge } from "$lib/components/ui/badge/index.js"
   import * as Card from "$lib/components/ui/card/index.js"
   import type { DataService } from "$lib/data/tricoteuses-ecosystem.js"
-  import { Book, Building, Database, Folder, Terminal } from "@lucide/svelte"
-  import DatabaseIcon from "@lucide/svelte/icons/database"
+  import Book from "@lucide/svelte/icons/book"
+  import Building from "@lucide/svelte/icons/building"
+  import Database from "@lucide/svelte/icons/database"
+  import Folder from "@lucide/svelte/icons/folder"
+  import Terminal from "@lucide/svelte/icons/terminal"
 
   interface ServiceCardProps {
     class?: string
@@ -74,7 +77,7 @@
       case "consolidation":
         return Book
       case "database":
-        return DatabaseIcon
+        return Database
       default:
         return Building
     }
@@ -119,7 +122,9 @@
     <Card.Content class="space-y-4">
       <div class="flex flex-wrap gap-2">
         <Badge variant="secondary">{typeBadgeLabel}</Badge>
-        {#if service.author}
+        {#if service.provider}
+          <Badge variant="outline">{service.provider.name}</Badge>
+        {:else if service.author}
           <Badge variant="outline">{service.author}</Badge>
         {/if}
       </div>

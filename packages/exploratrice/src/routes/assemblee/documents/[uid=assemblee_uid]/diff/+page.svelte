@@ -41,11 +41,11 @@
       },
       {
         label: "Dossier législatif",
-        href: urlPathFromId(current.document.dossierRef),
+        href: urlPathFromId(current.document.dossierRef) ?? undefined,
       },
       {
         label: current.document.titres.titrePrincipal,
-        href: urlPathFromId(params.uid),
+        href: urlPathFromId(params.uid) ?? undefined,
       },
       { label: "Diff" },
     ]}
@@ -65,11 +65,11 @@
       },
       {
         label: "Dossier législatif",
-        href: urlPathFromId(current.document.dossierRef),
+        href: urlPathFromId(current.document.dossierRef) ?? undefined,
       },
       {
         label: current.document.titres.titrePrincipal,
-        href: urlPathFromId(params.uid),
+        href: urlPathFromId(params.uid) ?? undefined,
       },
       { label: "Diff" },
     ]}
@@ -87,11 +87,11 @@
       },
       {
         label: "Dossier législatif",
-        href: urlPathFromId(current.document.dossierRef),
+        href: urlPathFromId(current.document.dossierRef) ?? undefined,
       },
       {
         label: current.document.titres.titrePrincipal,
-        href: urlPathFromId(params.uid),
+        href: urlPathFromId(params.uid) ?? undefined,
       },
       { label: "Diff" },
     ]}
@@ -111,11 +111,11 @@
       },
       {
         label: "Dossier législatif",
-        href: urlPathFromId(current.document.dossierRef),
+        href: urlPathFromId(current.document.dossierRef) ?? undefined,
       },
       {
         label: current.document.titres.titrePrincipal,
-        href: urlPathFromId(params.uid),
+        href: urlPathFromId(params.uid) ?? undefined,
       },
       { label: "Diff" },
     ]}

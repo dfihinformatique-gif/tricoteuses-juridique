@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Input } from "$lib/components/ui/input"
   import { Label } from "$lib/components/ui/label"
-  import { Search } from "@lucide/svelte"
+  import Search from "@lucide/svelte/icons/search"
 
   interface Props {
     value: string

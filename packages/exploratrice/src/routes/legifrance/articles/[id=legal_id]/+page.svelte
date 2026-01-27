@@ -33,7 +33,10 @@
       { label: "Textes promulgués", href: "/legifrance/textes" },
       {
         label: "Texte",
-        href: urlPathFromId(articlePageInfos.article.CONTEXTE.TEXTE["@cid"]),
+        href: articlePageInfos.article.CONTEXTE.TEXTE["@cid"]
+          ? (urlPathFromId(articlePageInfos.article.CONTEXTE.TEXTE["@cid"]) ??
+            undefined)
+          : undefined,
       },
       { label: `Article ${articlePageInfos.article.num ?? params.id}` },
     ]}

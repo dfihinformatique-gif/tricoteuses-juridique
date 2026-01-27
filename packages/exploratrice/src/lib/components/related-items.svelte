@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Badge } from "$lib/components/ui/badge/index.js"
   import type { Reuse, DataService } from "$lib/data/tricoteuses-ecosystem.js"
-  import { ChevronRight } from "@lucide/svelte"
+  import ChevronRight from "@lucide/svelte/icons/chevron-right"
 
   interface RelatedItemsProps {
     items: Array<Reuse | DataService>
@@ -20,7 +20,7 @@
     if (isDataService(item)) {
       return `/services/${item.id}`
     }
-    return `/reuses/${item.id}`
+    return `/reutilisations/${item.id}`
   }
 
   function getItemBadge(item: Reuse | DataService): string {

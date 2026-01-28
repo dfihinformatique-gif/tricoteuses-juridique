@@ -20,6 +20,7 @@
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { searchContext } from "$lib/hooks/search-context.svelte.js"
   import { urlPathFromId } from "$lib/urls.js"
+  import * as m from "$lib/paraglide/messages.js"
 
   import HtmlFragmentWithLinks from "./html-fragment-with-links.svelte"
   import HtmlFragmentWithReferences from "./html-fragment-with-references.svelte"
@@ -97,32 +98,40 @@
 </script>
 
 {#snippet pageSpecificMenuItem()}
-  <NavigationMenuDropdown trigger="Texte">
+  <NavigationMenuDropdown trigger={m.legifrance_texte_menu_trigger()}>
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Affichage</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.legifrance_article_menu_display()}</DropdownMenu.Label
+      >
       <DropdownMenu.RadioGroup bind:value={displayMode}>
-        <DropdownMenu.RadioItem value="links">Liens</DropdownMenu.RadioItem>
+        <DropdownMenu.RadioItem value="links"
+          >{m.legifrance_article_menu_links()}</DropdownMenu.RadioItem
+        >
         <DropdownMenu.RadioItem value="references"
-          >Références sans liens</DropdownMenu.RadioItem
+          >{m.legifrance_article_menu_references()}</DropdownMenu.RadioItem
         >
       </DropdownMenu.RadioGroup>
       <DropdownMenu.CheckboxItem bind:checked={showIds}>
-        Identifiants
+        {m.legifrance_article_menu_identifiers()}
       </DropdownMenu.CheckboxItem>
     </DropdownMenu.Group>
     <DropdownMenu.Separator />
     {#if dossierLegislatifAssembleeUid !== undefined}
       <DropdownMenu.Group>
-        <DropdownMenu.Label>Voir aussi</DropdownMenu.Label>
+        <DropdownMenu.Label
+          >{m.legifrance_texte_menu_see_also()}</DropdownMenu.Label
+        >
         <DropdownMenu.Item>
           <a href={urlPathFromId(dossierLegislatifAssembleeUid)}
-            >Dossier législatif de l'Assemblée</a
+            >{m.legifrance_texte_menu_assembly_legislative_dossier()}</a
           >
         </DropdownMenu.Item>
       </DropdownMenu.Group>
     {/if}
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.assemblee_document_menu_other_formats()}</DropdownMenu.Label
+      >
       <DropdownMenu.Item>
         <a
           class="flex whitespace-nowrap"
@@ -130,7 +139,9 @@
             gitPathFromId(id, ".md"),
             "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
           ).toString()}
-          target="_blank">Markdown dans git <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_markdown_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       {#if metaCommun !== undefined && metaTexteVersion !== undefined && ["CODE", "CONSTITUTION", "DECLARATION"].includes(metaCommun.NATURE ?? "")}
@@ -142,9 +153,8 @@
               `https://git.tricoteuses.fr/${organizationNameByTexteNature[metaCommun.NATURE as LegiTexteNature]}/${repositoryNameFromTitle(metaTexteVersion.TITREFULL ?? metaTexteVersion.TITRE ?? metaCommun.ID)}/src/branch/main/`,
             ).toString()}
             target="_blank"
-            >Markdown chronologique dans git <ExternalLinkIcon
-              class="ml-1"
-            /></a
+            >{m.legifrance_article_menu_markdown_chronological_git()}
+            <ExternalLinkIcon class="ml-1" /></a
           >
         </DropdownMenu.Item>
       {/if}
@@ -153,7 +163,8 @@
           class="flex whitespace-nowrap"
           href="https://legal.tricoteuses.fr/texte_version/{id}"
           target="_blank"
-          >JSON augmenté de TEXTE_VERSION <ExternalLinkIcon class="ml-1" /></a
+          >{m.legifrance_texte_menu_json_augmented_texte_version()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -161,7 +172,8 @@
           class="flex whitespace-nowrap"
           href="https://legal.tricoteuses.fr/textelr/{id}"
           target="_blank"
-          >JSON augmenté de TEXTELR <ExternalLinkIcon class="ml-1" /></a
+          >{m.legifrance_texte_menu_json_augmented_textelr()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -171,7 +183,9 @@
             gitPathFromId(id, ".json"),
             "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
           ).toString()}
-          target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_json_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -182,7 +196,8 @@
             "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
           ).toString()}
           target="_blank"
-          >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          >{m.legifrance_jo_menu_references_json_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -191,7 +206,9 @@
           href={metaCommun !== undefined && metaCommun.NATURE === "CODE"
             ? `https://www.legifrance.gouv.fr/codes/texte_lc/${id}`
             : `https://www.legifrance.gouv.fr/loda/id/${id}/`}
-          target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_legifrance()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
     </DropdownMenu.Group>
@@ -253,7 +270,7 @@
 {/if}
 
 {#if sm !== undefined}
-  <h2>Résumé</h2>
+  <h2>{m.legifrance_texte_summary_heading()}</h2>
   {#if displayMode === "links"}
     <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={sm} />
@@ -300,7 +317,7 @@
 {/if}
 
 {#if nota !== undefined}
-  <h2>Nota</h2>
+  <h2>{m.legifrance_texte_nota_heading()}</h2>
   {#if displayMode === "links"}
     <section class="prose prose-links mx-4">
       <HtmlFragmentWithLinks fragment={nota} />

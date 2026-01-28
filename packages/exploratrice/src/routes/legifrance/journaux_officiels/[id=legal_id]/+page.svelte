@@ -3,6 +3,7 @@
 
   import * as Alert from "$lib/components/ui/alert/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
+  import * as m from "$lib/paraglide/messages.js"
 
   import { queryJo } from "../../jo.remote"
   import Jo from "../../jo.svelte"
@@ -15,19 +16,19 @@
 {#if jo === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Journaux officiels", href: "/legifrance/journaux_officiels" },
-      { label: `Journal officiel ${params.id}` },
+      { label: m.legifrance_jo_list_breadcrumb(), href: "/legifrance/journaux_officiels" },
+      { label: `${m.legifrance_jo_menu_trigger()} ${params.id}` },
     ]}
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>Journal officiel {params.id} non trouvé !</Alert.Title>
+    <Alert.Title>{m.error_not_found({ item: `${m.legifrance_jo_menu_trigger()} ${params.id}` })}</Alert.Title>
   </Alert.Root>
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: "Journaux officiels", href: "/legifrance/journaux_officiels" },
-      { label: jo.META?.META_COMMUN.ID ?? `Journal officiel ${params.id}` },
+      { label: m.legifrance_jo_list_breadcrumb(), href: "/legifrance/journaux_officiels" },
+      { label: jo.META?.META_COMMUN.ID ?? `${m.legifrance_jo_menu_trigger()} ${params.id}` },
     ]}
   />
   <Jo {jo} />

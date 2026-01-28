@@ -12,6 +12,7 @@
   import ChevronRightIcon from "@lucide/svelte/icons/chevron-right"
   import FileTextIcon from "@lucide/svelte/icons/file-text"
   import FolderOpenIcon from "@lucide/svelte/icons/folder-open"
+  import * as m from "$lib/paraglide/messages.js"
 
   import type { PageData } from "./$types"
 
@@ -69,21 +70,24 @@
 {/snippet}
 
 <svelte:head>
-  <title>Dossiers législatifs - Tricoteuses</title>
+  <title>{m.assemblee_dossiers_list_page_title()}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb
-    segments={[{ label: "Assemblée" }, { label: "Dossiers législatifs" }]}
+    segments={[
+      { label: m.assemblee_documents_list_breadcrumb_assemblee() },
+      { label: m.assemblee_dossiers_list_breadcrumb_dossiers() },
+    ]}
   />
 
   <div class="mb-8">
     <h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">
       <FolderOpenIcon size={32} />
-      Les derniers dossiers législatifs
+      {m.assemblee_dossiers_list_heading()}
     </h1>
     <p class="text-lg text-muted-foreground">
-      Explorez les dossiers législatifs en cours à l'Assemblée nationale.
+      {m.assemblee_dossiers_list_description()}
     </p>
   </div>
 
@@ -113,17 +117,17 @@
       {#if currentPage > 1}
         <Button variant="outline" href="?page={currentPage - 1}">
           <ChevronLeftIcon class="mr-2 h-4 w-4" />
-          Précédent
+          {m.legifrance_jo_list_previous_button()}
         </Button>
       {/if}
 
       <span class="text-sm text-muted-foreground">
-        Page {currentPage} sur {totalPages}
+        {m.legifrance_jo_list_page_info({ currentPage, totalPages })}
       </span>
 
       {#if currentPage < totalPages}
         <Button variant="outline" href="?page={currentPage + 1}">
-          Suivant
+          {m.legifrance_jo_list_next_button()}
           <ChevronRightIcon class="ml-2 h-4 w-4" />
         </Button>
       {/if}

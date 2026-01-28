@@ -15,6 +15,7 @@
   import { fullDateFormatter } from "$lib/dates.js"
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { urlPathFromId } from "$lib/urls.js"
+  import * as m from "$lib/paraglide/messages.js"
 
   import type { DocumentPageInfos } from "./documents.js"
 
@@ -77,20 +78,28 @@
 </script>
 
 {#snippet pageSpecificMenuItem()}
-  <NavigationMenuDropdown trigger="Document">
+  <NavigationMenuDropdown trigger={m.assemblee_document_menu_trigger()}>
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Voir aussi</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.assemblee_document_menu_see_also()}</DropdownMenu.Label
+      >
       <DropdownMenu.Item>
-        <a href={urlPathFromId(document.dossierRef)}>Dossier législatif</a>
+        <a href={urlPathFromId(document.dossierRef)}
+          >{m.assemblee_document_menu_legislative_dossier()}</a
+        >
       </DropdownMenu.Item>
     </DropdownMenu.Group>
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.assemblee_document_menu_other_formats()}</DropdownMenu.Label
+      >
       <DropdownMenu.Item>
         <a
           class="flex whitespace-nowrap"
           href="https://assemblee.tricoteuses.fr/documents/{document.uid}"
-          target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.assemblee_document_menu_json_augmented()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
     </DropdownMenu.Group>
@@ -124,7 +133,9 @@
 
 <h1>
   <Badge variant="secondary"
-    >{date === undefined ? "date inconnue" : fullDateFormatter(date)}</Badge
+    >{date === undefined
+      ? m.assemblee_document_date_unknown()
+      : fullDateFormatter(date)}</Badge
   >
   {document.titres.titrePrincipal}
   <Badge variant="outline">{document.denominationStructurelle}</Badge>
@@ -132,7 +143,9 @@
 
 {#if documentSegmentation !== undefined}
   <Collapsible.Root>
-    <Collapsible.Trigger>Sommaire</Collapsible.Trigger>
+    <Collapsible.Trigger
+      >{m.assemblee_document_table_of_contents()}</Collapsible.Trigger
+    >
     <Collapsible.Content>
       {@render segmentationView(documentSegmentation)}
     </Collapsible.Content>

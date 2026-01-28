@@ -26,6 +26,7 @@
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { searchContext } from "$lib/hooks/search-context.svelte.js"
   import { urlPathFromId } from "$lib/urls.js"
+  import * as m from "$lib/paraglide/messages.js"
 
   import type { ArticleDisplayMode, ArticlePageInfos } from "./article.js"
   import ArticleBody from "./article-body.svelte"
@@ -151,28 +152,34 @@
 </script>
 
 {#snippet pageSpecificMenuItem()}
-  <NavigationMenuDropdown trigger="Article">
+  <NavigationMenuDropdown trigger={m.legifrance_article_menu_trigger()}>
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Affichage</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.legifrance_article_menu_display()}</DropdownMenu.Label
+      >
       <DropdownMenu.RadioGroup bind:value={displayMode}>
         <DropdownMenu.RadioItem value="inline_diff"
-          >Différences en ligne</DropdownMenu.RadioItem
+          >{m.legifrance_article_menu_inline_diff()}</DropdownMenu.RadioItem
         >
         <DropdownMenu.RadioItem value="side-by-side_diff"
-          >Différences côte à côte</DropdownMenu.RadioItem
+          >{m.legifrance_article_menu_side_by_side_diff()}</DropdownMenu.RadioItem
         >
-        <DropdownMenu.RadioItem value="links">Liens</DropdownMenu.RadioItem>
+        <DropdownMenu.RadioItem value="links"
+          >{m.legifrance_article_menu_links()}</DropdownMenu.RadioItem
+        >
         <DropdownMenu.RadioItem value="references"
-          >Références sans liens</DropdownMenu.RadioItem
+          >{m.legifrance_article_menu_references()}</DropdownMenu.RadioItem
         >
       </DropdownMenu.RadioGroup>
       <DropdownMenu.CheckboxItem bind:checked={showIds}>
-        Identifiants
+        {m.legifrance_article_menu_identifiers()}
       </DropdownMenu.CheckboxItem>
     </DropdownMenu.Group>
     <DropdownMenu.Separator />
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.assemblee_document_menu_other_formats()}</DropdownMenu.Label
+      >
       <DropdownMenu.Item>
         <a
           class="flex whitespace-nowrap"
@@ -180,7 +187,9 @@
             gitPathFromId(id, ".md"),
             "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
           ).toString()}
-          target="_blank">Markdown dans git <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_markdown_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       {#if ["CODE", "CONSTITUTION", "DECLARATION"].includes(texte["@nature"] ?? "")}
@@ -227,9 +236,8 @@
               `https://git.tricoteuses.fr/${organizationNameByTexteNature[texte["@nature"] as LegiTexteNature]}/${repositoryNameFromTitle(foundTitreTxt?.["#text"] ?? foundTitreTxt?.["@c_titre_court"] ?? texte["@cid"]!)}/src/branch/main/`,
             ).toString()}
             target="_blank"
-            >Markdown chronologique dans git <ExternalLinkIcon
-              class="ml-1"
-            /></a
+            >{m.legifrance_article_menu_markdown_chronological_git()}
+            <ExternalLinkIcon class="ml-1" /></a
           >
         </DropdownMenu.Item>
       {/if}
@@ -237,7 +245,9 @@
         <a
           class="flex whitespace-nowrap"
           href="https://legal.tricoteuses.fr/article/{id}"
-          target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.assemblee_document_menu_json_augmented()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -247,7 +257,9 @@
             gitPathFromId(id, ".json"),
             "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
           ).toString()}
-          target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_json_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -258,7 +270,8 @@
             "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
           ).toString()}
           target="_blank"
-          >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          >{m.legifrance_jo_menu_references_json_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -272,7 +285,9 @@
               id.startsWith("JORF")
               ? `https://www.legifrance.gouv.fr/jorf/article_jo/${id}/`
               : `https://www.legifrance.gouv.fr/loda/article_lc/${id}/`}
-          target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_legifrance()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
     </DropdownMenu.Group>
@@ -290,7 +305,7 @@
 {/if}
 
 <h1 class="my-4 scroll-m-20 text-3xl font-extrabold tracking-tight lg:text-4xl">
-  Article {article.num}
+  {m.legifrance_article_heading({ num: article.num ?? "" })}
 </h1>
 
 <div class="mx-auto my-6 flex justify-center">
@@ -320,10 +335,7 @@
 {#if ["inline_diff", "side-by-side_diff"].includes(displayMode)}
   {#if previousVersionArticle === undefined}
     <section class="mx-4">
-      <i
-        >Cette version de l'article est la première chronologiquement. Elle n'a
-        pas de version la précédant avec laquelle être comparée.</i
-      >
+      <i>{m.legifrance_article_first_version_notice()}</i>
     </section>
   {:else}
     <ArticleBodyDiff
@@ -342,13 +354,13 @@
     href={previousArticleId === undefined
       ? undefined
       : urlPathFromId(previousArticleId)}
-    variant="outline">Précédent</Button
+    variant="outline">{m.legifrance_article_previous_button()}</Button
   >
   <Button
     disabled={nextArticleId === undefined}
     href={nextArticleId === undefined
       ? undefined
       : urlPathFromId(nextArticleId)}
-    variant="outline">Suivant</Button
+    variant="outline">{m.legifrance_article_next_button()}</Button
   >
 </div>

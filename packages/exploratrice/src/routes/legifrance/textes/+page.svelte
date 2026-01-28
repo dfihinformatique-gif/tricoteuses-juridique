@@ -11,6 +11,7 @@
   import ChevronLeftIcon from "@lucide/svelte/icons/chevron-left"
   import ChevronRightIcon from "@lucide/svelte/icons/chevron-right"
   import ScaleIcon from "@lucide/svelte/icons/scale"
+  import * as m from "$lib/paraglide/messages.js"
 
   import type { PageData } from "./$types"
 
@@ -58,20 +59,19 @@
 {/snippet}
 
 <svelte:head>
-  <title>Textes promulgués - Tricoteuses</title>
+  <title>{m.legifrance_textes_list_page_title()}</title>
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-  <PageBreadcrumb segments={[{ label: "Textes promulgués" }]} />
+  <PageBreadcrumb segments={[{ label: m.legifrance_textes_list_breadcrumb() }]} />
 
   <div class="mb-8">
     <h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">
       <ScaleIcon size={32} />
-      Les derniers textes promulgués
+      {m.legifrance_textes_list_heading()}
     </h1>
     <p class="text-lg text-muted-foreground">
-      Explorez les lois, ordonnances et autres textes législatifs récemment
-      promulgués.
+      {m.legifrance_textes_list_description()}
     </p>
   </div>
 
@@ -101,17 +101,17 @@
       {#if currentPage > 1}
         <Button variant="outline" href="?page={currentPage - 1}">
           <ChevronLeftIcon class="mr-2 h-4 w-4" />
-          Précédent
+          {m.legifrance_jo_list_previous_button()}
         </Button>
       {/if}
 
       <span class="text-sm text-muted-foreground">
-        Page {currentPage} sur {totalPages}
+        {m.legifrance_jo_list_page_info({ currentPage, totalPages })}
       </span>
 
       {#if currentPage < totalPages}
         <Button variant="outline" href="?page={currentPage + 1}">
-          Suivant
+          {m.legifrance_jo_list_next_button()}
           <ChevronRightIcon class="ml-2 h-4 w-4" />
         </Button>
       {/if}

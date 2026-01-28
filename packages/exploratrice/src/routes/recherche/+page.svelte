@@ -17,6 +17,7 @@
   import { searchContext } from "$lib/hooks/search-context.svelte.js"
   import { autocomplete } from "$lib/autocompletion.remote.js"
   import { urlPathFromId } from "$lib/urls.js"
+  import * as m from "$lib/paraglide/messages.js"
 
   // Define the query schema for search parameters
   const SearchQuerySchema = z.object({
@@ -81,7 +82,7 @@
 </script>
 
 <svelte:head>
-  <title>Recherche législative - Tricoteuses</title>
+  <title>{m.search_page_title()}</title>
 </svelte:head>
 
 {#snippet suggestionView({ autocompletion, badge, date }: Suggestion)}
@@ -95,16 +96,15 @@
 {/snippet}
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-  <PageBreadcrumb segments={[{ label: "Recherche législative" }]} />
+  <PageBreadcrumb segments={[{ label: m.search_title() }]} />
 
   <div class="mb-8">
     <h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">
       <SearchIcon size={32} />
-      Recherche de documents législatifs
+      {m.search_heading()}
     </h1>
     <p class="text-lg text-muted-foreground">
-      Recherchez dans les lois, textes législatifs, journaux officiels et
-      dossiers parlementaires.
+      {m.search_description()}
     </p>
   </div>
 
@@ -112,12 +112,12 @@
     <Card.Content class="py-6">
       <section class="mb-6 space-y-2">
         <p>
-          Tapez les premiers caractères d'un texte législatif ou collez une
-          référence ou un identifiant.
+          {m.search_input_help()}
         </p>
 
         <p class="text-sm text-muted-foreground italic">
-          <b>Exemples</b> : {#each sampleSearches as sampleSearch, i}{i === 0
+          <b>{m.search_examples_label()}</b> : {#each sampleSearches as sampleSearch, i}{i ===
+            0
               ? ""
               : ", "}<a
               class="hover:underline"
@@ -131,7 +131,7 @@
       <Command.Root shouldFilter={false}>
         <InputGroup.Root class="[--radius:1rem]">
           <InputGroup.Input
-            placeholder="Nom de loi ou de projet de loi ou de JO…"
+            placeholder={m.search_input_placeholder()}
             bind:value={
               () => q,
               (value) => {
@@ -152,7 +152,9 @@
                     variant="ghost"
                     class="pr-1.5! text-xs"
                   >
-                    {typeFilter === undefined ? "Chercher dans…" : typeFilter}
+                    {typeFilter === undefined
+                      ? m.search_filter_all()
+                      : typeFilter}
                     <ChevronDownIcon class="size-3" />
                   </InputGroup.Button>
                 {/snippet}
@@ -168,7 +170,7 @@
                   }
                 >
                   <DropdownMenu.RadioItem value=""
-                    ><i>Tous</i></DropdownMenu.RadioItem
+                    ><i>{m.common_all()}</i></DropdownMenu.RadioItem
                   >
                   <DropdownMenu.Separator />
                   {#each possibleTypes as possibleType}
@@ -182,7 +184,7 @@
           </InputGroup.Addon>
         </InputGroup.Root>
         <Command.List class="mt-4">
-          <Command.Empty>Aucun résultat trouvé.</Command.Empty>
+          <Command.Empty>{m.search_no_results()}</Command.Empty>
           <Command.Group>
             {#each suggestions as suggestion (`${suggestion.id}_${suggestion.autocompletion}`)}
               {@const urlPath = urlPathFromId(suggestion.id)}
@@ -204,16 +206,12 @@
 
   <Card.Root>
     <Card.Content class="py-6">
-      <h2 class="mb-4 text-2xl font-bold">À propos de la recherche</h2>
+      <h2 class="mb-4 text-2xl font-bold">{m.search_about_title()}</h2>
       <p class="mb-4 text-muted-foreground">
-        Cette interface de recherche vous permet d'explorer l'ensemble des
-        documents législatifs français indexés par Tricoteuses : lois,
-        ordonnances, décrets, journaux officiels, dossiers parlementaires et
-        bien plus.
+        {m.search_about_description()}
       </p>
       <p class="text-sm text-muted-foreground">
-        Les résultats sont mis à jour quotidiennement à partir des données
-        officielles de l'Assemblée Nationale et de Légifrance.
+        {m.search_about_footer()}
       </p>
     </Card.Content>
   </Card.Root>

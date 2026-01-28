@@ -4,6 +4,7 @@
   import * as Alert from "$lib/components/ui/alert/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { urlPathFromId } from "$lib/urls.js"
+  import * as m from "$lib/paraglide/messages.js"
 
   import { querySectionTa } from "../../section-ta.remote.js"
   import SectionTa from "../../section-ta.svelte"
@@ -18,20 +19,20 @@
 {#if sectionTa === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Textes promulgués", href: "/legifrance/textes" },
-      { label: `Section ${params.id}` },
+      { label: m.legifrance_textes_list_breadcrumb(), href: "/legifrance/textes" },
+      { label: `${m.legifrance_section_menu_trigger()} ${params.id}` },
     ]}
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>Section texte article {params.id} non trouvée !</Alert.Title>
+    <Alert.Title>{m.error_not_found({ item: `${m.legifrance_section_menu_trigger()} ${params.id}` })}</Alert.Title>
   </Alert.Root>
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: "Textes promulgués", href: "/legifrance/textes" },
+      { label: m.legifrance_textes_list_breadcrumb(), href: "/legifrance/textes" },
       {
-        label: "Texte",
+        label: m.legifrance_texte_menu_trigger(),
         href: sectionTa.CONTEXTE.TEXTE["@cid"]
           ? (urlPathFromId(sectionTa.CONTEXTE.TEXTE["@cid"]) ?? undefined)
           : undefined,
@@ -42,7 +43,7 @@
             ? String(
                 (sectionTa.TITRE_TA as Record<string, unknown>)["#text"] ?? "",
               )
-            : sectionTa.TITRE_TA) || `Section ${params.id}`,
+            : sectionTa.TITRE_TA) || `${m.legifrance_section_menu_trigger()} ${params.id}`,
       },
     ]}
   />

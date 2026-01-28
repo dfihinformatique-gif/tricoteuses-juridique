@@ -18,6 +18,7 @@
   import { urlPathFromId } from "$lib/urls"
   import * as Card from "$lib/components/ui/card/index.js"
   import * as Accordion from "$lib/components/ui/accordion/index.js"
+  import * as m from "$lib/paraglide/messages.js"
 
   let { jo }: { jo: Jo } = $props()
 
@@ -72,9 +73,11 @@
 {/snippet}
 
 {#snippet pageSpecificMenuItem()}
-  <NavigationMenuDropdown trigger="Journal officiel">
+  <NavigationMenuDropdown trigger={m.legifrance_jo_menu_trigger()}>
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.assemblee_document_menu_other_formats()}</DropdownMenu.Label
+      >
       <DropdownMenu.Item>
         <a
           class="flex whitespace-nowrap"
@@ -82,14 +85,18 @@
             gitPathFromId(id, ".md"),
             "https://git.tricoteuses.fr/dila/textes_juridiques/src/branch/main/",
           ).toString()}
-          target="_blank">Markdown dans git <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_markdown_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
         <a
           class="flex whitespace-nowrap"
           href="https://legal.tricoteuses.fr/jo/{id}"
-          target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.assemblee_document_menu_json_augmented()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -99,7 +106,9 @@
             gitPathFromId(id, ".json"),
             "https://git.tricoteuses.fr/dila/donnees_juridiques/src/branch/main/",
           ).toString()}
-          target="_blank">JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_json_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -110,7 +119,8 @@
             "https://git.tricoteuses.fr/dila/references_donnees_juridiques/src/branch/main/",
           ).toString()}
           target="_blank"
-          >Références JSON dans git <ExternalLinkIcon class="ml-1" /></a
+          >{m.legifrance_jo_menu_references_json_git()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       <DropdownMenu.Item>
@@ -119,7 +129,9 @@
           href={metaConteneur.NUM === undefined
             ? `https://www.legifrance.gouv.fr/jorf/jo/id/${id}`
             : `https://www.legifrance.gouv.fr/jorf/jo/${metaConteneur.DATE_PUBLI.replaceAll("-", "/")}/${`0000${metaConteneur.NUM}`.slice(-4)}`}
-          target="_blank">Légifrance <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.legifrance_jo_menu_legifrance()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
     </DropdownMenu.Group>

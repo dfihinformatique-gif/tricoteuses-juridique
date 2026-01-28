@@ -1,9 +1,10 @@
 import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
 
 import type { Pathname } from "$app/types"
+import { localizedHref } from "$lib/i18n.js"
 
-export const urlPathFromId = (id: string): Pathname | null =>
-  documentUidRegex.test(id)
+export const urlPathFromId = (id: string): Pathname | null => {
+  const basePath = documentUidRegex.test(id)
     ? `/assemblee/documents/${id}`
     : dossierUidRegex.test(id)
       ? `/assemblee/dossiers_legislatifs/${id}`
@@ -18,3 +19,6 @@ export const urlPathFromId = (id: string): Pathname | null =>
             : /^(JORF|LEGI)TEXT\d{12}$/.test(id)
               ? `/legifrance/textes/${id}`
               : null
+
+  return basePath ? (localizedHref(basePath) as Pathname) : null
+}

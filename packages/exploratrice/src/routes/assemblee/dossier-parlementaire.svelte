@@ -10,6 +10,7 @@
   import { mainMenu } from "$lib/hooks/main-menu.svelte.js"
   import { capitalizeFirstLetter } from "$lib/strings"
   import { urlPathFromId } from "$lib/urls.js"
+  import * as m from "$lib/paraglide/messages.js"
 
   import type { DossierParlementairePageInfos } from "./dossiers-parlementaires.js"
 
@@ -35,9 +36,10 @@
     {#if document === undefined}
       <Badge variant="secondary"
         >{acte.dateActe === undefined
-          ? "date inconnue"
+          ? m.assemblee_document_date_unknown()
           : fullDateFormatter(acte.dateActe)}</Badge
-      > Document {uid} non trouvé
+      >
+      {m.assemblee_document_not_found({ uid })}
     {:else}
       {@const chrono = document.cycleDeVie.chrono}
       {@const date =
@@ -49,7 +51,7 @@
       <a href={urlPathFromId(document.uid)}
         ><Badge variant="secondary"
           >{date === undefined
-            ? "date inconnue"
+            ? m.assemblee_document_date_unknown()
             : fullDateFormatter(date)}</Badge
         >
         {capitalizeFirstLetter(document.titres.titrePrincipal)}
@@ -60,14 +62,18 @@
 {/snippet}
 
 {#snippet pageSpecificMenuItem()}
-  <NavigationMenuDropdown trigger="Dossier législatif">
+  <NavigationMenuDropdown trigger={m.assemblee_dossier_menu_trigger()}>
     <DropdownMenu.Group>
-      <DropdownMenu.Label>Autres formats</DropdownMenu.Label>
+      <DropdownMenu.Label
+        >{m.assemblee_document_menu_other_formats()}</DropdownMenu.Label
+      >
       <DropdownMenu.Item>
         <a
           class="flex whitespace-nowrap"
           href="https://assemblee.tricoteuses.fr/dossiers/{dossierParlementaire.uid}"
-          target="_blank">JSON augmenté <ExternalLinkIcon class="ml-1" /></a
+          target="_blank"
+          >{m.assemblee_document_menu_json_augmented()}
+          <ExternalLinkIcon class="ml-1" /></a
         >
       </DropdownMenu.Item>
       {#if dossierParlementaire.titreDossier.titreChemin !== undefined}
@@ -77,7 +83,8 @@
             href="https://www.assemblee-nationale.fr/dyn/{dossierParlementaire.legislature}/dossiers/{dossierParlementaire
               .titreDossier.titreChemin}"
             target="_blank"
-            >Assemblée nationale <ExternalLinkIcon class="ml-1" /></a
+            >{m.assemblee_dossier_menu_national_assembly()}
+            <ExternalLinkIcon class="ml-1" /></a
           >
         </DropdownMenu.Item>
       {/if}
@@ -113,7 +120,7 @@
             class="bg-green-500 text-white dark:bg-green-600"
             variant="secondary"
             >{acte.dateActe === undefined
-              ? "date inconnue"
+              ? m.assemblee_document_date_unknown()
               : fullDateFormatter(acte.dateActe)}</Badge
           >
           Loi n°{acte.codeLoi} du {fullDateFormatter(acte.dateActe!)}
@@ -123,7 +130,7 @@
             variant="secondary"
           >
             <BadgeCheckIcon />
-            Loi promulguée
+            {m.assemblee_dossier_promulgated_law()}
           </Badge></a
         >
       {/if}

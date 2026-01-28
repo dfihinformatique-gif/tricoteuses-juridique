@@ -3,6 +3,7 @@
 
   import * as Alert from "$lib/components/ui/alert/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
+  import * as m from "$lib/paraglide/messages.js"
 
   import { queryDossierParlementairePageInfos } from "../../dossier-parlementaire.remote"
   import DossierParlementaire from "../../dossier-parlementaire.svelte"
@@ -17,24 +18,24 @@
 {#if dossierParlementairePageInfos === undefined}
   <PageBreadcrumb
     segments={[
-      { label: "Assemblée" },
+      { label: m.assemblee_documents_list_breadcrumb_assemblee() },
       {
-        label: "Dossiers législatifs",
+        label: m.assemblee_dossiers_list_breadcrumb_dossiers(),
         href: "/assemblee/dossiers_legislatifs",
       },
-      { label: `Dossier ${params.uid}` },
+      { label: `${m.assemblee_dossier_menu_trigger()} ${params.uid}` },
     ]}
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>Dossier législatif {params.uid} non trouvé !</Alert.Title>
+    <Alert.Title>{m.error_not_found({ item: `${m.assemblee_dossier_menu_trigger()} ${params.uid}` })}</Alert.Title>
   </Alert.Root>
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: "Assemblée" },
+      { label: m.assemblee_documents_list_breadcrumb_assemblee() },
       {
-        label: "Dossiers législatifs",
+        label: m.assemblee_dossiers_list_breadcrumb_dossiers(),
         href: "/assemblee/dossiers_legislatifs",
       },
       {

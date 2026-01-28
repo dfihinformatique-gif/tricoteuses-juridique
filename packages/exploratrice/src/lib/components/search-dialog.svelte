@@ -64,7 +64,7 @@
   ]
   let suggestions = $derived(
     await autocomplete([
-      q,
+      q ?? null,
       typeFilter ?? null,
       searchContext.legifranceTexteCid,
     ]),
@@ -87,7 +87,7 @@
   class: className,
   content,
   ...restProps
-}: HTMLAttributes & { content: string | Component })}
+}: HTMLAttributes<HTMLElement> & { content: string | Component })}
   {@const Content = content}
   <kbd
     class={cn(

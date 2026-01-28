@@ -51,6 +51,122 @@
   }
 </script>
 
+{#snippet renderSchemaUI(s: any)}
+  {#if s.enum}
+    <!-- Enumeration type -->
+    <div class="text-sm">
+      <div class="mb-2 flex items-baseline gap-2">
+        <Badge variant="outline" class="text-xs">enum</Badge>
+        {#if s.type}
+          <span class="text-xs text-muted-foreground">Type: {s.type}</span>
+        {/if}
+      </div>
+      <div class="ml-1 text-xs">
+        <span class="text-muted-foreground">Valeurs possibles:</span>
+        <div class="mt-2 flex flex-wrap gap-1">
+          {#each s.enum as enumValue}
+            <Badge variant="secondary" class="font-mono text-xs">
+              {enumValue}
+            </Badge>
+          {/each}
+        </div>
+      </div>
+    </div>
+  {:else if s.properties}
+    <div class="space-y-2 border-l-2 border-muted pl-3">
+      {#each Object.entries(s.properties) as [propName, propSchema] (propName)}
+        <div class="text-sm">
+          <div class="flex flex-wrap items-baseline gap-2">
+            <span class="font-mono font-semibold text-primary">
+              {propName}
+            </span>
+            <Badge variant="outline" class="text-xs">
+              {getTypeDisplay(propSchema as any)}
+            </Badge>
+            {#if s.required?.includes(propName)}
+              <Badge variant="destructive" class="text-xs">requis</Badge>
+            {/if}
+            {#if (propSchema as any).$ref}
+              <a
+                href="#{extractRefName((propSchema as any).$ref)}"
+                class="text-xs text-purple-600 hover:underline dark:text-purple-400"
+              >
+                → {extractRefName((propSchema as any).$ref)}
+              </a>
+            {/if}
+          </div>
+          {#if (propSchema as any).description}
+            <div class="mt-1 ml-1">
+              <FormattedDescription
+                description={(propSchema as any).description}
+                class="text-xs text-muted-foreground"
+              />
+            </div>
+          {/if}
+          {#if (propSchema as any).enum}
+            <div class="mt-1 ml-1 text-xs">
+              <span class="text-muted-foreground">Valeurs possibles:</span>
+              <div class="mt-1 flex flex-wrap gap-1">
+                {#each (propSchema as any).enum as enumValue}
+                  <Badge variant="secondary" class="font-mono text-xs">
+                    {enumValue}
+                  </Badge>
+                {/each}
+              </div>
+            </div>
+          {/if}
+          {#if (propSchema as any).type === "object" && (propSchema as any).properties}
+            <div class="mt-2">
+              {@render renderSchemaUI(propSchema)}
+            </div>
+          {/if}
+          {#if (propSchema as any).type === "array" && (propSchema as any).items}
+            {#if (propSchema as any).items.properties}
+              <div class="mt-2">
+                <div class="mb-1 text-xs text-muted-foreground">
+                  Éléments du tableau:
+                </div>
+                {@render renderSchemaUI((propSchema as any).items)}
+              </div>
+            {:else if (propSchema as any).items.$ref}
+              <a
+                href="#{extractRefName((propSchema as any).items.$ref)}"
+                class="ml-1 text-xs text-purple-600 hover:underline dark:text-purple-400"
+              >
+                → Voir {extractRefName((propSchema as any).items.$ref)}
+              </a>
+            {/if}
+          {/if}
+        </div>
+      {/each}
+    </div>
+  {:else}
+    <!-- Other schema types (primitive, etc.) -->
+    <div class="text-sm">
+      {#if s.type}
+        <div class="mb-2 flex items-baseline gap-2">
+          <Badge variant="outline" class="text-xs">{s.type}</Badge>
+        </div>
+      {/if}
+      {#if s.format}
+        <p class="ml-1 text-xs text-muted-foreground">
+          Format: {s.format}
+        </p>
+      {/if}
+      {#if s.pattern}
+        <p class="mt-1 ml-1 text-xs text-muted-foreground">
+          Pattern: <code class="font-mono">{s.pattern}</code>
+        </p>
+      {/if}
+      {#if !s.type && !s.format && !s.pattern}
+        <p class="text-xs text-muted-foreground italic">
+          Schéma sans propriétés définies
+        </p>
+      {/if}
+    </div>
+  {/if}
+{/snippet}
+
 <Separator class="my-12" />
 
 <div class="mt-12">
@@ -81,134 +197,6 @@
           </div>
         </AccordionTrigger>
         <AccordionContent class="px-4 pb-4">
-          {#snippet renderSchemaUI(s: any)}
-            {#if s.enum}
-              <!-- Enumeration type -->
-              <div class="text-sm">
-                <div class="mb-2 flex items-baseline gap-2">
-                  <Badge variant="outline" class="text-xs">enum</Badge>
-                  {#if s.type}
-                    <span class="text-xs text-muted-foreground"
-                      >Type: {s.type}</span
-                    >
-                  {/if}
-                </div>
-                <div class="ml-1 text-xs">
-                  <span class="text-muted-foreground">Valeurs possibles:</span>
-                  <div class="mt-2 flex flex-wrap gap-1">
-                    {#each s.enum as enumValue}
-                      <Badge variant="secondary" class="font-mono text-xs">
-                        {enumValue}
-                      </Badge>
-                    {/each}
-                  </div>
-                </div>
-              </div>
-            {:else if s.properties}
-              <div class="space-y-2 border-l-2 border-muted pl-3">
-                {#each Object.entries(s.properties) as [propName, propSchema] (propName)}
-                  <div class="text-sm">
-                    <div class="flex flex-wrap items-baseline gap-2">
-                      <span class="font-mono font-semibold text-primary">
-                        {propName}
-                      </span>
-                      <Badge variant="outline" class="text-xs">
-                        {getTypeDisplay(propSchema as any)}
-                      </Badge>
-                      {#if s.required?.includes(propName)}
-                        <Badge variant="destructive" class="text-xs">
-                          requis
-                        </Badge>
-                      {/if}
-                      {#if (propSchema as any).$ref}
-                        <a
-                          href="#{extractRefName((propSchema as any).$ref)}"
-                          class="text-xs text-purple-600 hover:underline dark:text-purple-400"
-                        >
-                          → {extractRefName((propSchema as any).$ref)}
-                        </a>
-                      {/if}
-                    </div>
-                    {#if (propSchema as any).description}
-                      <div class="mt-1 ml-1">
-                        <FormattedDescription
-                          description={(propSchema as any).description}
-                          class="text-xs text-muted-foreground"
-                        />
-                      </div>
-                    {/if}
-                    {#if (propSchema as any).enum}
-                      <div class="mt-1 ml-1 text-xs">
-                        <span class="text-muted-foreground"
-                          >Valeurs possibles:</span
-                        >
-                        <div class="mt-1 flex flex-wrap gap-1">
-                          {#each (propSchema as any).enum as enumValue}
-                            <Badge
-                              variant="secondary"
-                              class="font-mono text-xs"
-                            >
-                              {enumValue}
-                            </Badge>
-                          {/each}
-                        </div>
-                      </div>
-                    {/if}
-                    {#if (propSchema as any).type === "object" && (propSchema as any).properties}
-                      <div class="mt-2">
-                        {@render renderSchemaUI(propSchema)}
-                      </div>
-                    {/if}
-                    {#if (propSchema as any).type === "array" && (propSchema as any).items}
-                      {#if (propSchema as any).items.properties}
-                        <div class="mt-2">
-                          <div class="mb-1 text-xs text-muted-foreground">
-                            Éléments du tableau:
-                          </div>
-                          {@render renderSchemaUI((propSchema as any).items)}
-                        </div>
-                      {:else if (propSchema as any).items.$ref}
-                        <a
-                          href="#{extractRefName(
-                            (propSchema as any).items.$ref,
-                          )}"
-                          class="ml-1 text-xs text-purple-600 hover:underline dark:text-purple-400"
-                        >
-                          → Voir {extractRefName(
-                            (propSchema as any).items.$ref,
-                          )}
-                        </a>
-                      {/if}
-                    {/if}
-                  </div>
-                {/each}
-              </div>
-            {:else}
-              <!-- Other schema types (primitive, etc.) -->
-              <div class="text-sm">
-                {#if s.type}
-                  <div class="mb-2 flex items-baseline gap-2">
-                    <Badge variant="outline" class="text-xs">{s.type}</Badge>
-                  </div>
-                {/if}
-                {#if s.format}
-                  <p class="ml-1 text-xs text-muted-foreground">
-                    Format: {s.format}
-                  </p>
-                {/if}
-                {#if s.pattern}
-                  <p class="mt-1 ml-1 text-xs text-muted-foreground">
-                    Pattern: <code class="font-mono">{s.pattern}</code>
-                  </p>
-                {/if}
-                {#if !s.type && !s.format && !s.pattern}
-                  <p class="text-xs text-muted-foreground italic">
-                    Schéma sans propriétés définies
-                  </p>
-                {/if}
-              </div>
-            {/if}
-          {/snippet}
           {@render renderSchemaUI(schema)}
         </AccordionContent>
       </AccordionItem>

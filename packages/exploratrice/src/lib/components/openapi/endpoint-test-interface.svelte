@@ -93,7 +93,10 @@
           <h6 class="text-sm font-semibold">Paramètres</h6>
           {#each resolvedParams as param (param.name)}
             <div>
-              <label class="mb-1 block text-sm font-medium">
+              <label
+                for="param-{param.name}"
+                class="mb-1 block text-sm font-medium"
+              >
                 {param.name}
                 <span class="text-gray-500">({param.in})</span>
                 {#if param.required}
@@ -101,6 +104,7 @@
                 {/if}
               </label>
               <input
+                id="param-{param.name}"
                 type="text"
                 bind:value={testParameters[param.name]}
                 placeholder={param.description || ""}

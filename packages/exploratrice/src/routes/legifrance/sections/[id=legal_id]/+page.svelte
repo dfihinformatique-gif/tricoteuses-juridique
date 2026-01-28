@@ -38,7 +38,9 @@
       },
       {
         label:
-          (sectionTa.TITRE_TA as Record)?.["#text"] || `Section ${params.id}`,
+          (typeof sectionTa.TITRE_TA === "object" && sectionTa.TITRE_TA !== null
+            ? (sectionTa.TITRE_TA as Record<string, any>)["#text"]
+            : sectionTa.TITRE_TA) || `Section ${params.id}`,
       },
     ]}
   />

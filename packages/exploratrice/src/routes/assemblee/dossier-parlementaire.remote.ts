@@ -24,11 +24,11 @@ export const queryDossierParlementairePageInfos = query(
             uid,
           ))(),
         (async (): Promise<Document[]> =>
-          await getOrLoadDocumentsByDossierParlementaireUid(
+          (await getOrLoadDocumentsByDossierParlementaireUid(
             assembleeDb,
             newAssembleeObjectCache(),
             uid,
-          ))(),
+          )) as Document[])(),
         (async (): Promise<string | null> =>
           (
             await legiDb<

@@ -45,7 +45,9 @@ const loadDocumentPageInfos = async (
   }
   const [document, documentFilesIndex] = await Promise.all([
     (async (): Promise<Document | undefined> =>
-      await getOrLoadDocument(assembleeDb, newAssembleeObjectCache(), uid))(),
+      (await getOrLoadDocument(assembleeDb, newAssembleeObjectCache(), uid)) as
+        | Document
+        | undefined)(),
     (async (): Promise<DocumentFilesIndex | undefined> => {
       if (!(await fs.pathExists(documentDir))) {
         return undefined

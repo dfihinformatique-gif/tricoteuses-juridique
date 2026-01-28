@@ -120,7 +120,7 @@ export const organizations: Record<string, Entity> = {
 }
 
 // ============================================================================
-// SOURCES DE DONNÉES
+// DATA SOURCES
 // ============================================================================
 
 export const assembleeNationaleOpendata: DataSource = {
@@ -409,7 +409,7 @@ export const software: Software[] = [
 ]
 
 // ============================================================================
-// SERVICES DE DONNÉES
+// DATA SERVICES
 // ============================================================================
 
 export const databaseCanutesAssemblee: DataService = {
@@ -827,7 +827,7 @@ export const dataServices: Record<string, DataService> = {
   [mcpParlement.id]: mcpParlement,
 }
 
-// Initialisation des servicesDependencies après que tous les services ont été déclarés
+// Initialize servicesDependencies after all services have been declared
 legiFlatDb.servicesDependencies = [databaseCanutesLegifrance]
 tricoteusesApiParlement.servicesDependencies = [depotsAssemblee, depotsSenat]
 tricoteusesTranscriptionVideos.servicesDependencies = [
@@ -854,7 +854,7 @@ tricoteusesTisseuse.servicesDependencies = [
 ]
 
 // ============================================================================
-// RÉUTILISATIONS
+// REUSES
 // ============================================================================
 
 export const reuses: Record<string, Reuse> = {
@@ -887,7 +887,7 @@ export const reuses: Record<string, Reuse> = {
   // "legiscope": {
   //   author: "Assemblée Nationale (cellule LexImpact)",
   //   description:
-  //     "Application permettant de naviguer dans les projets et propositions de lois. Utilise les liens mis par Tricoteuses pour créer des liens des projets de lois vers les articles de lois qu'ils citent ou modifient, ainsi que des liens entre les articles de lois. L'ensemble des données du Légiscope est fourni par Tricoteuses.",
+  //     "Application for navigating legislative projects and proposals. Uses links provided by Tricoteuses to create connections from bills to the legal articles they cite or modify, as well as links between legal articles. All Legiscope data is provided by Tricoteuses.",
   //   featured: true,
   //   id: "legiscope",
   //   name: "Legiscope de l'Assemblée Nationale",
@@ -1020,7 +1020,7 @@ export const reuses: Record<string, Reuse> = {
 }
 
 // ============================================================================
-// PROJETS EXTERNES COMPLÉMENTAIRES
+// COMPLEMENTARY EXTERNAL PROJECTS
 // ============================================================================
 
 export const externalProjects: ExternalProject[] = [
@@ -1075,30 +1075,30 @@ export function getEntityById(id: string): Entity | undefined {
 }
 
 /**
- * Récupère tous les copyright holders (directs + transitifs via dépendances) d'un service
+ * Retrieves all copyright holders (direct + transitive via dependencies) of a service
  */
 export function getCopyrightHolders(service: DataService): Entity[] {
-  // Set pour éviter les doublons
+  // Set to avoid duplicates
   const copyrightHolderIds = new Set<string>()
 
-  // Ajouter les copyright holders directs
+  // Add direct copyright holders
   service.directCopyrightHolderIds.forEach((id) => copyrightHolderIds.add(id))
 
-  // Récupérer récursivement les copyright holders des dépendances
+  // Recursively retrieve copyright holders from dependencies
   const dependencies = service.serviceDependencies ?? []
   dependencies.forEach((dep) => {
     const depHolders = getCopyrightHolders(dep)
     depHolders.forEach((holder) => copyrightHolderIds.add(holder.id))
   })
 
-  // Convertir les IDs en entities
+  // Convert IDs to entities
   return Array.from(copyrightHolderIds)
     .map(getEntityById)
     .filter((e) => e !== undefined)
 }
 
 /**
- * Récupère les réutilisations qui utilisent un service donné
+ * Retrieves reuses that use a given service
  */
 export function getReusesByService(service: DataService): Reuse[] {
   return Object.values(reuses).filter((reuse) =>

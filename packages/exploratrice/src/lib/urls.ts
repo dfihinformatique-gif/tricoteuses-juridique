@@ -1,7 +1,7 @@
 import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
 
 import type { Pathname } from "$app/types"
-import { localizedHref } from "$lib/i18n.js"
+import { getLocale } from "$lib/paraglide/runtime.js"
 
 export const urlPathFromId = (id: string): Pathname | null => {
   const basePath = documentUidRegex.test(id)
@@ -20,5 +20,16 @@ export const urlPathFromId = (id: string): Pathname | null => {
               ? `/legifrance/textes/${id}`
               : null
 
-  return basePath ? (localizedHref(basePath) as Pathname) : null
+  if (!basePath) return null
+
+  // Get the current locale (works both on server and client)
+  const locale = getLocale()
+
+  // For French (base locale), don't add prefix
+  if (locale === "fr") {
+    return basePath as Pathname
+  }
+
+  // For other locales, add the locale prefix
+  return `/${locale}${basePath}` as Pathname
 }

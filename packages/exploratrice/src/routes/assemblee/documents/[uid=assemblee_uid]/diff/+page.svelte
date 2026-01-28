@@ -4,6 +4,7 @@
   import * as Alert from "$lib/components/ui/alert/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { urlPathFromId } from "$lib/urls.js"
+  import { safeLocalizedHref } from "$lib/i18n.js"
   import * as m from "$lib/paraglide/messages.js"
 
   import { queryDocumentsDiffPageInfos } from "../../../document.remote.js"
@@ -24,7 +25,7 @@
       { label: m.assemblee_documents_list_breadcrumb_assemblee() },
       {
         label: m.assemblee_dossiers_list_breadcrumb_dossiers(),
-        href: "/assemblee/dossiers_legislatifs",
+        href: safeLocalizedHref("/assemblee/dossiers_legislatifs"),
       },
       { label: `${m.assemblee_document_menu_trigger()} ${params.uid}` },
       { label: m.assemblee_document_diff_breadcrumb() },
@@ -40,7 +41,7 @@
       { label: m.assemblee_documents_list_breadcrumb_assemblee() },
       {
         label: m.assemblee_dossiers_list_breadcrumb_dossiers(),
-        href: "/assemblee/dossiers_legislatifs",
+        href: safeLocalizedHref("/assemblee/dossiers_legislatifs"),
       },
       {
         label: m.assemblee_dossier_menu_trigger(),
@@ -65,7 +66,7 @@
       { label: m.assemblee_documents_list_breadcrumb_assemblee() },
       {
         label: m.assemblee_dossiers_list_breadcrumb_dossiers(),
-        href: "/assemblee/dossiers_legislatifs",
+        href: safeLocalizedHref("/assemblee/dossiers_legislatifs"),
       },
       {
         label: m.assemblee_dossier_menu_trigger(),
@@ -88,7 +89,7 @@
       { label: m.assemblee_documents_list_breadcrumb_assemblee() },
       {
         label: m.assemblee_dossiers_list_breadcrumb_dossiers(),
-        href: "/assemblee/dossiers_legislatifs",
+        href: safeLocalizedHref("/assemblee/dossiers_legislatifs"),
       },
       {
         label: m.assemblee_dossier_menu_trigger(),
@@ -113,7 +114,7 @@
       { label: m.assemblee_documents_list_breadcrumb_assemblee() },
       {
         label: m.assemblee_dossiers_list_breadcrumb_dossiers(),
-        href: "/assemblee/dossiers_legislatifs",
+        href: safeLocalizedHref("/assemblee/dossiers_legislatifs"),
       },
       {
         label: m.assemblee_dossier_menu_trigger(),

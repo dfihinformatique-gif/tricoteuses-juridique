@@ -4,6 +4,7 @@
   import * as Alert from "$lib/components/ui/alert/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { urlPathFromId } from "$lib/urls.js"
+  import { safeLocalizedHref } from "$lib/i18n.js"
   import * as m from "$lib/paraglide/messages.js"
 
   import type { ArticleDisplayMode } from "../../article.js"
@@ -20,7 +21,7 @@
 {#if articlePageInfos === undefined}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_textes_list_breadcrumb(), href: "/legifrance/textes" },
+      { label: m.legifrance_textes_list_breadcrumb(), href: safeLocalizedHref("/legifrance/textes") },
       { label: `${m.legifrance_article_heading({ num: params.id })}` },
     ]}
   />
@@ -31,7 +32,7 @@
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_textes_list_breadcrumb(), href: "/legifrance/textes" },
+      { label: m.legifrance_textes_list_breadcrumb(), href: safeLocalizedHref("/legifrance/textes") },
       {
         label: m.legifrance_texte_menu_trigger(),
         href: articlePageInfos.article.CONTEXTE.TEXTE["@cid"]

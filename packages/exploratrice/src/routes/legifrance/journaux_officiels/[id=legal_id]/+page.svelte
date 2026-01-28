@@ -3,6 +3,7 @@
 
   import * as Alert from "$lib/components/ui/alert/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
+  import { safeLocalizedHref } from "$lib/i18n.js"
   import * as m from "$lib/paraglide/messages.js"
 
   import { queryJo } from "../../jo.remote"
@@ -16,7 +17,7 @@
 {#if jo === undefined}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_jo_list_breadcrumb(), href: "/legifrance/journaux_officiels" },
+      { label: m.legifrance_jo_list_breadcrumb(), href: safeLocalizedHref("/legifrance/journaux_officiels") },
       { label: `${m.legifrance_jo_menu_trigger()} ${params.id}` },
     ]}
   />
@@ -27,7 +28,7 @@
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_jo_list_breadcrumb(), href: "/legifrance/journaux_officiels" },
+      { label: m.legifrance_jo_list_breadcrumb(), href: safeLocalizedHref("/legifrance/journaux_officiels") },
       { label: jo.META?.META_COMMUN.ID ?? `${m.legifrance_jo_menu_trigger()} ${params.id}` },
     ]}
   />

@@ -73,9 +73,7 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-  <PageBreadcrumb
-    segments={[{ label: "Assemblée" }, { label: "Documents" }]}
-  />
+  <PageBreadcrumb segments={[{ label: "Assemblée" }, { label: "Documents" }]} />
 
   <div class="mb-8">
     <h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">

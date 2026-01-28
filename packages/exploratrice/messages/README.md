@@ -51,6 +51,7 @@ Les messages sont organisés par section/page avec des clés utilisant des under
   - `data_[id]_author` - Auteur d'une entité
 
 Exemples :
+
 - `data_api_canutes_assemblee_name` - Nom de l'API Canutes Assemblée
 - `data_tricoteuses_legifrance_description` - Description du logiciel
 - `data_reuse_legiwatch_author` - Auteur de la réutilisation
@@ -73,6 +74,7 @@ Pour injecter des valeurs dynamiques, utilisez des accolades :
 ```
 
 Utilisation :
+
 ```javascript
 m.greeting({ name: "Alice" })
 m.items_found({ count: 42 })
@@ -89,6 +91,7 @@ Les messages peuvent contenir du HTML simple :
 ```
 
 Dans le code, utilisez `{@html}` :
+
 ```svelte
 <p>{@html m.about_presentation_p1()}</p>
 ```
@@ -106,6 +109,7 @@ Pour gérer les pluriels, utilisez le séparateur pipe `|` :
 ```
 
 Utilisation :
+
 ```javascript
 // Approche 1 : clés séparées
 count > 1 ? m.software_count_plural() : m.software_count_single()
@@ -118,6 +122,7 @@ count > 1 ? plural : singular
 ## Ajouter une nouvelle traduction
 
 1. **Ajouter la clé dans `fr.json`** :
+
 ```json
 {
   "my_new_key": "Mon nouveau message"
@@ -125,6 +130,7 @@ count > 1 ? plural : singular
 ```
 
 2. **Ajouter la traduction dans `en.json`** :
+
 ```json
 {
   "my_new_key": "My new message"
@@ -132,6 +138,7 @@ count > 1 ? plural : singular
 ```
 
 3. **Utiliser dans le code** :
+
 ```svelte
 <script lang="ts">
   import * as m from "$lib/paraglide/messages.js"
@@ -141,6 +148,7 @@ count > 1 ? plural : singular
 ```
 
 4. **Recompiler** (automatique en mode dev) :
+
 ```bash
 npm run dev
 ```

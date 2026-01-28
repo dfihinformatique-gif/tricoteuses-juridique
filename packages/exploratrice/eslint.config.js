@@ -22,6 +22,7 @@ export default defineConfig(
       "components.json",
       "src/lib/components/ui/",
       "src/lib/utils.ts",
+      "src/lib/paraglide/",
     ],
   },
   js.configs.recommended,

@@ -71,6 +71,7 @@
     }
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- Used as Svelte component in template
   const iconComponent = $derived.by(() => {
     switch (service.type) {
       case "api":

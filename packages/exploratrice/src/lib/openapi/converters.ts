@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { OpenAPIV2, OpenAPIV3 } from "openapi-types"
 
 /**

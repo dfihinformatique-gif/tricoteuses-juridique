@@ -12,11 +12,15 @@
   }
 
   function switchLanguage(locale: string) {
-    const url = new URL($page.url)
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- URL used for navigation, not reactive state
+    const url = new URL($page.url.toString())
     const segments = url.pathname.split("/").filter(Boolean)
 
     // Remove current locale if it exists
-    if (locales.includes(segments[0] as any)) {
+    if (
+      segments[0] !== undefined &&
+      (locales as readonly string[]).includes(segments[0])
+    ) {
       segments.shift()
     }
 
@@ -34,7 +38,7 @@
     const segments = $page.url.pathname.split("/").filter(Boolean)
     const firstSegment = segments[0]
     // Check if first segment is a locale
-    if (locales.includes(firstSegment as any)) {
+    if (firstSegment && (locales as readonly string[]).includes(firstSegment)) {
       return firstSegment
     }
     // Default to base locale (fr)

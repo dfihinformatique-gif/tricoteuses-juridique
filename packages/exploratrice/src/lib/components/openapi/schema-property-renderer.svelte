@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   import { getTypeDisplay, extractRefName } from "$lib/openapi/helpers"
   import { Badge } from "$lib/components/ui/badge"
   import FormattedDescription from "./formatted-description.svelte"

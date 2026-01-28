@@ -16,7 +16,6 @@ import { legalId } from "$lib/zod/legifrance.js"
 import {
   possibleTypes,
   suggestionFromSuggestionDb,
-  type PossibleType,
   type Suggestion,
   type SuggestionDb,
 } from "$lib/autocompletion.js"

@@ -1,13 +1,12 @@
 <script lang="ts">
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   import {
     Card,
     CardContent,
     CardHeader,
     CardTitle,
-    CardDescription,
   } from "$lib/components/ui/card"
   import { Badge } from "$lib/components/ui/badge"
-  import { Separator } from "$lib/components/ui/separator"
   import FormattedDescription from "./formatted-description.svelte"
   import SchemaPropertyRenderer from "./schema-property-renderer.svelte"
 

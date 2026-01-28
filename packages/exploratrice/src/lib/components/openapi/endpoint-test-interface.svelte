@@ -1,4 +1,5 @@
 <script lang="ts">
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   import type { OpenAPIV2 } from "openapi-types"
   import { buildUrl, resolveParameters } from "$lib/openapi/helpers"
 

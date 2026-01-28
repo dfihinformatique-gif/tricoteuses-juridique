@@ -8,11 +8,7 @@
   import { goto } from "$app/navigation"
   import { page } from "$app/state"
   import { parseSearchParams, querySingleton, queryQ } from "$lib/zod/query.js"
-  import {
-    possibleTypes,
-    type PossibleType,
-    type Suggestion,
-  } from "$lib/autocompletion.js"
+  import { possibleTypes, type Suggestion } from "$lib/autocompletion.js"
   import { Badge } from "$lib/components/ui/badge/index.js"
   import { Button } from "$lib/components/ui/button/index.js"
   import * as Command from "$lib/components/ui/command/index.js"

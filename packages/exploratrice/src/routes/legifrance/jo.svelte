@@ -18,8 +18,6 @@
   import { urlPathFromId } from "$lib/urls"
   import * as Card from "$lib/components/ui/card/index.js"
   import * as Accordion from "$lib/components/ui/accordion/index.js"
-  import { Item } from "$lib/components/ui/command"
-  import { Trigger } from "$lib/components/ui/collapsible"
 
   let { jo }: { jo: Jo } = $props()
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * OpenAPI utilities and helpers for documentation pages
  */
@@ -110,7 +111,7 @@ export function buildUrl(
   parameters: Record<string, string>,
 ): string {
   const queryParams = Object.entries(parameters)
-    .filter(([_, value]) => value)
+    .filter(([, value]) => value)
     .map(
       ([key, value]) =>
         `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,

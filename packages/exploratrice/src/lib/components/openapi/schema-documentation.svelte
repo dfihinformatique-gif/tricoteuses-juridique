@@ -1,12 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from "svelte"
-  import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-  } from "$lib/components/ui/card"
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   import { Badge } from "$lib/components/ui/badge"
   import {
     Accordion,

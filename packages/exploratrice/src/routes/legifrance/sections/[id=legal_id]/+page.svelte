@@ -39,7 +39,9 @@
       {
         label:
           (typeof sectionTa.TITRE_TA === "object" && sectionTa.TITRE_TA !== null
-            ? (sectionTa.TITRE_TA as Record<string, any>)["#text"]
+            ? String(
+                (sectionTa.TITRE_TA as Record<string, unknown>)["#text"] ?? "",
+              )
             : sectionTa.TITRE_TA) || `Section ${params.id}`,
       },
     ]}

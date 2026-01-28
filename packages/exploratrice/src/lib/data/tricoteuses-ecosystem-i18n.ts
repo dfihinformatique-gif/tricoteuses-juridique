@@ -16,7 +16,7 @@ import type {
 export function getDataSourceName(id: string): string {
   const key = `data_${id.replace(/-/g, "_")}_name` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : id
+  return typeof fn === "function" ? (fn as () => string)() : id
 }
 
 /**
@@ -25,7 +25,7 @@ export function getDataSourceName(id: string): string {
 export function getDataSourceDescription(id: string): string {
   const key = `data_${id.replace(/-/g, "_")}_description` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : ""
+  return typeof fn === "function" ? (fn as () => string)() : ""
 }
 
 /**
@@ -34,7 +34,7 @@ export function getDataSourceDescription(id: string): string {
 export function getProviderName(id: string): string {
   const key = `data_${id.replace(/-/g, "_")}_provider` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : id
+  return typeof fn === "function" ? (fn as () => string)() : id
 }
 
 /**
@@ -43,7 +43,7 @@ export function getProviderName(id: string): string {
 export function getDataServiceName(id: string): string {
   const key = `data_${id.replace(/-/g, "_")}_name` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : id
+  return typeof fn === "function" ? (fn as () => string)() : id
 }
 
 /**
@@ -52,7 +52,7 @@ export function getDataServiceName(id: string): string {
 export function getDataServiceDescription(id: string): string {
   const key = `data_${id.replace(/-/g, "_")}_description` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : ""
+  return typeof fn === "function" ? (fn as () => string)() : ""
 }
 
 /**
@@ -61,7 +61,7 @@ export function getDataServiceDescription(id: string): string {
 export function getSoftwareName(id: string): string {
   const key = `data_${id.replace(/-/g, "_")}_name` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : id
+  return typeof fn === "function" ? (fn as () => string)() : id
 }
 
 /**
@@ -70,7 +70,7 @@ export function getSoftwareName(id: string): string {
 export function getSoftwareDescription(id: string): string {
   const key = `data_${id.replace(/-/g, "_")}_description` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : ""
+  return typeof fn === "function" ? (fn as () => string)() : ""
 }
 
 /**
@@ -80,7 +80,7 @@ export function getExternalProjectDescription(id: string): string {
   const key =
     `data_external_project_${id.replace(/-/g, "_")}_description` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : ""
+  return typeof fn === "function" ? (fn as () => string)() : ""
 }
 
 /**
@@ -107,7 +107,7 @@ export function getLocalizedDataService(service: DataService): DataService {
       ? {
           ...service.provider,
           name: service.provider.url.includes("code4code")
-            ? (m.data_provider_code4code as any)()
+            ? (m.data_provider_code4code as () => string)()
             : service.provider.name,
         }
       : undefined,
@@ -131,7 +131,7 @@ export function getLocalizedSoftware(software: Software): Software {
 export function getReuseName(id: string): string {
   const key = `data_reuse_${id.replace(/-/g, "_")}_name` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : id
+  return typeof fn === "function" ? (fn as () => string)() : id
 }
 
 /**
@@ -141,7 +141,7 @@ export function getReuseDescription(id: string): string {
   const key =
     `data_reuse_${id.replace(/-/g, "_")}_description` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : ""
+  return typeof fn === "function" ? (fn as () => string)() : ""
 }
 
 /**
@@ -150,7 +150,7 @@ export function getReuseDescription(id: string): string {
 export function getReuseAuthor(id: string): string {
   const key = `data_reuse_${id.replace(/-/g, "_")}_author` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : ""
+  return typeof fn === "function" ? (fn as () => string)() : ""
 }
 
 /**
@@ -160,7 +160,7 @@ export function getExternalProjectName(id: string): string {
   const key =
     `data_external_project_${id.replace(/-/g, "_")}_name` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : id
+  return typeof fn === "function" ? (fn as () => string)() : id
 }
 
 /**
@@ -170,5 +170,5 @@ export function getExternalProjectAuthor(id: string): string {
   const key =
     `data_external_project_${id.replace(/-/g, "_")}_author` as keyof typeof m
   const fn = m[key]
-  return typeof fn === "function" ? (fn as any)() : ""
+  return typeof fn === "function" ? (fn as () => string)() : ""
 }

@@ -7,8 +7,25 @@
   import Plus from "@lucide/svelte/icons/plus"
   import * as m from "$lib/paraglide/messages.js"
   import { localizedHref } from "$lib/i18n.js"
+  import { page } from "$app/stores"
+  import { goto } from "$app/navigation"
 
-  let selectedType = $state<Reuse["type"] | "all">("all")
+  // Initialiser selectedType depuis l'URL
+  let selectedType = $state<Reuse["type"] | "all">(
+    ($page.url.searchParams.get("type") as Reuse["type"]) || "all",
+  )
+
+  // Fonction pour mettre à jour l'URL quand le filtre change
+  function updateFilter(type: Reuse["type"] | "all") {
+    selectedType = type
+    const url = new URL($page.url)
+    if (type === "all") {
+      url.searchParams.delete("type")
+    } else {
+      url.searchParams.set("type", type)
+    }
+    goto(url, { replaceState: true, noScroll: true })
+  }
 
   const filteredReuses = $derived.by(() => {
     const allReuses = Object.values(reuses)
@@ -61,7 +78,7 @@
       <Button
         variant={selectedType === filter.type ? "default" : "outline"}
         size="sm"
-        onclick={() => (selectedType = filter.type)}
+        onclick={() => updateFilter(filter.type)}
       >
         {filter.label}
       </Button>

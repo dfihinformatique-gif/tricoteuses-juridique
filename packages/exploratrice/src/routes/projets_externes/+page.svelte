@@ -7,8 +7,26 @@
   import Plus from "@lucide/svelte/icons/plus"
   import * as m from "$lib/paraglide/messages.js"
   import { localizedHref } from "$lib/i18n.js"
+  import { page } from "$app/stores"
+  import { goto } from "$app/navigation"
 
-  let selectedFeatured = $state<boolean | "all">("all")
+  // Initialiser selectedFeatured depuis l'URL
+  const featuredParam = $page.url.searchParams.get("featured")
+  let selectedFeatured = $state<boolean | "all">(
+    featuredParam === "true" ? true : featuredParam === "false" ? false : "all",
+  )
+
+  // Fonction pour mettre à jour l'URL quand le filtre change
+  function updateFilter(type: boolean | "all") {
+    selectedFeatured = type
+    const url = new URL($page.url)
+    if (type === "all") {
+      url.searchParams.delete("featured")
+    } else {
+      url.searchParams.set("featured", String(type))
+    }
+    goto(url, { replaceState: true, noScroll: true })
+  }
 
   const filteredProjects = $derived.by(() => {
     if (selectedFeatured === "all") return externalProjects
@@ -62,7 +80,7 @@
       <Button
         variant={selectedFeatured === filter.type ? "default" : "outline"}
         size="sm"
-        onclick={() => (selectedFeatured = filter.type)}
+        onclick={() => updateFilter(filter.type)}
       >
         {filter.label}
       </Button>

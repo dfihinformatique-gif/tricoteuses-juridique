@@ -101,14 +101,23 @@ export interface Reuse {
 // ORGANIZATIONS
 // ============================================================================
 
-export const organizations: Entity[] = [
-  {
-    email: "contact@logora.fr",
-    id: "logora",
-    name: "Logora",
-    url: "https://www.logora.com",
-  },
-]
+export const code4code = {
+  email: "contact@code4code.eu",
+  id: "code4code",
+  name: "Code4code.eu",
+  url: "https://code4code.eu",
+}
+export const logora = {
+  email: "contact@logora.fr",
+  id: "logora",
+  name: "Logora",
+  url: "https://www.logora.com",
+}
+
+export const organizations: Record<string, Entity> = {
+  [code4code.id]: code4code,
+  [logora.id]: logora,
+}
 
 // ============================================================================
 // SOURCES DE DONNÉES
@@ -406,7 +415,7 @@ export const software: Software[] = [
 export const databaseCanutesAssemblee: DataService = {
   description:
     "Base de données PostgreSQL contenant les données structurées de l'Assemblée Nationale : acteurs, amendements, dossiers législatifs, documents, organes, réunions, scrutins. Construite quotidiennement à partir des dépôts Git de l'Assemblée.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "database-canutes-assemblee",
   license: {
@@ -426,7 +435,7 @@ export const databaseCanutesAssemblee: DataService = {
 export const databaseCanutesLegifrance: DataService = {
   description:
     "Base de données PostgreSQL contenant les données structurées de Légifrance : articles de loi, textes légaux, sections, dossiers législatifs, journaux officiels. Construite quotidiennement à partir des dépôts Git DILA.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "database-canutes-legifrance",
   license: {
@@ -466,7 +475,7 @@ export const databaseCanutesParlement: DataService = {
 export const apiCanutesAssemblee: DataService = {
   description:
     "API REST pour accéder aux données de l'Assemblée Nationale (acteurs, amendements, dossiers législatifs, documents, organes, réunions, scrutins) via PostgREST avec spécification OpenAPI 2.0.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: true,
   id: "api-canutes-assemblee",
   license: {
@@ -488,7 +497,7 @@ export const apiCanutesAssemblee: DataService = {
 export const apiCanutesLegifrance: DataService = {
   description:
     "API REST pour accéder aux données législatives françaises de Légifrance (articles de loi, textes légaux, sections, dossiers législatifs, journaux officiels) via PostgREST avec spécification OpenAPI 2.0.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: true,
   id: "api-canutes-legifrance",
   license: {
@@ -533,7 +542,7 @@ export const apiParlement: DataService = {
 export const depotsDila: DataService = {
   description:
     "Dépôts Git contenant les données brutes de Légifrance publiées par la DILA, récupérées plusieurs fois par jour, converties en JSON, nettoyées et versionnées sous Git par Tricoteuses. Mises à jour quotidiennes.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "depots-dila",
   license: {
@@ -554,7 +563,7 @@ export const depotsDila: DataService = {
 export const depotsAssemblee: DataService = {
   description:
     "Dépôts Git contenant les données publiques de l'Assemblée nationale, récupérées plusieurs fois par jour, converties en JSON, nettoyées et versionnées sous Git par Tricoteuses. Mises à jour quotidiennes.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "depots-assemblee",
   license: {
@@ -575,7 +584,7 @@ export const depotsAssemblee: DataService = {
 export const documentsAssemblee: DataService = {
   description:
     "Dépôt Git contenant les documents (projets de lois, rapports, etc) de l'Assemblée nationale, auxquels s'ajoute un segmentation en articles incluant (en option) les liens vers les articles de lois",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "documents-assemblee",
   license: {
@@ -596,7 +605,7 @@ export const documentsAssemblee: DataService = {
 export const documentsEnrichisAssemblee: DataService = {
   description:
     "Dépôt Git contenant les documents (projets de lois, rapports, etc) de l'Assemblée nationale, enrichis de liens vers les articles de lois et d'une table des matières",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: true,
   id: "documents-enrichis-assemblee",
   license: {
@@ -617,7 +626,7 @@ export const documentsEnrichisAssemblee: DataService = {
 export const depotsSenat: DataService = {
   description:
     "Dépôts Git contenant les données brutes du Sénat, récupérées plusieurs fois par jour, converties en JSON, nettoyées et versionnées sous Git par Tricoteuses. Mises à jour quotidiennes.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "depots-senat",
   license: {
@@ -638,7 +647,7 @@ export const depotsSenat: DataService = {
 export const databaseCanutesSenat: DataService = {
   description:
     "Base de données PostgreSQL contenant les données structurées du Sénat : acteurs, amendements, dossiers législatifs, documents, organes, réunions, scrutins. Construite quotidiennement à partir des dépôts Git du Sénat.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "database-canutes-senat",
   license: {
@@ -659,7 +668,7 @@ export const databaseCanutesSenat: DataService = {
 export const databaseCanutesTisseuse: DataService = {
   description:
     "Base de données PostgreSQL permettant de rechercher des informations provenant de l'Assemblée, du Sénat ou de Légifrance.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "database-canutes-tisseuse",
   license: {
@@ -684,7 +693,7 @@ export const databaseCanutesTisseuse: DataService = {
 export const apiCanutesSenat: DataService = {
   description:
     "API REST pour accéder aux données du Sénat (acteurs, amendements, dossiers législatifs, documents, organes, réunions, scrutins) via PostgREST avec spécification OpenAPI 2.0.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: true,
   id: "api-canutes-senat",
   license: {
@@ -706,7 +715,7 @@ export const apiCanutesSenat: DataService = {
 export const codesJuridiques: DataService = {
   description:
     "Dépôts Git contenant l'ensemble des codes juridiques français (Code civil, Code général des impôts, etc.) avec leur historique complet des modifications, versionnés sous Git.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "codes-juridiques",
   license: {
@@ -727,7 +736,7 @@ export const codesJuridiques: DataService = {
 export const constitution: DataService = {
   description:
     "Texte intégral de la Constitution du 4 octobre 1958 avec son historique complet des modifications, versionné sous Git.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "constitution",
   license: {
@@ -749,7 +758,7 @@ export const mcpMoulineuse: DataService = {
   author: "Code4code.eu",
   description:
     "Serveur MCP (Model Context Protocol) permettant d'interroger directement les bases de données juridiques de Tricoteuses. Parfait pour permettre aux chats IA d'avoir une connaissance approfondie, exacte et à jour de la loi et de sa fabrique.",
-  directCopyrightHolderIds: ["emmanuel-raviart"],
+  directCopyrightHolderIds: ["code4code"],
   featured: false,
   id: "mcp-moulineuse",
   license: {
@@ -1044,8 +1053,8 @@ export const externalProjects: ExternalProject[] = [
  */
 export function getEntityById(id: string): Entity | undefined {
   // First, check organizations
-  const org = organizations.find((o) => o.id === id)
-  if (org) return org
+  const org = organizations[id]
+  if (org !== undefined) return org
 
   // Then, check authors in software
   for (const soft of software) {
@@ -1053,7 +1062,7 @@ export function getEntityById(id: string): Entity | undefined {
       const authorId = a.name.toLowerCase().replace(/[^a-z0-9-]/g, "-")
       return authorId === id
     })
-    if (author) {
+    if (author !== undefined) {
       return {
         id,
         name: author.name,

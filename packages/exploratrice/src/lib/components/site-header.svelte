@@ -25,7 +25,7 @@
           <NavigationMenu.Item openOnHover={false}>
             <NavigationMenu.Trigger>{m.site_name()}</NavigationMenu.Trigger>
             <NavigationMenu.Content>
-              <ul>
+              <ul class="pr-4 pb-4">
                 <li>
                   <NavigationMenu.Link href={localizedHref("/")}
                     >{m.nav_home()}</NavigationMenu.Link
@@ -70,6 +70,15 @@
                     href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/mentions_legales.md"
                     target="_blank"
                     >{m.nav_legal_notices()}
+                    <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
+                  >
+                </li>
+                <li>
+                  <NavigationMenu.Link
+                    class="flex flex-row whitespace-nowrap"
+                    href="https://git.tricoteuses.fr/logiciels/tricoteuses-juridique/src/branch/main/packages/exploratrice"
+                    target="_blank"
+                    >{m.nav_free_open_source()}
                     <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
                   >
                 </li>

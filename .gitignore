@@ -1,21 +1,25 @@
+# OS
 .DS_Store
+
+# Dependencies
 node_modules/
 
+# Logs
 *.log
 
-# Env
+# Environment files
 /packages/*/*.env
 !/packages/*/example.env
 
+# Build outputs
 /packages/exploratrice/.svelte-kit
 /packages/exploratrice/build
+/packages/moulineuse/dist
+/packages/tisseuse/dist
 
-packages/moulineuse/dist
-
-packages/tisseuse/dist
-# Ensure that text_titles_infos.json remains empty:
+# Ensure that text_titles_infos.json remains empty
 packages/tisseuse/src/lib/text_parsers/text_titles_infos.json
 
-# Local skills
+# Local skills (development)
 skills/
 packages/*/skills/

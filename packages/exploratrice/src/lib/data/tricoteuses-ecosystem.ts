@@ -534,7 +534,8 @@ export const apiParlement: DataService = {
   },
   serviceDependencies: [databaseCanutesParlement],
   softwareDependencies: [tricoteusesApiParlement],
-  technicalDocUrl: "/services/api-parlement/documentation",
+  // technicalDocUrl: "/services/api-parlement/documentation",
+  technicalDocUrl: "https://parlement.tricoteuses.fr/docs",
   type: "api",
   url: "https://parlement.tricoteuses.fr/api/v1",
 }

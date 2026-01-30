@@ -405,12 +405,31 @@ export const identificationTexteEuropeen = alternatives(
 export const natureTexteEuropeen = chain(
   [
     alternatives(
-      regExp("directive", { flags: "i", value: "DIRECTIVE_EURO" }),
-      regExp("règlement", { flags: "i", value: "REGLEMENTEUROPEEN" }),
+      // "arrêté" must be before "arrêt".
+      regExp("arrêté", { flags: "i", value: "ARRETEEURO" }),
+      regExp("arrêt", { flags: "i", value: "ARRETEURO" }),
+      regExp("avis", { flags: "i", value: "AVISEURO" }),
+      regExp("décision", { flags: "i", value: "DECISION_EURO" }),
+      regExp("déclaration", { flags: "i", value: "DECLARATIONEURO" }),
+      regExp("délibération", { flags: "i", value: "DELIBERATIONEURO" }),
+      regExp("directive (d'exécution|déléguée)?", {
+        flags: "i",
+        value: "DIRECTIVE_EURO",
+      }),
+      regExp("information", { flags: "i", value: "INFORMATIONEURO" }),
+      regExp("instruction", { flags: "i", value: "INSTRUCTIONEURO" }),
+      regExp("lettre", { flags: "i", value: "LETTREEURO" }),
+      regExp("règlement (d'exécution)?", {
+        flags: "i",
+        value: "REGLEMENTEUROPEEN",
+      }),
     ),
-    optional(regExp(String.raw` \((CE|CEE|UE(, EURATOM)?)\)`, { flags: "i" }), {
-      default: "",
-    }),
+    optional(
+      regExp(String.raw` \((CE|CEE|EURATOM|UE(, EURATOM)?)\)`, { flags: "i" }),
+      {
+        default: "",
+      },
+    ),
   ],
   {
     value: (results) => ({

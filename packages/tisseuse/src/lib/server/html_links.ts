@@ -284,7 +284,7 @@ export async function addLinksOrReferencesToHtmlFile({
       }
 
       case "european_text": {
-        const { link: href, originalTransformation, text } = link
+        const { url: href, originalTransformation, text, titleId } = link
         if (originalTransformation === undefined) {
           throw new Error(
             `Missing originalTransformation attribute in external text link: ${JSON.stringify(link, null, 2)}`,
@@ -309,7 +309,7 @@ export async function addLinksOrReferencesToHtmlFile({
             style: "background-color: #eae462",
             title: JSON.stringify(text),
           },
-          id: text.id,
+          id: titleId,
           originalTransformation,
           outputByType,
         })

@@ -76,7 +76,7 @@ export interface ArticleExternalLink {
   articleId?: string
   /**
    * Only defined when a transformation was used to convert input text
-   * to simplified text.
+   * to simpeurolified text.
    */
   originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
@@ -148,10 +148,6 @@ export interface ExtractedLinkDb {
 
 export interface TextEuropeanLink {
   /**
-   * URL of the European text
-   */
-  link?: string
-  /**
    * Only defined when a transformation was used to convert input text
    * to simplified text.
    */
@@ -159,7 +155,9 @@ export interface TextEuropeanLink {
   position: FragmentPosition
   reference: TextAstReference
   text: TextAstText & TextAstPosition
+  titleId: string
   type: "european_text"
+  url?: string
 }
 
 export interface TextExternalLink {
@@ -1390,21 +1388,22 @@ export async function* iterReferenceLinks({
           }
           if (atomicReference.legislation === "UE") {
             console.log(atomicReference)
-            const link = (
-              await europeDb<{ link: string }[]>`
-              SELECT link
+            const url = (
+              await europeDb<{ url: string }[]>`
+              SELECT url
               FROM titre_lien
-              WHERE id = ${atomicReference.num ?? null}
+              WHERE title_id = ${atomicReference.num ?? null}
             `
-            )[0]?.link
+            )[0]?.url
             yield Object.fromEntries(
               Object.entries({
-                link,
                 originalTransformation: atomicReference.originalTransformation,
                 position: atomicReference.position,
                 reference,
                 text: atomicReference,
+                titleId: atomicReference.num,
                 type: "european_text",
+                url,
               }).filter(([, value]) => value !== undefined),
             ) as unknown as TextLink
           } else {

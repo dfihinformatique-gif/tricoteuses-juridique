@@ -1300,6 +1300,31 @@ describe("getExtractedReferences, test spécifiques", () => {
       type: "parent-enfant",
     })
   })
+
+  test("Références à de multiples textes européens", () => {
+    const input = dedent`
+      sont retenues les définitions et méthodes de détermination du règlement (UE) 2017/1151 de la Commission du 1er juin 2017 complétant le règlement (CE) n° 715/2007 du Parlement européen et du Conseil relatif à la réception des véhicules à moteur au regard des émissions des véhicules particuliers et utilitaires légers (Euro 5 et Euro 6) et aux informations sur la réparation et l'entretien des véhicules, modifiant la directive 2007/46/CE du Parlement européen et du Conseil, le règlement (CE) n° 692/2008 de la Commission et le règlement (UE) n° 1230/2012 de la Commission et abrogeant le règlement (CE) n° 692/2008 ainsi que, s'agissant des véhicules qui ne relèvent pas de ce règlement, de définitions et méthodes équivalentes déterminées par arrêté du ministre chargé de l'environnement.
+    `
+    const context = new TextParserContext(input)
+    const references = getExtractedReferences(context)
+    expect(references.length).toBe(6)
+    expect(context.text(references[0].position)).toBe(
+      "du règlement (UE) 2017/1151",
+    )
+    expect(context.text(references[1].position)).toBe(
+      "le règlement (CE) n° 715/2007",
+    )
+    expect(context.text(references[2].position)).toBe("la directive 2007/46/CE")
+    expect(context.text(references[3].position)).toBe(
+      "le règlement (CE) n° 692/2008",
+    )
+    expect(context.text(references[4].position)).toBe(
+      "le règlement (UE) n° 1230/2012",
+    )
+    expect(context.text(references[5].position)).toBe(
+      "le règlement (CE) n° 692/2008",
+    )
+  })
 })
 
 describe("getExtractedReferencesWithOriginalTransformations", () => {

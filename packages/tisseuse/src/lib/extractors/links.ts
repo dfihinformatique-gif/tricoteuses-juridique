@@ -59,7 +59,7 @@ export interface ArticleDefinition {
    * Same value as article.originalTransformation, added for homogeneity
    *
    * Only defined when a transformation was used to convert input text
-   * simplified text.
+   * to simplified text.
    */
   originalTransformation?: FragmentReverseTransformation
   /**
@@ -76,7 +76,7 @@ export interface ArticleExternalLink {
   articleId?: string
   /**
    * Only defined when a transformation was used to convert input text
-   * simplified text.
+   * to simplified text.
    */
   originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
@@ -89,7 +89,7 @@ export interface ArticleInternalLink {
   definition: ArticleDefinition
   /**
    * Only defined when a transformation was used to convert input text
-   * simplified text.
+   * to simplified text.
    */
   originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
@@ -114,7 +114,7 @@ export interface DivisionExternalLink {
   division: TextAstDivision
   /**
    * Only defined when a transformation was used to convert input text
-   * simplified text.
+   * to simplified text.
    */
   originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
@@ -128,7 +128,7 @@ export interface DivisionExternalLink {
 //   definition: DivisionDefinition
 //   /**
 //    * Only defined when a transformation was used to convert input text
-//    * simplified text.
+//    * to simplified text.
 //    */
 //   originalTransformation?: FragmentReverseTransformation
 //   position: FragmentPosition
@@ -146,10 +146,26 @@ export interface ExtractedLinkDb {
   target_id: string | null
 }
 
+export interface TextEuropeanLink {
+  /**
+   * URL of the European text
+   */
+  link?: string
+  /**
+   * Only defined when a transformation was used to convert input text
+   * to simplified text.
+   */
+  originalTransformation?: FragmentReverseTransformation
+  position: FragmentPosition
+  reference: TextAstReference
+  text: TextAstText & TextAstPosition
+  type: "european_text"
+}
+
 export interface TextExternalLink {
   /**
    * Only defined when a transformation was used to convert input text
-   * simplified text.
+   * to simplified text.
    */
   originalTransformation?: FragmentReverseTransformation
   position: FragmentPosition
@@ -158,7 +174,7 @@ export interface TextExternalLink {
   type: "external_text"
 }
 
-export type TextLink = TextExternalLink // No internal link yet
+export type TextLink = TextEuropeanLink | TextExternalLink // No internal link yet
 
 export interface TextLinksParserState {
   articleId?: string
@@ -1381,19 +1397,16 @@ export async function* iterReferenceLinks({
               WHERE id = ${atomicReference.num ?? null}
             `
             )[0]?.link
-            if (link !== undefined) {
-              yield Object.fromEntries(
-                Object.entries({
-                  link,
-                  originalTransformation:
-                    atomicReference.originalTransformation,
-                  position: atomicReference.position,
-                  reference,
-                  text: atomicReference,
-                  type: "european_text",
-                }).filter(([, value]) => value !== undefined),
-              ) as unknown as TextLink
-            }
+            yield Object.fromEntries(
+              Object.entries({
+                link,
+                originalTransformation: atomicReference.originalTransformation,
+                position: atomicReference.position,
+                reference,
+                text: atomicReference,
+                type: "european_text",
+              }).filter(([, value]) => value !== undefined),
+            ) as unknown as TextLink
           } else {
             yield Object.fromEntries(
               Object.entries({

@@ -212,30 +212,6 @@ describe("Textes français", () => {
       expect(context.remaining()).toBe("")
     })
 
-    test("LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027", ({
-      task,
-    }) => {
-      const context = new TextParserContext(task.name)
-      const result = texte(context) as TextAstText & TextAstPosition
-      expect(result).toStrictEqual({
-        cid: "JORFTEXT000048581885",
-        date: "2023-12-18",
-        nature: "LOI",
-        num: "2023-1195",
-        position: {
-          start: 0,
-          stop: 104,
-        },
-        title:
-          "LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027",
-        titleRest:
-          "de programmation des finances publiques pour les années 2023 à 2027",
-        type: "texte",
-      })
-      expect(context.remaining()).toBe("")
-      expect(context.text(result.position)).toBe(task.name)
-    })
-
     test("loi organique n° 2001-692 du 5 septembre 2003", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(texteFrancais(context)).toStrictEqual({
@@ -308,6 +284,28 @@ describe("Textes européens et internationaux", () => {
         nature: "DIRECTIVE_EURO",
         legislation: "UE",
         num: "2001/73/CEE",
+        type: "texte",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test("règlement (CE) n° 692/2008", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteEuropeen(context)).toStrictEqual({
+        nature: "REGLEMENTEUROPEEN",
+        legislation: "UE",
+        num: "692/2008",
+        type: "texte",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test("règlement (UE) n° 1230/2012", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(texteEuropeen(context)).toStrictEqual({
+        nature: "REGLEMENTEUROPEEN",
+        legislation: "UE",
+        num: "1230/2012",
         type: "texte",
       })
       expect(context.remaining()).toBe("")
@@ -444,6 +442,30 @@ describe("Règle générale", () => {
         relative: 0,
         title:
           "Loi organique n° 2001-692 du 1 août 2001 relative aux lois de finances",
+        type: "texte",
+      })
+      expect(context.remaining()).toBe("")
+      expect(context.text(result.position)).toBe(task.name)
+    })
+
+    test("LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027", ({
+      task,
+    }) => {
+      const context = new TextParserContext(task.name)
+      const result = texte(context) as TextAstText & TextAstPosition
+      expect(result).toStrictEqual({
+        cid: "JORFTEXT000048581885",
+        date: "2023-12-18",
+        nature: "LOI",
+        num: "2023-1195",
+        position: {
+          start: 0,
+          stop: 104,
+        },
+        title:
+          "LOI n° 2023-1195 du 18 décembre 2023 de programmation des finances publiques pour les années 2023 à 2027",
+        titleRest:
+          "de programmation des finances publiques pour les années 2023 à 2027",
         type: "texte",
       })
       expect(context.remaining()).toBe("")

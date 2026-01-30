@@ -408,7 +408,9 @@ export const natureTexteEuropeen = chain(
       regExp("directive", { flags: "i", value: "DIRECTIVE_EURO" }),
       regExp("règlement", { flags: "i", value: "REGLEMENTEUROPEEN" }),
     ),
-    optional(regExp(String.raw` \(UE\)`, { flags: "i" }), { default: "" }),
+    optional(regExp(String.raw` \((CE|CEE|UE(, EURATOM)?)\)`, { flags: "i" }), {
+      default: "",
+    }),
   ],
   {
     value: (results) => ({

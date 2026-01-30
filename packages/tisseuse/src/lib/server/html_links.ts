@@ -44,7 +44,7 @@ function addExternalLinkToOutputs({
   originalTransformation,
   outputByType,
 }: {
-  attributes: { class?: string; href?: string }
+  attributes: { class?: string; href?: string; target?: string }
   originalTransformation: FragmentReverseTransformation
   outputByType: OutputByType
 }): void {
@@ -294,6 +294,7 @@ export async function addLinksOrReferencesToHtmlFile({
           attributes: {
             class: "lien_texte_european",
             href,
+            target: "_blank",
           },
           originalTransformation,
           outputByType,
@@ -302,16 +303,16 @@ export async function addLinksOrReferencesToHtmlFile({
         //   referredLegifranceTextCountByCid[text.cid] =
         //     (referredLegifranceTextCountByCid[text.cid] ?? 0) + 1
         // }
-        // addReferenceToOutputs({
-        //   attributes: {
-        //     class: "reference_texte",
-        //     style: "background-color: #eae462",
-        //     title: JSON.stringify(text),
-        //   },
-        //   id: text.cid,
-        //   originalTransformation,
-        //   outputByType,
-        // })
+        addReferenceToOutputs({
+          attributes: {
+            class: "reference_texte",
+            style: "background-color: #eae462",
+            title: JSON.stringify(text),
+          },
+          id: text.id,
+          originalTransformation,
+          outputByType,
+        })
         break
       }
 

@@ -42,7 +42,10 @@ async function enrichAssembleeDocuments({
     git.resetAndPull(documentsFilesDir)
     git.resetAndPull(enrichedDocumentsFilesDir)
   }
-  await fs.ensureDir(documentsFilesDir)
+  assert(
+    await fs.pathExists(documentsFilesDir),
+    `Documents directory "${documentsFilesDir}" does not exist`,
+  )
   await fs.ensureDir(enrichedDocumentsFilesDir)
 
   let skip = Boolean(firstUid)

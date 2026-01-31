@@ -406,19 +406,19 @@ export const natureTexteEuropeen = chain(
   [
     alternatives(
       // "arrêté" must be before "arrêt".
-      regExp("arrêté", { flags: "i", value: "ARRETEEURO" }),
-      regExp("arrêt", { flags: "i", value: "ARRETEURO" }),
-      regExp("avis", { flags: "i", value: "AVISEURO" }),
-      regExp("décision", { flags: "i", value: "DECISION_EURO" }),
-      regExp("déclaration", { flags: "i", value: "DECLARATIONEURO" }),
-      regExp("délibération", { flags: "i", value: "DELIBERATIONEURO" }),
+      regExp("arrêté", { flags: "i", value: "ARRETEEURO" }), // TODO
+      regExp("arrêt", { flags: "i", value: "ARRETEURO" }), // TODO
+      regExp("avis", { flags: "i", value: "AVISEURO" }), // TODO
+      regExp("décision", { flags: "i", value: "DECISION_EURO" }), // TODO
+      regExp("déclaration", { flags: "i", value: "DECLARATIONEURO" }), // TODO
+      regExp("délibération", { flags: "i", value: "DELIBERATIONEURO" }), // TODO
       regExp("directive (d'exécution|déléguée)?", {
         flags: "i",
         value: "DIRECTIVE_EURO",
       }),
-      regExp("information", { flags: "i", value: "INFORMATIONEURO" }),
-      regExp("instruction", { flags: "i", value: "INSTRUCTIONEURO" }),
-      regExp("lettre", { flags: "i", value: "LETTREEURO" }),
+      regExp("information", { flags: "i", value: "INFORMATIONEURO" }), // TODO
+      regExp("instruction", { flags: "i", value: "INSTRUCTIONEURO" }), // TODO
+      regExp("lettre", { flags: "i", value: "LETTREEURO" }), // TODO
       regExp("règlement (d'exécution)?", {
         flags: "i",
         value: "REGLEMENTEUROPEEN",

@@ -8,6 +8,7 @@
   import ServerIcon from "@lucide/svelte/icons/server"
   import UsersIcon from "@lucide/svelte/icons/users"
   import MailIcon from "@lucide/svelte/icons/mail"
+  import { localizedHref } from "$lib/i18n.js"
   import * as m from "$lib/paraglide/messages.js"
 </script>
 
@@ -62,6 +63,15 @@
         <Card.Content>
           <p class="text-muted-foreground">
             {m.about_principles_opendata_description()}
+          </p>
+          <p class="mt-4 text-sm text-muted-foreground">
+            Les données produites par Tricoteuses sont publiées sous
+            <a
+              href={localizedHref("/licence_odbl")}
+              class="text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              licence ODbL (Open Database License)
+            </a>.
           </p>
         </Card.Content>
       </Card.Root>

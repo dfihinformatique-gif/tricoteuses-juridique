@@ -184,21 +184,21 @@
             {m.service_detail_license_label()}
           </h3>
           <div class="flex flex-wrap items-center gap-2">
-            <a
-              href={service.license.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-sm text-muted-foreground underline hover:text-foreground"
-            >
-              {service.license.spdxId || service.license.name}
-            </a>
             {#if service.license.spdxId === "ODbL-1.0"}
-              <span class="text-sm text-muted-foreground">•</span>
               <a
                 href={localizedHref("/licence_odbl")}
-                class="text-sm text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                class="text-sm text-muted-foreground underline hover:text-foreground"
               >
-                {m.license_odbl_learn_more()}
+                {service.license.spdxId || service.license.name}
+              </a>
+            {:else}
+              <a
+                href={service.license.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-sm text-muted-foreground underline hover:text-foreground"
+              >
+                {service.license.spdxId || service.license.name}
               </a>
             {/if}
           </div>
@@ -357,21 +357,21 @@
               {#if source.license}
                 <div class="text-sm text-muted-foreground">
                   {m.service_detail_data_sources_license_label()}
-                  <a
-                    href={source.license.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="text-blue-600 hover:underline dark:text-blue-400"
-                  >
-                    {source.license.spdxId || source.license.name}
-                  </a>
                   {#if source.license.spdxId === "ODbL-1.0"}
-                    •
                     <a
                       href={localizedHref("/licence_odbl")}
                       class="text-blue-600 hover:underline dark:text-blue-400"
                     >
-                      {m.license_odbl_learn_more_short()}
+                      {source.license.spdxId || source.license.name}
+                    </a>
+                  {:else}
+                    <a
+                      href={source.license.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      {source.license.spdxId || source.license.name}
                     </a>
                   {/if}
                 </div>

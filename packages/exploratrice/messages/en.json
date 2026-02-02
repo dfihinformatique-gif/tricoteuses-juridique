@@ -517,6 +517,7 @@
   "meeting_date_label": "Date",
   "meeting_time_label": "Time",
   "meeting_location_label": "Location",
+  "meetings_schedule_info": "We organize a brief public meeting in person and/or remotely, **every other Tuesday at noon**.",
   "meeting_video_link_label": "Video conference link:",
   "meeting_link_label": "Link:",
   "meeting_description_label": "Description",

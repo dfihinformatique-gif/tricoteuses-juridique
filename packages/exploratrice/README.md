@@ -1,10 +1,10 @@
 # Tricoteuses Exploratrice
 
-_Web application to navigate between French legislative documents_
+_Web application to showcase French legislative datasets, software & APIs from Tricoteuses_
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), copy the `example.env` file to `.env`, customize it and start a development server:
 
 ```sh
 npm run dev

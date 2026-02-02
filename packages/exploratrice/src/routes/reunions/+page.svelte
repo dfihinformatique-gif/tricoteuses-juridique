@@ -97,6 +97,11 @@
     <p class="text-lg text-muted-foreground">
       {m.meetings_description()}
     </p>
+    <div class="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
+      <p class="text-base text-foreground">
+        {@html parseMarkdown(m.meetings_schedule_info())}
+      </p>
+    </div>
   </header>
 
   {#if upcomingMeetings.length > 0}

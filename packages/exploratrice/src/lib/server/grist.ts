@@ -44,11 +44,11 @@ async function fetchGristRecords<T = Record<string, unknown>>(
   docId: string,
   tableId: string,
 ): Promise<GristRecordsResponse<T>> {
-  const url = `${config.gristInstanceUrl}/api/docs/${docId}/tables/${tableId}/records`
+  const url = `${config.grist.instanceUrl}/api/docs/${docId}/tables/${tableId}/records`
 
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${config.gristApiKey}`,
+      Authorization: `Bearer ${config.grist.apiKey}`,
       "Content-Type": "application/json",
     },
   })
@@ -66,7 +66,7 @@ async function fetchGristRecords<T = Record<string, unknown>>(
  * Gets the next upcoming Tricoteuses meeting
  */
 export async function getNextTricoteusesMeeting(): Promise<TricoteusesMeeting | null> {
-  const docId = "fxFbRXnFuMSc3hMtymP6h3"
+  const docId = config.grist.docId
   const tableId = "Reunions"
 
   try {
@@ -113,7 +113,7 @@ export async function getNextTricoteusesMeeting(): Promise<TricoteusesMeeting | 
 export async function getAllTricoteusesMeetings(): Promise<
   TricoteusesMeeting[]
 > {
-  const docId = "fxFbRXnFuMSc3hMtymP6h3"
+  const docId = config.grist.docId
   const tableId = "Reunions"
 
   try {

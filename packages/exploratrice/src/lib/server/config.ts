@@ -19,9 +19,11 @@ const result = validateConfigSafe({
     password: process.env.ASSEMBLEE_DB_PASSWORD,
   },
   assembleeDocumentsDir: process.env.ASSEMBLEE_DOCUMENTS_DIR,
-  gristApiKey: process.env.GRIST_API_KEY,
-  gristDocId: process.env.GRIST_DOC_ID,
-  gristInstanceUrl: process.env.GRIST_INSTANCE_URL,
+  grist: {
+    apiKey: process.env.GRIST_API_KEY,
+    docId: process.env.GRIST_DOC_ID,
+    instanceUrl: process.env.GRIST_INSTANCE_URL,
+  },
   legiDb: {
     host: process.env.LEGI_DB_HOST,
     port: process.env.LEGI_DB_PORT,

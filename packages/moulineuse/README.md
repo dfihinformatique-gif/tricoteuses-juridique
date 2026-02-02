@@ -276,5 +276,5 @@ AGPL-3.0-or-later
 
 ## Related Projects
 
-- [Tricoteuses Exploratrice](../exploratrice): Web application to navigate between French legislative documents
+- [Tricoteuses Exploratrice](../exploratrice): Web application to showcase French legislative datasets, software & APIs from Tricoteuses
 - [Tricoteuses Tisseuse](../tisseuse): Find links in/to French legislative documents

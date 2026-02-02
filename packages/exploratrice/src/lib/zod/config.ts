@@ -46,6 +46,20 @@ export const ConfigSchema = z
       .min(1, "Assemblée documents directory is required")
       .describe("Path to Assemblée documents directory"),
 
+    gristApiKey: z
+      .string()
+      .trim()
+      .min(1, "Grist API key is required")
+      .describe("API key for Grist"),
+
+    gristDocId: z
+      .string()
+      .trim()
+      .min(1, "Grist document ID is required")
+      .describe("Grist document ID"),
+
+    gristInstanceUrl: httpUrl().describe("Grist instance URL"),
+
     legiDb: DatabaseConfigSchema.describe(
       "Database configuration for Légifrance data",
     ),

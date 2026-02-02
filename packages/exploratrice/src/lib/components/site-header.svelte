@@ -47,12 +47,8 @@
                   >
                 </li>
                 <li>
-                  <NavigationMenu.Link
-                    class="flex flex-row whitespace-nowrap"
-                    href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/reunions.md"
-                    target="_blank"
-                    >{m.nav_upcoming_meetings()}
-                    <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
+                  <NavigationMenu.Link href={localizedHref("/reunions")}
+                    >{m.nav_upcoming_meetings()}</NavigationMenu.Link
                   >
                 </li>
                 <li>

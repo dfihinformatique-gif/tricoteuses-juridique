@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from "$app/state"
   import { Button } from "$lib/components/ui/button/index.js"
   import ExternalProjectCard from "$lib/components/external-project-card.svelte"
   import ReuseCard from "$lib/components/reuse-card.svelte"
@@ -13,6 +14,7 @@
   import ChevronRight from "@lucide/svelte/icons/chevron-right"
   import { onDestroy, onMount } from "svelte"
   import * as m from "$lib/paraglide/messages.js"
+  import NextMeetingAlert from "$lib/components/next-meeting-alert.svelte"
 
   const featuredServices = Object.values(dataServices).filter((s) => s.featured)
   const featuredExternalReuses = Object.values(reuses).filter(
@@ -114,6 +116,11 @@
       </a>
     </p>
   </header>
+
+  <!-- Next Meeting Alert -->
+  {#if page.data.nextMeeting}
+    <NextMeetingAlert meeting={page.data.nextMeeting} />
+  {/if}
 
   <!-- Services Section -->
   <section class="mb-16">

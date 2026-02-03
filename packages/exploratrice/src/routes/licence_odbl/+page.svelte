@@ -256,7 +256,7 @@
   <section class="mb-12">
     <h2 class="mb-6 text-3xl font-bold">{m.license_commercial_title()}</h2>
     <Card.Root
-      class="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10"
+      class="border-primary/20 bg-linear-to-br from-primary/5 to-primary/10"
     >
       <Card.Content class="py-8">
         <p class="mb-6 text-lg leading-relaxed">
@@ -269,27 +269,19 @@
           </h3>
           <ul class="space-y-2">
             <li class="flex items-start gap-3">
-              <CheckCircleIcon
-                class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary"
-              />
+              <CheckCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <span>{m.license_commercial_benefit1()}</span>
             </li>
             <li class="flex items-start gap-3">
-              <CheckCircleIcon
-                class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary"
-              />
+              <CheckCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <span>{m.license_commercial_benefit2()}</span>
             </li>
             <li class="flex items-start gap-3">
-              <CheckCircleIcon
-                class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary"
-              />
+              <CheckCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <span>{m.license_commercial_benefit3()}</span>
             </li>
             <li class="flex items-start gap-3">
-              <CheckCircleIcon
-                class="mt-0.5 h-5 w-5 flex-shrink-0 text-primary"
-              />
+              <CheckCircleIcon class="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <span>{m.license_commercial_benefit4()}</span>
             </li>
           </ul>

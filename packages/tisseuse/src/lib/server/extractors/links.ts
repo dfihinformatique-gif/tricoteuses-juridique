@@ -17,6 +17,11 @@ import type { Sql } from "postgres"
 
 import { assertNever } from "$lib/asserts.js"
 import {
+  extractReferences,
+  extractReferencesWithOriginalTransformations,
+} from "$lib/extractors/references.js"
+import { europeDb } from "$lib/server/databases/index.js"
+import {
   divisionTypes,
   isTextAstDivision,
   isTextAstPortion,
@@ -39,12 +44,6 @@ import {
   reverseTransformationFromPosition,
   type Transformation,
 } from "$lib/text_parsers/transformers.js"
-
-import {
-  extractReferences,
-  extractReferencesWithOriginalTransformations,
-} from "./references.js"
-import { europeDb } from "$lib/server/databases/index.js"
 
 export type DefinitionOrLink =
   | ArticleDefinition

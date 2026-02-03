@@ -14,7 +14,6 @@ import sade from "sade"
 
 import {
   assertNever,
-  extractTextLinks,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
   simplifyHtml,
@@ -22,6 +21,7 @@ import {
   TextParserContext,
   urlFromLegalId,
 } from "$lib"
+import { extractTextLinks } from "$lib/server"
 import config from "$lib/server/config.js"
 import { legiDb } from "$lib/server/databases/index.js"
 

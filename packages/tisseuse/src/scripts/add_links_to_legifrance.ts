@@ -15,17 +15,19 @@ import {
   extendLoadedArticle,
   getArticleDateSignature,
   getTexteVersionDateSignature,
-  extractTextLinks,
   reverseTransformedInnerFragment,
   reverseTransformedReplacement,
   simplifyHtml,
   TextParserContext,
   urlFromLegalId,
-  type ExtractedLinkDb,
   type JorfArticleExtended,
   type LegiArticleExtended,
-  type TextLinksParserState,
 } from "$lib"
+import {
+  extractTextLinks,
+  type ExtractedLinkDb,
+  type TextLinksParserState,
+} from "$lib/server"
 import config from "$lib/server/config.js"
 import { legiDb } from "$lib/server/databases/index.js"
 

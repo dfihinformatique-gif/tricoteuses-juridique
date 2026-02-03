@@ -10,12 +10,12 @@ import {
 } from "$lib/loaders/legifrance.js"
 import config from "$lib/server/config.js"
 import { legiDb } from "$lib/server/databases/index.js"
+import { extractTextLinks } from "$lib/server/extractors/links.js"
 import {
   readTransformation,
   writeTransformation,
 } from "$lib/server/text_parsers/transformers.js"
 import { type FragmentReverseTransformation } from "$lib/text_parsers/fragments.js"
-import { extractTextLinks } from "$lib/extractors/links.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {

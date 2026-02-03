@@ -55,6 +55,16 @@ export const getArticleDateDebut = (
   if (parentsCreationDates.length > 0) {
     return parentsCreationDates.sort().at(-1)!
   }
+  // Note: article.CONTEXTE.TEXTE["@date_publi"] is always the publication date of
+  // the first JORF text, so it is not the good start date (nor publication date) for
+  // LEGI articles.
+  const datePublication = contexteTexte["@date_publi"]
+  if (
+    datePublication !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(datePublication)
+  ) {
+    return datePublication
+  }
   // Note: article.CONTEXTE.TEXTE["@date_signature"] is always the date_signature of
   // the first JORF text, so it is not the good date début (nor date signature) for
   // LEGI articles.
@@ -86,7 +96,7 @@ export const getArticleDateDebut = (
   // Since, currently, we don't handle events in LIENS.LIEN, no valid date
   // is found.
   throw new Error(
-    `Missing date signature in text ${article.META.META_COMMUN.ID}`,
+    `Missing date signature in article ${article.META.META_COMMUN.ID}`,
   )
 }
 
@@ -117,6 +127,16 @@ export const getArticleDateSignature = (
     !["2222-02-22", "2999-01-01"].includes(dateSignature)
   ) {
     return dateSignature
+  }
+  // Note: article.CONTEXTE.TEXTE["@date_publi"] is always the publication date of
+  // the first JORF text, so it is not the good start date (nor publication date) for
+  // LEGI articles.
+  const datePublication = contexteTexte["@date_publi"]
+  if (
+    datePublication !== undefined &&
+    !["2222-02-22", "2999-01-01"].includes(datePublication)
+  ) {
+    return datePublication
   }
   // Assume that the latest date of the parent sections TA is a good proxy ot the
   // creation date of the article.
@@ -162,7 +182,7 @@ export const getArticleDateSignature = (
   // Since, currently, we don't handle events in LIENS.LIEN, no valid date
   // is found.
   throw new Error(
-    `Missing date signature in text ${article.META.META_COMMUN.ID}`,
+    `Missing date signature in article ${article.META.META_COMMUN.ID}`,
   )
 }
 

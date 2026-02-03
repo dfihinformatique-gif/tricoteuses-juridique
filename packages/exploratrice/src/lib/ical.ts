@@ -1,4 +1,4 @@
-import type { TricoteusesMeeting } from "$lib/server/grist.js"
+import type { TricoteusesMeeting } from "$lib/grist.js"
 
 /**
  * Génère un fichier iCal (.ics) pour une réunion
@@ -106,7 +106,9 @@ export function generateICalFile(meeting: TricoteusesMeeting): string {
 /**
  * Génère un lien Google Calendar pour une réunion
  */
-export function generateGoogleCalendarLink(meeting: TricoteusesMeeting): string {
+export function generateGoogleCalendarLink(
+  meeting: TricoteusesMeeting,
+): string {
   const dateStr = meeting.Date
   const timeStr = meeting.Heure || "12:00"
 

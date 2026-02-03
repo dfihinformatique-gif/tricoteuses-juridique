@@ -1,36 +1,36 @@
 import assert from "node:assert"
 import postgres from "postgres"
 
-import config from "$lib/server/config.js"
+import privateConfig from "$lib/server/private_config.js"
 
 export interface Version {
   number: number
 }
 
 export const assembleeDb = postgres({
-  database: config.assembleeDb.database,
-  host: config.assembleeDb.host,
-  password: config.assembleeDb.password,
-  port: config.assembleeDb.port,
-  user: config.assembleeDb.user,
+  database: privateConfig.assembleeDb.database,
+  host: privateConfig.assembleeDb.host,
+  port: privateConfig.assembleeDb.port,
+  user: privateConfig.assembleeDb.user,
+  password: privateConfig.assembleeDb.password,
 })
 export const assembleeVersionNumber = 9
 
 export const legiDb = postgres({
-  database: config.legiDb.database,
-  host: config.legiDb.host,
-  password: config.legiDb.password,
-  port: config.legiDb.port,
-  user: config.legiDb.user,
+  database: privateConfig.legiDb.database,
+  host: privateConfig.legiDb.host,
+  port: privateConfig.legiDb.port,
+  user: privateConfig.legiDb.user,
+  password: privateConfig.legiDb.password,
 })
 export const legiVersionNumber = 20
 
 export const tisseuseDb = postgres({
-  database: config.tisseuseDb.database,
-  host: config.tisseuseDb.host,
-  password: config.tisseuseDb.password,
-  port: config.tisseuseDb.port,
-  user: config.tisseuseDb.user,
+  database: privateConfig.tisseuseDb.database,
+  host: privateConfig.tisseuseDb.host,
+  port: privateConfig.tisseuseDb.port,
+  user: privateConfig.tisseuseDb.user,
+  password: privateConfig.tisseuseDb.password,
 })
 export const tisseuseVersionNumber = 3
 

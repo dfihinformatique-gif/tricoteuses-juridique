@@ -21,7 +21,7 @@ import path from "node:path"
 import { query } from "$app/server"
 import { DocumentUidSchema } from "$lib/zod/assemblee.js"
 import { zodToStandardSchema } from "$lib/zod/standardschema.js"
-import config from "$lib/server/config.js"
+import privateConfig from "$lib/server/private_config.js"
 import { assembleeDb } from "$lib/server/databases/index.js"
 
 import type { DocumentPageInfos, DocumentsDiffPageInfos } from "./documents.js"
@@ -35,7 +35,7 @@ const loadDocumentPageInfos = async (
 ): Promise<DocumentPageInfos | undefined> => {
   let documentDir: string
   try {
-    documentDir = pathFromDocumentUid(config.assembleeDocumentsDir, uid)
+    documentDir = pathFromDocumentUid(privateConfig.assembleeDocumentsDir, uid)
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "EACCES") {
       // Permission Denied (EACCES).

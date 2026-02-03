@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Calendar } from "@lucide/svelte/icons"
   import { localizedHref } from "$lib/i18n.js"
-  import type { TricoteusesMeeting } from "$lib/server/grist.js"
+  import type { TricoteusesMeeting } from "$lib/grist.js"
   import * as m from "$lib/paraglide/messages.js"
   import { getLocale } from "$lib/paraglide/runtime.js"
 

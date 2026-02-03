@@ -29,7 +29,11 @@
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>{m.error_not_found({ item: `${m.assemblee_dossier_menu_trigger()} ${params.uid}` })}</Alert.Title>
+    <Alert.Title
+      >{m.error_not_found({
+        item: `${m.assemblee_dossier_menu_trigger()} ${params.uid}`,
+      })}</Alert.Title
+    >
   </Alert.Root>
 {:else}
   <PageBreadcrumb

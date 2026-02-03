@@ -1,13 +1,13 @@
 import { z } from "zod"
 import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
 import {
-  iterReferenceLinks,
   listeReferencesSeules,
   reference,
   simplifyPlainText,
   TextParserContext,
   type TextAstReference,
 } from "@tricoteuses/tisseuse"
+import { iterReferenceLinks } from "@tricoteuses/tisseuse/server"
 import type { PendingQuery, Row } from "postgres"
 
 import { query } from "$app/server"

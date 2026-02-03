@@ -1,7 +1,7 @@
 import type { Handle } from "@sveltejs/kit"
 import { sequence } from "@sveltejs/kit/hooks"
 import { paraglideMiddleware } from "$lib/paraglide/server"
-import config from "$lib/server/config.js"
+import privateConfig from "$lib/server/private_config.js"
 import { deLocalizeUrl } from "$lib/paraglide/runtime"
 
 // HTTP Basic Auth middleware for admin routes
@@ -22,7 +22,8 @@ const handleAdminAuth: Handle = async ({ event, resolve }) => {
       const [username, password] = credentials.split(":")
 
       isAuthorized =
-        username === config.admin.username && password === config.admin.password
+        username === privateConfig.admin.username &&
+        password === privateConfig.admin.password
     }
 
     if (!isAuthorized) {

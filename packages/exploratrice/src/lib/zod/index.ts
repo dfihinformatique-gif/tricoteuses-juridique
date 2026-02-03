@@ -12,6 +12,7 @@ export * from "./query.js"
 export * from "./legifrance.js"
 
 // Export schemas
-export * from "./config.js"
+export * from "./private_config.js"
+export * from "./public_config.js"
 export * from "./assemblee.js"
 export * from "./standardschema.js"

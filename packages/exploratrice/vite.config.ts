@@ -20,6 +20,7 @@ export default defineConfig({
       "@tricoteuses/assemblee/loaders",
       "@tricoteuses/assemblee/git",
       "@tricoteuses/assemblee/parsers",
+      "@tricoteuses/tisseuse/server",
     ],
   },
 })

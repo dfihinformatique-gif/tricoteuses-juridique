@@ -18,7 +18,7 @@
   import { fullDateFormatter } from "$lib/dates.js"
   import { useModifierKeyPrefix } from "$lib/hooks/use-modifier-key-prefix.svelte.js"
   import { searchContext } from "$lib/hooks/search-context.svelte.js"
-  import { autocomplete } from "$lib/autocompletion.remote.js"
+  import { autocomplete } from "$lib/server/autocompletion.remote.js"
   import { urlPathFromId } from "$lib/urls.js"
   import { cn } from "$lib/utils.js"
 

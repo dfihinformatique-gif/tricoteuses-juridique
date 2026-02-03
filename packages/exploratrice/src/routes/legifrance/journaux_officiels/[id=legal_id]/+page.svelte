@@ -17,19 +17,33 @@
 {#if jo === undefined}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_jo_list_breadcrumb(), href: safeLocalizedHref("/legifrance/journaux_officiels") },
+      {
+        label: m.legifrance_jo_list_breadcrumb(),
+        href: safeLocalizedHref("/legifrance/journaux_officiels"),
+      },
       { label: `${m.legifrance_jo_menu_trigger()} ${params.id}` },
     ]}
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>{m.error_not_found({ item: `${m.legifrance_jo_menu_trigger()} ${params.id}` })}</Alert.Title>
+    <Alert.Title
+      >{m.error_not_found({
+        item: `${m.legifrance_jo_menu_trigger()} ${params.id}`,
+      })}</Alert.Title
+    >
   </Alert.Root>
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_jo_list_breadcrumb(), href: safeLocalizedHref("/legifrance/journaux_officiels") },
-      { label: jo.META?.META_COMMUN.ID ?? `${m.legifrance_jo_menu_trigger()} ${params.id}` },
+      {
+        label: m.legifrance_jo_list_breadcrumb(),
+        href: safeLocalizedHref("/legifrance/journaux_officiels"),
+      },
+      {
+        label:
+          jo.META?.META_COMMUN.ID ??
+          `${m.legifrance_jo_menu_trigger()} ${params.id}`,
+      },
     ]}
   />
   <Jo {jo} />

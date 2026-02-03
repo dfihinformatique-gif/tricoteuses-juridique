@@ -15,7 +15,7 @@
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { fullDateFormatter } from "$lib/dates.js"
   import { searchContext } from "$lib/hooks/search-context.svelte.js"
-  import { autocomplete } from "$lib/autocompletion.remote.js"
+  import { autocomplete } from "$lib/server/autocompletion.remote.js"
   import { urlPathFromId } from "$lib/urls.js"
   import * as m from "$lib/paraglide/messages.js"
 

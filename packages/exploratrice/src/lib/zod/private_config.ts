@@ -24,12 +24,12 @@ export const DatabaseConfigSchema = z
   })
   .strict()
 
-export type DatabaseConfig = z.infer<typeof DatabaseConfigSchema>
+export type DatabasePrivateConfig = z.infer<typeof DatabaseConfigSchema>
 
 /**
  * Main application configuration schema
  */
-export const ConfigSchema = z
+export const PrivateConfigSchema = z
   .object({
     allowRobots: z
       .union([stringToBoolean(), z.boolean()])
@@ -101,29 +101,23 @@ export const ConfigSchema = z
     tisseuseDb: DatabaseConfigSchema.describe(
       "Database configuration for Tisseuse data",
     ),
-
-    title: z
-      .string()
-      .trim()
-      .min(1, "Application title is required")
-      .describe("Application title"),
   })
   .strict()
 
-export type Config = z.infer<typeof ConfigSchema>
+export type PrivateConfig = z.infer<typeof PrivateConfigSchema>
 
 /**
  * Validates configuration data
  * Throws ZodError if validation fails
  */
-export function validateConfig(data: unknown): Config {
-  return ConfigSchema.parse(data)
+export function validatePrivateConfig(data: unknown): PrivateConfig {
+  return PrivateConfigSchema.parse(data)
 }
 
 /**
  * Validates configuration data (safe version)
  * Returns { success: true, data } or { success: false, error }
  */
-export function validateConfigSafe(data: unknown) {
-  return ConfigSchema.safeParse(data)
+export function validatePrivateConfigSafe(data: unknown) {
+  return PrivateConfigSchema.safeParse(data)
 }

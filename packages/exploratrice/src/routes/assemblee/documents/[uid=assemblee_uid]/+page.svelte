@@ -28,7 +28,9 @@
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>{m.assemblee_document_not_found({ uid: params.uid })}</Alert.Title>
+    <Alert.Title
+      >{m.assemblee_document_not_found({ uid: params.uid })}</Alert.Title
+    >
   </Alert.Root>
 {:else}
   <PageBreadcrumb

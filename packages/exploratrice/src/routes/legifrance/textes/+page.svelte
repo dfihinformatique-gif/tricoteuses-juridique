@@ -63,7 +63,9 @@
 </svelte:head>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
-  <PageBreadcrumb segments={[{ label: m.legifrance_textes_list_breadcrumb() }]} />
+  <PageBreadcrumb
+    segments={[{ label: m.legifrance_textes_list_breadcrumb() }]}
+  />
 
   <div class="mb-8">
     <h1 class="mb-4 flex items-center gap-3 text-4xl font-bold">

@@ -33,7 +33,9 @@
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>{m.assemblee_document_not_found({ uid: params.uid })}</Alert.Title>
+    <Alert.Title
+      >{m.assemblee_document_not_found({ uid: params.uid })}</Alert.Title
+    >
   </Alert.Root>
 {:else if current.documentSegmentation === undefined}
   <PageBreadcrumb
@@ -57,7 +59,9 @@
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
     <Alert.Title
-      >{m.assemblee_document_diff_missing_toc({ title: current.document.titres.titrePrincipal })}</Alert.Title
+      >{m.assemblee_document_diff_missing_toc({
+        title: current.document.titres.titrePrincipal,
+      })}</Alert.Title
     >
   </Alert.Root>
 {:else if previous === undefined}
@@ -81,7 +85,9 @@
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>{m.assemblee_document_not_found({ uid: previousUid })}</Alert.Title>
+    <Alert.Title
+      >{m.assemblee_document_not_found({ uid: previousUid })}</Alert.Title
+    >
   </Alert.Root>
 {:else if previous.documentSegmentation === undefined}
   <PageBreadcrumb
@@ -105,7 +111,9 @@
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
     <Alert.Title
-      >{m.assemblee_document_diff_missing_toc({ title: previous.document.titres.titrePrincipal })}</Alert.Title
+      >{m.assemblee_document_diff_missing_toc({
+        title: previous.document.titres.titrePrincipal,
+      })}</Alert.Title
     >
   </Alert.Root>
 {:else}

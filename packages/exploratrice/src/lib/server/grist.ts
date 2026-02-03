@@ -1,24 +1,14 @@
-import config from "$lib/server/config.js"
+import privateConfig from "$lib/server/private_config.js"
 import { getOrSet } from "$lib/server/cache.js"
 import { getMeetingEndTime } from "$lib/meetings.js"
+import type {
+  GristRecord,
+  GristRecordsResponse,
+  TricoteusesMeeting,
+} from "$lib/grist.js"
 
-export interface GristRecord<T = Record<string, unknown>> {
-  id: number
-  fields: T
-}
-
-export interface GristRecordsResponse<T = Record<string, unknown>> {
-  records: GristRecord<T>[]
-}
-
-export interface TricoteusesMeeting {
-  id: number
-  Date: string
-  Heure?: string
-  Lieu?: string
-  Description?: string
-  Lien?: string
-}
+// Re-export types for backward compatibility
+export type { GristRecord, GristRecordsResponse, TricoteusesMeeting }
 
 interface GristMeetingRaw {
   Date: number | string
@@ -46,11 +36,11 @@ async function fetchGristRecords<T = Record<string, unknown>>(
   docId: string,
   tableId: string,
 ): Promise<GristRecordsResponse<T>> {
-  const url = `${config.grist.instanceUrl}/api/docs/${docId}/tables/${tableId}/records`
+  const url = `${privateConfig.grist.instanceUrl}/api/docs/${privateConfig.grist.docId}/tables/${tableId}/records`
 
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${config.grist.apiKey}`,
+      Authorization: `Bearer ${privateConfig.grist.apiKey}`,
       "Content-Type": "application/json",
     },
   })
@@ -68,7 +58,7 @@ async function fetchGristRecords<T = Record<string, unknown>>(
  * Fetches the next upcoming Tricoteuses meeting without cache
  */
 async function fetchNextTricoteusesMeeting(): Promise<TricoteusesMeeting | null> {
-  const docId = config.grist.docId
+  const docId = privateConfig.grist.docId
   const tableId = "Reunions"
 
   try {
@@ -116,7 +106,7 @@ export async function getNextTricoteusesMeeting(): Promise<TricoteusesMeeting | 
   return getOrSet(
     "grist-next-meeting",
     fetchNextTricoteusesMeeting,
-    config.grist.cacheTtlMinutes,
+    privateConfig.grist.cacheTtlMinutes,
   )
 }
 
@@ -126,7 +116,7 @@ export async function getNextTricoteusesMeeting(): Promise<TricoteusesMeeting | 
 export async function getAllTricoteusesMeetings(): Promise<
   TricoteusesMeeting[]
 > {
-  const docId = config.grist.docId
+  const docId = privateConfig.grist.docId
   const tableId = "Reunions"
 
   try {

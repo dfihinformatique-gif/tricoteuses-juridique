@@ -1,4 +1,4 @@
-import type { TricoteusesMeeting } from "$lib/server/grist.js"
+import type { TricoteusesMeeting } from "$lib/grist.js"
 
 /**
  * Parse meeting time from "HH:MM" format, returns null if invalid

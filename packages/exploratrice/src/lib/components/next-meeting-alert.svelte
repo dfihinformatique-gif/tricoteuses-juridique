@@ -10,7 +10,7 @@
     QrCode,
   } from "@lucide/svelte/icons"
   import { localizedHref } from "$lib/i18n.js"
-  import type { TricoteusesMeeting } from "$lib/server/grist.js"
+  import type { TricoteusesMeeting } from "$lib/grist.js"
   import { parseMarkdown } from "$lib/markdown.js"
   import { downloadICalFile, generateGoogleCalendarLink } from "$lib/ical.js"
   import * as m from "$lib/paraglide/messages.js"

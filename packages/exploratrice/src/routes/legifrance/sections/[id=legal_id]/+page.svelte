@@ -20,18 +20,28 @@
 {#if sectionTa === undefined}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_textes_list_breadcrumb(), href: safeLocalizedHref("/legifrance/textes") },
+      {
+        label: m.legifrance_textes_list_breadcrumb(),
+        href: safeLocalizedHref("/legifrance/textes"),
+      },
       { label: `${m.legifrance_section_menu_trigger()} ${params.id}` },
     ]}
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>{m.error_not_found({ item: `${m.legifrance_section_menu_trigger()} ${params.id}` })}</Alert.Title>
+    <Alert.Title
+      >{m.error_not_found({
+        item: `${m.legifrance_section_menu_trigger()} ${params.id}`,
+      })}</Alert.Title
+    >
   </Alert.Root>
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_textes_list_breadcrumb(), href: safeLocalizedHref("/legifrance/textes") },
+      {
+        label: m.legifrance_textes_list_breadcrumb(),
+        href: safeLocalizedHref("/legifrance/textes"),
+      },
       {
         label: m.legifrance_texte_menu_trigger(),
         href: sectionTa.CONTEXTE.TEXTE["@cid"]
@@ -44,7 +54,8 @@
             ? String(
                 (sectionTa.TITRE_TA as Record<string, unknown>)["#text"] ?? "",
               )
-            : sectionTa.TITRE_TA) || `${m.legifrance_section_menu_trigger()} ${params.id}`,
+            : sectionTa.TITRE_TA) ||
+          `${m.legifrance_section_menu_trigger()} ${params.id}`,
       },
     ]}
   />

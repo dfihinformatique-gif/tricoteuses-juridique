@@ -1,9 +1,9 @@
 import type { RequestHandler } from "@sveltejs/kit"
 import dedent from "dedent-js"
 
-import config from "$lib/server/config"
+import privateConfig from "$lib/server/private_config"
 
-const { allowRobots } = config
+const { allowRobots } = privateConfig
 
 export const GET: RequestHandler = async () => {
   return new Response(

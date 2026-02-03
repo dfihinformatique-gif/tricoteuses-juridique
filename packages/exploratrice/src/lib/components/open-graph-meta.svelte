@@ -32,10 +32,16 @@
   <!-- Article metadata -->
   {#if metadata.article}
     {#if metadata.article.publishedTime}
-      <meta property="article:published_time" content={metadata.article.publishedTime} />
+      <meta
+        property="article:published_time"
+        content={metadata.article.publishedTime}
+      />
     {/if}
     {#if metadata.article.modifiedTime}
-      <meta property="article:modified_time" content={metadata.article.modifiedTime} />
+      <meta
+        property="article:modified_time"
+        content={metadata.article.modifiedTime}
+      />
     {/if}
     {#if metadata.article.author}
       <meta property="article:author" content={metadata.article.author} />

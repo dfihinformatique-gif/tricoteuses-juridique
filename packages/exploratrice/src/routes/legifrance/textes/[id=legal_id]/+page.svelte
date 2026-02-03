@@ -19,18 +19,28 @@
 {#if textePageInfos === undefined}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_textes_list_breadcrumb(), href: safeLocalizedHref("/legifrance/textes") },
+      {
+        label: m.legifrance_textes_list_breadcrumb(),
+        href: safeLocalizedHref("/legifrance/textes"),
+      },
       { label: `${m.legifrance_texte_menu_trigger()} ${params.id}` },
     ]}
   />
   <Alert.Root class="mx-auto w-fit max-w-xl" variant="destructive">
     <AlertCircleIcon />
-    <Alert.Title>{m.error_not_found({ item: `${m.legifrance_texte_menu_trigger()} ${params.id}` })}</Alert.Title>
+    <Alert.Title
+      >{m.error_not_found({
+        item: `${m.legifrance_texte_menu_trigger()} ${params.id}`,
+      })}</Alert.Title
+    >
   </Alert.Root>
 {:else}
   <PageBreadcrumb
     segments={[
-      { label: m.legifrance_textes_list_breadcrumb(), href: safeLocalizedHref("/legifrance/textes") },
+      {
+        label: m.legifrance_textes_list_breadcrumb(),
+        href: safeLocalizedHref("/legifrance/textes"),
+      },
       {
         label:
           textePageInfos.texteVersion.META.META_SPEC.META_TEXTE_VERSION

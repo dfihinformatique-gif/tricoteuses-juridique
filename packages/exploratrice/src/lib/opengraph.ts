@@ -1,8 +1,8 @@
 import { getLocale } from "$lib/paraglide/runtime"
 import * as m from "$lib/paraglide/messages"
-import type { TricoteusesMeeting } from "$lib/server/grist"
+import type { TricoteusesMeeting } from "$lib/grist"
 import type { Reuse } from "$lib/data/tricoteuses-ecosystem"
-import config from "$lib/server/config"
+import publicConfig from "$lib/public_config"
 
 export interface OpenGraphMetadata {
   title: string
@@ -27,11 +27,11 @@ export interface OpenGraphMetadata {
  */
 export function generateHomeOpenGraph(baseUrl?: string): OpenGraphMetadata {
   return {
-    title: config.title,
+    title: publicConfig.title,
     description: m.og_home_description(),
     type: "website",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
   }
 }
@@ -55,11 +55,11 @@ export function generateMeetingsListOpenGraph(
     : m.og_meetings_description()
 
   return {
-    title: `${m.og_meetings_title()} - ${config.title}`,
+    title: `${m.og_meetings_title()} - ${publicConfig.title}`,
     description,
     type: "website",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
   }
 }
@@ -83,7 +83,7 @@ export function generateReuseOpenGraph(
     url: baseUrl,
     image: reuse.screenshot,
     imageAlt: m.og_reuse_screenshot_alt({ name: reuse.name }),
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
     article: {
       section: typeLabel,
@@ -99,11 +99,11 @@ export function generateReusesListOpenGraph(
   baseUrl?: string,
 ): OpenGraphMetadata {
   return {
-    title: `${m.og_reuses_list_title()} - ${config.title}`,
+    title: `${m.og_reuses_list_title()} - ${publicConfig.title}`,
     description: m.og_reuses_list_description(),
     type: "website",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
   }
 }
@@ -133,7 +133,7 @@ export function generateLegifranceArticleOpenGraph(
     description,
     type: "article",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
     article: {
       section: m.og_legifrance_article_section(),
@@ -158,7 +158,7 @@ export function generateLegifranceSectionOpenGraph(
     description: m.og_legifrance_section_description({ title }),
     type: "article",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
     article: {
       section: m.og_legifrance_article_section(),
@@ -188,7 +188,7 @@ export function generateLegifranceTexteOpenGraph(
     description,
     type: "article",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
     article: {
       section: m.og_legifrance_article_section(),
@@ -229,7 +229,7 @@ export function generateAssembleeDocumentOpenGraph(
     description,
     type: "article",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
     article: {
       section: m.og_assemblee_document_title(),
@@ -259,7 +259,7 @@ export function generateAssembleeDossierOpenGraph(
     description,
     type: "article",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
     article: {
       section: m.og_assemblee_document_title(),
@@ -278,7 +278,7 @@ export function generateAssembleeDocumentsListOpenGraph(
     description: m.og_assemblee_documents_list_description(),
     type: "website",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
   }
 }
@@ -294,7 +294,7 @@ export function generateLegifranceTextesListOpenGraph(
     description: m.og_legifrance_textes_list_description(),
     type: "website",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
   }
 }
@@ -323,7 +323,7 @@ export function generateServiceOpenGraph(
     description: serviceDescription,
     type: "article",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
     article: {
       section,
@@ -338,11 +338,11 @@ export function generateServicesListOpenGraph(
   baseUrl?: string,
 ): OpenGraphMetadata {
   return {
-    title: `${m.og_services_title()} - ${config.title}`,
+    title: `${m.og_services_title()} - ${publicConfig.title}`,
     description: m.og_services_description(),
     type: "website",
     url: baseUrl,
-    siteName: config.title,
+    siteName: publicConfig.title,
     locale: getLocale(),
   }
 }

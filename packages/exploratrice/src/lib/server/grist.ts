@@ -64,6 +64,48 @@ async function fetchGristRecords<T = Record<string, unknown>>(
 }
 
 /**
+ * Parse meeting time from "HH:MM" format, returns null if invalid
+ */
+function parseMeetingTime(
+  timeString?: string,
+): { hours: number; minutes: number } | null {
+  if (!timeString) return null
+
+  const match = timeString.match(/^(\d{1,2}):(\d{2})/)
+  if (!match) return null
+
+  const hours = parseInt(match[1], 10)
+  const minutes = parseInt(match[2], 10)
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null
+
+  return { hours, minutes }
+}
+
+/**
+ * Get meeting end time (meeting date + time + 1 hour)
+ * If no time is specified, assumes end of day (23:59) + 1 hour
+ */
+function getMeetingEndTime(meeting: TricoteusesMeeting): Date {
+  const meetingDate = new Date(meeting.Date)
+
+  const time = parseMeetingTime(meeting.Heure)
+
+  if (time) {
+    // Set the meeting start time
+    meetingDate.setHours(time.hours, time.minutes, 0, 0)
+    // Add 1 hour
+    meetingDate.setHours(meetingDate.getHours() + 1)
+  } else {
+    // No time specified, assume end of day + 1 hour
+    meetingDate.setHours(23, 59, 0, 0)
+    meetingDate.setHours(meetingDate.getHours() + 1)
+  }
+
+  return meetingDate
+}
+
+/**
  * Fetches the next upcoming Tricoteuses meeting without cache
  */
 async function fetchNextTricoteusesMeeting(): Promise<TricoteusesMeeting | null> {
@@ -84,12 +126,12 @@ async function fetchNextTricoteusesMeeting(): Promise<TricoteusesMeeting | null>
       Date: convertGristDate(record.fields.Date),
     }))
 
-    // Filter future meetings and sort by date
+    // Filter meetings that haven't ended yet (meeting end time + 1 hour > now)
     const now = new Date()
     const futureMeetings = meetings
       .filter((meeting) => {
-        const meetingDate = new Date(meeting.Date)
-        return meetingDate >= now
+        const meetingEndTime = getMeetingEndTime(meeting)
+        return meetingEndTime > now
       })
       .sort((a, b) => {
         const dateA = new Date(a.Date)

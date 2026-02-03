@@ -18,8 +18,11 @@
   import { onMount } from "svelte"
   import { Button } from "$lib/components/ui/button"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
+  import OpenGraphMeta from "$lib/components/open-graph-meta.svelte"
 
   let { data }: { data: PageData } = $props()
+
+  const ogMetadata = $derived(data.ogMetadata)
 
   // QR codes pour chaque réunion
   let qrCodes = $state<Record<number, string>>({})
@@ -82,9 +85,7 @@
   }
 </script>
 
-<svelte:head>
-  <title>{m.meetings_page_title()}</title>
-</svelte:head>
+<OpenGraphMeta metadata={ogMetadata} />
 
 <div class="container mx-auto max-w-5xl px-4 py-8">
   <header class="mb-12">

@@ -15,6 +15,13 @@
   import { onDestroy, onMount } from "svelte"
   import * as m from "$lib/paraglide/messages.js"
   import NextMeetingAlert from "$lib/components/next-meeting-alert.svelte"
+  import OpenGraphMeta from "$lib/components/open-graph-meta.svelte"
+
+  import type { PageData } from "./$types"
+
+  let { data }: { data: PageData } = $props()
+
+  const ogMetadata = $derived(data.ogMetadata)
 
   const featuredServices = Object.values(dataServices).filter((s) => s.featured)
   const featuredExternalReuses = Object.values(reuses).filter(
@@ -96,9 +103,7 @@
   })
 </script>
 
-<svelte:head>
-  <title>{m.site_title()}</title>
-</svelte:head>
+<OpenGraphMeta metadata={ogMetadata} />
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <!-- Hero Section -->

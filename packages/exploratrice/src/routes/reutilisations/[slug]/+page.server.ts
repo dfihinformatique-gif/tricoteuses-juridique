@@ -1,10 +1,11 @@
 import { error } from "@sveltejs/kit"
 
 import { reuses } from "$lib/data/tricoteuses-ecosystem.js"
+import { generateReuseOpenGraph } from "$lib/opengraph.js"
 
 import type { PageServerLoad } from "./$types"
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ params, url }) => {
   const reuse = reuses[params.slug]
 
   if (reuse === undefined) {
@@ -13,7 +14,11 @@ export const load: PageServerLoad = async ({ params }) => {
     })
   }
 
+  const baseUrl = `${url.origin}${url.pathname}`
+  const ogMetadata = generateReuseOpenGraph(reuse, baseUrl)
+
   return {
     reuse,
+    ogMetadata,
   }
 }

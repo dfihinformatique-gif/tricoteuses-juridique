@@ -15,6 +15,7 @@
   import UserIcon from "@lucide/svelte/icons/user"
   import * as m from "$lib/paraglide/messages.js"
   import { localizedHref } from "$lib/i18n.js"
+  import OpenGraphMeta from "$lib/components/open-graph-meta.svelte"
 
   import type { PageData } from "./$types"
 
@@ -27,6 +28,8 @@
   const localizedName = $derived(getReuseName(reuse.id))
   const localizedDescription = $derived(getReuseDescription(reuse.id))
   const localizedAuthor = $derived(getReuseAuthor(reuse.id))
+
+  const ogMetadata = $derived(data.ogMetadata)
 
   function getReuseColor(type: Reuse["type"]) {
     switch (type) {
@@ -62,9 +65,9 @@
   }
 </script>
 
-<svelte:head>
-  <title>{m.reuse_detail_page_title({ name: localizedName })}</title>
-</svelte:head>
+{#if ogMetadata}
+  <OpenGraphMeta metadata={ogMetadata} />
+{/if}
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb

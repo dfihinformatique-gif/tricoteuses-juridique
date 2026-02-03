@@ -1,13 +1,13 @@
 import { z } from "zod"
 import { documentUidRegex, dossierUidRegex } from "@tricoteuses/assemblee"
 import {
+  iterReferenceLinks,
   listeReferencesSeules,
   reference,
   simplifyPlainText,
   TextParserContext,
   type TextAstReference,
 } from "@tricoteuses/tisseuse"
-import { iterReferenceLinks } from "@tricoteuses/tisseuse/server"
 import type { PendingQuery, Row } from "postgres"
 
 import { query } from "$app/server"
@@ -19,7 +19,7 @@ import {
   type Suggestion,
   type SuggestionDb,
 } from "$lib/autocompletion.js"
-import { legiDb, tisseuseDb } from "$lib/server/databases/index.js"
+import { europeDb, legiDb, tisseuseDb } from "$lib/server/databases/index.js"
 
 const AutocompleteInputSchema = z.tuple([
   z
@@ -68,6 +68,7 @@ export const autocomplete = query(
           for await (const link of iterReferenceLinks({
             context,
             date: new Date().toISOString().split("T")[0],
+            europeDb,
             reference: referenceAst,
             legiDb,
             state: { defaultTextId },
@@ -116,6 +117,12 @@ export const autocomplete = query(
                     )),
                   )
                 }
+                break
+              }
+
+              case "european_text": {
+                // European texts are handled differently - they may have a titleId
+                // For now, we skip them in autocomplete suggestions
                 break
               }
 

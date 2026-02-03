@@ -27,9 +27,9 @@ import {
   extractTextLinks,
   type ExtractedLinkDb,
   type TextLinksParserState,
-} from "$lib/server"
+} from "$lib"
 import config from "$lib/server/config.js"
-import { legiDb } from "$lib/server/databases/index.js"
+import { europeDb, legiDb } from "$lib/server/databases/index.js"
 
 const { linkBaseUrl, linkType } = config
 const today = new Date().toISOString().split("T")[0]
@@ -65,6 +65,7 @@ async function addLinksToHtml({
   for await (const link of extractTextLinks({
     context,
     date,
+    europeDb,
     legiDb,
     logIgnoredReferencesTypes,
     logPartialReferences,
@@ -169,6 +170,51 @@ async function addLinksToHtml({
             (divisionOriginalTransformation.position.stop -
               divisionOriginalTransformation.position.start)
         }
+        break
+      }
+
+      case "european_text": {
+        const {
+          url: href,
+          originalTransformation: texteOriginalTransformation,
+          titleId,
+        } = link
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: titleId ?? null,
+        })
+        if (href === undefined) {
+          continue
+        }
+
+        if (texteOriginalTransformation === undefined) {
+          throw new Error(
+            `Missing originalTransformation attribute in european text link: ${JSON.stringify(link, null, 2)}`,
+          )
+        }
+        const original = reverseTransformedInnerFragment(
+          output,
+          texteOriginalTransformation,
+          outputOffset,
+        )
+        const replacement = reverseTransformedReplacement(
+          texteOriginalTransformation,
+          `<a class="lien_texte_european" href="${href}" target="_blank">${original}</a>`,
+        )
+        output =
+          output.slice(
+            0,
+            texteOriginalTransformation.position.start + outputOffset,
+          ) +
+          replacement +
+          output.slice(texteOriginalTransformation.position.stop + outputOffset)
+        outputOffset +=
+          replacement.length -
+          (texteOriginalTransformation.position.stop -
+            texteOriginalTransformation.position.start)
         break
       }
 

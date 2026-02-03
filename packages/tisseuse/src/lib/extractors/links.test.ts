@@ -1,7 +1,7 @@
 import dedent from "dedent-js"
 import { describe, expect, test } from "vitest"
 
-import { legiDb } from "$lib/server/databases/index.js"
+import { europeDb, legiDb } from "$lib/server/databases/index.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
 import { simplifyHtml } from "$lib/text_parsers/simplifiers.js"
 import {
@@ -26,6 +26,7 @@ describe("extractTextLinks", () => {
       extractTextLinks({
         context,
         date: "2025-12-17",
+        europeDb,
         legiDb,
       }),
     )
@@ -136,6 +137,7 @@ describe("extractTextLinks", () => {
       extractTextLinks({
         context,
         date: "2025-10-15",
+        europeDb,
         legiDb,
       }),
     )
@@ -207,6 +209,7 @@ describe("extractTextLinks", () => {
       extractTextLinks({
         context,
         date: "2025-07-14",
+        europeDb,
         legiDb,
       }),
     )
@@ -285,6 +288,7 @@ describe("extractTextLinks", () => {
       extractTextLinks({
         context,
         date: "2025-07-14",
+        europeDb,
         legiDb,
       }),
     )
@@ -345,7 +349,7 @@ describe("extractTextLinks", () => {
       "à l'article 200 undecies, aux articles 244 quater B à 244 quater W et aux articles 27 et 151 de la loi n° 2020-1721 du 29 décembre 2020"
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", europeDb, legiDb }),
     )
     expect(links.length).toBe(5)
     const link3 = links[3]
@@ -473,7 +477,7 @@ describe("extractTextLinks", () => {
     `)
     const context = new TextParserContext(transformation.output)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", europeDb, legiDb }),
     )
     expect(links.length).toBe(2)
     const link0 = links[0]
@@ -631,7 +635,7 @@ describe("extractTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", europeDb, legiDb }),
     )
     expect(links.length).toBe(2)
     const link0 = links[0]
@@ -789,7 +793,7 @@ describe("extractTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", europeDb, legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -916,7 +920,7 @@ describe("extractTextLinks", () => {
     const input = "l'article 223 VO bis"
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", europeDb, legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -953,7 +957,7 @@ describe("extractTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", europeDb, legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -1074,7 +1078,7 @@ describe("extractTextLinks", () => {
     `
     const context = new TextParserContext(input)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2025-07-14", legiDb }),
+      extractTextLinks({ context, date: "2025-07-14", europeDb, legiDb }),
     )
     expect(links).toStrictEqual([
       {
@@ -1381,7 +1385,13 @@ describe("extractTextLinks with transformation", () => {
     )
     const context = new TextParserContext(inputText)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2016-10-07", legiDb, transformation }),
+      extractTextLinks({
+        context,
+        date: "2016-10-07",
+        europeDb,
+        legiDb,
+        transformation,
+      }),
     )
     expect(links).toStrictEqual([
       {
@@ -1554,7 +1564,13 @@ describe("extractTextLinks with transformation", () => {
     const inputText = transformation.output
     const context = new TextParserContext(inputText)
     const links = await Array.fromAsync(
-      extractTextLinks({ context, date: "2016-10-07", legiDb, transformation }),
+      extractTextLinks({
+        context,
+        date: "2016-10-07",
+        europeDb,
+        legiDb,
+        transformation,
+      }),
     )
     expect(links).toStrictEqual([
       {

@@ -20,7 +20,7 @@ import {
   extractReferences,
   extractReferencesWithOriginalTransformations,
 } from "$lib/extractors/references.js"
-import { europeDb } from "$lib/server/databases/index.js"
+
 import {
   divisionTypes,
   isTextAstDivision,
@@ -140,7 +140,11 @@ export type DivisionLink = DivisionExternalLink // | DivisionInternalLink
 export interface ExtractedLinkDb {
   field_name: string
   index: number
-  link: ArticleExternalLink | DivisionExternalLink | TextExternalLink
+  link:
+    | ArticleExternalLink
+    | DivisionExternalLink
+    | TextEuropeanLink
+    | TextExternalLink
   source_id: string
   target_id: string | null
 }
@@ -187,6 +191,7 @@ export interface TextLinksParserState {
 export async function* extractTextLinks({
   context,
   date,
+  europeDb,
   legiDb,
   logIgnoredReferencesTypes,
   logPartialReferences,
@@ -196,6 +201,7 @@ export async function* extractTextLinks({
 }: {
   context: TextParserContext
   date: string
+  europeDb: Sql
   legiDb: Sql
   logIgnoredReferencesTypes?: boolean
   logPartialReferences?: boolean
@@ -346,6 +352,7 @@ export async function* extractTextLinks({
       articleDefinitionByNumByTextId,
       context,
       date,
+      europeDb,
       legiDb,
       logIgnoredReferencesTypes,
       logPartialReferences,
@@ -1153,6 +1160,7 @@ export async function* iterReferenceLinks({
   articleDefinitionByNumByTextId: articleDefinitionByNumByTextIdInput,
   context,
   date,
+  europeDb,
   legiDb,
   logIgnoredReferencesTypes,
   logPartialReferences,
@@ -1166,6 +1174,7 @@ export async function* iterReferenceLinks({
   >
   context: TextParserContext
   date: string
+  europeDb: Sql
   legiDb: Sql
   logIgnoredReferencesTypes?: boolean
   logPartialReferences?: boolean

@@ -9,8 +9,8 @@ import {
   getOrLoadSectionTa,
 } from "$lib/loaders/legifrance.js"
 import config from "$lib/server/config.js"
-import { legiDb } from "$lib/server/databases/index.js"
-import { extractTextLinks } from "$lib/server/extractors/links.js"
+import { europeDb, legiDb } from "$lib/server/databases/index.js"
+import { extractTextLinks } from "$lib/extractors/links.js"
 import {
   readTransformation,
   writeTransformation,
@@ -157,6 +157,7 @@ export async function addLinksOrReferencesToHtmlFile({
   for await (const link of extractTextLinks({
     context,
     date,
+    europeDb,
     legiDb,
     logIgnoredReferencesTypes,
     logPartialReferences,

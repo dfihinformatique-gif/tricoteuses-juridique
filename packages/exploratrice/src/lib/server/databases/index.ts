@@ -25,6 +25,14 @@ export const legiDb = postgres({
 })
 export const legiVersionNumber = 20
 
+export const europeDb = postgres({
+  database: privateConfig.europeDb.database,
+  host: privateConfig.europeDb.host,
+  port: privateConfig.europeDb.port,
+  user: privateConfig.europeDb.user,
+  password: privateConfig.europeDb.password,
+})
+
 export const tisseuseDb = postgres({
   database: privateConfig.tisseuseDb.database,
   host: privateConfig.tisseuseDb.host,

@@ -21,9 +21,9 @@ import {
   TextParserContext,
   urlFromLegalId,
 } from "$lib"
-import { extractTextLinks } from "$lib/server"
+import { extractTextLinks } from "$lib"
 import config from "$lib/server/config.js"
-import { legiDb } from "$lib/server/databases/index.js"
+import { europeDb, legiDb } from "$lib/server/databases/index.js"
 
 const { linkBaseUrl, linkType } = config
 
@@ -121,6 +121,7 @@ async function addLinksToAssembleeParsedDocuments({
             for await (const link of extractTextLinks({
               context,
               date,
+              europeDb,
               legiDb,
               // logIgnoredReferencesTypes,
               // logPartialReferences,
@@ -292,6 +293,45 @@ async function addLinksToAssembleeParsedDocuments({
                   break
                 }
 
+                case "european_text": {
+                  const {
+                    url: href,
+                    originalTransformation: texteOriginalTransformation,
+                  } = link
+                  if (href === undefined) {
+                    continue
+                  }
+
+                  if (texteOriginalTransformation === undefined) {
+                    throw new Error(
+                      `Missing originalTransformation attribute in european text link: ${JSON.stringify(link, null, 2)}`,
+                    )
+                  }
+                  const original = reverseTransformedInnerFragment(
+                    output,
+                    texteOriginalTransformation,
+                    outputOffset,
+                  )
+                  const replacement = reverseTransformedReplacement(
+                    texteOriginalTransformation,
+                    `<a class="lien_texte_european" href="${href}" target="_blank">${original}</a>`,
+                  )
+                  output =
+                    output.slice(
+                      0,
+                      texteOriginalTransformation.position.start + outputOffset,
+                    ) +
+                    replacement +
+                    output.slice(
+                      texteOriginalTransformation.position.stop + outputOffset,
+                    )
+                  outputOffset +=
+                    replacement.length -
+                    (texteOriginalTransformation.position.stop -
+                      texteOriginalTransformation.position.start)
+                  break
+                }
+
                 case "internal_article": {
                   const {
                     definition,
@@ -355,6 +395,7 @@ async function addLinksToAssembleeParsedDocuments({
             for await (const link of extractTextLinks({
               context,
               date,
+              europeDb,
               legiDb,
               // logIgnoredReferencesTypes,
               // logPartialReferences,
@@ -561,6 +602,45 @@ async function addLinksToAssembleeParsedDocuments({
                     replacement.length -
                     (articleOriginalTransformation.position.stop -
                       articleOriginalTransformation.position.start)
+                  break
+                }
+
+                case "european_text": {
+                  const {
+                    url: href,
+                    originalTransformation: texteOriginalTransformation,
+                  } = link
+                  if (href === undefined) {
+                    continue
+                  }
+
+                  if (texteOriginalTransformation === undefined) {
+                    throw new Error(
+                      `Missing originalTransformation attribute in european text link: ${JSON.stringify(link, null, 2)}`,
+                    )
+                  }
+                  const original = reverseTransformedInnerFragment(
+                    output,
+                    texteOriginalTransformation,
+                    outputOffset,
+                  )
+                  const replacement = reverseTransformedReplacement(
+                    texteOriginalTransformation,
+                    `<a class="lien_texte_european" href="${href}" target="_blank">${original}</a>`,
+                  )
+                  output =
+                    output.slice(
+                      0,
+                      texteOriginalTransformation.position.start + outputOffset,
+                    ) +
+                    replacement +
+                    output.slice(
+                      texteOriginalTransformation.position.stop + outputOffset,
+                    )
+                  outputOffset +=
+                    replacement.length -
+                    (texteOriginalTransformation.position.stop -
+                      texteOriginalTransformation.position.start)
                   break
                 }
 

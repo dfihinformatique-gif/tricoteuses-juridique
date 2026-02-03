@@ -93,6 +93,10 @@ export const PrivateConfigSchema = z
       "Database configuration for Légifrance data",
     ),
 
+    europeDb: DatabaseConfigSchema.describe(
+      "Database configuration for Europe data",
+    ),
+
     linkUrlOriginReplacement: httpUrl()
       .optional()
       .transform((url) => url?.replace(/\/$/, ""))

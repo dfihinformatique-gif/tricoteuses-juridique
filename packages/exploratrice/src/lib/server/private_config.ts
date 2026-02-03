@@ -35,6 +35,13 @@ const result = validatePrivateConfigSafe({
     user: env.LEGI_DB_USER,
     password: env.LEGI_DB_PASSWORD,
   },
+  europeDb: {
+    host: env.EUROPE_DB_HOST,
+    port: env.EUROPE_DB_PORT,
+    database: env.EUROPE_DB_NAME,
+    user: env.EUROPE_DB_USER,
+    password: env.EUROPE_DB_PASSWORD,
+  },
   linkUrlOriginReplacement: env.LINK_URL_ORIGIN_REPLACEMENT,
   tisseuseDb: {
     host: env.TISSEUSE_DB_HOST,

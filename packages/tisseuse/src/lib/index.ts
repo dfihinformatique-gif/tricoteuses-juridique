@@ -17,6 +17,22 @@ export {
 export { formatLongDate } from "./dates.js"
 export { extractBillDefinitions } from "./extractors/definitions.js"
 export {
+  extractTextLinks,
+  iterReferenceLinks,
+  type ArticleDefinition,
+  type ArticleExternalLink,
+  type ArticleInternalLink,
+  type ArticleLink,
+  type DefinitionOrLink,
+  type DivisionExternalLink,
+  type DivisionLink,
+  type ExtractedLinkDb,
+  type TextEuropeanLink,
+  type TextExternalLink,
+  type TextLink,
+  type TextLinksParserState,
+} from "./extractors/links.js"
+export {
   extractCitationReferences,
   extractReferences,
   extractReferencesWithOriginalTransformations,

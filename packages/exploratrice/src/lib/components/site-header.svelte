@@ -78,6 +78,11 @@
                     <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
                   >
                 </li>
+                <li class="border-t">
+                  <NavigationMenu.Link href={localizedHref("/admin")}
+                    >Administration</NavigationMenu.Link
+                  >
+                </li>
               </ul>
             </NavigationMenu.Content>
           </NavigationMenu.Item>

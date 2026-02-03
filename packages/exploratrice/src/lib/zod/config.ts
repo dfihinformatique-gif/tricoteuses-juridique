@@ -61,9 +61,33 @@ export const ConfigSchema = z
           .describe("Grist document ID"),
 
         instanceUrl: httpUrl().describe("Grist instance URL"),
+
+        cacheTtlMinutes: z.coerce
+          .number()
+          .int()
+          .min(1, "Cache TTL must be at least 1 minute")
+          .default(60)
+          .describe("Cache TTL in minutes for Grist data"),
       })
       .strict()
       .describe("Grist configuration"),
+
+    admin: z
+      .object({
+        username: z
+          .string()
+          .trim()
+          .min(1, "Admin username is required")
+          .describe("Admin username for HTTP Basic Auth"),
+
+        password: z
+          .string()
+          .trim()
+          .min(1, "Admin password is required")
+          .describe("Admin password for HTTP Basic Auth"),
+      })
+      .strict()
+      .describe("Admin authentication configuration"),
 
     legiDb: DatabaseConfigSchema.describe(
       "Database configuration for Légifrance data",

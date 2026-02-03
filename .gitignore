@@ -17,6 +17,9 @@ node_modules/
 /packages/moulineuse/dist
 /packages/tisseuse/dist
 
+# Cache
+/packages/exploratrice/.cache
+
 # Ensure that text_titles_infos.json remains empty
 packages/tisseuse/src/lib/text_parsers/text_titles_infos.json
 

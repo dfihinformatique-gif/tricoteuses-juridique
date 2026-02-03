@@ -23,6 +23,11 @@ const result = validateConfigSafe({
     apiKey: process.env.GRIST_API_KEY,
     docId: process.env.GRIST_DOC_ID,
     instanceUrl: process.env.GRIST_INSTANCE_URL,
+    cacheTtlMinutes: process.env.GRIST_CACHE_TTL_MINUTES,
+  },
+  admin: {
+    username: process.env.ADMIN_USERNAME,
+    password: process.env.ADMIN_PASSWORD,
   },
   legiDb: {
     host: process.env.LEGI_DB_HOST,

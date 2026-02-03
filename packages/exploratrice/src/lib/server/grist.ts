@@ -1,4 +1,5 @@
 import config from "$lib/server/config.js"
+import { getOrSet } from "$lib/server/cache.js"
 
 export interface GristRecord<T = Record<string, unknown>> {
   id: number
@@ -63,9 +64,9 @@ async function fetchGristRecords<T = Record<string, unknown>>(
 }
 
 /**
- * Gets the next upcoming Tricoteuses meeting
+ * Fetches the next upcoming Tricoteuses meeting without cache
  */
-export async function getNextTricoteusesMeeting(): Promise<TricoteusesMeeting | null> {
+async function fetchNextTricoteusesMeeting(): Promise<TricoteusesMeeting | null> {
   const docId = config.grist.docId
   const tableId = "Reunions"
 
@@ -105,6 +106,17 @@ export async function getNextTricoteusesMeeting(): Promise<TricoteusesMeeting | 
     console.error("Error fetching Tricoteuses meetings from Grist:", error)
     return null
   }
+}
+
+/**
+ * Gets the next upcoming Tricoteuses meeting (with caching)
+ */
+export async function getNextTricoteusesMeeting(): Promise<TricoteusesMeeting | null> {
+  return getOrSet(
+    "grist-next-meeting",
+    fetchNextTricoteusesMeeting,
+    config.grist.cacheTtlMinutes,
+  )
 }
 
 /**

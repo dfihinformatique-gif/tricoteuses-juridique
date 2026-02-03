@@ -29,7 +29,9 @@ export default defineConfig({
         "node:assert",
         "node:path",
         // Dependencies from package.json
+        "dotenv",
         "fs-extra",
+        "postgres",
       ],
       output: {
         // Preserve module structure for entry points (if possible with multiple entries)

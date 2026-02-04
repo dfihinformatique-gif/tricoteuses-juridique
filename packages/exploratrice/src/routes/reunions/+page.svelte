@@ -11,7 +11,7 @@
   import type { PageData } from "./$types.js"
   import { parseMarkdown } from "$lib/markdown.js"
   import { downloadICalFile, generateGoogleCalendarLink } from "$lib/ical.js"
-  import { isMeetingEnded } from "$lib/meetings.js"
+
   import * as m from "$lib/paraglide/messages.js"
   import { getLocale } from "$lib/paraglide/runtime.js"
   import QRCode from "qrcode"
@@ -41,16 +41,14 @@
     }).format(date)
   }
 
-  const upcomingMeetings = $derived(
-    data.meetings.filter((meeting) => !isMeetingEnded(meeting)),
-  )
-  const pastMeetings = $derived(
-    data.meetings.filter((meeting) => isMeetingEnded(meeting)),
-  )
+  // Les réunions sont déjà filtrées côté serveur (utilise l'heure du serveur)
+  const upcomingMeetings = $derived(data.upcomingMeetings)
+  const pastMeetings = $derived(data.pastMeetings)
 
   // Générer les QR codes pour toutes les réunions avec liens
   onMount(async () => {
-    const meetingsWithLinks = data.meetings.filter((m) => m.Lien)
+    const allMeetings = [...data.upcomingMeetings, ...data.pastMeetings]
+    const meetingsWithLinks = allMeetings.filter((m) => m.Lien)
     for (const meeting of meetingsWithLinks) {
       try {
         const qrDataUrl = await QRCode.toDataURL(meeting.Lien!, {

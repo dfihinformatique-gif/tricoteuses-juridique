@@ -1,14 +1,15 @@
 import type { TricoteusesMeeting } from "$lib/grist.js"
 
 /**
- * Parse meeting time from "HH:MM" format, returns null if invalid
+ * Parse meeting time from "HH:MM" or "HHhMM" format, returns null if invalid
  */
 function parseMeetingTime(
   timeString?: string,
 ): { hours: number; minutes: number } | null {
   if (!timeString) return null
 
-  const match = timeString.match(/^(\d{1,2}):(\d{2})/)
+  // Support both "12:00" and "12h00" formats
+  const match = timeString.match(/^(\d{1,2})[:h](\d{2})/)
   if (!match) return null
 
   const hours = parseInt(match[1], 10)
@@ -24,7 +25,10 @@ function parseMeetingTime(
  * If no time is specified, assumes end of day (23:59) + 1 hour
  */
 export function getMeetingEndTime(meeting: TricoteusesMeeting): Date {
-  const meetingDate = new Date(meeting.Date)
+  // Parse date in local timezone by splitting the ISO date string
+  // This avoids timezone issues with Date constructor
+  const [year, month, day] = meeting.Date.split("-").map(Number)
+  const meetingDate = new Date(year, month - 1, day)
 
   const time = parseMeetingTime(meeting.Heure)
 

@@ -8,6 +8,9 @@
     CalendarPlus,
     QrCode,
     CalendarRange,
+    Copy,
+    Check,
+    ChevronDown,
   } from "@lucide/svelte/icons"
   import type { PageData } from "./$types.js"
   import { parseMarkdown } from "$lib/markdown.js"
@@ -19,6 +22,7 @@
   import { onMount } from "svelte"
   import { Button } from "$lib/components/ui/button"
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
+  import * as Collapsible from "$lib/components/ui/collapsible"
   import OpenGraphMeta from "$lib/components/open-graph-meta.svelte"
 
   let { data }: { data: PageData } = $props()
@@ -28,6 +32,17 @@
   // QR codes pour chaque réunion
   let qrCodes = $state<Record<number, string>>({})
   let expandedQrCodes = $state<Record<number, boolean>>({})
+
+  // État pour le bouton de copie du calendrier
+  let calendarUrlCopied = $state(false)
+
+  // Générer l'URL complète du calendrier
+  const calendarUrl = $derived(() => {
+    if (typeof window !== "undefined") {
+      return `${window.location.origin}/reunions/calendrier.ics`
+    }
+    return "/reunions/calendrier.ics"
+  })
 
   function formatDate(dateString: string): string {
     const date = new Date(dateString)
@@ -82,6 +97,19 @@
   function toggleQrCode(meetingId: number) {
     expandedQrCodes[meetingId] = !expandedQrCodes[meetingId]
   }
+
+  async function copyCalendarUrl() {
+    try {
+      const url = calendarUrl()
+      await navigator.clipboard.writeText(url)
+      calendarUrlCopied = true
+      setTimeout(() => {
+        calendarUrlCopied = false
+      }, 2000)
+    } catch (err) {
+      console.error("Failed to copy URL:", err)
+    }
+  }
 </script>
 
 <OpenGraphMeta metadata={ogMetadata} />
@@ -98,20 +126,69 @@
       </p>
     </div>
 
-    <!-- Bouton d'abonnement au calendrier -->
+    <!-- Abonnement au calendrier -->
     <div class="mt-6">
-      <a
-        href="/reunions/calendrier.ics"
-        class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        download="reunions-tricoteuses.ics"
-      >
-        <CalendarRange class="h-4 w-4" />
-        S'abonner au calendrier (iCal)
-      </a>
-      <p class="mt-2 text-sm text-muted-foreground">
-        Compatible avec NextCloud, Thunderbird, DavX, Apple Calendar, Google
-        Calendar, etc.
-      </p>
+      <Collapsible.Root class="group">
+        <Collapsible.Trigger
+          class="flex w-full items-center justify-between rounded-lg border border-primary/20 bg-card p-4 text-left transition-colors hover:bg-accent"
+        >
+          <div class="flex items-center gap-2">
+            <CalendarRange class="h-5 w-5 text-primary" />
+            <h3 class="font-semibold text-foreground">
+              {m.meeting_calendar_subscribe_title()}
+            </h3>
+          </div>
+          <ChevronDown
+            class="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180"
+          />
+        </Collapsible.Trigger>
+        <Collapsible.Content
+          class="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down"
+        >
+          <div
+            class="rounded-b-lg border border-t-0 border-primary/20 bg-card p-4"
+          >
+            <p class="mb-3 text-sm text-muted-foreground">
+              {m.meeting_calendar_subscribe_description()}
+            </p>
+            <div class="flex gap-2">
+              <input
+                type="text"
+                readonly
+                value={calendarUrl()}
+                class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
+                onclick={(e) => e.currentTarget.select()}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onclick={copyCalendarUrl}
+                class="shrink-0"
+              >
+                {#if calendarUrlCopied}
+                  <Check class="mr-2 h-4 w-4" />
+                  {m.meeting_calendar_subscribe_copied()}
+                {:else}
+                  <Copy class="mr-2 h-4 w-4" />
+                  {m.meeting_calendar_subscribe_copy()}
+                {/if}
+              </Button>
+            </div>
+            <p class="mt-3 text-sm text-muted-foreground">
+              {m.meeting_calendar_subscribe_compatibility()}
+            </p>
+            <div class="mt-2">
+              <a
+                href="/reunions/calendrier.ics"
+                download="reunions-tricoteuses.ics"
+                class="text-sm text-primary hover:underline"
+              >
+                {m.meeting_calendar_subscribe_download_link()}
+              </a>
+            </div>
+          </div>
+        </Collapsible.Content>
+      </Collapsible.Root>
     </div>
   </header>
 

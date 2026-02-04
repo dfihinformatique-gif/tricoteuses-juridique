@@ -1,7 +1,123 @@
 import type { TricoteusesMeeting } from "$lib/grist.js"
 
 /**
- * Génère un fichier iCal (.ics) pour une réunion
+ * Génère un fichier iCal (.ics) complet avec toutes les réunions
+ * pour permettre l'abonnement dans NextCloud, Thunderbird, DavX, etc.
+ */
+export function generateFullCalendar(
+  meetings: TricoteusesMeeting[],
+  calendarName = "Tricoteuses",
+): string {
+  const now = new Date()
+  const timestamp = now
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "")
+
+  // En-tête du calendrier
+  const icalLines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Tricoteuses//Meetings Calendar//FR",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    `NAME:${calendarName}`,
+    `X-WR-CALNAME:${calendarName}`,
+    `X-WR-CALDESC:Calendrier des réunions des Tricoteuses`,
+    "X-WR-TIMEZONE:Europe/Paris",
+    "REFRESH-INTERVAL;VALUE=DURATION:PT1H",
+    "X-PUBLISHED-TTL:PT1H",
+  ]
+
+  // Ajouter chaque réunion comme VEVENT
+  for (const meeting of meetings) {
+    const dateStr = meeting.Date // Format: YYYY-MM-DD
+    const timeStr = meeting.Heure || "12:00"
+
+    // Créer la date de début
+    let startDateTime: Date
+    let isAllDay = false
+
+    if (timeStr.toLowerCase().includes("toute la journée")) {
+      isAllDay = true
+      startDateTime = new Date(dateStr + "T00:00:00")
+    } else {
+      // Parser l'heure (formats: "12h00", "21h00", "12:00")
+      const timeParts = timeStr.match(/(\d+)[h:](\d+)/)
+      if (timeParts) {
+        const hours = timeParts[1].padStart(2, "0")
+        const minutes = timeParts[2].padStart(2, "0")
+        startDateTime = new Date(`${dateStr}T${hours}:${minutes}:00`)
+      } else {
+        startDateTime = new Date(dateStr + "T12:00:00")
+      }
+    }
+
+    // Date de fin (2 heures après le début par défaut)
+    const endDateTime = new Date(startDateTime.getTime() + 2 * 60 * 60 * 1000)
+
+    // Formater les dates au format iCal
+    const formatICalDate = (date: Date) => {
+      return date
+        .toISOString()
+        .replace(/[-:]/g, "")
+        .replace(/\.\d{3}/, "")
+    }
+
+    const dtStart = isAllDay
+      ? dateStr.replace(/-/g, "")
+      : formatICalDate(startDateTime)
+    const dtEnd = isAllDay
+      ? dateStr.replace(/-/g, "")
+      : formatICalDate(endDateTime)
+
+    // Préparer les données
+    const description = meeting.Description?.replace(/\n/g, "\\n") || ""
+    const location = meeting.Lieu || ""
+    const url = meeting.Lien || ""
+    const uid = `meeting-${meeting.id}-${dateStr}@tricoteuses.fr`
+
+    // Ajouter l'événement
+    icalLines.push("BEGIN:VEVENT", `UID:${uid}`, `DTSTAMP:${timestamp}`)
+
+    if (isAllDay) {
+      icalLines.push(`DTSTART;VALUE=DATE:${dtStart}`)
+      icalLines.push(`DTEND;VALUE=DATE:${dtEnd}`)
+    } else {
+      icalLines.push(`DTSTART:${dtStart}`)
+      icalLines.push(`DTEND:${dtEnd}`)
+    }
+
+    icalLines.push(
+      `SUMMARY:Réunion des Tricoteuses`,
+      `LOCATION:${location}`,
+      `DESCRIPTION:${description}`,
+    )
+
+    if (url) {
+      icalLines.push(`URL:${url}`)
+    }
+
+    icalLines.push(
+      "STATUS:CONFIRMED",
+      "SEQUENCE:0",
+      "BEGIN:VALARM",
+      "TRIGGER:-PT15M",
+      "ACTION:DISPLAY",
+      "DESCRIPTION:Rappel: Réunion des Tricoteuses dans 15 minutes",
+      "END:VALARM",
+      "END:VEVENT",
+    )
+  }
+
+  // Fermer le calendrier
+  icalLines.push("END:VCALENDAR")
+
+  return icalLines.join("\r\n")
+}
+
+/**
+ * Génère un fichier iCal (.ics) pour une réunion individuelle
  */
 export function generateICalFile(meeting: TricoteusesMeeting): string {
   const now = new Date()

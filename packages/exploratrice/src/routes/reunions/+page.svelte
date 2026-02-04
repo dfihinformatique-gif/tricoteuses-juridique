@@ -7,6 +7,7 @@
     Video,
     CalendarPlus,
     QrCode,
+    CalendarRange,
   } from "@lucide/svelte/icons"
   import type { PageData } from "./$types.js"
   import { parseMarkdown } from "$lib/markdown.js"
@@ -94,6 +95,22 @@
     <div class="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-4">
       <p class="text-base text-foreground">
         {@html parseMarkdown(m.meetings_schedule_info())}
+      </p>
+    </div>
+
+    <!-- Bouton d'abonnement au calendrier -->
+    <div class="mt-6">
+      <a
+        href="/reunions/calendrier.ics"
+        class="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        download="reunions-tricoteuses.ics"
+      >
+        <CalendarRange class="h-4 w-4" />
+        S'abonner au calendrier (iCal)
+      </a>
+      <p class="mt-2 text-sm text-muted-foreground">
+        Compatible avec NextCloud, Thunderbird, DavX, Apple Calendar, Google
+        Calendar, etc.
       </p>
     </div>
   </header>

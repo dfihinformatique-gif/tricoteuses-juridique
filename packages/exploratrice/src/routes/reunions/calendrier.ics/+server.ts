@@ -1,6 +1,8 @@
 import { getAllTricoteusesMeetings } from "$lib/server/grist.js"
 import { generateFullCalendar } from "$lib/ical.js"
 import publicConfig from "$lib/public_config.js"
+import privateConfig from "$lib/server/private_config.js"
+import { getOrSet } from "$lib/server/cache.js"
 import type { RequestHandler } from "./$types.js"
 
 /**
@@ -18,11 +20,17 @@ import type { RequestHandler } from "./$types.js"
  */
 export const GET: RequestHandler = async ({ setHeaders }) => {
   try {
-    // Récupérer toutes les réunions depuis Grist
-    const meetings = await getAllTricoteusesMeetings()
-
-    // Générer le calendrier iCal complet
-    const icalContent = generateFullCalendar(meetings, publicConfig.title)
+    // Récupérer le calendrier depuis le cache ou générer un nouveau
+    const icalContent = await getOrSet(
+      "grist-full-calendar",
+      async () => {
+        // Récupérer toutes les réunions depuis Grist
+        const meetings = await getAllTricoteusesMeetings()
+        // Générer le calendrier iCal complet
+        return generateFullCalendar(meetings, publicConfig.title)
+      },
+      privateConfig.grist.cacheTtlMinutes,
+    )
 
     // Générer un nom de fichier basé sur le titre (en retirant les caractères spéciaux)
     const safeFilename = publicConfig.title

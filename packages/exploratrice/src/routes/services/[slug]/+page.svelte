@@ -127,7 +127,7 @@
 <div class="container mx-auto max-w-7xl px-4 py-8">
   <PageBreadcrumb
     segments={[
-      { label: m.nav_services(), href: localizedHref("/services") },
+      { label: m.nav_services(), href: "/services" },
       { label: service.name },
     ]}
   />

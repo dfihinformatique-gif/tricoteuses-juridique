@@ -15,6 +15,7 @@
   import type { PageData } from "./$types.js"
   import { parseMarkdown } from "$lib/markdown.js"
   import { downloadICalFile, generateGoogleCalendarLink } from "$lib/ical.js"
+  import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
 
   import * as m from "$lib/paraglide/messages.js"
   import { getLocale } from "$lib/paraglide/runtime.js"
@@ -85,11 +86,13 @@
     }
   })
 
-  function handleDownloadICal(meeting: (typeof data.meetings)[0]) {
+  function handleDownloadICal(meeting: (typeof data.upcomingMeetings)[0]) {
     downloadICalFile(meeting)
   }
 
-  function handleOpenGoogleCalendar(meeting: (typeof data.meetings)[0]) {
+  function handleOpenGoogleCalendar(
+    meeting: (typeof data.upcomingMeetings)[0],
+  ) {
     const link = generateGoogleCalendarLink(meeting)
     window.open(link, "_blank", "noopener,noreferrer")
   }
@@ -115,6 +118,8 @@
 <OpenGraphMeta metadata={ogMetadata} />
 
 <div class="container mx-auto max-w-5xl px-4 py-8">
+  <PageBreadcrumb segments={[{ label: m.meetings_breadcrumb() }]} />
+
   <header class="mb-12">
     <h1 class="mb-4 text-4xl font-bold">{m.meetings_title()}</h1>
     <p class="text-lg text-muted-foreground">

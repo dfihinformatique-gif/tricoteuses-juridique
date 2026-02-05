@@ -52,21 +52,13 @@
                   >
                 </li>
                 <li>
-                  <NavigationMenu.Link
-                    class="flex flex-row whitespace-nowrap"
-                    href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/FAQ.md"
-                    target="_blank"
-                    >{m.nav_faq()}
-                    <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
+                  <NavigationMenu.Link href={localizedHref("/faq")}
+                    >{m.nav_faq()}</NavigationMenu.Link
                   >
                 </li>
                 <li>
-                  <NavigationMenu.Link
-                    class="flex flex-row whitespace-nowrap"
-                    href="https://git.tricoteuses.fr/tricoteuses/a_propos/src/branch/main/mentions_legales.md"
-                    target="_blank"
-                    >{m.nav_legal_notices()}
-                    <ExternalLinkIcon class="ml-1" /></NavigationMenu.Link
+                  <NavigationMenu.Link href={localizedHref("/mentions_legales")}
+                    >{m.nav_legal_notices()}</NavigationMenu.Link
                   >
                 </li>
                 <li>

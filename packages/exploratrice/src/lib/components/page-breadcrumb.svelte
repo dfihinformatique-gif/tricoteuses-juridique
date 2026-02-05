@@ -13,7 +13,7 @@
 
   // Toujours inclure "Accueil" comme premier segment
   const fullSegments = $derived([
-    { label: m.nav_home(), href: localizedHref("/") },
+    { label: m.nav_home(), href: "/" },
     ...segments,
   ])
 </script>

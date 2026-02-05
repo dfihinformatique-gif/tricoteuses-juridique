@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { Button } from "$lib/components/ui/button/index.js"
-  import * as Card from "$lib/components/ui/card/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import ExternalLinkIcon from "@lucide/svelte/icons/external-link"
   import CheckCircleIcon from "@lucide/svelte/icons/check-circle"
@@ -9,6 +7,10 @@
   import BookOpenIcon from "@lucide/svelte/icons/book-open"
   import ScaleIcon from "@lucide/svelte/icons/scale"
   import MailIcon from "@lucide/svelte/icons/mail"
+
+  import { Button } from "$lib/components/ui/button/index.js"
+  import * as Card from "$lib/components/ui/card/index.js"
+  import { localizedHref } from "$lib/i18n.js"
   import * as m from "$lib/paraglide/messages.js"
 </script>
 
@@ -412,7 +414,7 @@
         <p class="mb-6 text-muted-foreground">
           {m.license_contact_description()}
         </p>
-        <Button href="/a_propos" size="lg">
+        <Button href={localizedHref("/a_propos")} size="lg">
           {m.license_contact_button()}
         </Button>
       </Card.Content>

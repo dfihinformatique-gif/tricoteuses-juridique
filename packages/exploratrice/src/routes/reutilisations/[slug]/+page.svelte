@@ -74,7 +74,7 @@
     segments={[
       {
         label: m.reuse_detail_breadcrumb_reuses(),
-        href: localizedHref("/reutilisations"),
+        href: "/reutilisations",
       },
       { label: localizedName },
     ]}

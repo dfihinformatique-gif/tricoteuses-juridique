@@ -4,7 +4,6 @@
   import * as Alert from "$lib/components/ui/alert/index.js"
   import PageBreadcrumb from "$lib/components/page-breadcrumb.svelte"
   import { urlPathFromId } from "$lib/urls.js"
-  import { safeLocalizedHref } from "$lib/i18n.js"
   import * as m from "$lib/paraglide/messages.js"
 
   import { querySectionTa } from "../../section-ta.remote.js"
@@ -22,7 +21,7 @@
     segments={[
       {
         label: m.legifrance_textes_list_breadcrumb(),
-        href: safeLocalizedHref("/legifrance/textes"),
+        href: "/legifrance/textes",
       },
       { label: `${m.legifrance_section_menu_trigger()} ${params.id}` },
     ]}
@@ -40,7 +39,7 @@
     segments={[
       {
         label: m.legifrance_textes_list_breadcrumb(),
-        href: safeLocalizedHref("/legifrance/textes"),
+        href: "/legifrance/textes",
       },
       {
         label: m.legifrance_texte_menu_trigger(),

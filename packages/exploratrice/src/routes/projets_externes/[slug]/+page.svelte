@@ -36,7 +36,7 @@
     segments={[
       {
         label: m.external_project_detail_breadcrumb(),
-        href: localizedHref("/projets_externes"),
+        href: "/projets_externes",
       },
       { label: localizedName },
     ]}

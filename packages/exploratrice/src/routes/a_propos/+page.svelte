@@ -135,27 +135,6 @@
     </div>
   </section>
 
-  <!-- En savoir plus -->
-  <section class="mb-12">
-    <Card.Root class="border-primary/20 bg-primary/5">
-      <Card.Content class="py-8 text-center">
-        <h2 class="mb-4 text-2xl font-bold">{m.about_learn_more_title()}</h2>
-        <p class="mb-6 text-muted-foreground">
-          {m.about_learn_more_description()}
-        </p>
-        <Button
-          href="https://git.tricoteuses.fr/tricoteuses/a_propos"
-          target="_blank"
-          rel="noopener noreferrer"
-          size="lg"
-        >
-          {m.about_learn_more_button()}
-          <ExternalLinkIcon class="ml-2 h-4 w-4" />
-        </Button>
-      </Card.Content>
-    </Card.Root>
-  </section>
-
   <!-- Contact -->
   <section class="mb-12">
     <h2 class="mb-6 text-3xl font-bold">{m.about_contact_title()}</h2>

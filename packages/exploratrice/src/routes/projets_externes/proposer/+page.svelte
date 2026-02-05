@@ -8,7 +8,6 @@
   import CheckIcon from "@lucide/svelte/icons/check"
   import CopyIcon from "@lucide/svelte/icons/copy"
   import * as m from "$lib/paraglide/messages.js"
-  import { localizedHref } from "$lib/i18n.js"
 
   let authorName = $state("")
   let contactEmail = $state("")
@@ -86,7 +85,7 @@
     segments={[
       {
         label: m.external_project_detail_breadcrumb(),
-        href: localizedHref("/projets_externes"),
+        href: "/projets_externes",
       },
       { label: m.external_project_propose_breadcrumb() },
     ]}

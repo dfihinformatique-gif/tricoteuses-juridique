@@ -10,7 +10,6 @@
   import CheckIcon from "@lucide/svelte/icons/check"
   import CopyIcon from "@lucide/svelte/icons/copy"
   import * as m from "$lib/paraglide/messages.js"
-  import { localizedHref } from "$lib/i18n.js"
 
   const services = Object.values(dataServices)
 
@@ -100,7 +99,7 @@
     segments={[
       {
         label: m.reuse_propose_breadcrumb_reuses(),
-        href: localizedHref("/reutilisations"),
+        href: "/reutilisations",
       },
       { label: m.reuse_propose_breadcrumb_propose() },
     ]}

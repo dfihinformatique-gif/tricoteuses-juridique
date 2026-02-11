@@ -1,5 +1,6 @@
 import fs from "fs-extra"
 import path from "node:path"
+import * as prettier from "prettier"
 import sade from "sade"
 
 import {
@@ -17,6 +18,7 @@ async function simplifyWordHtmlFile(
     "keep-empty": keepEmpty,
     "relative-alinea": relativeAlinea,
     "keep-image-hash": keepImageHash,
+    format,
     verbose,
   }: {
     output?: string
@@ -26,6 +28,7 @@ async function simplifyWordHtmlFile(
     "keep-empty"?: boolean
     "relative-alinea"?: boolean
     "keep-image-hash"?: boolean
+    format?: boolean
     verbose?: boolean
   },
 ): Promise<number> {
@@ -54,9 +57,23 @@ async function simplifyWordHtmlFile(
     keepImageHash: keepImageHash ?? false,
   }
 
-  const simplifiedHtml = fullDocument
+  let simplifiedHtml = fullDocument
     ? simplifyWordHtmlToDocument(inputHtml, options)
     : simplifyWordHtml(inputHtml, options)
+
+  // Format with Prettier if requested
+  if (format) {
+    if (verbose) {
+      console.log("Formatting HTML with Prettier...")
+    }
+    simplifiedHtml = await prettier.format(simplifiedHtml, {
+      parser: "html",
+      printWidth: 120,
+      tabWidth: 2,
+      useTabs: false,
+      htmlWhitespaceSensitivity: "ignore",
+    })
+  }
 
   // Determine output path
   let outputPath: string
@@ -98,6 +115,7 @@ async function simplifyWordHtmlDirectory(
     "keep-empty": keepEmpty,
     "relative-alinea": relativeAlinea,
     "keep-image-hash": keepImageHash,
+    format,
     recursive,
     pattern,
     verbose,
@@ -109,6 +127,7 @@ async function simplifyWordHtmlDirectory(
     "keep-empty"?: boolean
     "relative-alinea"?: boolean
     "keep-image-hash"?: boolean
+    format?: boolean
     recursive?: boolean
     pattern?: string
     verbose?: boolean
@@ -162,9 +181,20 @@ async function simplifyWordHtmlDirectory(
     try {
       const inputHtml = await fs.readFile(inputPath, { encoding: "utf-8" })
 
-      const simplifiedHtml = fullDocument
+      let simplifiedHtml = fullDocument
         ? simplifyWordHtmlToDocument(inputHtml, options)
         : simplifyWordHtml(inputHtml, options)
+
+      // Format with Prettier if requested
+      if (format) {
+        simplifiedHtml = await prettier.format(simplifiedHtml, {
+          parser: "html",
+          printWidth: 120,
+          tabWidth: 2,
+          useTabs: false,
+          htmlWhitespaceSensitivity: "ignore",
+        })
+      }
 
       // Determine output path
       let outputPath: string
@@ -224,6 +254,7 @@ prog
     "-H, --keep-image-hash",
     "Keep image hash in alinea markers for debugging",
   )
+  .option("-F, --format", "Format output HTML with Prettier")
   .option("-v, --verbose", "Verbose output")
   .action(async (input, options) => {
     process.exit(await simplifyWordHtmlFile(input, options))
@@ -248,6 +279,7 @@ prog
     "-H, --keep-image-hash",
     "Keep image hash in alinea markers for debugging",
   )
+  .option("-F, --format", "Format output HTML with Prettier")
   .option("-R, --recursive", "Process subdirectories recursively")
   .option(
     "-p, --pattern",

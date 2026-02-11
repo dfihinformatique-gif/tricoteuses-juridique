@@ -162,6 +162,119 @@ describe("simplifyWordHtml", () => {
   })
 
   /**
+   * Tests for cover page (first page) styling
+   * Example source: PRJLANR5L17B1906
+   */
+  describe("cover page styling", () => {
+    test("styles cover page title (assnatFARCouvTitre)", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFARCouvTitre">
+            Projet de loi de finances pour 2026
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain('class="cover-title"')
+      expect(output).toContain("Projet de loi de finances pour 2026")
+      expect(output).toContain(".cover-title {")
+    })
+
+    test("styles cover page subtitle (assnatFARCouvTitreD)", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFARCouvTitreD">
+            Projet de loi de finances pour 2026
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain('class="cover-subtitle"')
+      expect(output).toContain("Projet de loi de finances pour 2026")
+      expect(output).toContain(".cover-subtitle {")
+    })
+
+    test("styles cover page info (assnatFPFprem)", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFPFprem">
+            Constitution du 4 octobre 1958
+          </p>
+          <p class="assnatFPFprem">
+            Dix-septième législature
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain('class="cover-info"')
+      expect(output).toContain("Constitution du 4 octobre 1958")
+      expect(output).toContain("Dix-septième législature")
+      expect(output).toContain(".cover-info {")
+    })
+
+    test("styles cover page year (assnatFARCouvAnnee)", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFARCouvAnnee">
+            2026
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain('class="cover-year"')
+      expect(output).toContain("2026")
+      expect(output).toContain(".cover-year {")
+    })
+
+    test("full cover page with multiple elements", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFARCouvTitre">
+            Projet de loi de finances pour 2026
+          </p>
+          <p class="assnatFPFprem">
+            Assemblée nationale
+          </p>
+          <p class="assnatFPFprem">
+            Constitution du 4 octobre 1958
+          </p>
+          <p class="assnatFARCouvAnnee">
+            2026
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain('class="cover-title"')
+      expect(output).toContain('class="cover-info"')
+      expect(output).toContain('class="cover-year"')
+      // All cover page styles should be included
+      expect(output).toContain(".cover-title {")
+      expect(output).toContain(".cover-info {")
+      expect(output).toContain(".cover-year {")
+    })
+  })
+
+  /**
    * Tests for PLF (Projet de Loi de Finances) document format
    * Example source: PRJLANR5L17B1906
    * This format uses ordered lists (<ol>/<li>) instead of pastille images
@@ -302,6 +415,28 @@ describe("simplifyWordHtml", () => {
       expect(output).not.toMatch(/<li>\s*&#xa0;/)
     })
 
+    test("preserves center alignment on list items", () => {
+      const input = `
+        <html>
+        <body>
+          <ol>
+            <li style="text-align: center; font-family:Arial; font-size:7pt">Centered title</li>
+            <li style="font-family:Arial; font-size:7pt">Normal item</li>
+          </ol>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Center alignment should be preserved
+      expect(output).toContain(
+        '<li style="text-align: center">Centered title</li>',
+      )
+      // Non-centered li should not have style
+      expect(output).toMatch(/<li>Normal item<\/li>/)
+    })
+
     test("preserves large illustration images", () => {
       const input = `
         <html>
@@ -383,6 +518,1085 @@ describe("simplifyWordHtml", () => {
 
       expect(output).toContain("Word1 Word2")
       expect(output).not.toContain("Word1Word2")
+    })
+
+    test("converts assnatEmphasis class to italic (for bis, ter, quater, etc.)", () => {
+      const input = `
+        <html>
+        <body>
+          <p>
+            <span style="font-family:Marianne">article 792-0</span>
+            <span class="assnatEmphasis" style="font-family:Marianne">bis</span>
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // assnatEmphasis should be converted to <em>
+      expect(output).toContain("<em>bis</em>")
+    })
+
+    test("converts assnatStrongEmphasis class to bold (for emphasized text)", () => {
+      const input = `
+        <html>
+        <body>
+          <p>
+            <span class="assnatStrongEmphasis">Assemblée nationale</span>
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // assnatStrongEmphasis should be converted to <strong>
+      expect(output).toContain("<strong>Assemblée nationale</strong>")
+      // Should NOT be converted to <em>
+      expect(output).not.toContain("<em>Assemblée nationale</em>")
+    })
+  })
+
+  /**
+   * Tests for exposé des motifs styling
+   * Example source: PRJLANR5L17B1906
+   */
+  describe("exposé des motifs", () => {
+    test("styles expose des motifs title", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFPFexpogentitre1">
+            Exposé des motifs
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Title should have the expose-motifs-titre class
+      expect(output).toContain('class="expose-motifs-titre"')
+      expect(output).toContain("Exposé des motifs")
+    })
+
+    test("wraps expose des motifs text in styled container", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFPFexpogentitre1">
+            Exposé des motifs
+          </p>
+          <p class="assnatFPFexpogentexte">
+            Premier paragraphe de l'exposé.
+          </p>
+          <p class="assnatFPFexpogentexte">
+            Deuxième paragraphe de l'exposé.
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Should have expose-motifs container
+      expect(output).toContain('class="expose-motifs"')
+      // Content should be inside
+      expect(output).toContain("Premier paragraphe")
+      expect(output).toContain("Deuxième paragraphe")
+      // Should have CSS styles for expose-motifs
+      expect(output).toContain(".expose-motifs {")
+      expect(output).toContain("border-left:")
+    })
+
+    test("handles expose des motifs text inside tables", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFPFexpogentitre1">
+            Exposé des motifs
+          </p>
+          <table>
+            <tr>
+              <td>
+                <p class="assnatFPFexpogentexte">
+                  Texte dans une table.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Should extract text from table and wrap in container
+      expect(output).toContain('class="expose-motifs"')
+      expect(output).toContain("Texte dans une table")
+    })
+  })
+
+  /**
+   * Tests for table styling preservation
+   * Example source: PRJLANR5L17B1906
+   */
+  describe("table styling", () => {
+    test("preserves border styles on tables and cells", () => {
+      const input = `
+        <html>
+        <body>
+          <table style="width:100%; padding:0pt; border-collapse:collapse; font-size:12pt">
+            <tr>
+              <td style="width:494.9pt; border-left:1.5pt solid #0070b9; padding:0pt 0pt 0pt 3.25pt; vertical-align:middle; color:blue">
+                <p>Cell content</p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Table styles should be preserved
+      expect(output).toContain("border-collapse:collapse")
+      expect(output).toContain("width:100%")
+      // Cell border and padding should be preserved
+      expect(output).toContain("border-left:1.5pt solid #0070b9")
+      expect(output).toContain("padding:0pt 0pt 0pt 3.25pt")
+      expect(output).toContain("vertical-align:middle")
+      // Font-size and color should be removed (not table-relevant)
+      expect(output).not.toContain("font-size:12pt")
+      expect(output).not.toContain("color:blue")
+    })
+
+    test("preserves multiple border properties", () => {
+      const input = `
+        <html>
+        <body>
+          <table style="border:0.75pt solid #0070b9; padding:0pt">
+            <tr>
+              <td style="border-right:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:1.4pt">
+                <p>Content</p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain("border:0.75pt solid #0070b9")
+      expect(output).toContain("border-right:0.75pt solid #0070b9")
+      expect(output).toContain("border-bottom:0.75pt solid #0070b9")
+    })
+
+    test("removes class attributes from tables", () => {
+      const input = `
+        <html>
+        <body>
+          <table class="someWordClass" style="width:100%">
+            <tr class="rowClass">
+              <td class="cellClass" style="padding:5pt">Content</td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Classes should be removed
+      expect(output).not.toContain("someWordClass")
+      expect(output).not.toContain("rowClass")
+      expect(output).not.toContain("cellClass")
+      // But styles should be kept
+      expect(output).toContain("width:100%")
+      expect(output).toContain("padding:5pt")
+    })
+
+    test("unwraps styling tables that contain article titles", () => {
+      const input = `
+        <html>
+        <body>
+          <table style="width:100%; padding:0pt; border-collapse:collapse">
+            <tbody><tr>
+              <td style="width:497.5pt; border-left:0.75pt solid #0070b9; border-bottom:0.75pt solid #0070b9; padding:0pt 0pt 1.4pt 1.02pt; vertical-align:middle">
+                <h6>
+                  <span id="_Toc211281758"><strong>ARTICLE 4</strong> : <br>Prorogation en 2026 avec division par deux des taux</span>
+                </h6>
+              </td>
+            </tr>
+          </tbody></table>
+          <p>Content after table</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Table should be removed (unwrapped)
+      expect(output).not.toContain("<table")
+      expect(output).not.toContain("</table>")
+      expect(output).not.toContain("<tbody")
+      expect(output).not.toContain("<tr")
+      expect(output).not.toContain("<td")
+      // Content should be preserved
+      expect(output).toContain("ARTICLE 4")
+      expect(output).toContain("Prorogation en 2026")
+      expect(output).toContain("Content after table")
+      // Heading should be preserved (may have id attribute hoisted from inner span)
+      expect(output).toMatch(/<h6(\s|>)/)
+      // The id from the inner span should be hoisted to the heading
+      expect(output).toContain('id="_Toc211281758"')
+    })
+
+    test("keeps regular tables with multiple rows", () => {
+      const input = `
+        <html>
+        <body>
+          <table style="width:100%">
+            <tr>
+              <td style="border-left:0.75pt solid #0070b9">
+                <h6>Row 1</h6>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <p>Row 2</p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Table with multiple rows should be kept
+      expect(output).toContain("<table")
+      expect(output).toContain("</table>")
+    })
+
+    test("keeps tables with multiple cells per row", () => {
+      const input = `
+        <html>
+        <body>
+          <table style="width:100%">
+            <tr>
+              <td style="border-left:0.75pt solid #0070b9">
+                <h6>Cell 1</h6>
+              </td>
+              <td>
+                <p>Cell 2</p>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Table with multiple cells should be kept
+      expect(output).toContain("<table")
+      expect(output).toContain("</table>")
+    })
+
+    test("keeps tables without border styling even with single cell heading", () => {
+      const input = `
+        <html>
+        <body>
+          <table style="width:100%">
+            <tr>
+              <td style="padding:5pt">
+                <h6>Title without border styling</h6>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Table without border styling should be kept
+      expect(output).toContain("<table")
+      expect(output).toContain("</table>")
+    })
+  })
+
+  /**
+   * Tests for table of contents link preservation
+   * Example source: PRJLANR5L17B1906
+   */
+  describe("table of contents links", () => {
+    test("preserves _Toc anchor targets for TOC links", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatTOC1">
+            <a href="#_Toc211281745"><span class="assnatHyperlink">Exposé général des motifs</span></a>
+          </p>
+          <h1>
+            <a id="_Toc211281745"><span>Exposé général des motifs</span></a>
+          </h1>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // TOC link should be preserved
+      expect(output).toContain('href="#_Toc211281745"')
+      // Target anchor should be preserved (converted to span with id)
+      expect(output).toContain('id="_Toc211281745"')
+    })
+
+    test("preserves multiple TOC links and their targets", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatTOC6">
+            <a href="#_Toc211281754"><span>ARTICLE 1</span></a>
+          </p>
+          <p class="assnatTOC6">
+            <a href="#_Toc211281755"><span>ARTICLE 2</span></a>
+          </p>
+          <h6><a id="_Toc211281754"><span>ARTICLE 1</span></a></h6>
+          <h6><a id="_Toc211281755"><span>ARTICLE 2</span></a></h6>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // All TOC links should be preserved
+      expect(output).toContain('href="#_Toc211281754"')
+      expect(output).toContain('href="#_Toc211281755"')
+      // All target anchors should be preserved
+      expect(output).toContain('id="_Toc211281754"')
+      expect(output).toContain('id="_Toc211281755"')
+    })
+  })
+
+  /**
+   * Tests for hoisting span ids to parent elements
+   */
+  describe("span id hoisting", () => {
+    test("hoists id from span to parent when span is only child", () => {
+      const input = `
+        <html>
+        <body>
+          <p><span id="anchor123">Some text content</span></p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The id should be hoisted to the p element
+      expect(output).toContain('<p id="anchor123">Some text content</p>')
+      // Should not have a span with id inside p
+      expect(output).not.toContain('<span id="anchor123">')
+    })
+
+    test("hoists id from span to heading when span is only child", () => {
+      const input = `
+        <html>
+        <body>
+          <h1><span id="_Toc123456">Chapter Title</span></h1>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The id should be hoisted to the h1 element
+      expect(output).toContain('<h1 id="_Toc123456">Chapter Title</h1>')
+      expect(output).not.toContain('<span id="_Toc123456">')
+    })
+
+    test("does not hoist id when span has other attributes", () => {
+      const input = `
+        <html>
+        <body>
+          <p><span id="anchor123" class="highlight">Some text</span></p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The span should remain because it has a class attribute
+      expect(output).toContain('id="anchor123"')
+      // The p should not have the id
+      expect(output).not.toContain('<p id="anchor123">')
+    })
+
+    test("does not hoist id when parent already has an id", () => {
+      const input = `
+        <html>
+        <body>
+          <p id="existing"><span id="anchor123">Some text</span></p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Parent should keep its original id
+      expect(output).toContain('id="existing"')
+      // The span id should still be present somewhere
+      expect(output).toContain('id="anchor123"')
+    })
+
+    test("does not hoist id when span is not the only child", () => {
+      const input = `
+        <html>
+        <body>
+          <p>Prefix text <span id="anchor123">Some text</span> suffix text</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The span should remain because there's other content in the parent
+      expect(output).toContain('id="anchor123"')
+      expect(output).not.toContain('<p id="anchor123">')
+    })
+
+    test("hoists id in table cells", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><span id="cell_anchor">Cell content</span></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The id should be hoisted to the td element
+      expect(output).toContain('<td id="cell_anchor">Cell content</td>')
+      expect(output).not.toContain('<span id="cell_anchor">')
+    })
+
+    test("hoists id in list items", () => {
+      const input = `
+        <html>
+        <body>
+          <ol>
+            <li><span id="item_anchor">List item text</span></li>
+          </ol>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The id should be hoisted to the li element
+      expect(output).toContain('<li id="item_anchor">List item text</li>')
+      expect(output).not.toContain('<span id="item_anchor">')
+    })
+  })
+
+  /**
+   * Tests for bold formatting implied by CSS classes
+   */
+  describe("bold class handling", () => {
+    test("wraps content in strong when paragraph has assnatetatagr class", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatetatagr">A. Recettes fiscales</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Content should be wrapped in <strong>
+      expect(output).toContain("<strong>A. Recettes fiscales</strong>")
+    })
+
+    test("wraps content in strong when paragraph has assnatetatagrM class", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatetatagrM">493 186</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain("<strong>493 186</strong>")
+    })
+
+    test("wraps content in strong when paragraph has assnatetatagrgr class", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatetatagrgr">Recettes totales nettes</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain("<strong>Recettes totales nettes</strong>")
+    })
+
+    test("wraps content in strong when paragraph has assnatTableHeading class", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><p class="assnatTableHeading">Column Header</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain("<strong>Column Header</strong>")
+    })
+
+    test("does not double-wrap content already in strong", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatetatagr"><strong>Already bold</strong></p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Should not have nested strong tags
+      expect(output).toContain("<strong>Already bold</strong>")
+      expect(output).not.toContain("<strong><strong>")
+    })
+
+    test("preserves bold in table cells with bold classes", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><p class="assnatetatagr">Category A</p></td>
+              <td><p class="assnatetatagrM">1 000</p></td>
+            </tr>
+            <tr>
+              <td><p class="assnatetatalr">Regular row</p></td>
+              <td><p class="assnatetatalrM">500</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Bold classes should result in strong tags
+      expect(output).toContain("<strong>Category A</strong>")
+      expect(output).toContain("<strong>1 000</strong>")
+      // Non-bold classes should not have strong
+      expect(output).toContain("Regular row")
+      expect(output).not.toContain("<strong>Regular row</strong>")
+      expect(output).toContain("500")
+    })
+
+    test("applies right alignment from assnatetatagrM class", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatetatagrM">493 186</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Should have both bold and right alignment
+      expect(output).toContain("<strong>493 186</strong>")
+      expect(output).toContain('align="right"')
+    })
+
+    test("applies center alignment from assnatTableHeading class", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatTableHeading">Column Header</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Should have both bold and center alignment
+      expect(output).toContain("<strong>Column Header</strong>")
+      expect(output).toContain('align="center"')
+    })
+
+    test("applies right alignment from assnatligneTequilibre class", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatligneTequilibre">1 234 567</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain("<strong>1 234 567</strong>")
+      expect(output).toContain('align="right"')
+    })
+
+    test("explicit style alignment takes priority over class alignment", () => {
+      const input = `
+        <html>
+        <body>
+          <p class="assnatetatagrM" style="text-align: center">Override</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Style alignment should override class alignment
+      expect(output).toContain('align="center"')
+      expect(output).not.toContain('align="right"')
+    })
+
+    test("preserves alignment in table cells with different classes", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><p class="assnatetatagr">Left aligned bold</p></td>
+              <td><p class="assnatetatagrM">Right aligned bold</p></td>
+              <td><p class="assnatligneequilibrec7">Center bold</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // All should be bold
+      expect(output).toContain("<strong>Left aligned bold</strong>")
+      expect(output).toContain("<strong>Right aligned bold</strong>")
+      expect(output).toContain("<strong>Center bold</strong>")
+      // Check alignments (now on td since td/p are merged)
+      expect(output).toMatch(/<td[^>]*align="right"[^>]*>.*Right aligned bold/)
+      expect(output).toMatch(/<td[^>]*align="center"[^>]*>.*Center bold/)
+    })
+  })
+
+  /**
+   * Tests for merging td cells with their single p child
+   */
+  describe("td/p merging", () => {
+    test("merges td containing only a p element", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><p>Simple text</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The p should be removed, content directly in td
+      expect(output).toContain("<td>Simple text</td>")
+      expect(output).not.toContain("<td><p>")
+    })
+
+    test("transfers align attribute from p to td when merging", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><p class="assnatetatagrM">493 186</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The td should have the align attribute and the strong content
+      expect(output).toContain(
+        '<td align="right"><strong>493 186</strong></td>',
+      )
+      expect(output).not.toContain("<p")
+    })
+
+    test("transfers id attribute from p to td when merging", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><p id="cell_id">Content</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      expect(output).toContain('<td id="cell_id">Content</td>')
+      expect(output).not.toContain("<p")
+    })
+
+    test("does not merge when td has multiple children", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><p>First</p><p>Second</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Should keep the p elements
+      expect(output).toContain("<p>First</p>")
+      expect(output).toContain("<p>Second</p>")
+    })
+
+    test("does not merge when td contains non-p content", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td><strong>Bold text</strong></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Strong should remain directly in td
+      expect(output).toContain("<td><strong>Bold text</strong></td>")
+    })
+
+    test("merges th containing only a p element", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <th><p class="assnatTableHeading">Header</p></th>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The th should have the align and content without p
+      expect(output).toContain(
+        '<th align="center"><strong>Header</strong></th>',
+      )
+      expect(output).not.toContain("<p")
+    })
+
+    test("preserves cell align if already set when merging", () => {
+      const input = `
+        <html>
+        <body>
+          <table>
+            <tr>
+              <td style="text-align: left"><p class="assnatetatagrM">Value</p></td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The p's align should be used since td style is cleaned
+      expect(output).toContain('align="right"')
+      expect(output).toContain("<strong>Value</strong>")
+    })
+  })
+
+  /**
+   * Tests for large image preservation in position:absolute spans
+   * Example: cover page illustrations in PLF documents
+   */
+  describe("large image preservation", () => {
+    test("removes large background images with z-index:-65537", () => {
+      // Large images with z-index:-65537 are background/watermark images
+      // that cause layout issues and should be removed
+      const input = `
+        <html>
+        <body>
+          <p class="assnatFAR09Noir">
+            <span style="height:0pt; text-align:left; display:block; position:absolute; z-index:-65537">
+              <img src="data:image/png;base64,iVBORw0KGgo..." width="732" height="937" alt="" />
+            </span>
+            Texte après l'image
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Large background image with z-index:-65537 should be removed
+      expect(output).not.toContain('width="732"')
+      expect(output).not.toContain('height="937"')
+      // Text content should still be preserved
+      expect(output).toContain("Texte après l'image")
+    })
+
+    test("removes small images in position:absolute spans", () => {
+      const input = `
+        <html>
+        <body>
+          <p>
+            <span style="height:0pt; position:absolute; z-index:5">
+              <img src="data:image/png;base64,small..." width="45" height="31" alt="" />
+            </span>
+            Some text
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Small image (pastille) should be removed
+      expect(output).not.toContain('width="45"')
+      expect(output).not.toContain('height="31"')
+    })
+
+    test("unwraps large images from their span container", () => {
+      const input = `
+        <html>
+        <body>
+          <p>
+            <span style="height:0pt; position:absolute; z-index:-1">
+              <img src="data:image/png;base64,large..." width="500" height="400" alt="Cover" />
+            </span>
+          </p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Image should be present but not wrapped in span with position:absolute
+      expect(output).toContain('width="500"')
+      expect(output).toContain('alt="Cover"')
+      expect(output).not.toContain("position:absolute")
+    })
+
+    /**
+     * Tests for alignment-only classes (no bold)
+     */
+    describe("alignment-only class handling", () => {
+      test("applies right alignment from assnatetatalrM class (no bold)", () => {
+        const input = `
+          <html>
+          <body>
+            <p class="assnatetatalrM">500</p>
+          </body>
+          </html>
+        `
+
+        const output = simplifyWordHtml(input)
+
+        // Should have right alignment but no bold
+        expect(output).toContain('align="right"')
+        expect(output).toContain(">500<")
+        expect(output).not.toContain("<strong>500</strong>")
+      })
+
+      test("applies center alignment from assnatetatalrC class (no bold)", () => {
+        const input = `
+          <html>
+          <body>
+            <p class="assnatetatalrC">Centered text</p>
+          </body>
+          </html>
+        `
+
+        const output = simplifyWordHtml(input)
+
+        expect(output).toContain('align="center"')
+        expect(output).not.toContain("<strong>")
+      })
+
+      test("applies right alignment from assnattable-ligneD class", () => {
+        const input = `
+          <html>
+          <body>
+            <table>
+              <tr>
+                <td><p class="assnattable-ligneD">1 234</p></td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+
+        const output = simplifyWordHtml(input)
+
+        // After td/p merge, alignment should be on td
+        expect(output).toContain('<td align="right">1 234</td>')
+        expect(output).not.toContain("<strong>")
+      })
+
+      test("applies center alignment from assnattable-entete class", () => {
+        const input = `
+          <html>
+          <body>
+            <table>
+              <tr>
+                <td><p class="assnattable-entete">Header</p></td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+
+        const output = simplifyWordHtml(input)
+
+        expect(output).toContain('<td align="center">Header</td>')
+        expect(output).not.toContain("<strong>")
+      })
+
+      test("applies right alignment from assnatligneequilibre class", () => {
+        const input = `
+          <html>
+          <body>
+            <p class="assnatligneequilibre">12 345</p>
+          </body>
+          </html>
+        `
+
+        const output = simplifyWordHtml(input)
+
+        expect(output).toContain('align="right"')
+        expect(output).not.toContain("<strong>")
+      })
+
+      test("differentiates bold vs non-bold classes in same table", () => {
+        const input = `
+          <html>
+          <body>
+            <table>
+              <tr>
+                <td><p class="assnatetatagr">Bold label</p></td>
+                <td><p class="assnatetatagrM">Bold right</p></td>
+                <td><p class="assnatetatalrM">Normal right</p></td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+
+        const output = simplifyWordHtml(input)
+
+        // Bold classes should have strong
+        expect(output).toContain("<strong>Bold label</strong>")
+        expect(output).toContain("<strong>Bold right</strong>")
+        // Non-bold class should not have strong
+        expect(output).not.toContain("<strong>Normal right</strong>")
+        expect(output).toContain(">Normal right<")
+        // Alignments
+        expect(output).toMatch(
+          /<td[^>]*align="right"[^>]*>.*<strong>Bold right<\/strong>/,
+        )
+        expect(output).toMatch(/<td[^>]*align="right"[^>]*>Normal right/)
+      })
+    })
+  })
+
+  describe("background/watermark image removal", () => {
+    test("removes images with z-index:-65537", () => {
+      const input = `
+        <html>
+        <body>
+          <span style="position:absolute;z-index:-65537">
+            <img width="200" height="150" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="/>
+          </span>
+          <p>Normal content that should be preserved.</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // The background image span should be completely removed
+      expect(output).not.toContain("z-index:-65537")
+      expect(output).not.toContain(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk",
+      )
+      // Normal content should still be present
+      expect(output).toContain("Normal content that should be preserved.")
+    })
+
+    test("preserves other absolutely positioned elements", () => {
+      const input = `
+        <html>
+        <body>
+          <span style="position:absolute;z-index:-65537">
+            <img width="200" height="150" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA"/>
+          </span>
+          <span style="position:absolute;z-index:1">
+            <img width="45" height="31" src="data:image/png;base64,alinea"/>
+          </span>
+          <p>Content</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // Background image should be removed
+      expect(output).not.toContain("z-index:-65537")
+      expect(output).not.toContain("iVBORw0KGgoAAAANSUhEUgAAAAUA")
+      // Other absolutely positioned elements may be processed differently
+      // (either converted to alinea markers or removed based on size)
+      expect(output).toContain("Content")
     })
   })
 })

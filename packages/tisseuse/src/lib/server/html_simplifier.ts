@@ -6,7 +6,7 @@ import type { Element } from "domhandler"
  * Regex to extract z-index from style attribute
  * The z-index typically represents the alinea number (global in the document)
  */
-const ZINDEX_REGEX = /z-index:\s*(\d+)/i
+const ZINDEX_REGEX = /z-index:\s*(-?\d+)/i
 
 /**
  * Interface to track alinea markers with their global z-index
@@ -44,6 +44,8 @@ const ALINEA_IMAGE_HASHES: Record<string, number> = {
   "3897ae4eea49099dacd75569920c84b7": 5,
   // Alinéa 6
   "22e32fa2c5b5e9aef2127fc1156c162a": 6,
+  // Alinéa 7
+  "13134f3d3317cec32d544028c3978262": 7,
   // Alinéa 8
   ba115410998ebd9c64824326754533a4: 8,
   // Alinéa 9
@@ -366,7 +368,39 @@ const ALINEA_STYLES = `
   border-radius: 1em;
   vertical-align: middle;
 }
+`
 
+const LIST_STYLES = `
+ol {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5em 0;
+  counter-reset: list-counter;
+}
+ol > li {
+  counter-increment: list-counter;
+  margin: 0.3em 0;
+  padding-left: 2.3em;
+  position: relative;
+}
+ol > li::before {
+  content: counter(list-counter);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5em;
+  height: 1.5em;
+  padding: 0 0.3em;
+  font-size: 0.75em;
+  font-weight: bold;
+  color: #555;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 1em;
+  position: absolute;
+  left: 0;
+  top: 0.1em;
+}
 `
 
 /**
@@ -525,6 +559,26 @@ export function simplifyWordHtml(
   // Remove style and script elements
   $("style, script, meta, link").remove()
 
+  // Remove header, footer, and page-break related elements
+  $(
+    ".assnatHeader, .assnatFooter, .assnatHeaderLeft, .assnatHeaderandFooter",
+  ).remove()
+  $(
+    ".assnatFARSautApres, .assnatFARSautAvant, .assnatFARSautPageNiv0, .assnatFARSautPageNiv1, .assnatFARSautPageNiv1PG",
+  ).remove()
+
+  // Remove page header tables (tables containing assnatFARTT08Bleu class - page title with page number)
+  $(".assnatFARTT08Bleu").each((_, el) => {
+    // Find the parent table and remove it
+    const $table = $(el).closest("table")
+    if ($table.length > 0) {
+      $table.remove()
+    }
+  })
+
+  // Remove br elements with page-break styles
+  $('br[style*="page-break"]').remove()
+
   // Collect alinea markers with their global z-index
   // We'll recalculate them relative to each article later
   const alineaMarkers: AlineaMarker[] = []
@@ -559,8 +613,10 @@ export function simplifyWordHtml(
       // Check if this is a pastille image (small, positioned to the left)
       if (
         imgAttrs &&
-        imgAttrs.width === "45" &&
-        (imgAttrs.height === "31" || imgAttrs.height === "30") &&
+        ((imgAttrs.width === "45" &&
+          (imgAttrs.height === "31" || imgAttrs.height === "30")) ||
+          (parseInt(imgAttrs.width || "0", 10) < 50 &&
+            parseInt(imgAttrs.height || "0", 10) < 50)) &&
         style.includes("position:absolute")
       ) {
         // Extract z-index which represents the alinea number (global)
@@ -612,8 +668,21 @@ export function simplifyWordHtml(
     }
   })
 
-  // Remove remaining images (typically base64 logos in Word documents)
-  $("img").remove()
+  // Remove small images (logos, icons) but keep large illustration images
+  $("img").each((_, img) => {
+    const $img = $(img)
+    const width = parseInt($img.attr("width") || "0", 10)
+    const height = parseInt($img.attr("height") || "0", 10)
+
+    // Keep images that are large enough to be illustrations (> 100px in both dimensions)
+    // Remove small images (logos, decorative elements, pastilles that weren't alinea markers)
+    if (width < 100 || height < 100) {
+      $img.remove()
+    } else {
+      // Clean up style attribute but keep src, width, height, alt
+      $img.removeAttr("style").removeAttr("class")
+    }
+  })
 
   // Remove Word-specific elements that are just for layout
   // (pastille spans have already been processed above)
@@ -713,7 +782,14 @@ export function simplifyWordHtml(
         $span.removeAttr("style")
       } else {
         // No formatting and no meaningful class - unwrap the span
-        $span.replaceWith($span.html() || "")
+        // Preserve spaces by replacing empty spans with a space if they contain whitespace
+        const innerHtml = $span.html() || ""
+        if (innerHtml.trim() === "" && innerHtml.length > 0) {
+          // Span contains only whitespace - preserve a single space
+          $span.replaceWith(" ")
+        } else {
+          $span.replaceWith(innerHtml)
+        }
       }
     })
 
@@ -826,6 +902,34 @@ export function simplifyWordHtml(
     $el.removeAttr("style").removeAttr("class")
   })
 
+  // Process lists - keep structure but remove Word styling (font-size, color, etc.)
+  $("ol, ul").each((_, el) => {
+    const $el = $(el)
+    // Keep the start attribute for ordered lists and set counter-reset via inline style
+    const start = $el.attr("start")
+    $el.removeAttr("style").removeAttr("class")
+    if (start) {
+      const startNum = parseInt(start, 10)
+      if (!isNaN(startNum) && startNum > 1) {
+        // Set counter-reset to start - 1 so first li shows correct number
+        $el.attr("style", `counter-reset: list-counter ${startNum - 1}`)
+      }
+      $el.attr("start", start)
+    }
+  })
+
+  $("li").each((_, el) => {
+    const $el = $(el)
+    $el.removeAttr("style").removeAttr("class")
+
+    // Remove leading nbsp characters from list item content
+    const html = $el.html() || ""
+    const cleanedHtml = html.replace(/^(\s|&#xa0;|&#160;|\u00a0)+/, "")
+    if (cleanedHtml !== html) {
+      $el.html(cleanedHtml)
+    }
+  })
+
   // Now recalculate alinea numbers relative to each article
   // Articles are marked by h6 headings (from assnat9ArticleNum class)
   // Within each article, alineas should be numbered starting from 1
@@ -838,11 +942,19 @@ export function simplifyWordHtml(
   // Get the body content
   const bodyHtml = $("body").html() || $.html()
 
-  // Check if there are any alinea markers - if so, add the styles
+  // Check if there are any alinea markers or lists - if so, add the styles
   const hasAlineas = bodyHtml.includes('class="alinea')
-  let result = hasAlineas
-    ? `<style>${ALINEA_STYLES}</style>\n${bodyHtml}`
-    : bodyHtml
+  const hasLists = $("ol").length > 0
+
+  let styles = ""
+  if (hasAlineas) {
+    styles += ALINEA_STYLES
+  }
+  if (hasLists) {
+    styles += LIST_STYLES
+  }
+
+  let result = styles ? `<style>${styles}</style>\n${bodyHtml}` : bodyHtml
 
   // Clean up whitespace
   result = result
@@ -954,9 +1066,12 @@ function recalculateAlineaNumbers(
         } else {
           // Unknown hash - use the z-index as the alinea number
           // In most PLF/DECL documents, the z-index corresponds directly to the alinea number
-          // This handles the many high-numbered alineas (100+) without needing to maintain
-          // a complete hash table
-          alineaNumber = globalZIndex > 0 ? globalZIndex : 1
+          // In some recent documents, it starts at -65537 for alinéa 1
+          if (globalZIndex <= -65000) {
+            alineaNumber = globalZIndex + 65538
+          } else {
+            alineaNumber = globalZIndex > 0 ? globalZIndex : 1
+          }
         }
       }
 
@@ -993,21 +1108,22 @@ function recalculateAlineaNumbers(
 /**
  * Merge consecutive identical formatting tags
  * e.g., <strong>foo</strong><strong>bar</strong> -> <strong>foobar</strong>
+ * Preserves spaces between tags
  */
 function mergeConsecutiveFormatting(html: string): string {
   let result = html
 
-  // Merge consecutive strong tags
-  result = result.replace(/<\/strong>\s*<strong>/gi, "")
+  // Merge consecutive strong tags, preserving any space between them
+  result = result.replace(/<\/strong>(\s*)<strong>/gi, "$1")
 
-  // Merge consecutive em tags
-  result = result.replace(/<\/em>\s*<em>/gi, "")
+  // Merge consecutive em tags, preserving any space between them
+  result = result.replace(/<\/em>(\s*)<em>/gi, "$1")
 
-  // Merge consecutive sup tags
-  result = result.replace(/<\/sup>\s*<sup>/gi, "")
+  // Merge consecutive sup tags, preserving any space between them
+  result = result.replace(/<\/sup>(\s*)<sup>/gi, "$1")
 
-  // Merge consecutive sub tags
-  result = result.replace(/<\/sub>\s*<sub>/gi, "")
+  // Merge consecutive sub tags, preserving any space between them
+  result = result.replace(/<\/sub>(\s*)<sub>/gi, "$1")
 
   return result
 }

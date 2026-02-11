@@ -66,6 +66,7 @@
     "@types/node": "^24.8.1",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "@typescript-eslint/parser": "^8.46.1",
+    "cheerio": "^1.2.0",
     "dedent-js": "^1.0.1",
     "dotenv": "^17.2.2",
     "eslint": "^9.38.0",

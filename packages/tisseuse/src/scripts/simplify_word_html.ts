@@ -16,8 +16,6 @@ async function simplifyWordHtmlFile(
     "convert-nbsp": convertNbsp,
     "keep-alignment": keepAlignment,
     "keep-empty": keepEmpty,
-    "relative-alinea": relativeAlinea,
-    "keep-image-hash": keepImageHash,
     format,
     verbose,
   }: {
@@ -26,8 +24,6 @@ async function simplifyWordHtmlFile(
     "convert-nbsp"?: boolean
     "keep-alignment"?: boolean
     "keep-empty"?: boolean
-    "relative-alinea"?: boolean
-    "keep-image-hash"?: boolean
     format?: boolean
     verbose?: boolean
   },
@@ -53,8 +49,6 @@ async function simplifyWordHtmlFile(
     keepAlignment: keepAlignment ?? true,
     convertNbsp: convertNbsp ?? false,
     removeEmptyParagraphs: !keepEmpty,
-    relativeAlineaNumbers: relativeAlinea ?? false,
-    keepImageHash: keepImageHash ?? false,
   }
 
   let simplifiedHtml = fullDocument
@@ -113,8 +107,6 @@ async function simplifyWordHtmlDirectory(
     "convert-nbsp": convertNbsp,
     "keep-alignment": keepAlignment,
     "keep-empty": keepEmpty,
-    "relative-alinea": relativeAlinea,
-    "keep-image-hash": keepImageHash,
     format,
     recursive,
     pattern,
@@ -125,8 +117,6 @@ async function simplifyWordHtmlDirectory(
     "convert-nbsp"?: boolean
     "keep-alignment"?: boolean
     "keep-empty"?: boolean
-    "relative-alinea"?: boolean
-    "keep-image-hash"?: boolean
     format?: boolean
     recursive?: boolean
     pattern?: string
@@ -170,8 +160,6 @@ async function simplifyWordHtmlDirectory(
     keepAlignment: keepAlignment ?? true,
     convertNbsp: convertNbsp ?? false,
     removeEmptyParagraphs: !keepEmpty,
-    relativeAlineaNumbers: relativeAlinea ?? false,
-    keepImageHash: keepImageHash ?? false,
   }
 
   let processed = 0
@@ -246,14 +234,6 @@ prog
     "Keep alignment attributes on paragraphs (default: true)",
   )
   .option("-e, --keep-empty", "Keep empty paragraphs")
-  .option(
-    "-r, --relative-alinea",
-    "Use relative alinea numbering (1, 2, 3...) instead of original document numbers",
-  )
-  .option(
-    "-H, --keep-image-hash",
-    "Keep image hash in alinea markers for debugging",
-  )
   .option("-F, --format", "Format output HTML with Prettier")
   .option("-v, --verbose", "Verbose output")
   .action(async (input, options) => {
@@ -271,14 +251,6 @@ prog
     "Keep alignment attributes on paragraphs (default: true)",
   )
   .option("-e, --keep-empty", "Keep empty paragraphs")
-  .option(
-    "--relative-alinea",
-    "Use relative alinea numbering (1, 2, 3...) instead of original document numbers",
-  )
-  .option(
-    "-H, --keep-image-hash",
-    "Keep image hash in alinea markers for debugging",
-  )
   .option("-F, --format", "Format output HTML with Prettier")
   .option("-R, --recursive", "Process subdirectories recursively")
   .option(

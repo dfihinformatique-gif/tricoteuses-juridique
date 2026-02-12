@@ -383,8 +383,21 @@ function updateStateTextId({
     case "ARRETE":
     case "CIRCULAIRE":
     case "CONVENTION":
-    case "DECRET_LOI":
+    case "DECRET_LOI": {
+      // TODO
+      delete state.textId
+      break
+    }
+
+    case "ARRETEURO":
+    case "AVISEURO":
+    case "DECISION_EURO":
+    case "DECLARATIONEURO":
+    case "DELIBERATIONEURO":
     case "DIRECTIVE_EURO":
+    case "INFORMATIONEURO":
+    case "INSTRUCTIONEURO":
+    case "LETTREEURO":
     case "REGLEMENTEUROPEEN": {
       // TODO
       delete state.textId

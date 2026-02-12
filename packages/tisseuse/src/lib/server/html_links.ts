@@ -1,15 +1,14 @@
 import { escapeHtml } from "@tricoteuses/legifrance"
 import fs from "fs-extra"
+import type { Sql } from "postgres"
 
 import { assertNever } from "$lib/asserts.js"
 import { newLegifranceObjectCache } from "$lib/cache.js"
-import { urlFromLegalId } from "$lib/links.js"
+import { urlFromLegalId, type LinkType } from "$lib/links.js"
 import {
   getOrLoadArticle,
   getOrLoadSectionTa,
 } from "$lib/loaders/legifrance.js"
-import config from "$lib/server/config.js"
-import { europeDb, legiDb } from "$lib/server/databases/index.js"
 import { extractTextLinks } from "$lib/extractors/links.js"
 import {
   readTransformation,
@@ -36,7 +35,6 @@ type OutputByType = Partial<
 >
 type OutputType = (typeof outputTypes)[number]
 
-const { linkBaseUrl, linkType } = config
 const outputTypes = ["links", "links_or_references", "references"] as const
 
 function addExternalLinkToOutputs({
@@ -81,6 +79,7 @@ function addExternalLinkToOutputs({
 export async function addLinksOrReferencesToHtmlFile({
   date,
   defaultTextId,
+  europeDb,
   htmlFilePath,
   htmlTransformationsInputDir,
   htmlTransformationsOutputDir,
@@ -88,6 +87,9 @@ export async function addLinksOrReferencesToHtmlFile({
   htmlWithLinksOrReferencesFilePath,
   htmlWithLinksTransformationsOutputDir,
   htmlWithReferencesFilePath,
+  legiDb,
+  linkBaseUrl,
+  linkType,
   logIgnoredReferencesTypes,
   logPartialReferences,
   logReferences,
@@ -95,6 +97,7 @@ export async function addLinksOrReferencesToHtmlFile({
 }: {
   date: string
   defaultTextId?: string
+  europeDb: Sql
   htmlFilePath: string
   htmlTransformationsInputDir?: string
   htmlTransformationsOutputDir?: string
@@ -102,6 +105,9 @@ export async function addLinksOrReferencesToHtmlFile({
   htmlWithLinksOrReferencesFilePath?: string
   htmlWithLinksTransformationsOutputDir?: string
   htmlWithReferencesFilePath?: string
+  legiDb: Sql
+  linkBaseUrl: string
+  linkType: LinkType
   logIgnoredReferencesTypes?: boolean
   logPartialReferences?: boolean
   logReferences?: boolean

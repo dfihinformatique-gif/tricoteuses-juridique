@@ -153,14 +153,14 @@ const loadDocumentPageInfos = async (
     }
 
     let documentTransformation: Transformation | undefined = undefined
-    const documentTransformationPath = path.join(
+    const documentTransformationsDir = path.join(
       enrichedDocumentDir,
-      documentFilename.replace(/\.html$/, "_transformation"),
+      documentFilename.replace(/\.html$/, "_transformations"),
     )
-    if (transformation && (await fs.pathExists(documentTransformationPath))) {
+    if (transformation && (await fs.pathExists(documentTransformationsDir))) {
       documentTransformation = readTransformation(
         documentHtml,
-        documentTransformationPath,
+        documentTransformationsDir,
       )
       if (documentSegmentation !== undefined) {
         // Add table of contents segmentation as a first transformation.

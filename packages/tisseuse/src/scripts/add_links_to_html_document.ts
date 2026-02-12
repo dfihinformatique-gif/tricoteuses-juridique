@@ -1,6 +1,10 @@
 import sade from "sade"
 
-import { addLinksOrReferencesToHtmlFile } from "$lib/server/html_links"
+import { addLinksOrReferencesToHtmlFile } from "$lib/server"
+import config from "$lib/server/config.js"
+import { europeDb, legiDb } from "$lib/server/databases/index.js"
+
+const { linkBaseUrl, linkType } = config
 
 async function addLinksToHtmlDocument(
   inputDocumentPath: string,
@@ -41,6 +45,7 @@ async function addLinksToHtmlDocument(
     await addLinksOrReferencesToHtmlFile({
       date,
       defaultTextId,
+      europeDb,
       htmlFilePath: inputDocumentPath,
       htmlTransformationsInputDir,
       htmlTransformationsOutputDir,
@@ -48,6 +53,9 @@ async function addLinksToHtmlDocument(
       htmlWithLinksOrReferencesFilePath,
       htmlWithLinksTransformationsOutputDir,
       htmlWithReferencesFilePath,
+      legiDb,
+      linkBaseUrl,
+      linkType,
       logIgnoredReferencesTypes,
       logPartialReferences,
       logReferences,

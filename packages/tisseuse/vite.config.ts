@@ -27,7 +27,12 @@ export default defineConfig({
       external: [
         // Node built-ins
         "node:assert",
+        "node:child_process",
+        "node:crypto",
+        "node:fs",
+        "node:os",
         "node:path",
+        "node:url",
         // Dependencies from package.json
         "dotenv",
         "fs-extra",

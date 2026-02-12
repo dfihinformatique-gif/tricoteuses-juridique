@@ -9,11 +9,15 @@ import assert from "node:assert"
 import path from "node:path"
 import sade from "sade"
 
-import { addLinksOrReferencesToHtmlFile } from "$lib/server/html_links.js"
 import {
+  addLinksOrReferencesToHtmlFile,
   addPositionsToTableOfContentsFile,
   simplifiedHtmlBillFileToTableOfContentsFile,
 } from "$lib/server"
+import config from "$lib/server/config.js"
+import { europeDb, legiDb } from "$lib/server/databases/index.js"
+
+const { linkBaseUrl, linkType } = config
 
 async function enrichAssembleeDocuments({
   commit,
@@ -121,6 +125,7 @@ async function enrichAssembleeDocuments({
       await addLinksOrReferencesToHtmlFile({
         date,
         // defaultTextId,
+        europeDb,
         htmlFilePath,
         htmlWithLinksFilePath,
         htmlWithLinksOrReferencesFilePath: path.join(
@@ -132,6 +137,9 @@ async function enrichAssembleeDocuments({
           enrichedDocumentOrDivisionFilesDir,
           "dyn-opendata_avec_references.html",
         ),
+        legiDb,
+        linkBaseUrl,
+        linkType,
         // logIgnoredReferencesTypes,
         // logPartialReferences,
         // logReferences,

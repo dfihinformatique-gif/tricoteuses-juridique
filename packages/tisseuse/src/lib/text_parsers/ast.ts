@@ -218,7 +218,16 @@ export const compoundReferencesSeparators = [
 ] as const
 
 export const europeanLawNatures = [
+  "ARRETEEURO",
+  "ARRETEURO",
+  "AVISEURO",
+  "DECISION_EURO",
+  "DECLARATIONEURO",
+  "DELIBERATIONEURO",
   "DIRECTIVE_EURO",
+  "INFORMATIONEURO",
+  "INSTRUCTIONEURO",
+  "LETTREEURO",
   "REGLEMENTEUROPEEN",
 ] as const
 

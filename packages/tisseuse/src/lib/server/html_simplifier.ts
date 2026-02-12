@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio"
-import * as crypto from "crypto"
 import type { Element } from "domhandler"
+import * as crypto from "node:crypto"
 
 import { alineaImageHashes } from "./alinea_image_hashes"
 
@@ -262,11 +262,6 @@ export interface SimplifyHtmlOptions {
   convertNbsp?: boolean
   /** Remove empty paragraphs (default: true) */
   removeEmptyParagraphs?: boolean
-  /** Keep image hash in alinea markers for debugging (default: false) */
-  keepImageHash?: boolean
-  /** Use relative alinea numbering within each article (1, 2, 3...) instead of
-   * absolute numbers from the original document (default: false) */
-  relativeAlineaNumbers?: boolean
 }
 
 /**
@@ -1071,14 +1066,8 @@ export function simplifyWordHtml(
   // Hoist span ids to parent elements when appropriate
   hoistSpanIds($)
 
-  // Now recalculate alinea numbers relative to each article
-  // Articles are marked by h6 headings (from assnat9ArticleNum class)
-  // Within each article, alineas should be numbered starting from 1
-  recalculateAlineaNumbers(
-    $,
-    options.keepImageHash ?? false,
-    options.relativeAlineaNumbers ?? false,
-  )
+  // Recalculate alinea numbers using exclusively the alineaImageHashes mapping
+  recalculateAlineaNumbers($)
 
   // Get the body content
   const bodyHtml = $("body").html() || $.html()
@@ -1245,66 +1234,41 @@ function hoistSpanIds($: cheerio.CheerioAPI): void {
   })
 }
 
-function recalculateAlineaNumbers(
-  $: cheerio.CheerioAPI,
-  keepImageHash: boolean,
-  relativeNumbering: boolean,
-): void {
+function recalculateAlineaNumbers($: cheerio.CheerioAPI): void {
   // Get all elements in document order
   const body = $("body")
   if (body.length === 0) return
 
-  // Find all alinea markers and h6 headings
-  const allElements = body.find("h6, span.alinea[data-marker-id]")
+  // Find all alinea markers
+  const allElements = body.find("span.alinea[data-marker-id]")
 
-  // Track state for duplicate detection and relative numbering
+  // Track state for duplicate detection
   let lastAlineaNumber = -1
-  let relativeCounter = 0
 
   allElements.each((_, el) => {
     const $el = $(el)
 
-    if (el.tagName?.toLowerCase() === "h6") {
-      // New article starts - reset trackers
-      lastAlineaNumber = -1
-      relativeCounter = 0
-    } else if ($el.hasClass("alinea") && $el.attr("data-marker-id")) {
+    if ($el.hasClass("alinea") && $el.attr("data-marker-id")) {
       // This is an alinea marker
       const imageHash = $el.attr("data-image-hash")
-      const globalZIndex = parseInt($el.attr("data-global-zindex") || "0", 10)
 
-      let alineaNumber: number
+      let alineaNumber: number | undefined
 
-      if (relativeNumbering) {
-        // Relative mode: sequential numbering within each article
-        relativeCounter++
-        alineaNumber = relativeCounter
-      } else {
-        // Absolute mode: use the image hash as the source of truth
-        if (imageHash && alineaImageHashes[imageHash] !== undefined) {
-          // Known hash - use the predefined alinea number
-          alineaNumber = alineaImageHashes[imageHash]
-        } else {
-          // Unknown hash - use the z-index as the alinea number
-          // In most PLF/DECL documents, the z-index corresponds directly to the alinea number
-          // In some recent documents, it starts at -65537 for alinéa 1
-          if (globalZIndex <= -65000) {
-            alineaNumber = globalZIndex + 65538
-          } else {
-            alineaNumber = globalZIndex > 0 ? globalZIndex : 1
-          }
-        }
+      // Use exclusively the alineaImageHashes mapping
+      if (imageHash && alineaImageHashes[imageHash] !== undefined) {
+        alineaNumber = alineaImageHashes[imageHash]
+      }
+
+      if (alineaNumber === undefined) {
+        // Unknown hash - remove the marker
+        $el.remove()
+        return
       }
 
       // Skip duplicates (same alinea number as previous, possibly from del/ins remnants)
-      // Note: In relative mode, duplicates shouldn't occur, but we check anyway
       if (alineaNumber === lastAlineaNumber) {
         // Remove duplicate marker
         $el.remove()
-        // In relative mode, decrement the counter since we removed this marker
-        if (relativeNumbering) {
-          relativeCounter--
-        }
         return
       }
 
@@ -1319,9 +1283,7 @@ function recalculateAlineaNumbers(
       // Clean up temporary attributes
       $el.removeAttr("data-marker-id")
       $el.removeAttr("data-global-zindex")
-      if (!keepImageHash) {
-        $el.removeAttr("data-image-hash")
-      }
+      $el.removeAttr("data-image-hash")
     }
   })
 }

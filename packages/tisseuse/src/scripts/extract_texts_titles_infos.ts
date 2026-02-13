@@ -119,6 +119,14 @@ async function extractTextsNames(): Promise<number> {
           break
         }
 
+        case "Loi des 2-17 mars 1791 portant suspension de tous les droits d'aides, de toutes les maîtrises et jurandes et établissement des droits de patente (décret d'Allarde)": {
+          otherTitles.add(title)
+          titlesToParse.add(
+            "Loi du 17 mars 1791 portant suspension de tous les droits d'aides, de toutes les maîtrises et jurandes et établissement des droits de patente (décret d'Allarde)",
+          )
+          break
+        }
+
         case "Loi n° 77-1423 du 27 décembre 1977 77-1423 du 27 décembre 1977 autorisant l'approbation de la convention sur le commerce international des espèces de faune et de flore sauvages menacées d'extinction, ensemble quatre annexes, ouverte à la signature à Washington jusqu'au 30 avril 1973 et, après cette date, à Berne jusqu'au 31 décembre 1974": {
           titlesToParse.add(
             "Loi n° 77-1423 du 27 décembre 1977 autorisant l'approbation de la convention sur le commerce international des espèces de faune et de flore sauvages menacées d'extinction, ensemble quatre annexes, ouverte à la signature à Washington jusqu'au 30 avril 1973 et, après cette date, à Berne jusqu'au 31 décembre 1974",

@@ -38,7 +38,7 @@ runs:
         EUROPE_DB_HOST="${{ vars.DB_HOST_RW }}"
         EUROPE_DB_PORT=${{ vars.DB_PORT }}
         EUROPE_DB_USER="europe_rw"
-        EUROPE_DB_PASSWORD="${{ inputs.CANUTES_DB_PASSWORD_RW }}"
+        EUROPE_DB_PASSWORD="${{ inputs.EUROPE_DB_PASSWORD_RW }}"
 
         # Légifrance Anomalies PostgreSQL database configuration
         LEGI_ANOMALIES_DB_NAME="canutes_anomalies"

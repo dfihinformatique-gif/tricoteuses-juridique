@@ -39,7 +39,7 @@ runs:
         EUROPE_DB_HOST="${{ vars.DB_HOST_RO }}"
         EUROPE_DB_PORT=${{ vars.DB_PORT }}
         EUROPE_DB_USER="europe_ro"
-        EUROPE_DB_PASSWORD="${{ inputs.CANUTES_DB_PASSWORD_RO }}"
+        EUROPE_DB_PASSWORD="${{ inputs.EUROPE_DB_PASSWORD_RO }}"
 
         # Légifrance PostgreSQL database configuration
         LEGI_DB_NAME="canutes_legifrance"

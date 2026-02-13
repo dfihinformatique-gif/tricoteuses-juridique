@@ -16,6 +16,7 @@ jobs:
         uses: ./.forgejo/actions/setup_tisseuse
         with:
           ASSEMBLEE_DB_PASSWORD_RW: "${{ secrets.ASSEMBLEE_DB_PASSWORD_RW }}"
+          EUROPE_DB_PASSWORD_RW: "${{ secrets.EUROPE_DB_PASSWORD_RW }}"
           LEGI_ANOMALIES_DB_PASSWORD_RW: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD_RW }}"
           LEGI_DB_PASSWORD_RW: "${{ secrets.LEGI_DB_PASSWORD_RW }}"
           TISSEUSE_DB_PASSWORD_RW: "${{ secrets.TISSEUSE_DB_PASSWORD_RW }}"
@@ -27,6 +28,7 @@ jobs:
       #   uses: ./.forgejo/actions/setup_exploratrice
       #   with:
       #     ASSEMBLEE_DB_PASSWORD_RO: "${{ secrets.ASSEMBLEE_DB_PASSWORD_RO }}"
+      #     EUROPE_DB_PASSWORD_RW: "${{ secrets.EUROPE_DB_PASSWORD_RO }}"
       #     LEGI_DB_PASSWORD_RO: "${{ secrets.LEGI_DB_PASSWORD_RO }}"
       #     TISSEUSE_DB_PASSWORD_RO: "${{ secrets.TISSEUSE_DB_PASSWORD_RO }}"
       # EMFILE: too many open files, watch '/workspace/logiciels/tricoteuses-juridique/packages/tisseuse/package.json'
@@ -54,6 +56,7 @@ jobs:
     uses: ./.forgejo/workflows/update_tisseuse_database.yml
     secrets:
       ASSEMBLEE_DB_PASSWORD_RW: "${{ secrets.ASSEMBLEE_DB_PASSWORD_RW }}"
+      EUROPE_DB_PASSWORD_RW: "${{ secrets.EUROPE_DB_PASSWORD_RW }}"
       LEGI_ANOMALIES_DB_PASSWORD_RW: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD_RW }}"
       LEGI_DB_PASSWORD_RW: "${{ secrets.LEGI_DB_PASSWORD_RW }}"
       TISSEUSE_DB_PASSWORD_RW: "${{ secrets.TISSEUSE_DB_PASSWORD_RW }}"

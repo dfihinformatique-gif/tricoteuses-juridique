@@ -15,6 +15,7 @@ jobs:
         uses: ./.forgejo/actions/setup_tisseuse
         with:
           ASSEMBLEE_DB_PASSWORD_RW: "${{ secrets.ASSEMBLEE_DB_PASSWORD_RW }}"
+          EUROPE_DB_PASSWORD_RW: "${{ secrets.EUROPE_DB_PASSWORD_RW }}"
           LEGI_ANOMALIES_DB_PASSWORD_RW: "${{ secrets.LEGI_ANOMALIES_DB_PASSWORD_RW }}"
           LEGI_DB_PASSWORD_RW: "${{ secrets.LEGI_DB_PASSWORD_RW }}"
           TISSEUSE_DB_PASSWORD_RW: "${{ secrets.TISSEUSE_DB_PASSWORD_RW }}"

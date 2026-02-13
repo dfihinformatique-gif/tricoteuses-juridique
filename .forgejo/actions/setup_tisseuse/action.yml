@@ -4,6 +4,9 @@ inputs:
   ASSEMBLEE_DB_PASSWORD_RW:
     description: "Password of Assemblée PostgreSQL read-write database"
     required: true
+  EUROPE_DB_PASSWORD_RW:
+    description: "Password of Europe PostgreSQL read-write database"
+    required: true
   LEGI_ANOMALIES_DB_PASSWORD_RW:
     description: "Password of Légifrance Anomalies PostgreSQL read-write database"
     required: true
@@ -29,6 +32,13 @@ runs:
         ASSEMBLEE_DB_PORT=${{ vars.DB_PORT }}
         ASSEMBLEE_DB_USER="assemblee_rw"
         ASSEMBLEE_DB_PASSWORD="${{ inputs.ASSEMBLEE_DB_PASSWORD_RW }}"
+
+        # Europe PostgreSQL database configuration
+        EUROPE_DB_NAME="canutes_europe"
+        EUROPE_DB_HOST="${{ vars.DB_HOST_RW }}"
+        EUROPE_DB_PORT=${{ vars.DB_PORT }}
+        EUROPE_DB_USER="europe_rw"
+        EUROPE_DB_PASSWORD="${{ inputs.CANUTES_DB_PASSWORD_RW }}"
 
         # Légifrance Anomalies PostgreSQL database configuration
         LEGI_ANOMALIES_DB_NAME="canutes_anomalies"

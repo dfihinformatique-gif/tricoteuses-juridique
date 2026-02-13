@@ -4,6 +4,9 @@ inputs:
   ASSEMBLEE_DB_PASSWORD_RO:
     description: "Password of Assemblée PostgreSQL read-only database"
     required: true
+  EUROPE_DB_PASSWORD_RO:
+    description: "Password of Europe PostgreSQL read-only database"
+    required: true
   LEGI_DB_PASSWORD_RO:
     description: "Password of Légifrance PostgreSQL read-only database"
     required: true
@@ -30,6 +33,13 @@ runs:
         # Path of repository containing repository of Assemblée documents
         # in various formats (HTML, PDF, etc)
         ASSEMBLEE_DOCUMENTS_DIR="../../../assemblee-data/Documents/"
+
+        # Europe PostgreSQL database configuration
+        EUROPE_DB_NAME="canutes_europe"
+        EUROPE_DB_HOST="${{ vars.DB_HOST_RO }}"
+        EUROPE_DB_PORT=${{ vars.DB_PORT }}
+        EUROPE_DB_USER="europe_ro"
+        EUROPE_DB_PASSWORD="${{ inputs.CANUTES_DB_PASSWORD_RO }}"
 
         # Légifrance PostgreSQL database configuration
         LEGI_DB_NAME="canutes_legifrance"

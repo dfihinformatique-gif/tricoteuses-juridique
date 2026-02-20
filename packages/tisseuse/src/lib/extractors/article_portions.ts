@@ -83,7 +83,7 @@ export type ArticlePortionMatch =
     }
 
 const ITEM_PREFIX_RE =
-  /^\s*([IVXLCDM]+|[A-Z]|[a-z]|\d+)(?:\s*(?:°|\.|\)|-))\s+/u
+  /^\s*([IVXLCDM]+|[A-Z]|[a-z]|\d+)(?:\s*(?:°|\.|\)|-|–|—))+(?:\s+|(?=\p{L}))/u
 const DIVISION_PREFIX_RE =
   /^\s*(partie|livre|titre|sous-titre|chapitre|section|sous-section|paragraphe|sous-paragraphe|sous-sous-paragraphe)\s+([IVXLCDM]+|[A-Z]|\d+)(?:\s*(?:°|\.|\)|-))?\s*/iu
 const DIVISION_LABEL_RE =
@@ -163,6 +163,7 @@ function nextAlineaIndex(
     parent.children.filter((child) => child.type === "alinéa").length + 1
   )
 }
+
 
 export function buildArticlePortionTreeFromHtml(
   html: string,
@@ -370,6 +371,23 @@ function resolveStep(
     | ArticlePortionAlinea,
   step: PortionSelectorStep,
 ): { node: ArticlePortionNode; path: ArticlePortionNode[] } | null {
+  const collectAlineasDeep = (
+    current:
+      | ArticlePortionArticle
+      | ArticlePortionDivision
+      | ArticlePortionItem
+      | ArticlePortionAlinea,
+  ): ArticlePortionAlinea[] => {
+    if (current.type === "alinéa") return [current]
+    if (
+      current.type === "article" ||
+      current.type === "item" ||
+      divisionTypes.includes(current.type as DivisionType)
+    ) {
+      return current.children.flatMap(collectAlineasDeep)
+    }
+    return []
+  }
   if (divisionTypes.includes(step.type as DivisionType)) {
     const children =
       node.type === "article" ||
@@ -414,9 +432,12 @@ function resolveStep(
 
     if (step.index !== undefined) {
       const idx = step.index
-      const resolvedIndex = idx < 0 ? alineas.length + idx + 1 : idx
-      if (resolvedIndex < 1 || resolvedIndex > alineas.length) return null
-      const selected = alineas[resolvedIndex - 1]
+      const list =
+        idx < 0 ? collectAlineasDeep(node) : alineas
+      if (list.length === 0) return null
+      const resolvedIndex = idx < 0 ? list.length + idx + 1 : idx
+      if (resolvedIndex < 1 || resolvedIndex > list.length) return null
+      const selected = list[resolvedIndex - 1]
       return { node: selected, path: [selected] }
     }
     return null

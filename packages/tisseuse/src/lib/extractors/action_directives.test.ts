@@ -36,4 +36,26 @@ describe("extractActionDirectivesFromText", () => {
     const directive = directives[0]
     expect(directive.kind).toBe("delete_article")
   })
+
+  test("remplacement par alinéas ainsi rédigés sur plusieurs lignes", () => {
+    const line = [
+      "La seconde phrase du dernier alinéa du II de l’article 224 du code général des impôts est remplacée par trois alinéas ainsi rédigés :",
+      "« En cas de modification de la situation de famille du contribuable au cours de l’année d’imposition, les revenus nets sont ceux :",
+      "« a) Du couple passible de la contribution ;",
+      "« b) Du contribuable passible de la contribution. »",
+    ].join("\n")
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(1)
+    const directive = directives[0]
+    expect(directive.kind).toBe("replace_portion")
+    if (directive.kind === "replace_portion") {
+      expect(directive.portionSelectors.length).toBeGreaterThan(0)
+      expect(directive.replacementText).toContain(
+        "En cas de modification de la situation de famille du contribuable",
+      )
+      expect(directive.replacementText).toContain("a) Du couple passible")
+      expect(directive.replacementText).not.toContain("«")
+      expect(directive.replacementText).not.toContain("»")
+    }
+  })
 })

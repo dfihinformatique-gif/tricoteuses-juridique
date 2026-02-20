@@ -7,11 +7,21 @@ import type {
   ActionTarget,
   TextAstAction,
   TextAstArticle,
+  TextAstCitation,
   TextAstReference,
 } from "$lib/text_parsers/ast.js"
-import { actionTargetFromReference } from "$lib/text_parsers/helpers.js"
+import {
+  actionTargetFromReference,
+  addChildLeftToLastChild,
+} from "$lib/text_parsers/helpers.js"
 import type { FragmentPosition } from "$lib/text_parsers/fragments.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
+import {
+  citation,
+  convertCitationToText,
+} from "$lib/text_parsers/citations.js"
+import { article } from "$lib/text_parsers/articles.js"
+import { portion } from "$lib/text_parsers/portions.js"
 import {
   simplifyHtml,
   simplifyPlainText,
@@ -90,11 +100,21 @@ function normalizeQuotedText(text: string): string {
 
 function extractQuotedTexts(text: string): string[] {
   const results: string[] = []
-  const regex = /[«“"]\s*([^»”"]+?)\s*[»”"]/gu
-  let match: RegExpExecArray | null = null
-  while ((match = regex.exec(text)) !== null) {
-    const value = match[1]?.trim()
-    if (value) results.push(normalizeQuotedText(value))
+  let offset = 0
+  while (offset < text.length) {
+    const start = text.indexOf("«", offset)
+    if (start === -1) break
+    const context = new TextParserContext(text)
+    context.offset = start
+    const parsed = citation(context) as TextAstCitation | undefined
+    if (!parsed) {
+      offset = start + 1
+      continue
+    }
+    const transformed = convertCitationToText(context, parsed)
+    results.push(normalizeQuotedText(transformed.output))
+    const nextOffset = parsed.position?.stop ?? start + 1
+    offset = Math.max(nextOffset, start + 1)
   }
   return results
 }
@@ -149,6 +169,103 @@ function replaceQuotedTextWithSpaces(text: string): string {
   return chars.join("")
 }
 
+function shiftPosition(
+  position: FragmentPosition | undefined,
+  offset: number,
+): void {
+  if (!position) return
+  position.start += offset
+  position.stop += offset
+}
+
+function shiftReferencePositions(
+  reference: TextAstReference,
+  offset: number,
+): void {
+  if (reference.type === "parent-enfant") {
+    shiftReferencePositions(reference.parent, offset)
+    shiftReferencePositions(reference.child, offset)
+    shiftPosition(reference.position, offset)
+    return
+  }
+
+  if (reference.type === "bounded-interval") {
+    shiftReferencePositions(reference.first, offset)
+    shiftReferencePositions(reference.last, offset)
+    shiftPosition(reference.position, offset)
+    return
+  }
+
+  if (reference.type === "counted-interval") {
+    shiftReferencePositions(reference.first, offset)
+    shiftPosition(reference.position, offset)
+    return
+  }
+
+  if (reference.type === "enumeration" || reference.type === "exclusion") {
+    shiftReferencePositions(reference.left, offset)
+    shiftReferencePositions(reference.right, offset)
+    shiftPosition(reference.position, offset)
+    return
+  }
+
+  if (reference.type === "reference_et_action") {
+    shiftReferencePositions(reference.reference, offset)
+    shiftPosition(reference.position, offset)
+    return
+  }
+
+  shiftPosition(reference.position, offset)
+}
+
+function trimTrailingArticleIntro(prefix: string): string {
+  return prefix.replace(/\b(de\s+l['’]?|de\s+la|de\s+le|du|des)\s*$/i, "")
+}
+
+function extractPortionReferenceFromPrefix(
+  prefix: string,
+  prefixOffset: number,
+): TextAstReference | null {
+  const cleaned = trimTrailingArticleIntro(prefix)
+  if (!cleaned) return null
+
+  const wordMatches = [...cleaned.matchAll(/\p{L}/gu)]
+  for (const match of wordMatches) {
+    const startIndex = match.index ?? 0
+    const candidate = cleaned.slice(startIndex)
+    if (!candidate) continue
+
+    const context = new TextParserContext(candidate)
+    const parsed = portion(context) as TextAstReference | undefined
+    if (!parsed || context.offset === 0) continue
+
+    if (candidate.slice(context.offset).trim().length !== 0) continue
+    shiftReferencePositions(parsed, prefixOffset + startIndex)
+    return parsed
+  }
+
+  return null
+}
+
+function buildPortionReferenceFromText(
+  text: string,
+): TextAstReference | null {
+  const articleMatch = /\barticle\b/i.exec(text)
+  if (!articleMatch || articleMatch.index === undefined) return null
+  const articleIndex = articleMatch.index
+  const articleText = text.slice(articleIndex)
+  const articleContext = new TextParserContext(articleText)
+  const parsedArticle = article(articleContext) as TextAstArticle | undefined
+  if (!parsedArticle) return null
+  shiftReferencePositions(parsedArticle, articleIndex)
+
+  const prefix = text.slice(0, articleIndex)
+  const portionReference = extractPortionReferenceFromPrefix(prefix, 0)
+  if (!portionReference) return null
+
+  return addChildLeftToLastChild(parsedArticle, portionReference)
+}
+
 function parseActionFromText(
   text: string,
   action: TextAstAction,
@@ -157,6 +274,10 @@ function parseActionFromText(
 ): ParsedActionKind | null {
   const normalized = normalizeActionText(text)
   const quoted = extractQuotedTexts(quoteSourceText)
+  const hasRedactionIntro =
+    /\bredige\b|\bredigee\b|\bredigees\b|\brediges\b|\bainsi\b/.test(
+      normalized,
+    ) || /\bdispositions suivantes\b/.test(normalized)
 
   const hasAfter = /\bapres (la|les) reference\b|\bapres (le|les) mots\b|\bapres la mention\b/.test(
     normalized,
@@ -192,7 +313,7 @@ function parseActionFromText(
     }
   }
 
-  if (isReplace && quoted.length === 1) {
+  if (isReplace && quoted.length === 1 && hasRedactionIntro) {
     return {
       kind: "replace_portion",
       replacementText: quoted[0],
@@ -352,18 +473,26 @@ export function extractActionDirectivesFromText(
       ]
     }
   }
+
+  if (
+    references.length === 1 &&
+    references[0]?.type === "article"
+  ) {
+    const portionedReference = buildPortionReferenceFromText(textWithoutQuotes)
+    if (portionedReference) {
+      references = [portionedReference]
+    }
+  }
   const directives: ActionDirective[] = []
 
   for (const reference of references) {
     if (reference.type === "reference_et_action") {
-      const sourcePosition = reference.position ?? {
-        start: 0,
+      const start = reference.position?.start ?? 0
+      const sourcePosition: FragmentPosition = {
+        start,
         stop: simplifiedText.length,
       }
-      const sourceText = simplifiedText.slice(
-        sourcePosition.start,
-        sourcePosition.stop,
-      )
+      const sourceText = simplifiedText.slice(start)
       const directive = buildActionDirective({
         action: reference.action,
         reference: reference.reference,

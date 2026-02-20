@@ -35,16 +35,12 @@
 
 import * as fs from "node:fs"
 import * as path from "node:path"
-import { fileURLToPath } from "node:url"
 
 import {
   extractAlineaImages,
   getImageDimensions,
   extractBase64Data,
 } from "../lib/server/alinea_image_utils.js"
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 // Configuration
 const DEFAULT_DOCUMENTS_PATH =

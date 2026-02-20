@@ -1,4 +1,8 @@
-import { isTextAstDivision, type DivisionType } from "$lib/text_parsers/ast.js"
+import {
+  isTextAstDivision,
+  type DivisionType,
+} from "$lib/text_parsers/ast.js"
+import { assertNever } from "$lib/asserts.js"
 import {
   FragmentPosition,
   FragmentReverseTransformation,
@@ -139,10 +143,7 @@ export function getExtractedTableOfContentsFromTextBill(
         type: "article",
       })
     } else {
-      throw new Error(
-        // @ts-ignore: Unexpected definition type
-        `Unexpected type "${definition.type}" in definition:\n${JSON.stringify(definition, null, 2)}`,
-      )
+      assertNever("definition", definition)
     }
   }
 

@@ -2,7 +2,10 @@ import { assertNever } from "$lib/asserts.js"
 import {
   divisionTypes,
   isTextAstAtomicReference,
+  isTextAstDivision,
+  isTextAstPortion,
   portionTypes,
+  type ActionTarget,
   type CompoundReferencesSeparator,
   type TextAstAtomicReference,
   type TextAstCompoundReference,
@@ -512,6 +515,34 @@ export function* iterAtomicReferences(
     }
   }
 }
+
+export function actionTargetFromReference(
+  reference: TextAstReference,
+): ActionTarget {
+  let hasPortion = false
+  let hasArticle = false
+  let hasDivision = false
+  let hasTexte = false
+
+  for (const atomic of iterAtomicReferences(reference)) {
+    if (isTextAstPortion(atomic)) {
+      hasPortion = true
+    } else if (atomic.type === "article") {
+      hasArticle = true
+    } else if (isTextAstDivision(atomic)) {
+      hasDivision = true
+    } else if (atomic.type === "texte") {
+      hasTexte = true
+    }
+  }
+
+  if (hasPortion) return "portion"
+  if (hasArticle) return "article"
+  if (hasDivision) return "division"
+  if (hasTexte) return "texte"
+  return "unknown"
+}
+
 
 export function* iterIncludedReferences(
   reference: TextAstReference,

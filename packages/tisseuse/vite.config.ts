@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export default defineConfig({
+  cacheDir: "/tmp/vite-tisseuse",
   build: {
     target: "esnext", // Target ES2020
     outDir: "dist",

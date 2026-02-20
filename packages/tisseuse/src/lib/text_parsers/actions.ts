@@ -4,6 +4,7 @@ import { alternatives, chain, optional, regExp, repeat } from "./parsers.js"
 import { espace, virguleOuEspace } from "./typography.js"
 
 export const action = alternatives(
+  // After/Before specific words already quoted.
   chain(
     [
       virguleOuEspace,
@@ -23,6 +24,52 @@ export const action = alternatives(
       }),
     },
   ),
+  // "..., « ... », sont insérés les mots ..."
+  chain(
+    [
+      virguleOuEspace,
+      citation,
+      optional([virguleOuEspace], { default: "" }),
+      regExp("sont (ajouté|inséré)e?s les mots", { flags: "i" }),
+    ],
+    {
+      value: (results): TextAstAction => ({
+        action: "CREATION",
+        actionInContent: true,
+        originalCitations: [results[1] as TextAstCitation],
+      }),
+    },
+  ),
+  // "..., « ... », il est inséré la référence"
+  chain(
+    [
+      virguleOuEspace,
+      citation,
+      optional([virguleOuEspace], { default: "" }),
+      regExp("(il )?est inséré(e|s)? la référence", { flags: "i" }),
+    ],
+    { value: { action: "CREATION", actionInContent: true } },
+  ),
+  // "... est complété par les mots : « ... »"
+  chain(
+    [
+      virguleOuEspace,
+      alternatives(
+        regExp("est complétée? par les mots", { flags: "i" }),
+        regExp("sont complétée?s par les mots", { flags: "i" }),
+      ),
+      regExp(" ?:"),
+      citation,
+    ],
+    {
+      value: (results): TextAstAction => ({
+        action: "CREATION",
+        actionInContent: true,
+        originalCitations: [results[3] as TextAstCitation],
+      }),
+    },
+  ),
+  // General creations (insert/add/restore/complete), optionally after a cited reference.
   chain(
     [
       virguleOuEspace,
@@ -45,14 +92,16 @@ export const action = alternatives(
             alternatives(
               regExp("(il )?est (ajouté|inséré)e?", { flags: "i" }),
               regExp("sont (ajouté|inséré)e?s", { flags: "i" }),
+              regExp("(il )?est rétablie?", { flags: "i" }),
+              regExp("sont rétablie?s", { flags: "i" }),
+              regExp("est complétée?", { flags: "i" }),
+              regExp("sont complétée?s", { flags: "i" }),
             ),
           ],
           {
             value: (results) => results[0] as TextAstCitation | null,
           },
         ),
-        regExp("est complétée?", { flags: "i", value: null }),
-        regExp("sont complétée?s", { flags: "i", value: null }),
       ),
     ],
     {
@@ -68,6 +117,7 @@ export const action = alternatives(
       },
     },
   ),
+  // Creation or modification: "est ainsi rédigé" / "est rédigé comme suit".
   chain(
     [
       virguleOuEspace,
@@ -80,6 +130,7 @@ export const action = alternatives(
     ],
     { value: { action: "CREATION_OU_MODIFICATION" } },
   ),
+  // Direct modification patterns.
   chain(
     [
       virguleOuEspace,
@@ -94,10 +145,15 @@ export const action = alternatives(
           flags: "i",
         }),
         regExp("sont remplacée?s", { flags: "i" }),
+        regExp("devient", { flags: "i" }),
+        regExp("deviennent", { flags: "i" }),
+        regExp("est renum[eé]rotée?", { flags: "i" }),
+        regExp("sont renum[eé]rotée?s", { flags: "i" }),
       ),
     ],
     { value: { action: "MODIFICATION" } },
   ),
+  // Modification with cited content after a label.
   chain(
     [
       virguleOuEspace,
@@ -157,6 +213,60 @@ export const action = alternatives(
       }),
     },
   ),
+  // Modification with inline quoted content.
+  chain(
+    [
+      virguleOuEspace,
+      citation,
+      optional([virguleOuEspace], { default: "" }),
+      alternatives(
+        regExp("est remplacée?", { flags: "i" }),
+        regExp("sont remplacée?s", { flags: "i" }),
+        regExp("est modifiée?", { flags: "i" }),
+        regExp("sont modifiée?s", { flags: "i" }),
+      ),
+    ],
+    {
+      value: (results): TextAstAction => ({
+        action: "MODIFICATION",
+        actionInContent: true,
+        originalCitations: [results[1] as TextAstCitation],
+      }),
+    },
+  ),
+  // Modification for amounts without quotes (kept narrow to avoid false positives).
+  chain(
+    [
+      virguleOuEspace,
+      regExp("le montant (de|d') [^,;:.]{1,60}?(?= est )", { flags: "i" }),
+      espace,
+      alternatives(
+        regExp("est remplacée?", { flags: "i" }),
+        regExp("est modifiée?", { flags: "i" }),
+      ),
+    ],
+    { value: { action: "MODIFICATION", actionInContent: true } },
+  ),
+  // Suppression with inline quoted content.
+  chain(
+    [
+      virguleOuEspace,
+      citation,
+      optional([virguleOuEspace], { default: "" }),
+      alternatives(
+        regExp("est supprimée?", { flags: "i" }),
+        regExp("sont supprimée?s", { flags: "i" }),
+      ),
+    ],
+    {
+      value: (results): TextAstAction => ({
+        action: "SUPPRESSION",
+        actionInContent: true,
+        originalCitations: [results[1] as TextAstCitation],
+      }),
+    },
+  ),
+  // Suppression with labeled content.
   chain(
     [
       virguleOuEspace,
@@ -216,6 +326,11 @@ export const action = alternatives(
         return action
       },
     },
+  ),
+  // Generic suppression / abrogation.
+  chain(
+    [virguleOuEspace, regExp("sont (abrogé|supprimé)e?s", { flags: "i" })],
+    { value: { action: "SUPPRESSION" } },
   ),
   chain([virguleOuEspace, regExp("est (abrogé|supprimé)e?", { flags: "i" })], {
     value: { action: "SUPPRESSION" },

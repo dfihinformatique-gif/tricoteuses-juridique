@@ -36,6 +36,63 @@ describe("actions", () => {
       })
       expect(context.remaining()).toBe("")
     })
+
+    test(" est rétabli", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toStrictEqual({
+        action: "CREATION",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test(", est complété par les mots : « foo »", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toMatchObject({
+        action: "CREATION",
+        actionInContent: true,
+        originalCitations: [
+          {
+            type: "citation",
+          },
+        ],
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test(", « article 73 », sont insérés les mots", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toStrictEqual({
+        action: "CREATION",
+        actionInContent: true,
+        originalCitations: [
+          {
+            content: [
+              {
+                position: {
+                  start: 4,
+                  stop: 14,
+                },
+              },
+            ],
+            position: {
+              start: 2,
+              stop: 16,
+            },
+            type: "citation",
+          },
+        ],
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test(", « 231 quater », il est inséré la référence", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toStrictEqual({
+        action: "CREATION",
+        actionInContent: true,
+      })
+      expect(context.remaining()).toBe("")
+    })
   })
 
   describe("CREATION_OU_MODIFICATION", () => {
@@ -77,6 +134,49 @@ describe("actions", () => {
       const context = new TextParserContext(task.name)
       expect(action(context)).toStrictEqual({
         action: "MODIFICATION",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test(" devient", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toStrictEqual({
+        action: "MODIFICATION",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test(", le montant de 523 millions est remplacé", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toStrictEqual({
+        action: "MODIFICATION",
+        actionInContent: true,
+      })
+      expect(context.remaining()).toBe("")
+    })
+
+    test(", « montant 1 » est remplacé", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toStrictEqual({
+        action: "MODIFICATION",
+        actionInContent: true,
+        originalCitations: [
+          {
+            content: [
+              {
+                position: {
+                  start: 4,
+                  stop: 13,
+                },
+              },
+            ],
+            position: {
+              start: 2,
+              stop: 15,
+            },
+            type: "citation",
+          },
+        ],
       })
       expect(context.remaining()).toBe("")
     })
@@ -160,6 +260,14 @@ describe("actions", () => {
       expect(context.remaining()).toBe("")
     })
 
+    test(" sont supprimées", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(action(context)).toStrictEqual({
+        action: "SUPPRESSION",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
     test(", les mots : « Chambertin-Clos de Bèze » sont supprimés", ({
       task,
     }) => {
@@ -198,12 +306,4 @@ describe("actions", () => {
     })
   })
   // describe("actions après objet", () => {
-  //   test("Il est rétabli dans", ({ task }) => {
-  //     const context = new TextParserContext(task.name)
-  //     expect(action(context)).toStrictEqual({
-  //       action: "CREATION",
-  //     })
-  //     expect(context.remaining()).toBe("")
-  //   })
-  // })
 })

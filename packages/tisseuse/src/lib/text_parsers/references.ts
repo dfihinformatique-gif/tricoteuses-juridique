@@ -9,6 +9,7 @@ import type {
 } from "./ast.js"
 import { division, divisions } from "./divisions.js"
 import {
+  actionTargetFromReference,
   addChildLeftToLastChild,
   createEnumerationOrBoundedInterval,
   createParentChildTreeFromReferences,
@@ -145,15 +146,23 @@ export const referencePluriel1Internal = chain(
     optional(action, { default: null }),
   ],
   {
-    value: (results, context) =>
-      results[1] === null
-        ? (results[0] as TextAstReference)
-        : {
-            action: results[1] as TextAstAction,
-            position: context.position(),
-            reference: results[0] as TextAstReference,
-            type: "reference_et_action",
-          },
+    value: (results, context) => {
+      if (results[1] === null) {
+        return results[0] as TextAstReference
+      }
+      const reference = results[0] as TextAstReference
+      const action = results[1] as TextAstAction
+      const actionWithTarget =
+        action.action === "SUPPRESSION"
+          ? { ...action, target: actionTargetFromReference(reference) }
+          : action
+      return {
+        action: actionWithTarget,
+        position: context.position(),
+        reference,
+        type: "reference_et_action",
+      }
+    },
   },
 )
 
@@ -187,15 +196,23 @@ export const referenceSingulier1Internal = chain(
     optional(action, { default: null }),
   ],
   {
-    value: (results, context) =>
-      results[1] === null
-        ? (results[0] as TextAstReference)
-        : {
-            action: results[1] as TextAstAction,
-            position: context.position(),
-            reference: results[0] as TextAstReference,
-            type: "reference_et_action",
-          },
+    value: (results, context) => {
+      if (results[1] === null) {
+        return results[0] as TextAstReference
+      }
+      const reference = results[0] as TextAstReference
+      const action = results[1] as TextAstAction
+      const actionWithTarget =
+        action.action === "SUPPRESSION"
+          ? { ...action, target: actionTargetFromReference(reference) }
+          : action
+      return {
+        action: actionWithTarget,
+        position: context.position(),
+        reference,
+        type: "reference_et_action",
+      }
+    },
   },
 )
 

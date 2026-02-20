@@ -33,9 +33,7 @@ type OutputByType = Partial<
     }
   >
 >
-type OutputType = (typeof outputTypes)[number]
-
-const outputTypes = ["links", "links_or_references", "references"] as const
+type OutputType = "links" | "links_or_references" | "references"
 
 function addExternalLinkToOutputs({
   attributes,

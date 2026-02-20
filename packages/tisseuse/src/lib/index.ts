@@ -17,6 +17,11 @@ export {
 export { formatLongDate } from "./dates.js"
 export { extractBillDefinitions } from "./extractors/definitions.js"
 export {
+  extractActionDirectivesFromHtml,
+  extractActionDirectivesFromText,
+  type ActionDirective,
+} from "./extractors/action_directives.js"
+export {
   extractTextLinks,
   iterReferenceLinks,
   type ArticleDefinition,
@@ -39,6 +44,19 @@ export {
   getExtractedReferences,
   getExtractedReferencesWithOriginalTransformations,
 } from "./extractors/references.js"
+export {
+  buildArticlePortionTreeFromHtml,
+  extractPortionSelectors,
+  resolvePortionSelector,
+  type ArticlePortionArticle,
+  type ArticlePortionDivision,
+  type ArticlePortionItem,
+  type ArticlePortionAlinea,
+  type ArticlePortionMatch,
+  type ArticlePortionNode,
+  type PortionSelector,
+  type PortionSelectorStep,
+} from "./extractors/article_portions.js"
 export {
   addPositionsToTableOfContentsItems,
   getExtractedTableOfContentsFromTextBill,
@@ -84,6 +102,7 @@ export {
   nomSpecialArticle,
 } from "./text_parsers/articles.js"
 export {
+  actionTargets,
   compoundReferencesSeparators,
   divisionTypes,
   europeanLawNatures,
@@ -95,6 +114,7 @@ export {
   lawNatures,
   localizationAdverbs,
   portionTypes,
+  type ActionTarget,
   type CompoundReferencesSeparator,
   type DivisionType,
   type EuropeanLawNature,

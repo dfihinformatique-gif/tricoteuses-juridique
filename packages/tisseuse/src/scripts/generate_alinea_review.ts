@@ -28,7 +28,7 @@ import { fileURLToPath } from "node:url"
 
 import { extractBase64Data } from "../lib/server/alinea_image_utils.js"
 
-import type { ExtractedData, ImageData } from "./extract_alinea_images.js"
+import type { ExtractedData } from "./extract_alinea_images.js"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -57,7 +57,7 @@ interface ManualCorrections {
 // Chargement du mapping existant et des corrections manuelles
 // ============================================================================
 
-let existingMapping: Record<string, number> = {}
+const existingMapping: Record<string, number> = {}
 try {
   const mappingPath = path.join(
     __dirname,

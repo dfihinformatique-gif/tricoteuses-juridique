@@ -7,6 +7,16 @@ import type {
 
 export type CompoundReferencesSeparator =
   (typeof compoundReferencesSeparators)[number]
+export type ActionTarget = (typeof actionTargets)[number]
+
+export const actionTargets = [
+  "article",
+  "portion",
+  "division",
+  "texte",
+  "unknown",
+] as const
+
 
 export type DivisionType = (typeof divisionTypes)[number]
 
@@ -48,6 +58,7 @@ export interface TextAstAction {
     | "SUPPRESSION"
   actionInContent?: boolean
   originalCitations?: TextAstCitation[]
+  target?: ActionTarget
 }
 
 export type TextAstArticle = {

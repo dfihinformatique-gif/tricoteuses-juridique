@@ -1,7 +1,6 @@
 import {
   type CompoundReferencesSeparator,
   type LocalizationAdverb,
-  type TextAst,
   type TextAstArticle,
   type TextAstIncompleteHeader,
   type TextAstLocalization,

@@ -117,6 +117,13 @@ export const numeroPortion = chain(
           value: (result as string).charCodeAt(0) - "a".charCodeAt(0) + 1,
         }),
       }),
+      convert(regExp("[A-Z]"), {
+        value: (result, context) => ({
+          position: context.position(),
+          text: result as string,
+          value: (result as string).charCodeAt(0) - "A".charCodeAt(0) + 1,
+        }),
+      }),
       chain([nombreCardinal, regExp("[°o]?", { flags: "i" })], {
         value: (results, context) => ({
           position: context.position(),
@@ -239,7 +246,8 @@ export const quelquesPortionsNumerotees = chain(
 
       // Convertir tous les items pour leur donner le bon type et supprimer le champ num
       // Ajuster la position du premier item pour inclure le mot "alinéas"/"phrases"
-      const { num: _firstNum, ...firstItemWithoutNum } = firstItem
+      const { num: firstItemNum, ...firstItemWithoutNum } = firstItem
+      void firstItemNum
       const typedFirstItem = {
         ...firstItemWithoutNum,
         type: portionType,
@@ -250,7 +258,8 @@ export const quelquesPortionsNumerotees = chain(
       }
 
       const typedRestItems = restItems.map(([separator, item]) => {
-        const { num: _itemNum, ...itemWithoutNum } = item
+        const { num: itemNum, ...itemWithoutNum } = item
+        void itemNum
         return [separator, { ...itemWithoutNum, type: portionType }]
       }) as Array<[CompoundReferencesSeparator, TextAstReference]>
 

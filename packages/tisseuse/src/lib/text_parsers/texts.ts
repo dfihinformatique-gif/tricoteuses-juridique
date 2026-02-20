@@ -412,14 +412,14 @@ export const natureTexteEuropeen = chain(
       regExp("décision", { flags: "i", value: "DECISION_EURO" }), // TODO
       regExp("déclaration", { flags: "i", value: "DECLARATIONEURO" }), // TODO
       regExp("délibération", { flags: "i", value: "DELIBERATIONEURO" }), // TODO
-      regExp("directive (d'exécution|déléguée)?", {
+      regExp("directive(?: (d'exécution|déléguée))?", {
         flags: "i",
         value: "DIRECTIVE_EURO",
       }),
       regExp("information", { flags: "i", value: "INFORMATIONEURO" }), // TODO
       regExp("instruction", { flags: "i", value: "INSTRUCTIONEURO" }), // TODO
       regExp("lettre", { flags: "i", value: "LETTREEURO" }), // TODO
-      regExp("règlement (d'exécution)?", {
+      regExp("règlement(?: d'exécution)?", {
         flags: "i",
         value: "REGLEMENTEUROPEEN",
       }),

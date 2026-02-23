@@ -58,4 +58,35 @@ describe("extractActionDirectivesFromText", () => {
       expect(directive.replacementText).not.toContain("»")
     }
   })
+
+  test("liste d'items dans un bloc modifie", () => {
+    const line = [
+      "II. – L’article 10 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié :",
+      "1° Après le III, il est inséré un III bis ainsi rédigé :",
+      "« III bis. – Exemple d’insertion. »",
+      "2° Le A du IV est remplacé par les dispositions suivantes :",
+      "« A. – Exemple de remplacement. »",
+    ].join("\n")
+
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(2)
+
+    const insertDirective = directives.find(
+      (directive) => directive.kind === "insert_after",
+    )
+    expect(insertDirective).toBeDefined()
+    if (insertDirective?.kind === "insert_after") {
+      expect(insertDirective.insertText).toContain("III bis")
+      expect(insertDirective.portionSelectors.length).toBeGreaterThan(0)
+    }
+
+    const replaceDirective = directives.find(
+      (directive) => directive.kind === "replace_portion",
+    )
+    expect(replaceDirective).toBeDefined()
+    if (replaceDirective?.kind === "replace_portion") {
+      expect(replaceDirective.replacementText).toContain("Exemple de remplacement")
+      expect(replaceDirective.portionSelectors.length).toBeGreaterThan(0)
+    }
+  })
 })

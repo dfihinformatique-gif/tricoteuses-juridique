@@ -178,90 +178,150 @@ export function buildArticlePortionTreeFromHtml(
 
   const paragraphs = $("p").toArray()
 
+  const splitParagraphLines = (paragraphHtml: string): Array<{
+    text: string
+    html: string
+  }> => {
+    const parts = paragraphHtml.split(/<br\s*\/?>/i)
+    const lines: Array<{ text: string; html: string }> = []
+    for (const part of parts) {
+      const text = cheerio.load(part).text().replace(/\s+/g, " ").trim()
+      if (!text) continue
+      lines.push({ text, html: part })
+    }
+    return lines.length > 0 ? lines : []
+  }
+
   paragraphs.forEach((p, paragraphIndex) => {
     const $p = $(p)
-    const text = ($p.text() || "").replace(/\s+/g, " ").trim()
-    if (!text) return
-
-    const divisionMatch = text.match(DIVISION_PREFIX_RE)
-    if (divisionMatch) {
-      const type = divisionMatch[1].toLowerCase() as DivisionType
-      const token = divisionMatch[2]
-      const level = divisionLevelByType[type]
-      while (stack.length > 0 && stack[stack.length - 1].level >= level) {
-        stack.pop()
-      }
-      const parent = stack[stack.length - 1]?.node ?? root
-      const divisionNode: ArticlePortionDivision = {
-        type,
-        index: itemIndexFromToken(token),
-        num: token,
-        label: undefined,
-        children: [],
-      }
-      parent.children.push(divisionNode)
-      stack.push({ level, node: divisionNode })
-
-      const restText = text.slice(divisionMatch[0].length).trim()
-      if (restText) {
-        if (DIVISION_LABEL_RE.test(restText)) {
-          divisionNode.label = restText
-        } else {
-          divisionNode.children.push({
-            type: "alinéa",
-            index: nextAlineaIndex(divisionNode),
-            text: restText,
-            html: $p.html() ?? "",
-            paragraphIndex,
-          })
-        }
-      }
-      return
+    const paragraphHtml = $p.html() ?? ""
+    const lines = splitParagraphLines(paragraphHtml)
+    if (lines.length === 0) {
+      const text = ($p.text() || "").replace(/\s+/g, " ").trim()
+      if (!text) return
+      lines.push({ text, html: paragraphHtml })
     }
 
-    const match = text.match(ITEM_PREFIX_RE)
-    if (match) {
-      const token = match[1]
-      const level = itemLevelFromToken(token)
-      while (stack.length > 0 && stack[stack.length - 1].level >= level) {
-        stack.pop()
-      }
-      const parent = stack[stack.length - 1]?.node ?? root
-      const itemNode: ArticlePortionItem = {
-        type: "item",
-        index: itemIndexFromToken(token),
-        num: token,
-        label: undefined,
-        children: [],
-      }
-      parent.children.push(itemNode)
-      stack.push({ level, node: itemNode })
-
-      const restText = text.slice(match[0].length).trim()
-      if (restText) {
-        if (DIVISION_LABEL_RE.test(restText)) {
-          itemNode.label = restText
-        } else {
-          itemNode.children.push({
-            type: "alinéa",
-            index: nextAlineaIndex(itemNode),
-            text: restText,
-            html: $p.html() ?? "",
-            paragraphIndex,
-          })
+    const appendNestedItems = (
+      parent: ArticlePortionDivision | ArticlePortionItem,
+      restText: string,
+      lineHtml: string,
+    ) => {
+      let currentParent: ArticlePortionDivision | ArticlePortionItem = parent
+      let remaining = restText
+      while (true) {
+        const nestedMatch = remaining.match(ITEM_PREFIX_RE)
+        if (!nestedMatch) break
+        const token = nestedMatch[1]
+        const nestedItem: ArticlePortionItem = {
+          type: "item",
+          index: itemIndexFromToken(token),
+          num: token,
+          label: undefined,
+          children: [],
         }
+        currentParent.children.push(nestedItem)
+        stack.push({ level: itemLevelFromToken(token), node: nestedItem })
+        currentParent = nestedItem
+        remaining = remaining.slice(nestedMatch[0].length).trim()
       }
-      return
+      if (remaining) {
+        currentParent.children.push({
+          type: "alinéa",
+          index: nextAlineaIndex(currentParent),
+          text: remaining,
+          html: lineHtml,
+          paragraphIndex,
+        })
+      }
     }
 
-    const currentParent = stack[stack.length - 1]?.node ?? root
-    currentParent.children.push({
-      type: "alinéa",
-      index: nextAlineaIndex(currentParent),
-      text,
-      html: $p.html() ?? "",
-      paragraphIndex,
-    })
+    for (const line of lines) {
+      const text = line.text
+      const divisionMatch = text.match(DIVISION_PREFIX_RE)
+      if (divisionMatch) {
+        const type = divisionMatch[1].toLowerCase() as DivisionType
+        const token = divisionMatch[2]
+        const level = divisionLevelByType[type]
+        while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+          stack.pop()
+        }
+        const parent = stack[stack.length - 1]?.node ?? root
+        const divisionNode: ArticlePortionDivision = {
+          type,
+          index: itemIndexFromToken(token),
+          num: token,
+          label: undefined,
+          children: [],
+        }
+        parent.children.push(divisionNode)
+        stack.push({ level, node: divisionNode })
+
+        const restText = text.slice(divisionMatch[0].length).trim()
+        if (restText) {
+          if (DIVISION_LABEL_RE.test(restText)) {
+            divisionNode.label = restText
+          } else if (ITEM_PREFIX_RE.test(restText)) {
+            appendNestedItems(divisionNode, restText, line.html)
+          } else {
+            divisionNode.children.push({
+              type: "alinéa",
+              index: nextAlineaIndex(divisionNode),
+              text: restText,
+              html: line.html,
+              paragraphIndex,
+            })
+          }
+        }
+        continue
+      }
+
+      const match = text.match(ITEM_PREFIX_RE)
+      if (match) {
+        const token = match[1]
+        const level = itemLevelFromToken(token)
+        while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+          stack.pop()
+        }
+        const parent = stack[stack.length - 1]?.node ?? root
+        const itemNode: ArticlePortionItem = {
+          type: "item",
+          index: itemIndexFromToken(token),
+          num: token,
+          label: undefined,
+          children: [],
+        }
+        parent.children.push(itemNode)
+        stack.push({ level, node: itemNode })
+
+        const restText = text.slice(match[0].length).trim()
+        if (restText) {
+          if (DIVISION_LABEL_RE.test(restText)) {
+            itemNode.label = restText
+          } else if (ITEM_PREFIX_RE.test(restText)) {
+            appendNestedItems(itemNode, restText, line.html)
+          } else {
+            itemNode.children.push({
+              type: "alinéa",
+              index: nextAlineaIndex(itemNode),
+              text: restText,
+              html: line.html,
+              paragraphIndex,
+            })
+          }
+        }
+        continue
+      }
+
+      const currentParent = stack[stack.length - 1]?.node ?? root
+      currentParent.children.push({
+        type: "alinéa",
+        index: nextAlineaIndex(currentParent),
+        text,
+        html: line.html,
+        paragraphIndex,
+      })
+    }
   })
 
   return root

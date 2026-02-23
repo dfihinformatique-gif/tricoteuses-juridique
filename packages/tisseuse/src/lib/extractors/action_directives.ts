@@ -89,6 +89,142 @@ function normalizeActionText(text: string): string {
     .replace(/\p{Diacritic}/gu, "")
 }
 
+function stripLineLeader(line: string): string {
+  return line
+    .replace(/^\s*(\d+)\s*(?:°|\.|\))\s*/u, "")
+    .replace(/^\s*[a-zA-Z]\s*\)\s*/u, "")
+    .replace(/^\s*[IVXLCDM]+\s*(?:\.|–|-)\s*/u, "")
+}
+
+type LineWithOffset = {
+  text: string
+  start: number
+  end: number
+}
+
+function splitLinesWithOffsets(text: string): LineWithOffset[] {
+  const lines = text.split("\n")
+  const output: LineWithOffset[] = []
+  let offset = 0
+  for (const line of lines) {
+    const start = offset
+    const end = start + line.length
+    output.push({ text: line, start, end })
+    offset = end + 1
+  }
+  return output
+}
+
+function isListItemStart(line: string): boolean {
+  return (
+    /^\s*\d+\s*°/u.test(line) ||
+    /^\s*[a-zA-Z]\s*\)/u.test(line)
+  )
+}
+
+function isListBlockIntroLine(line: string): boolean {
+  if (!line.trim().endsWith(":")) return false
+  const normalized = normalizeActionText(line)
+  return /\bainsi\s+modifie/.test(normalized)
+}
+
+function findFirstActionIndex(text: string): number | null {
+  const match = /\b(inséré|insere|ajouté|ajoute|remplacé|remplace|supprimé|supprime|abrogé|abroge|complété|complete)\b/i.exec(
+    text,
+  )
+  return match?.index ?? null
+}
+
+function unwrapReference(reference: TextAstReference): TextAstReference {
+  return reference.type === "reference_et_action"
+    ? reference.reference
+    : reference
+}
+
+function pickArticleReference(text: string): TextAstReference | null {
+  const references = getExtractedReferences(new TextParserContext(text))
+  const article = references
+    .map(unwrapReference)
+    .find((reference) => actionTargetFromReference(reference) === "article")
+  if (article) return article
+  const fallback = fallbackArticleReference(text)
+  return fallback?.reference ?? null
+}
+
+function pickPortionReferenceForItem(text: string): TextAstReference | null {
+  const actionIndex = findFirstActionIndex(text) ?? text.length
+  const quoteRanges = getQuoteRanges(text)
+  const references = getExtractedReferences(new TextParserContext(text))
+  const candidates = references
+    .map(unwrapReference)
+    .filter(
+      (reference) =>
+        !isInsideQuoteRanges(reference.position, quoteRanges) &&
+        actionTargetFromReference(reference) !== "article" &&
+        (reference.position?.start ?? 0) < actionIndex,
+    )
+    .sort(
+      (a, b) => (a.position?.start ?? 0) - (b.position?.start ?? 0),
+    )
+  return candidates[0] ?? null
+}
+
+function extractListItemDirectives(
+  text: string,
+): ActionDirective[] | null {
+  const lines = splitLinesWithOffsets(text)
+  const introIndex = lines.findIndex((line) =>
+    isListBlockIntroLine(line.text),
+  )
+  if (introIndex === -1) return null
+
+  const articleReference = pickArticleReference(lines[introIndex]?.text ?? "")
+  if (!articleReference) return null
+
+  type ItemBlock = { lines: LineWithOffset[]; start: number; end: number }
+  const items: ItemBlock[] = []
+  let current: ItemBlock | null = null
+
+  for (let i = introIndex + 1; i < lines.length; i += 1) {
+    const line = lines[i]
+    if (!line) continue
+    if (isListItemStart(line.text)) {
+      if (current) items.push(current)
+      current = { lines: [line], start: line.start, end: line.end }
+      continue
+    }
+    if (current) {
+      current.lines.push(line)
+      current.end = line.end
+    }
+  }
+  if (current) items.push(current)
+  if (items.length === 0) return null
+
+  const directives: ActionDirective[] = []
+  for (const item of items) {
+    const itemLines = item.lines.map((line) => line.text)
+    if (itemLines.length === 0) continue
+    itemLines[0] = stripLineLeader(itemLines[0] ?? "")
+    const itemText = itemLines.join("\n").trim()
+    if (!itemText) continue
+
+    const portionReference = pickPortionReferenceForItem(itemText)
+    const reference = portionReference
+      ? addChildLeftToLastChild(articleReference, portionReference)
+      : articleReference
+    const directive = buildActionDirective({
+      action: { action: "MODIFICATION" },
+      reference,
+      sourcePosition: { start: item.start, stop: item.end },
+      sourceText: itemText,
+    })
+    if (directive) directives.push(directive)
+  }
+
+  return directives.length > 0 ? directives : null
+}
+
 function normalizeQuotedText(text: string): string {
   const cleaned = text
     .split(/\n+/)
@@ -279,12 +415,16 @@ function parseActionFromText(
       normalized,
     ) || /\bdispositions suivantes\b/.test(normalized)
 
-  const hasAfter = /\bapres (la|les) reference\b|\bapres (le|les) mots\b|\bapres la mention\b/.test(
-    normalized,
-  )
-  const hasBefore = /\bavant (la|les) reference\b|\bavant (le|les) mots\b|\bavant la mention\b/.test(
-    normalized,
-  )
+  const hasAfter =
+    /\bapres\b/.test(normalized) ||
+    /\bapres (la|les) reference\b|\bapres (le|les) mots\b|\bapres la mention\b/.test(
+      normalized,
+    )
+  const hasBefore =
+    /\bavant\b/.test(normalized) ||
+    /\bavant (la|les) reference\b|\bavant (le|les) mots\b|\bavant la mention\b/.test(
+      normalized,
+    )
   const isInsert = /\binsere\b|\bajoute\b|\bajoutee\b|\bajoutes\b|\bajoutees\b|\bcomplete\b/.test(
     normalized,
   )
@@ -333,6 +473,23 @@ function parseActionFromText(
         kind: "insert_before",
         targetText: quoted[0],
         insertText: quoted[1],
+      }
+    }
+  }
+
+  if (isInsert && quoted.length === 1) {
+    if (hasAfter) {
+      return {
+        kind: "insert_after",
+        targetText: "",
+        insertText: quoted[0],
+      }
+    }
+    if (hasBefore) {
+      return {
+        kind: "insert_before",
+        targetText: "",
+        insertText: quoted[0],
       }
     }
   }
@@ -444,11 +601,17 @@ function fallbackArticleReference(text: string): {
   return { reference: article, position: { start, stop } }
 }
 
-export function extractActionDirectivesFromText(
+function extractActionDirectivesFromTextInternal(
   text: string,
+  options: { allowListExtraction: boolean },
 ): ActionDirective[] {
   const simplified = simplifyPlainText(text)
   const simplifiedText = simplified.output
+
+  if (options.allowListExtraction) {
+    const listDirectives = extractListItemDirectives(simplifiedText)
+    if (listDirectives) return listDirectives
+  }
   const quoteRanges = getQuoteRanges(simplifiedText)
   const textWithoutQuotes = replaceQuotedTextWithSpaces(simplifiedText)
   const context = new TextParserContext(simplifiedText)
@@ -536,6 +699,14 @@ export function extractActionDirectivesFromText(
   return directives
 }
 
+export function extractActionDirectivesFromText(
+  text: string,
+): ActionDirective[] {
+  return extractActionDirectivesFromTextInternal(text, {
+    allowListExtraction: true,
+  })
+}
+
 function isActionLineIntroducingCitation(line: string): boolean {
   const normalized = normalizeActionText(line)
   if (normalized.includes("«") || normalized.includes("»")) {
@@ -558,15 +729,16 @@ function collectCitationLines(
   let index = startIndex + 1
   while (index < lines.length) {
     const line = lines[index]
-    if (!foundOpening && line.includes("«")) {
+    const normalizedLine = stripLineLeader(line)
+    if (!foundOpening && normalizedLine.includes("«")) {
       foundOpening = true
     }
     if (foundOpening) {
-      citationLines.push(line)
-      if (line.includes("»")) {
+      citationLines.push(normalizedLine)
+      if (normalizedLine.includes("»")) {
         break
       }
-    } else if (line.trim().length > 0) {
+    } else if (normalizedLine.trim().length > 0) {
       // No opening quote found before another non-empty line -> stop.
       break
     }
@@ -574,7 +746,7 @@ function collectCitationLines(
   }
   if (!foundOpening || citationLines.length === 0) return null
   return {
-    combinedText: [lines[startIndex], ...citationLines].join("\n"),
+    combinedText: [stripLineLeader(lines[startIndex]), ...citationLines].join("\n"),
     endIndex: index,
   }
 }
@@ -607,7 +779,9 @@ export function extractActionDirectivesFromHtml(
       }
     }
 
-    const lineDirectives = extractActionDirectivesFromText(line)
+    const lineDirectives = extractActionDirectivesFromTextInternal(line, {
+      allowListExtraction: false,
+    })
     if (lineDirectives.length > 0) {
       directives.push(...lineDirectives)
     }

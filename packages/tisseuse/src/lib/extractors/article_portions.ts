@@ -82,7 +82,7 @@ export type ArticlePortionMatch =
       pathEnd: ArticlePortionNode[]
     }
 
-const ITEM_PREFIX_RE =
+export const ITEM_PREFIX_RE =
   /^\s*([IVXLCDM]+|[A-Z]|[a-z]|\d+)(?:\s*(?:°|\.|\)|-|–|—))+(?:\s+|(?=\p{L}))/u
 const DIVISION_PREFIX_RE =
   /^\s*(partie|livre|titre|sous-titre|chapitre|section|sous-section|paragraphe|sous-paragraphe|sous-sous-paragraphe)\s+([IVXLCDM]+|[A-Z]|\d+)(?:\s*(?:°|\.|\)|-))?\s*/iu

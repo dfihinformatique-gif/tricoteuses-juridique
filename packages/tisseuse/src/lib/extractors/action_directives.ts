@@ -1,5 +1,6 @@
 import {
   extractPortionSelectors,
+  ITEM_PREFIX_RE,
   type PortionSelector,
 } from "$lib/extractors/article_portions.js"
 import { getExtractedReferences } from "$lib/extractors/references.js"
@@ -90,10 +91,7 @@ function normalizeActionText(text: string): string {
 }
 
 function stripLineLeader(line: string): string {
-  return line
-    .replace(/^\s*(\d+)\s*(?:°|\.|\))\s*/u, "")
-    .replace(/^\s*[a-zA-Z]\s*\)\s*/u, "")
-    .replace(/^\s*[IVXLCDM]+\s*(?:\.|–|-)\s*/u, "")
+  return line.replace(ITEM_PREFIX_RE, "")
 }
 
 type LineWithOffset = {
@@ -116,10 +114,7 @@ function splitLinesWithOffsets(text: string): LineWithOffset[] {
 }
 
 function isListItemStart(line: string): boolean {
-  return (
-    /^\s*\d+\s*°/u.test(line) ||
-    /^\s*[a-zA-Z]\s*\)/u.test(line)
-  )
+  return ITEM_PREFIX_RE.test(line)
 }
 
 function isListBlockIntroLine(line: string): boolean {

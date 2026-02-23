@@ -89,4 +89,21 @@ describe("extractActionDirectivesFromText", () => {
       expect(replaceDirective.portionSelectors.length).toBeGreaterThan(0)
     }
   })
+
+  test("liste d'items avec numerotation romaine", () => {
+    const line = [
+      "L’article 48 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié :",
+      "I. – Au I, les mots : « du premier exercice » sont remplacés par les mots : « des deux premiers exercices » ;",
+    ].join("\n")
+
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(1)
+    const directive = directives[0]
+    expect(directive.kind).toBe("replace")
+    if (directive.kind === "replace") {
+      expect(directive.targetText).toBe("du premier exercice")
+      expect(directive.replacementText).toBe("des deux premiers exercices")
+      expect(directive.portionSelectors.length).toBeGreaterThan(0)
+    }
+  })
 })

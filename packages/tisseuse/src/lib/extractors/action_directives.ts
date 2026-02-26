@@ -1,6 +1,7 @@
 import {
   extractPortionSelectors,
   ITEM_PREFIX_RE,
+  isRomanNumeral,
   type PortionSelector,
 } from "$lib/extractors/article_portions.js"
 import { getExtractedReferences } from "$lib/extractors/references.js"
@@ -68,6 +69,14 @@ export type ActionDirective =
       sourceText: string
     }
   | {
+      kind: "delete_portion"
+      targetType: ActionTarget
+      reference: TextAstReference
+      portionSelectors: PortionSelector[]
+      sourcePosition: FragmentPosition
+      sourceText: string
+    }
+  | {
       kind: "delete_article"
       targetType: "article"
       reference: TextAstReference
@@ -81,6 +90,7 @@ type ParsedActionKind =
   | { kind: "replace_portion"; replacementText: string }
   | { kind: "replace"; targetText: string; replacementText: string }
   | { kind: "delete"; targetText: string }
+  | { kind: "delete_portion" }
   | { kind: "delete_article" }
 
 function normalizeActionText(text: string): string {
@@ -115,6 +125,31 @@ function splitLinesWithOffsets(text: string): LineWithOffset[] {
 
 function isListItemStart(line: string): boolean {
   return ITEM_PREFIX_RE.test(line)
+}
+
+type ItemMarkerInfo = {
+  marker: string
+  level: number
+}
+
+function getItemMarkerInfo(line: string): ItemMarkerInfo | null {
+  const match = ITEM_PREFIX_RE.exec(line)
+  if (!match) return null
+  const marker = match[1] ?? ""
+  if (!marker) return null
+  if (/^\d+$/.test(marker)) {
+    return { marker, level: 2 }
+  }
+  if (isRomanNumeral(marker)) {
+    return { marker, level: 1 }
+  }
+  if (/^[a-z]$/.test(marker)) {
+    return { marker, level: 3 }
+  }
+  if (/^[A-Z]$/.test(marker)) {
+    return { marker, level: 2 }
+  }
+  return { marker, level: 2 }
 }
 
 function isListBlockIntroLine(line: string): boolean {
@@ -164,6 +199,29 @@ function pickPortionReferenceForItem(text: string): TextAstReference | null {
   return candidates[0] ?? null
 }
 
+function pickContextReferenceForItem(
+  text: string,
+): TextAstReference | null {
+  const actionIndex = findFirstActionIndex(text) ?? text.length
+  const quoteRanges = getQuoteRanges(text)
+  const references = getExtractedReferences(new TextParserContext(text))
+    .map(unwrapReference)
+    .filter(
+      (reference) =>
+        !isInsideQuoteRanges(reference.position, quoteRanges) &&
+        (reference.position?.start ?? 0) < actionIndex,
+    )
+    .sort(
+      (a, b) => (a.position?.start ?? 0) - (b.position?.start ?? 0),
+    )
+  if (references.length === 0) return null
+  const nonArticle =
+    references.find((reference) =>
+      actionTargetFromReference(reference) !== "article",
+    ) ?? null
+  return nonArticle ?? references[0] ?? null
+}
+
 function extractListItemDirectives(
   text: string,
 ): ActionDirective[] | null {
@@ -174,7 +232,6 @@ function extractListItemDirectives(
   if (introIndex === -1) return null
 
   const articleReference = pickArticleReference(lines[introIndex]?.text ?? "")
-  if (!articleReference) return null
 
   type ItemBlock = { lines: LineWithOffset[]; start: number; end: number }
   const items: ItemBlock[] = []
@@ -197,17 +254,61 @@ function extractListItemDirectives(
   if (items.length === 0) return null
 
   const directives: ActionDirective[] = []
+  const contextStack: Array<{ level: number; reference: TextAstReference }> = []
   for (const item of items) {
     const itemLines = item.lines.map((line) => line.text)
     if (itemLines.length === 0) continue
+    const markerInfo = getItemMarkerInfo(itemLines[0] ?? "")
+    const itemLevel = markerInfo?.level ?? 0
     itemLines[0] = stripLineLeader(itemLines[0] ?? "")
     const itemText = itemLines.join("\n").trim()
     if (!itemText) continue
 
+    while (
+      contextStack.length > 0 &&
+      contextStack[contextStack.length - 1].level >= itemLevel
+    ) {
+      contextStack.pop()
+    }
+
     const portionReference = pickPortionReferenceForItem(itemText)
-    const reference = portionReference
-      ? addChildLeftToLastChild(articleReference, portionReference)
-      : articleReference
+    const hasAction = findFirstActionIndex(itemText) !== null
+    const isContextOnly =
+      !hasAction && itemText.trim().endsWith(":")
+
+    if (isContextOnly) {
+      const contextReference = pickContextReferenceForItem(itemText)
+      if (contextReference && itemLevel > 0) {
+        contextStack.push({ level: itemLevel, reference: contextReference })
+      }
+      continue
+    }
+
+    let reference = articleReference
+    for (const context of contextStack) {
+      if (reference) {
+        reference = addChildLeftToLastChild(reference, context.reference)
+      } else {
+        reference = context.reference
+      }
+    }
+    if (!reference) {
+      reference = pickArticleReference(itemText)
+    }
+    if (portionReference && itemLevel > 0) {
+      if (!reference) {
+        reference = portionReference
+      } else if (
+        portionReference.type === "article" ||
+        actionTargetFromReference(portionReference) === "article"
+      ) {
+        reference = addChildLeftToLastChild(portionReference, reference)
+      } else {
+        reference = addChildLeftToLastChild(reference, portionReference)
+      }
+    }
+    if (!reference) continue
+
     const directive = buildActionDirective({
       action: { action: "MODIFICATION" },
       reference,
@@ -420,7 +521,7 @@ function parseActionFromText(
     /\bavant (la|les) reference\b|\bavant (le|les) mots\b|\bavant la mention\b/.test(
       normalized,
     )
-  const isInsert = /\binsere\b|\bajoute\b|\bajoutee\b|\bajoutes\b|\bajoutees\b|\bcomplete\b/.test(
+  const isInsert = /\binsere(?:e|es|s)?\b|\bajoute\b|\bajoutee\b|\bajoutes\b|\bajoutees\b|\bcomplete\b/.test(
     normalized,
   )
   const isReplace = /\bremplace\b|\bremplacee\b|\bremplaces\b|\bremplacees\b/.test(
@@ -437,7 +538,7 @@ function parseActionFromText(
     if (quoted.length >= 1) {
       return { kind: "delete", targetText: quoted[0] }
     }
-    return null
+    return { kind: "delete_portion" }
   }
 
   if (isReplace && quoted.length >= 2) {
@@ -486,6 +587,11 @@ function parseActionFromText(
         targetText: "",
         insertText: quoted[0],
       }
+    }
+    return {
+      kind: "insert_after",
+      targetText: "",
+      insertText: quoted[0],
     }
   }
 
@@ -560,6 +666,15 @@ function buildActionDirective({
         reference,
         portionSelectors,
         targetText: parsed.targetText,
+        sourcePosition,
+        sourceText,
+      }
+    case "delete_portion":
+      return {
+        kind: "delete_portion",
+        targetType,
+        reference,
+        portionSelectors,
         sourcePosition,
         sourceText,
       }

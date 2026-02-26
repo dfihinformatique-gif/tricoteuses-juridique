@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 
+import type { TextAstReference } from "../text_parsers/ast.js"
 import { extractActionDirectivesFromText } from "./action_directives.js"
 
 describe("extractActionDirectivesFromText", () => {
@@ -105,5 +106,137 @@ describe("extractActionDirectivesFromText", () => {
       expect(directive.replacementText).toBe("des deux premiers exercices")
       expect(directive.portionSelectors.length).toBeGreaterThan(0)
     }
+  })
+
+  test("liste imbriquee avec contexte de portion", () => {
+    const line = [
+      "L’article 48 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié :",
+      "II. – Au IV :",
+      "1° Au A :",
+      "a) Le premier alinéa est complété par les mots : « pour le premier exercice clos à compter du 31 décembre 2025 et à 10,3 % pour l’exercice suivant » ;",
+      "b) Au deuxième alinéa, après les mots : « inférieur à 1,1 milliard d’euros », sont insérés les mots : « et pour les redevables dont le chiffre d’affaires au titre de l’un de ces deux exercices est inférieur à 1 milliard d’euros » ;",
+      "2° Au B :",
+      "a) Le premier alinéa est complété par les mots : « pour le premier exercice clos à compter du 31 décembre 2025 et à 20,6 % pour l’exercice suivant » ;",
+      "b) Au deuxième alinéa, après les mots : « inférieur à 3,1 milliards d’euros », sont insérés les mots : « et pour les redevables dont le chiffre d’affaires au titre de l’un de ces deux exercices est inférieur à 3 milliards d’euros » ;",
+    ].join("\n")
+
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(4)
+
+    const first = directives[0]
+    expect(first.kind).toBe("insert_after")
+    if (first.kind === "insert_after") {
+      const steps = first.portionSelectors.flatMap((selector) =>
+        selector.kind === "single"
+          ? selector.steps
+          : [...selector.first, ...selector.last],
+      )
+      const nums = steps.flatMap((step) => ("num" in step ? [step.num] : []))
+      expect(nums).toContain("IV")
+      expect(nums).toContain("A")
+    }
+
+    const second = directives[1]
+    expect(second.kind).toBe("insert_after")
+    if (second.kind === "insert_after") {
+      const steps = second.portionSelectors.flatMap((selector) =>
+        selector.kind === "single"
+          ? selector.steps
+          : [...selector.first, ...selector.last],
+      )
+      const nums = steps.flatMap((step) => ("num" in step ? [step.num] : []))
+      expect(nums).toContain("IV")
+      expect(nums).toContain("A")
+    }
+
+    const third = directives[2]
+    expect(third.kind).toBe("insert_after")
+    if (third.kind === "insert_after") {
+      const steps = third.portionSelectors.flatMap((selector) =>
+        selector.kind === "single"
+          ? selector.steps
+          : [...selector.first, ...selector.last],
+      )
+      const nums = steps.flatMap((step) => ("num" in step ? [step.num] : []))
+      expect(nums).toContain("IV")
+      expect(nums).toContain("B")
+    }
+
+    const fourth = directives[3]
+    expect(fourth.kind).toBe("insert_after")
+    if (fourth.kind === "insert_after") {
+      const steps = fourth.portionSelectors.flatMap((selector) =>
+        selector.kind === "single"
+          ? selector.steps
+          : [...selector.first, ...selector.last],
+      )
+      const nums = steps.flatMap((step) => ("num" in step ? [step.num] : []))
+      expect(nums).toContain("IV")
+      expect(nums).toContain("B")
+    }
+  })
+
+  test("suppression de portion sans citation explicite", () => {
+    const line = "Le 5° du 1 de l’article 93 est abrogé ;"
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(1)
+    const directive = directives[0]
+    expect(directive.kind).toBe("delete_portion")
+    expect(directive.portionSelectors.length).toBeGreaterThan(0)
+  })
+
+  test("liste imbriquee sans reference d'article dans l'intro", () => {
+    const line = [
+      "Le code général des impôts est ainsi modifié :",
+      "4° A l’article 81 :",
+      "a) Le 7° est abrogé ;",
+    ].join("\n")
+
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(1)
+    const directive = directives[0]
+    expect(directive.kind).toBe("delete_portion")
+    const steps = directive.portionSelectors.flatMap((selector) =>
+      selector.kind === "single"
+        ? selector.steps
+        : [...selector.first, ...selector.last],
+    )
+    const nums = steps.flatMap((step) => ("num" in step ? [step.num] : []))
+    expect(nums).toContain("7°")
+    const collectArticleNums = (reference: TextAstReference): string[] => {
+      if (reference.type === "article") {
+        return reference.num ? [reference.num] : []
+      }
+      if (reference.type === "parent-enfant") {
+        return [
+          ...collectArticleNums(reference.parent),
+          ...collectArticleNums(reference.child),
+        ]
+      }
+      if (reference.type === "bounded-interval") {
+        return [
+          ...collectArticleNums(reference.first),
+          ...collectArticleNums(reference.last),
+        ]
+      }
+      if (reference.type === "counted-interval") {
+        return collectArticleNums(reference.first)
+      }
+      if (reference.type === "enumeration") {
+        return [
+          ...collectArticleNums(reference.left),
+          ...collectArticleNums(reference.right),
+        ]
+      }
+      if (reference.type === "exclusion") {
+        return collectArticleNums(reference.left)
+      }
+      if (reference.type === "reference_et_action") {
+        return collectArticleNums(reference.reference)
+      }
+      return []
+    }
+    const articleNums = collectArticleNums(directive.reference)
+    expect(articleNums).toContain("81")
   })
 })

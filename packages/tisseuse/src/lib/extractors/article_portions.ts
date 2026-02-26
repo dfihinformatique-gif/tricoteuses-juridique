@@ -102,7 +102,7 @@ const divisionLevelByType: Record<DivisionType, number> = {
   "sous-sous-paragraphe": 9,
 }
 
-function isRomanNumeral(token: string): boolean {
+export function isRomanNumeral(token: string): boolean {
   return /^[IVXLCDM]+$/i.test(token)
 }
 
@@ -407,7 +407,23 @@ function portionSelectorsFromSingleReference(
 export function extractPortionSelectors(
   reference: TextAstReference,
 ): PortionSelector[] {
-  return portionSelectorsFromSingleReference(reference)
+  const selectors = portionSelectorsFromSingleReference(reference)
+  if (selectors.length === 0) return selectors
+  const primary = selectors[0]
+  if (primary?.kind === "single" && primary.steps.length > 1) {
+    const [first, second] = primary.steps
+    if (
+      first?.type === "item" &&
+      typeof first.num === "string" &&
+      /^\d+$/.test(first.num) &&
+      second?.type === "item" &&
+      typeof second.num === "string" &&
+      /°/.test(second.num)
+    ) {
+      return [primary, { kind: "single", steps: primary.steps.slice(1) }]
+    }
+  }
+  return selectors
 }
 
 function matchItemStep(
@@ -418,7 +434,9 @@ function matchItemStep(
     return step.index === node.index
   }
   if (step.num !== undefined && node.num !== undefined) {
-    return step.num.toLowerCase() === node.num.toLowerCase()
+    const normalize = (value: string): string =>
+      value.toLowerCase().replace(/[°.]/g, "").trim()
+    return normalize(step.num) === normalize(node.num)
   }
   return false
 }
@@ -431,6 +449,23 @@ function resolveStep(
     | ArticlePortionAlinea,
   step: PortionSelectorStep,
 ): { node: ArticlePortionNode; path: ArticlePortionNode[] } | null {
+  const getChildren = (
+    current:
+      | ArticlePortionArticle
+      | ArticlePortionDivision
+      | ArticlePortionItem
+      | ArticlePortionAlinea,
+  ): ArticlePortionNode[] => {
+    if (
+      "children" in current &&
+      (current.type === "article" ||
+        current.type === "item" ||
+        divisionTypes.includes(current.type as DivisionType))
+    ) {
+      return current.children
+    }
+    return []
+  }
   const collectAlineasDeep = (
     current:
       | ArticlePortionArticle
@@ -449,12 +484,7 @@ function resolveStep(
     return []
   }
   if (divisionTypes.includes(step.type as DivisionType)) {
-    const children =
-      node.type === "article" ||
-      node.type === "item" ||
-      divisionTypes.includes(node.type as DivisionType)
-        ? node.children
-        : []
+    const children = getChildren(node)
     for (const child of children) {
       if (
         divisionTypes.includes(child.type as DivisionType) &&
@@ -468,23 +498,24 @@ function resolveStep(
   }
 
   if (step.type === "item") {
-    const children =
-      node.type === "article" || node.type === "item" || divisionTypes.includes(node.type as DivisionType)
-        ? node.children
-        : []
+    const children = getChildren(node)
     for (const child of children) {
       if (child.type === "item" && matchItemStep(child, step)) {
         return { node: child, path: [child] }
+      }
+    }
+    for (const child of children) {
+      if (child.type === "alinéa") continue
+      const resolved = resolveStep(child, step)
+      if (resolved) {
+        return { node: resolved.node, path: [child, ...resolved.path] }
       }
     }
     return null
   }
 
   if (step.type === "alinéa") {
-    const children =
-      node.type === "article" || node.type === "item" || divisionTypes.includes(node.type as DivisionType)
-        ? node.children
-        : []
+    const children = getChildren(node)
     const alineas = children.filter(
       (child): child is ArticlePortionAlinea => child.type === "alinéa",
     )

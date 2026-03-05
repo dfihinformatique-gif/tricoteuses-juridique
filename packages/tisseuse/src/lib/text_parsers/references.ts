@@ -1,4 +1,4 @@
-import { action } from "./actions.js"
+import { action, preAction } from "./actions.js"
 import { article, articles } from "./articles.js"
 import type {
   CompoundReferencesSeparator,
@@ -9,7 +9,6 @@ import type {
 } from "./ast.js"
 import { division, divisions } from "./divisions.js"
 import {
-  actionTargetFromReference,
   addChildLeftToLastChild,
   createEnumerationOrBoundedInterval,
   createParentChildTreeFromReferences,
@@ -18,9 +17,11 @@ import {
   alternatives,
   chain,
   convert,
+  fastPath,
   optional,
   regExp,
   repeat,
+  type TextParser,
 } from "./parsers.js"
 import { portionPrecisePluriel, portionPreciseSingulier } from "./portions.js"
 import {
@@ -124,6 +125,7 @@ export const referenceSingulier2Internal = alternatives(
 
 export const referencePluriel1Internal = chain(
   [
+    optional(preAction, { default: null }),
     chain(
       [
         introPluriel,
@@ -147,27 +149,22 @@ export const referencePluriel1Internal = chain(
   ],
   {
     value: (results, context) => {
-      if (results[1] === null) {
-        return results[0] as TextAstReference
-      }
-      const reference = results[0] as TextAstReference
-      const action = results[1] as TextAstAction
-      const actionWithTarget =
-        action.action === "SUPPRESSION"
-          ? { ...action, target: actionTargetFromReference(reference) }
-          : action
-      return {
-        action: actionWithTarget,
-        position: context.position(),
-        reference,
-        type: "reference_et_action",
-      }
+      const detectedAction = (results[2] ?? results[0]) as TextAstAction | null
+      return detectedAction === null
+        ? (results[1] as TextAstReference)
+        : {
+            action: detectedAction,
+            position: context.position(),
+            reference: results[1] as TextAstReference,
+            type: "reference_et_action",
+          }
     },
   },
 )
 
 export const referenceSingulier1Internal = chain(
   [
+    optional(preAction, { default: null }),
     chain(
       [
         introSingulier,
@@ -197,21 +194,15 @@ export const referenceSingulier1Internal = chain(
   ],
   {
     value: (results, context) => {
-      if (results[1] === null) {
-        return results[0] as TextAstReference
-      }
-      const reference = results[0] as TextAstReference
-      const action = results[1] as TextAstAction
-      const actionWithTarget =
-        action.action === "SUPPRESSION"
-          ? { ...action, target: actionTargetFromReference(reference) }
-          : action
-      return {
-        action: actionWithTarget,
-        position: context.position(),
-        reference,
-        type: "reference_et_action",
-      }
+      const detectedAction = (results[2] ?? results[0]) as TextAstAction | null
+      return detectedAction === null
+        ? (results[1] as TextAstReference)
+        : {
+            action: detectedAction,
+            position: context.position(),
+            reference: results[1] as TextAstReference,
+            type: "reference_et_action",
+          }
     },
   },
 )
@@ -221,27 +212,30 @@ export const reference1Internal = alternatives(
   referencePluriel1Internal,
 )
 
-export const reference = chain(
-  [
-    reference1Internal,
-    repeat([
-      alternatives(separateurExclusion, separateurEnumeration),
+export const reference = fastPath<TextAstReference>(
+  "article|loi|décret|code|alinéa|phrase|chapitre|titre|livre|partie|section|paragraphe|ordonnance|constitution|directive|règlement|\\d|[ivxlc]+|[a-zA-Z]",
+  chain(
+    [
       reference1Internal,
-    ]),
-  ],
-  {
-    value: (results, context) =>
-      createEnumerationOrBoundedInterval(
-        results[0] as TextAstReference,
-        results[1] as Array<
-          [
-            CompoundReferencesSeparator,
-            TextAstAtomicReference | TextAstParentChild,
-          ]
-        >,
-        context.position(),
-      ),
-  },
+      repeat([
+        alternatives(separateurExclusion, separateurEnumeration),
+        reference1Internal,
+      ]),
+    ],
+    {
+      value: (results, context) =>
+        createEnumerationOrBoundedInterval(
+          results[0] as TextAstReference,
+          results[1] as Array<
+            [
+              CompoundReferencesSeparator,
+              TextAstAtomicReference | TextAstParentChild,
+            ]
+          >,
+          context.position(),
+        ),
+    },
+  ) as TextParser<TextAstReference>,
 )
 
 export const referenceSeule = convert(referenceSingulier2Internal, {

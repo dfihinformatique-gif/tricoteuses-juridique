@@ -11,303 +11,21 @@ import type { JSONValue } from "postgres"
 import sade from "sade"
 
 import {
-  assertNever,
   extendLoadedArticle,
   getArticleDateSignature,
   getTexteVersionDateSignature,
-  reverseTransformedInnerFragment,
-  reverseTransformedReplacement,
-  simplifyHtml,
-  TextParserContext,
-  urlFromLegalId,
+  type DefinitionOrLink,
+  type ExtractedLinkDb,
   type JorfArticleExtended,
   type LegiArticleExtended,
-} from "$lib"
-import {
-  extractTextLinks,
-  type ExtractedLinkDb,
   type TextLinksParserState,
 } from "$lib"
+import { addLinksToHtml } from "$lib/linkers/html.js"
 import config from "$lib/server/config.js"
 import { europeDb, legiDb } from "$lib/server/databases/index.js"
 
 const { linkBaseUrl, linkType } = config
 const today = new Date().toISOString().split("T")[0]
-
-async function addLinksToHtml({
-  date,
-  existingLinksKeys,
-  fieldName,
-  id,
-  inputHtml,
-  logIgnoredReferencesTypes,
-  logPartialReferences,
-  logReferences,
-  state,
-}: {
-  date: string
-  existingLinksKeys: Set<string>
-  fieldName: string
-  id: string
-  inputHtml: string
-  logIgnoredReferencesTypes?: boolean
-  logPartialReferences?: boolean
-  logReferences?: boolean
-  state: TextLinksParserState
-}): Promise<string> {
-  const transformation = simplifyHtml({ removeAWithHref: true })(inputHtml)
-  const inputText = transformation.output
-  const context = new TextParserContext(inputText)
-  let output = inputHtml
-  let outputOffset = 0
-
-  let index = -1
-  for await (const link of extractTextLinks({
-    context,
-    date,
-    europeDb,
-    legiDb,
-    logIgnoredReferencesTypes,
-    logPartialReferences,
-    logReferences,
-    state,
-    transformation,
-  })) {
-    index++
-    switch (link.type) {
-      case "article_definition": {
-        // Example: LEGIARTI000006312473
-        // La gestion comptable et financière du fonds national de garantie des calamités agricoles est assurée selon les dispositions de l'article L. 431-11 du code des assurances ci-après reproduit :
-        //
-        // Art. L. 431-11 - La gestion comptable et financière du fonds national de garantie des calamités agricoles mentionné à l'article L. 442-1 est assurée par la caisse centrale de réassurance dans un compte distinct de ceux qui retracent les autres opérations pratiquées par cet établissement.
-        //
-        // => Ignore it.
-        break
-      }
-
-      case "external_article": {
-        const {
-          articleId,
-          originalTransformation: articleOriginalTransformation,
-        } = link
-        await upsertExtractedLink(existingLinksKeys, {
-          field_name: fieldName,
-          index,
-          link,
-          source_id: id,
-          target_id: articleId ?? null,
-        })
-        if (articleId !== undefined) {
-          if (articleOriginalTransformation === undefined) {
-            throw new Error(
-              `Missing originalTransformation attribute in external article link: ${JSON.stringify(link, null, 2)}`,
-            )
-          }
-          const original = reverseTransformedInnerFragment(
-            output,
-            articleOriginalTransformation,
-            outputOffset,
-          )
-          const replacement = reverseTransformedReplacement(
-            articleOriginalTransformation,
-            `<a class="lien_article_externe" href="${urlFromLegalId(linkType, linkBaseUrl, articleId)}">${original}</a>`,
-          )
-          output =
-            output.slice(
-              0,
-              articleOriginalTransformation.position.start + outputOffset,
-            ) +
-            replacement +
-            output.slice(
-              articleOriginalTransformation.position.stop + outputOffset,
-            )
-          outputOffset +=
-            replacement.length -
-            (articleOriginalTransformation.position.stop -
-              articleOriginalTransformation.position.start)
-        }
-        break
-      }
-
-      case "external_division": {
-        const {
-          originalTransformation: divisionOriginalTransformation,
-          sectionTaId,
-        } = link
-        await upsertExtractedLink(existingLinksKeys, {
-          field_name: fieldName,
-          index,
-          link,
-          source_id: id,
-          target_id: sectionTaId ?? null,
-        })
-        if (sectionTaId !== undefined) {
-          if (divisionOriginalTransformation === undefined) {
-            throw new Error(
-              `Missing originalTransformation attribute in external division link: ${JSON.stringify(link, null, 2)}`,
-            )
-          }
-          const original = reverseTransformedInnerFragment(
-            output,
-            divisionOriginalTransformation,
-            outputOffset,
-          )
-          const replacement = reverseTransformedReplacement(
-            divisionOriginalTransformation,
-            `<a class="lien_division_externe" href="${urlFromLegalId(linkType, linkBaseUrl, sectionTaId)}">${original}</a>`,
-          )
-          output =
-            output.slice(
-              0,
-              divisionOriginalTransformation.position.start + outputOffset,
-            ) +
-            replacement +
-            output.slice(
-              divisionOriginalTransformation.position.stop + outputOffset,
-            )
-          outputOffset +=
-            replacement.length -
-            (divisionOriginalTransformation.position.stop -
-              divisionOriginalTransformation.position.start)
-        }
-        break
-      }
-
-      case "european_text": {
-        const {
-          url: href,
-          originalTransformation: texteOriginalTransformation,
-          titleId,
-        } = link
-        await upsertExtractedLink(existingLinksKeys, {
-          field_name: fieldName,
-          index,
-          link,
-          source_id: id,
-          target_id: titleId ?? null,
-        })
-        if (href === undefined) {
-          continue
-        }
-
-        if (texteOriginalTransformation === undefined) {
-          throw new Error(
-            `Missing originalTransformation attribute in european text link: ${JSON.stringify(link, null, 2)}`,
-          )
-        }
-        const original = reverseTransformedInnerFragment(
-          output,
-          texteOriginalTransformation,
-          outputOffset,
-        )
-        const replacement = reverseTransformedReplacement(
-          texteOriginalTransformation,
-          `<a class="lien_texte_european" href="${href}" target="_blank">${original}</a>`,
-        )
-        output =
-          output.slice(
-            0,
-            texteOriginalTransformation.position.start + outputOffset,
-          ) +
-          replacement +
-          output.slice(texteOriginalTransformation.position.stop + outputOffset)
-        outputOffset +=
-          replacement.length -
-          (texteOriginalTransformation.position.stop -
-            texteOriginalTransformation.position.start)
-        break
-      }
-
-      case "external_text": {
-        const { originalTransformation: texteOriginalTransformation, text } =
-          link
-        await upsertExtractedLink(existingLinksKeys, {
-          field_name: fieldName,
-          index,
-          link,
-          source_id: id,
-          target_id: text.cid ?? null,
-        })
-        if (text.cid === undefined) {
-          if (text.relative !== 0) {
-            // It is not "la présente loi".
-            console.error(
-              `In ${id} field ${fieldName}, link to text "${context.text(text.position)}" without CID: ${JSON.stringify(text, null, 2)}`,
-            )
-          }
-          continue
-        }
-
-        if (texteOriginalTransformation === undefined) {
-          throw new Error(
-            `Missing originalTransformation attribute in external text link: ${JSON.stringify(link, null, 2)}`,
-          )
-        }
-        const original = reverseTransformedInnerFragment(
-          output,
-          texteOriginalTransformation,
-          outputOffset,
-        )
-        const replacement = reverseTransformedReplacement(
-          texteOriginalTransformation,
-          `<a class="lien_texte_externe" href="${urlFromLegalId(linkType, linkBaseUrl, text.cid!)}">${original}</a>`,
-        )
-        output =
-          output.slice(
-            0,
-            texteOriginalTransformation.position.start + outputOffset,
-          ) +
-          replacement +
-          output.slice(texteOriginalTransformation.position.stop + outputOffset)
-        outputOffset +=
-          replacement.length -
-          (texteOriginalTransformation.position.stop -
-            texteOriginalTransformation.position.start)
-        break
-      }
-
-      case "internal_article": {
-        const {
-          definition,
-          originalTransformation: articleOriginalTransformation,
-        } = link
-        if (articleOriginalTransformation === undefined) {
-          throw new Error(
-            `Missing originalTransformation attribute in internal article link: ${JSON.stringify(link, null, 2)}`,
-          )
-        }
-        const original = reverseTransformedInnerFragment(
-          output,
-          articleOriginalTransformation,
-          outputOffset,
-        )
-        const replacement = reverseTransformedReplacement(
-          articleOriginalTransformation,
-          `<a class="lien_article_interne" href="#definition_article_${definition.textId}_${definition.article.num!.replaceAll(" ", "_")}" style="background-color: #eae462">${original}</a>`,
-        )
-        output =
-          output.slice(
-            0,
-            articleOriginalTransformation.position.start + outputOffset,
-          ) +
-          replacement +
-          output.slice(
-            articleOriginalTransformation.position.stop + outputOffset,
-          )
-        outputOffset +=
-          replacement.length -
-          (articleOriginalTransformation.position.stop -
-            articleOriginalTransformation.position.start)
-        break
-      }
-
-      default: {
-        assertNever("Link", link)
-      }
-    }
-  }
-  return output
-}
 
 async function addLinksToLegifrance({
   cid: textCid,
@@ -413,20 +131,22 @@ async function addLinksToLegifranceText({
       ["visas", (texteVersion as LegiTexteVersion).VISAS?.CONTENU],
     ] as Array<[keyof typeof outputByFieldName, string | undefined]>) {
       if (input !== undefined) {
-        const output = await addLinksToHtml({
+        const { output } = await addLinksToHtml({
           date,
-          existingLinksKeys,
-          fieldName,
-          id,
-          inputHtml: input,
+          europeDb,
+          html: input,
+          legiDb,
+          linkBaseUrl,
+          linkType,
           logIgnoredReferencesTypes,
           logPartialReferences,
           logReferences,
+          onLink: makeOnLink(existingLinksKeys, fieldName, id),
           state: {
             defaultTextId: textCid,
           },
         })
-        if (output !== input) {
+        if (output !== null) {
           outputByFieldName[fieldName] = output
         }
       }
@@ -642,36 +362,40 @@ async function addLinksToLegifranceText({
 
       const blocTextuelContenu = article.BLOC_TEXTUEL?.CONTENU
       if (blocTextuelContenu !== undefined) {
-        const output = await addLinksToHtml({
+        const { output } = await addLinksToHtml({
           date,
-          existingLinksKeys,
-          fieldName: "bloc_textuel",
-          id,
-          inputHtml: blocTextuelContenu,
+          europeDb,
+          html: blocTextuelContenu,
+          legiDb,
+          linkBaseUrl,
+          linkType,
           logIgnoredReferencesTypes,
           logPartialReferences,
           logReferences,
+          onLink: makeOnLink(existingLinksKeys, "bloc_textuel", id),
           state: articleBlocTextuelContext,
         })
-        if (output !== blocTextuelContenu) {
+        if (output !== null) {
           outputByFieldName.bloc_textuel = output
         }
       }
 
       const notaContenu = (article as LegiArticle).NOTA?.CONTENU
       if (notaContenu !== undefined) {
-        const output = await addLinksToHtml({
+        const { output } = await addLinksToHtml({
           date,
-          existingLinksKeys,
-          fieldName: "bloc_textuel",
-          id,
-          inputHtml: notaContenu,
+          europeDb,
+          html: notaContenu,
+          legiDb,
+          linkBaseUrl,
+          linkType,
           logIgnoredReferencesTypes,
           logPartialReferences,
           logReferences,
+          onLink: makeOnLink(existingLinksKeys, "bloc_textuel", id),
           state: structuredClone(defaultArticleContext),
         })
-        if (output !== notaContenu) {
+        if (output !== null) {
           outputByFieldName.nota = output
         }
       }
@@ -744,6 +468,71 @@ function getPreviousArticle(
     }
   }
   return undefined
+}
+
+function makeOnLink(
+  existingLinksKeys: Set<string>,
+  fieldName: string,
+  id: string,
+): (link: DefinitionOrLink, index: number) => Promise<boolean | void> {
+  return async (link, index) => {
+    switch (link.type) {
+      case "article_definition": {
+        // Ignore article definitions in Legifrance context.
+        return true
+      }
+
+      case "external_article": {
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: link.articleId ?? null,
+        })
+        break
+      }
+
+      case "external_division": {
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: link.sectionTaId ?? null,
+        })
+        break
+      }
+
+      case "european_text": {
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: link.titleId ?? null,
+        })
+        break
+      }
+
+      case "external_text": {
+        await upsertExtractedLink(existingLinksKeys, {
+          field_name: fieldName,
+          index,
+          link,
+          source_id: id,
+          target_id: link.text.cid ?? null,
+        })
+        break
+      }
+
+      case "internal_article": {
+        // No DB upsert for internal article links.
+        break
+      }
+    }
+    return false
+  }
 }
 
 async function upsertExtractedLink(

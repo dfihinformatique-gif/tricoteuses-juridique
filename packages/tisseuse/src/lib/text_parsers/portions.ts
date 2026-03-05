@@ -47,15 +47,15 @@ import { separateurEnumeration, separateurPlage } from "./separators.js"
 import {
   espace,
   espaceOuRien,
-  lettreAsciiMinuscule,
+  lettreAscii,
   nonLettre,
   virgule,
 } from "./typography.js"
 
-export const naturePortionSingulier = alternatives(
-  regExp("alinéa", { flags: "i", value: "alinéa" }),
-  regExp("phrase", { flags: "i", value: "phrase" }),
-)
+export const naturePortionSingulier = regExp("alinéa|phrase", {
+  flags: "i",
+  value: (match) => match[0].toLowerCase() as "alinéa" | "phrase",
+})
 
 export const naturePortionPluriel = chain(
   [naturePortionSingulier, regExp("s", { flags: "i" })],
@@ -110,18 +110,14 @@ export const numeroPortion = chain(
           value: result as number,
         }),
       }),
-      convert(lettreAsciiMinuscule, {
+      convert(lettreAscii, {
         value: (result, context) => ({
           position: context.position(),
           text: result as string,
-          value: (result as string).charCodeAt(0) - "a".charCodeAt(0) + 1,
-        }),
-      }),
-      convert(regExp("[A-Z]"), {
-        value: (result, context) => ({
-          position: context.position(),
-          text: result as string,
-          value: (result as string).charCodeAt(0) - "A".charCodeAt(0) + 1,
+          value:
+            (result as string).toLowerCase().charCodeAt(0) -
+            "a".charCodeAt(0) +
+            1,
         }),
       }),
       chain([nombreCardinal, regExp("[°o]?", { flags: "i" })], {
@@ -246,8 +242,8 @@ export const quelquesPortionsNumerotees = chain(
 
       // Convertir tous les items pour leur donner le bon type et supprimer le champ num
       // Ajuster la position du premier item pour inclure le mot "alinéas"/"phrases"
-      const { num: firstItemNum, ...firstItemWithoutNum } = firstItem
-      void firstItemNum
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { num: _firstNum, ...firstItemWithoutNum } = firstItem
       const typedFirstItem = {
         ...firstItemWithoutNum,
         type: portionType,
@@ -258,8 +254,8 @@ export const quelquesPortionsNumerotees = chain(
       }
 
       const typedRestItems = restItems.map(([separator, item]) => {
-        const { num: itemNum, ...itemWithoutNum } = item
-        void itemNum
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { num: _itemNum, ...itemWithoutNum } = item
         return [separator, { ...itemWithoutNum, type: portionType }]
       }) as Array<[CompoundReferencesSeparator, TextAstReference]>
 

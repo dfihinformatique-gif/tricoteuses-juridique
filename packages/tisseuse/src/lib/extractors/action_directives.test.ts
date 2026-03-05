@@ -86,7 +86,9 @@ describe("extractActionDirectivesFromText", () => {
     )
     expect(replaceDirective).toBeDefined()
     if (replaceDirective?.kind === "replace_portion") {
-      expect(replaceDirective.replacementText).toContain("Exemple de remplacement")
+      expect(replaceDirective.replacementText).toContain(
+        "Exemple de remplacement",
+      )
       expect(replaceDirective.portionSelectors.length).toBeGreaterThan(0)
     }
   })

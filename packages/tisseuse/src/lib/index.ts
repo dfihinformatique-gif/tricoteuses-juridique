@@ -69,6 +69,13 @@ export {
   type TableOfContentsPositioned,
 } from "./extractors/table_of_contents.js"
 export { jsonReplacer } from "./json.js"
+export {
+  addLinksToHtml,
+  addLinksOrReferencesToHtmlPage,
+  type OutputByType,
+  type OutputType,
+} from "./linkers/html.js"
+export { addLinksToText } from "./linkers/markdown.js"
 export { linkTypes, urlFromLegalId, type LinkType } from "./links.js"
 export {
   getOrLoadDocument,
@@ -238,6 +245,13 @@ export {
   simplifyUnicodeCharacters,
 } from "./text_parsers/simplifiers.js"
 export {
+  searchArticle,
+  searchArticleKeyword,
+  searchQueryReference,
+  searchTexte,
+  searchTexteAbbreviations,
+} from "./text_parsers/search_queries.js"
+export {
   definitionTexteFrancais,
   identificationTexteEuropeen,
   natureTexteFrancais,
@@ -268,7 +282,7 @@ export {
 } from "./text_parsers/transformers.js"
 export {
   espace,
-  lettreAsciiMinuscule,
+  lettreAscii,
   nonLettre,
   numero,
   virguleOuEspace,

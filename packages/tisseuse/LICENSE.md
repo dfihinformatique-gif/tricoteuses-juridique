@@ -6,6 +6,7 @@ By:
 
 - Camille Moulin <mailto:public_commits@proton.me>
 - Emmanuel Raviart <mailto:emmanuel@raviart.com>
+- David Smadja <mailto:david.smadja@altatech.fr>
 
 Copyright © 2025, 2026 Emmanuel Raviart
 

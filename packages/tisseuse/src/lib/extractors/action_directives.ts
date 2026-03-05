@@ -18,10 +18,7 @@ import {
 } from "$lib/text_parsers/helpers.js"
 import type { FragmentPosition } from "$lib/text_parsers/fragments.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
-import {
-  citation,
-  convertCitationToText,
-} from "$lib/text_parsers/citations.js"
+import { citation, convertCitationToText } from "$lib/text_parsers/citations.js"
 import { article } from "$lib/text_parsers/articles.js"
 import { portion } from "$lib/text_parsers/portions.js"
 import {
@@ -86,7 +83,11 @@ export type ActionDirective =
     }
 
 type ParsedActionKind =
-  | { kind: "insert_after" | "insert_before"; targetText: string; insertText: string }
+  | {
+      kind: "insert_after" | "insert_before"
+      targetText: string
+      insertText: string
+    }
   | { kind: "replace_portion"; replacementText: string }
   | { kind: "replace"; targetText: string; replacementText: string }
   | { kind: "delete"; targetText: string }
@@ -159,9 +160,10 @@ function isListBlockIntroLine(line: string): boolean {
 }
 
 function findFirstActionIndex(text: string): number | null {
-  const match = /\b(inséré|insere|ajouté|ajoute|remplacé|remplace|supprimé|supprime|abrogé|abroge|complété|complete)\b/i.exec(
-    text,
-  )
+  const match =
+    /\b(inséré|insere|ajouté|ajoute|remplacé|remplace|supprimé|supprime|abrogé|abroge|complété|complete)\b/i.exec(
+      text,
+    )
   return match?.index ?? null
 }
 
@@ -193,15 +195,11 @@ function pickPortionReferenceForItem(text: string): TextAstReference | null {
         actionTargetFromReference(reference) !== "article" &&
         (reference.position?.start ?? 0) < actionIndex,
     )
-    .sort(
-      (a, b) => (a.position?.start ?? 0) - (b.position?.start ?? 0),
-    )
+    .sort((a, b) => (a.position?.start ?? 0) - (b.position?.start ?? 0))
   return candidates[0] ?? null
 }
 
-function pickContextReferenceForItem(
-  text: string,
-): TextAstReference | null {
+function pickContextReferenceForItem(text: string): TextAstReference | null {
   const actionIndex = findFirstActionIndex(text) ?? text.length
   const quoteRanges = getQuoteRanges(text)
   const references = getExtractedReferences(new TextParserContext(text))
@@ -211,24 +209,18 @@ function pickContextReferenceForItem(
         !isInsideQuoteRanges(reference.position, quoteRanges) &&
         (reference.position?.start ?? 0) < actionIndex,
     )
-    .sort(
-      (a, b) => (a.position?.start ?? 0) - (b.position?.start ?? 0),
-    )
+    .sort((a, b) => (a.position?.start ?? 0) - (b.position?.start ?? 0))
   if (references.length === 0) return null
   const nonArticle =
-    references.find((reference) =>
-      actionTargetFromReference(reference) !== "article",
+    references.find(
+      (reference) => actionTargetFromReference(reference) !== "article",
     ) ?? null
   return nonArticle ?? references[0] ?? null
 }
 
-function extractListItemDirectives(
-  text: string,
-): ActionDirective[] | null {
+function extractListItemDirectives(text: string): ActionDirective[] | null {
   const lines = splitLinesWithOffsets(text)
-  const introIndex = lines.findIndex((line) =>
-    isListBlockIntroLine(line.text),
-  )
+  const introIndex = lines.findIndex((line) => isListBlockIntroLine(line.text))
   if (introIndex === -1) return null
 
   const articleReference = pickArticleReference(lines[introIndex]?.text ?? "")
@@ -273,8 +265,7 @@ function extractListItemDirectives(
 
     const portionReference = pickPortionReferenceForItem(itemText)
     const hasAction = findFirstActionIndex(itemText) !== null
-    const isContextOnly =
-      !hasAction && itemText.trim().endsWith(":")
+    const isContextOnly = !hasAction && itemText.trim().endsWith(":")
 
     if (isContextOnly) {
       const contextReference = pickContextReferenceForItem(itemText)
@@ -310,7 +301,7 @@ function extractListItemDirectives(
     if (!reference) continue
 
     const directive = buildActionDirective({
-      action: { action: "MODIFICATION" },
+      action: { action: "modifier" },
       reference,
       sourcePosition: { start: item.start, stop: item.end },
       sourceText: itemText,
@@ -479,9 +470,7 @@ function extractPortionReferenceFromPrefix(
   return null
 }
 
-function buildPortionReferenceFromText(
-  text: string,
-): TextAstReference | null {
+function buildPortionReferenceFromText(text: string): TextAstReference | null {
   const articleMatch = /\barticle\b/i.exec(text)
   if (!articleMatch || articleMatch.index === undefined) return null
   const articleIndex = articleMatch.index
@@ -521,17 +510,18 @@ function parseActionFromText(
     /\bavant (la|les) reference\b|\bavant (le|les) mots\b|\bavant la mention\b/.test(
       normalized,
     )
-  const isInsert = /\binsere(?:e|es|s)?\b|\bajoute\b|\bajoutee\b|\bajoutes\b|\bajoutees\b|\bcomplete\b/.test(
-    normalized,
-  )
-  const isReplace = /\bremplace\b|\bremplacee\b|\bremplaces\b|\bremplacees\b/.test(
-    normalized,
-  )
-  const isDelete = /\bsupprime\b|\bsupprimee\b|\bsupprimes\b|\bsupprimees\b|\babroge\b|\babrogee\b|\babroges\b|\babrogees\b/.test(
-    normalized,
-  )
+  const isInsert =
+    /\binsere(?:e|es|s)?\b|\bajoute\b|\bajoutee\b|\bajoutes\b|\bajoutees\b|\bcomplete\b/.test(
+      normalized,
+    )
+  const isReplace =
+    /\bremplace\b|\bremplacee\b|\bremplaces\b|\bremplacees\b/.test(normalized)
+  const isDelete =
+    /\bsupprime\b|\bsupprimee\b|\bsupprimes\b|\bsupprimees\b|\babroge\b|\babrogee\b|\babroges\b|\babrogees\b/.test(
+      normalized,
+    )
 
-  if (action.action === "SUPPRESSION" || isDelete) {
+  if (action.action === "supprimer" || isDelete) {
     if (targetType === "article" && quoted.length === 0) {
       return { kind: "delete_article" }
     }
@@ -697,9 +687,8 @@ function fallbackArticleReference(text: string): {
   reference: TextAstArticle
   position: FragmentPosition
 } | null {
-  const match = /\barticle\s+([0-9]+(?:-[0-9]+)?(?:\s*[A-Z])?(?:\s+[a-z]+)?)\b/i.exec(
-    text,
-  )
+  const match =
+    /\barticle\s+([0-9]+(?:-[0-9]+)?(?:\s*[A-Z])?(?:\s+[a-z]+)?)\b/i.exec(text)
   if (!match || match.index === undefined) return null
   const start = match.index
   const stop = match.index + match[0].length
@@ -747,10 +736,7 @@ function extractActionDirectivesFromTextInternal(
     }
   }
 
-  if (
-    references.length === 1 &&
-    references[0]?.type === "article"
-  ) {
+  if (references.length === 1 && references[0]?.type === "article") {
     const portionedReference = buildPortionReferenceFromText(textWithoutQuotes)
     if (portionedReference) {
       references = [portionedReference]
@@ -778,12 +764,13 @@ function extractActionDirectivesFromTextInternal(
     }
 
     const sourcePosition =
-      reference.position ?? ({
+      reference.position ??
+      ({
         start: 0,
         stop: simplifiedText.length,
       } satisfies FragmentPosition)
     const directive = buildActionDirective({
-      action: { action: "MODIFICATION" },
+      action: { action: "modifier" },
       reference,
       sourcePosition,
       sourceText: simplifiedText,
@@ -796,7 +783,7 @@ function extractActionDirectivesFromTextInternal(
     const fallback = fallbackArticleReference(textWithoutQuotes)
     if (fallback) {
       const directive = buildActionDirective({
-        action: { action: "MODIFICATION" },
+        action: { action: "modifier" },
         reference: fallback.reference,
         sourcePosition: fallback.position,
         sourceText: simplifiedText,
@@ -856,7 +843,9 @@ function collectCitationLines(
   }
   if (!foundOpening || citationLines.length === 0) return null
   return {
-    combinedText: [stripLineLeader(lines[startIndex]), ...citationLines].join("\n"),
+    combinedText: [stripLineLeader(lines[startIndex]), ...citationLines].join(
+      "\n",
+    ),
     endIndex: index,
   }
 }

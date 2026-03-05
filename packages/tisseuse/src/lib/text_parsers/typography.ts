@@ -6,7 +6,7 @@ export const espace = regExp(" ")
 
 export const espaceOuRien = regExp(" ?", { value: "" })
 
-export const lettreAsciiMinuscule = regExp("[a-z]")
+export const lettreAscii = regExp("[a-z]", { flags: "i" })
 
 export const nonLettre = regExp(String.raw`(?=$|\P{Alphabetic})`, {
   flags: "iv",

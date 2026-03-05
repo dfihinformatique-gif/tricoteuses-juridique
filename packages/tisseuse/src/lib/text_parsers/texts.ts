@@ -66,31 +66,33 @@ const textsCidsByNatureAndNum =
  */
 export const natureTexteFrancais = convert(
   alternatives(
-    regExp("arrêtés?", { flags: "i", value: "ARRETE" }),
-    regExp("circulaires?", { flags: "i", value: "CIRCULAIRE" }),
-    // JORFTEXT000000702211 Code professionnel local du 26 juillet 1900 pour l'Alsace et la Moselle
-    regExp("code professionnel local", { flags: "i", value: "LOI" }),
-    regExp("code", { flags: "i", value: "CODE" }),
     regExp("Constitution", { value: "CONSTITUTION" }),
-    regExp("décret-loi", { flags: "i", value: "DECRET_LOI" }),
-    regExp("décrets?", { flags: "i", value: "DECRET" }),
-    regExp("livre(?= des procédures fiscales)", { flags: "i", value: "CODE" }),
-    regExp("loi constitutionnelle", {
-      flags: "i",
-      value: "LOI_CONSTIT",
-    }),
-    regExp("loi d'orientation quinquennale", { flags: "i", value: "LOI" }),
-    regExp("loi d'orientation", { flags: "i", value: "LOI" }),
-    regExp("loi de programme", { flags: "i", value: "LOI" }),
-    regExp("loi locale", { flags: "i", value: "LOI" }),
-    regExp("loi organique", { flags: "i", value: "LOI_ORGANIQUE" }),
-    regExp("loi quinquennale", { flags: "i", value: "LOI" }),
-    regExp("loi", { flags: "i", value: "LOI" }),
-    regExp("ordonnance (du Roi|locale|ministérielle|royale)", {
-      flags: "i",
-      value: "ORDONNANCE",
-    }),
-    regExp("ordonnance", { flags: "i", value: "ORDONNANCE" }),
+    regExp(
+      "arrêtés?|circulaires?|code professionnel local|code|décret-loi|décrets?|livre(?= des procédures fiscales)|loi constitutionnelle|loi d'orientation quinquennale|loi d'orientation|loi de programme|loi locale|loi organique|loi quinquennale|loi|ordonnance (?:du Roi|locale|ministérielle|royale)|ordonnance",
+      {
+        flags: "i",
+        value: (match) => {
+          const text = match[0].toLowerCase()
+          if (text.startsWith("arrêté")) return "ARRETE"
+          if (text.startsWith("circulaire")) return "CIRCULAIRE"
+          if (text === "code professionnel local") return "LOI"
+          if (text === "code") return "CODE"
+          if (text === "décret-loi") return "DECRET_LOI"
+          if (text.startsWith("décret")) return "DECRET"
+          if (text.startsWith("livre")) return "CODE"
+          if (text === "loi constitutionnelle") return "LOI_CONSTIT"
+          if (text === "loi d'orientation quinquennale") return "LOI"
+          if (text === "loi d'orientation") return "LOI"
+          if (text === "loi de programme") return "LOI"
+          if (text === "loi locale") return "LOI"
+          if (text === "loi organique") return "LOI_ORGANIQUE"
+          if (text === "loi quinquennale") return "LOI"
+          if (text === "loi") return "LOI"
+          if (text.startsWith("ordonnance")) return "ORDONNANCE"
+          return "LOI" // fallback
+        },
+      },
+    ),
   ),
   {
     value: (result) => ({
@@ -404,25 +406,27 @@ export const identificationTexteEuropeen = alternatives(
  */
 export const natureTexteEuropeen = chain(
   [
-    alternatives(
-      // "arrêté" must be before "arrêt".
-      regExp("arrêté", { flags: "i", value: "ARRETEEURO" }), // TODO
-      regExp("arrêt", { flags: "i", value: "ARRETEURO" }), // TODO
-      regExp("avis", { flags: "i", value: "AVISEURO" }), // TODO
-      regExp("décision", { flags: "i", value: "DECISION_EURO" }), // TODO
-      regExp("déclaration", { flags: "i", value: "DECLARATIONEURO" }), // TODO
-      regExp("délibération", { flags: "i", value: "DELIBERATIONEURO" }), // TODO
-      regExp("directive(?: (d'exécution|déléguée))?", {
+    regExp(
+      "arrêtés?|arrêts?|avis|décisions?|déclarations?|délibérations?|directive(?: d'exécution|déléguée)?|informations?|instructions?|lettres?|règlement(?: d'exécution)?",
+      {
         flags: "i",
-        value: "DIRECTIVE_EURO",
-      }),
-      regExp("information", { flags: "i", value: "INFORMATIONEURO" }), // TODO
-      regExp("instruction", { flags: "i", value: "INSTRUCTIONEURO" }), // TODO
-      regExp("lettre", { flags: "i", value: "LETTREEURO" }), // TODO
-      regExp("règlement(?: d'exécution)?", {
-        flags: "i",
-        value: "REGLEMENTEUROPEEN",
-      }),
+        value: (match) => {
+          const text = match[0].toLowerCase()
+          // "arrêté" must be before "arrêt".
+          if (text.startsWith("arrêté")) return "ARRETEEURO"
+          if (text.startsWith("arrêt")) return "ARRETEURO"
+          if (text.startsWith("avis")) return "AVISEURO"
+          if (text.startsWith("décision")) return "DECISION_EURO"
+          if (text.startsWith("déclaration")) return "DECLARATIONEURO"
+          if (text.startsWith("délibération")) return "DELIBERATIONEURO"
+          if (text.startsWith("directive")) return "DIRECTIVE_EURO"
+          if (text.startsWith("information")) return "INFORMATIONEURO"
+          if (text.startsWith("instruction")) return "INSTRUCTIONEURO"
+          if (text.startsWith("lettre")) return "LETTREEURO"
+          if (text.startsWith("règlement")) return "REGLEMENTEUROPEEN"
+          return "REGLEMENTEUROPEEN" // Fallback (should not happen)
+        },
+      },
     ),
     optional(
       regExp(String.raw` \((CE|CEE|EURATOM|UE(, EURATOM)?)\)`, { flags: "i" }),

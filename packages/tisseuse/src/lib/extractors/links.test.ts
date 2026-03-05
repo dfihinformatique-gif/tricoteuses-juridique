@@ -47,30 +47,40 @@ describe("extractTextLinks", () => {
           stop: 61,
         },
         reference: {
-          child: {
-            num: "1649 A",
-            position: {
-              start: 20,
-              stop: 34,
-            },
-            type: "article",
-          },
-          parent: {
-            cid: "LEGITEXT000006069577",
-            nature: "CODE",
-            position: {
-              start: 38,
-              stop: 61,
-            },
-            title: "Code général des impôts",
-            titleRest: "général des impôts",
-            type: "texte",
+          action: {
+            action: "application",
           },
           position: {
             start: 18,
             stop: 61,
           },
-          type: "parent-enfant",
+          reference: {
+            child: {
+              num: "1649 A",
+              position: {
+                start: 20,
+                stop: 34,
+              },
+              type: "article",
+            },
+            parent: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 38,
+                stop: 61,
+              },
+              title: "Code général des impôts",
+              titleRest: "général des impôts",
+              type: "texte",
+            },
+            position: {
+              start: 18,
+              stop: 61,
+            },
+            type: "parent-enfant",
+          },
+          type: "reference_et_action",
         },
         type: "external_article",
       },
@@ -101,24 +111,34 @@ describe("extractTextLinks", () => {
           stop: 99,
         },
         reference: {
-          implicitText: {
-            cid: "LEGITEXT000006069577",
-            nature: "CODE",
-            position: {
-              start: 38,
-              stop: 61,
-            },
-            title: "Code général des impôts",
-            titleRest: "général des impôts",
-            type: "texte",
+          action: {
+            action: "application",
           },
-          num: "1649 A",
           position: {
             start: 77,
             stop: 99,
           },
-          relative: 0,
-          type: "article",
+          reference: {
+            implicitText: {
+              cid: "LEGITEXT000006069577",
+              nature: "CODE",
+              position: {
+                start: 38,
+                stop: 61,
+              },
+              title: "Code général des impôts",
+              titleRest: "général des impôts",
+              type: "texte",
+            },
+            num: "1649 A",
+            position: {
+              start: 77,
+              stop: 99,
+            },
+            relative: 0,
+            type: "article",
+          },
+          type: "reference_et_action",
         },
         type: "external_article",
       },
@@ -158,7 +178,7 @@ describe("extractTextLinks", () => {
       },
       reference: {
         action: {
-          action: "MODIFICATION",
+          action: "modifier",
         },
         position: {
           start: 0,
@@ -488,7 +508,7 @@ describe("extractTextLinks", () => {
       },
       reference: {
         action: {
-          action: "MODIFICATION",
+          action: "modifier",
         },
         position: {
           start: 5,
@@ -549,7 +569,7 @@ describe("extractTextLinks", () => {
       },
       reference: {
         action: {
-          action: "MODIFICATION",
+          action: "remplacer",
           actionInContent: true,
           originalCitations: [
             {
@@ -646,7 +666,7 @@ describe("extractTextLinks", () => {
       },
       reference: {
         action: {
-          action: "MODIFICATION",
+          action: "modifier",
         },
         position: {
           start: 5,
@@ -707,7 +727,7 @@ describe("extractTextLinks", () => {
       },
       reference: {
         action: {
-          action: "MODIFICATION",
+          action: "remplacer",
           actionInContent: true,
           originalCitations: [
             {
@@ -803,7 +823,7 @@ describe("extractTextLinks", () => {
         },
         reference: {
           action: {
-            action: "MODIFICATION",
+            action: "modifier",
           },
           position: {
             start: 5,
@@ -976,7 +996,7 @@ describe("extractTextLinks", () => {
         },
         reference: {
           action: {
-            action: "CREATION",
+            action: "compléter",
           },
           position: {
             start: 4,
@@ -1088,7 +1108,7 @@ describe("extractTextLinks", () => {
         },
         reference: {
           action: {
-            action: "MODIFICATION",
+            action: "modifier",
           },
           position: {
             start: 5,
@@ -1267,7 +1287,7 @@ describe("extractTextLinks", () => {
         },
         reference: {
           action: {
-            action: "CREATION",
+            action: "insérer",
           },
           position: {
             start: 167,
@@ -1426,7 +1446,7 @@ describe("extractTextLinks with transformation", () => {
         },
         reference: {
           action: {
-            action: "MODIFICATION",
+            action: "modifier",
           },
           originalTransformation: {
             innerPrefix: "<span>",
@@ -1601,7 +1621,7 @@ describe("extractTextLinks with transformation", () => {
         },
         reference: {
           action: {
-            action: "MODIFICATION",
+            action: "modifier",
           },
           originalTransformation: {
             position: {
@@ -1708,7 +1728,7 @@ describe("extractTextLinks with transformation", () => {
         },
         reference: {
           action: {
-            action: "CREATION",
+            action: "compléter",
           },
           originalTransformation: {
             position: {
@@ -1782,7 +1802,9 @@ describe("extractTextLinks with transformation", () => {
           stop: 302,
         },
         reference: {
-          num: "L311-6",
+          action: {
+            action: "application",
+          },
           originalTransformation: {
             position: {
               start: 306,
@@ -1793,7 +1815,21 @@ describe("extractTextLinks with transformation", () => {
             start: 284,
             stop: 302,
           },
-          type: "article",
+          reference: {
+            num: "L311-6",
+            originalTransformation: {
+              position: {
+                start: 306,
+                stop: 324,
+              },
+            },
+            position: {
+              start: 284,
+              stop: 302,
+            },
+            type: "article",
+          },
+          type: "reference_et_action",
         },
         type: "external_article",
       },

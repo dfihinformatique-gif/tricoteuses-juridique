@@ -10,7 +10,6 @@ export interface Config {
   legiDb: DatabaseConfig
   linkBaseUrl: string
   linkType: LinkType
-  tisseuseDb: DatabaseConfig
 }
 
 export interface DatabaseConfig {
@@ -52,13 +51,6 @@ const [config, error] = validateConfig({
   },
   linkBaseUrl: process.env.LINK_BASE_URL,
   linkType: process.env.LINK_TYPE,
-  tisseuseDb: {
-    host: process.env.TISSEUSE_DB_HOST,
-    port: process.env.TISSEUSE_DB_PORT,
-    database: process.env.TISSEUSE_DB_NAME,
-    user: process.env.TISSEUSE_DB_USER,
-    password: process.env.TISSEUSE_DB_PASSWORD,
-  },
 }) as [Config, unknown]
 if (error !== null) {
   console.error(

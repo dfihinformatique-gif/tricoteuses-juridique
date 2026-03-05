@@ -25,7 +25,13 @@ export type TextAstConverter<T extends TextAst> = (
   context: TextParserContext,
 ) => TextAst | undefined
 
-export type TextParser = (context: TextParserContext) => TextAst | undefined
+export type TextParser<T extends TextAst = TextAst> = {
+  (context: TextParserContext): T | undefined
+  extract?: (
+    context: TextParserContext,
+    options?: { jumpExact?: boolean; overlapWindow?: number },
+  ) => Generator<T, void, undefined>
+}
 
 export class TextParserContext {
   currentArticle: TextAstArticle | undefined = undefined
@@ -196,6 +202,180 @@ export const convert =
     return value
   }
 
+/**
+ * Executes a parser only if a fast-path regular expression matches ahead in the text.
+ * It checks if the `fastRegExp` pattern exists within a short window ahead of `context.offset`.
+ * If not, it skips evaluating the inner combinator tree, saving massive amounts of operations.
+ */
+export const fastPath = <T extends TextAst = TextAst>(
+  fastRegExpContent: string,
+  parser: TextParser<T> | TextParser<T>[],
+  windowSize = 80,
+  globalRegExpContent?: string,
+): TextParser<T> => {
+  // Compile strictly with 'y' (sticky) but test a window instead of anchoring at offset 0
+  // We do not use 'y' because we want to match ANYWHERE within the slice window
+  const fastRegExp = new RegExp(fastRegExpContent, "i")
+
+  const parserFn = (context: TextParserContext): T | undefined => {
+    // Extract a window of text immediately following the current offset
+    const window = context.input.slice(
+      context.offset,
+      context.offset + windowSize,
+    )
+
+    // If the keyword doesn't appear in this upcoming window, it's impossible to parse here
+    if (!fastRegExp.test(window)) {
+      return undefined
+    }
+
+    // Fast-path matched nearby! Run the exact combinator at the *current* offset.
+    return (
+      Array.isArray(parser) ? chain(parser, { exportVariables: true }) : parser
+    )(context) as T | undefined
+  }
+
+  parserFn.extract = function* (
+    context: TextParserContext,
+    options?: { jumpExact?: boolean; overlapWindow?: number },
+  ): Generator<T, void, undefined> {
+    const globalRegExp = new RegExp(
+      globalRegExpContent ?? fastRegExpContent,
+      "gimv",
+    )
+    let nextMatchIndex = -1
+
+    while (context.offset < context.input.length) {
+      if (context.offset > nextMatchIndex) {
+        globalRegExp.lastIndex = context.offset
+        const candidate = globalRegExp.exec(context.input)
+        if (candidate === null) {
+          return // No more matches possible
+        }
+        nextMatchIndex = candidate.index
+
+        if (options?.jumpExact) {
+          context.offset = nextMatchIndex
+        } else if (options?.overlapWindow !== undefined) {
+          // Delay offset assignment until the backward scanning loop below
+        } else {
+          // Fast-forward offset to exactly windowSize before the keyword,
+          // because the parser might start that far back to match preceding context.
+          context.offset = Math.max(context.offset, nextMatchIndex - windowSize)
+        }
+      }
+
+      if (options?.overlapWindow !== undefined) {
+        let bestAst: T | undefined = undefined
+        let bestEndOffset = -1
+        const startCheckIndex = Math.max(
+          context.offset,
+          nextMatchIndex - options.overlapWindow,
+        )
+
+        for (let i = startCheckIndex; i <= nextMatchIndex; i++) {
+          context.offset = i
+          const ast = parserFn(context)
+          // To be a valid overlapping match, the parsing must consume past the anchor keyword's start index
+          if (ast !== undefined && context.offset > nextMatchIndex) {
+            bestAst = ast
+            bestEndOffset = context.offset
+            break
+          }
+        }
+
+        if (bestAst !== undefined) {
+          yield bestAst
+          context.offset = bestEndOffset
+          globalRegExp.lastIndex = context.offset
+        } else {
+          context.offset = nextMatchIndex + 1
+          if (globalRegExp.lastIndex <= context.offset) {
+            globalRegExp.lastIndex = context.offset
+          } else {
+            context.offset = globalRegExp.lastIndex
+          }
+        }
+      } else {
+        const ast = parserFn(context)
+        if (ast !== undefined) {
+          yield ast
+          // context.offset is safely advanced by the inner parser logic
+          if (options?.jumpExact) {
+            globalRegExp.lastIndex = context.offset
+          }
+        } else {
+          if (options?.jumpExact) {
+            // For exact jumps, we don't inch forward checking every character
+            // Wait for the next regexp execution at current lastIndex.
+            if (globalRegExp.lastIndex <= context.offset) {
+              context.offset++
+            } else {
+              context.offset = globalRegExp.lastIndex
+            }
+          } else {
+            context.offset++
+          }
+        }
+      }
+    }
+  }
+
+  return parserFn
+}
+
+export const lookBehind =
+  (
+    parser: TextParser | TextParser[],
+    {
+      lookbackLength = 50,
+      value,
+    }: {
+      lookbackLength?: number
+      value?: TextAst | TextAstConverter<TextAst>
+    } = {},
+  ): TextParser =>
+  (context: TextParserContext): TextAst | undefined => {
+    const minIndex = Math.max(0, context.offset - lookbackLength)
+
+    // Start backwards from context.offset to minIndex
+    for (let i = context.offset; i >= minIndex; i--) {
+      const testContext = new TextParserContext(context.input, i)
+      testContext.variables = { ...context.variables }
+      testContext.currentArticle = context.currentArticle
+      testContext.currentText = context.currentText
+
+      const ast = (
+        Array.isArray(parser)
+          ? chain(parser, { exportVariables: true })
+          : parser
+      )(testContext)
+
+      if (ast !== undefined && testContext.offset === context.offset) {
+        let finalAst = ast
+        if (value !== undefined) {
+          if (typeof value === "function") {
+            const convertedAst = value(ast, testContext)
+            if (convertedAst === undefined) {
+              continue
+            }
+            finalAst = convertedAst
+          } else {
+            finalAst = value
+          }
+        }
+
+        context.variables = testContext.variables
+        context.length = 0
+        context.usedInputs = undefined
+
+        return finalAst
+      }
+    }
+
+    return undefined
+  }
+
 export const optional =
   (
     parser: TextParser | TextParser[],
@@ -238,37 +418,37 @@ export const parseText = (
 ): TextAst | undefined =>
   (Array.isArray(parser) ? chain(parser) : parser)(new TextParserContext(input))
 
-export const regExp =
-  (
-    regExpContent: string,
-    {
-      flags,
-      value,
-    }: {
-      flags?:
-        | "d"
-        | "di"
-        | "dim"
-        | "dimv"
-        | "div"
-        | "dm"
-        | "dmv"
-        | "dv"
-        | "i"
-        | "im"
-        | "imv"
-        | "iv"
-        | "m"
-        | "mv"
-        | "v"
-        | null
-      value?: TextAst | RegExpConverter
-    } = {},
-  ): TextParser =>
-  (context: TextParserContext): TextAst | undefined => {
-    const regExp = new RegExp(regExpContent, "gy" + (flags ?? ""))
-    regExp.lastIndex = context.offset
-    const match = regExp.exec(context.input)
+export const regExp = (
+  regExpContent: string,
+  {
+    flags,
+    value,
+  }: {
+    flags?:
+      | "d"
+      | "di"
+      | "dim"
+      | "dimv"
+      | "div"
+      | "dm"
+      | "dmv"
+      | "dv"
+      | "i"
+      | "im"
+      | "imv"
+      | "iv"
+      | "m"
+      | "mv"
+      | "v"
+      | null
+    value?: TextAst | RegExpConverter
+  } = {},
+): TextParser => {
+  const compiledRegExp = new RegExp(regExpContent, "gy" + (flags ?? ""))
+
+  return (context: TextParserContext): TextAst | undefined => {
+    compiledRegExp.lastIndex = context.offset
+    const match = compiledRegExp.exec(context.input)
     if (match === null) {
       return undefined
     }
@@ -298,6 +478,7 @@ export const regExp =
 
     return ast
   }
+}
 
 export const repeat =
   (
@@ -452,7 +633,8 @@ export const wordsTree =
   (context: TextParserContext): TextAst | undefined => {
     let node = tree
     let offset = context.offset
-    const regExp = /([\-\/\d\p{Alphabetic}'°]+)($|[^\-\/\d\p{Alphabetic}°]+)/gvy
+    const regExp =
+      /([\-\/\d\p{Alphabetic}'°]+)($|[^\-\/\d\p{Alphabetic}°]{1,10000})/gvy
     regExp.lastIndex = context.offset
     const usedInputs = []
     let lastSeparator: string | undefined = undefined

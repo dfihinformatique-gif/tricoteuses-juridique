@@ -2,28 +2,28 @@ import { describe, expect, test } from "vitest"
 
 import { TextParserContext } from "./parsers.js"
 import {
-  lettreAsciiMinuscule,
+  lettreAscii,
   nonLettre,
   numero,
   virguleOuEspace,
 } from "./typography.js"
 
-describe("lettreAsciiMinuscule", () => {
+describe("lettreAscii", () => {
   test("y", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(lettreAsciiMinuscule(context)).toBe("y")
+    expect(lettreAscii(context)).toBe("y")
     expect(context.remaining()).toBe("")
   })
 
   test("A", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(lettreAsciiMinuscule(context)).toBe(undefined)
-    expect(context.remaining()).toBe(task.name)
+    expect(lettreAscii(context)).toBe("A")
+    expect(context.remaining()).toBe("")
   })
 
   test("é", ({ task }) => {
     const context = new TextParserContext(task.name)
-    expect(lettreAsciiMinuscule(context)).toBe(undefined)
+    expect(lettreAscii(context)).toBe(undefined)
     expect(context.remaining()).toBe(task.name)
   })
 })

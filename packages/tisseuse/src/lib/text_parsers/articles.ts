@@ -41,14 +41,16 @@ import { espace } from "./typography.js"
 /**
  * Nom spécifique d’un article, par exemple « liminaire »
  */
-export const nomSpecialArticle = alternatives(
-  regExp("annexe", { flags: "i", value: "annexe" }),
-  regExp("exécution", { flags: "i", value: "exécution" }),
-  regExp("liminaire", { flags: "i", value: "liminaire" }),
-  regExp("préambule", { flags: "i", value: "préambule" }),
-  regExp("préliminaire", { flags: "i", value: "préliminaire" }),
-  regExp("premier", { flags: "i", value: "1" }),
-  regExp("unique", { flags: "i", value: "1" }),
+export const nomSpecialArticle = regExp(
+  "annexe|exécution|liminaire|préambule|préliminaire|premier|unique",
+  {
+    flags: "i",
+    value: (match) => {
+      const text = match[0].toLowerCase()
+      if (text === "premier" || text === "unique") return "1"
+      return text
+    },
+  },
 )
 
 /**

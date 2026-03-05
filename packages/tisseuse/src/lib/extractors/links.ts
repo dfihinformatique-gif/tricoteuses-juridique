@@ -488,7 +488,11 @@ function updateStateTextId({
     }
 
     default: {
-      assertNever("nature", text.nature)
+      if (text.nature !== undefined) {
+        assertNever("nature", text.nature as never)
+      } else {
+        delete state.textId
+      }
     }
   }
 }

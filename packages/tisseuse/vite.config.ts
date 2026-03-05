@@ -34,6 +34,7 @@ export default defineConfig({
         "node:os",
         "node:path",
         "node:url",
+        "node:zlib",
         // Dependencies from package.json
         "dotenv",
         "fs-extra",

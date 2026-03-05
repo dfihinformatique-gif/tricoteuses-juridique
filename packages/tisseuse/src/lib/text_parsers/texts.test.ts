@@ -5,6 +5,7 @@ import { TextParserContext } from "./parsers.js"
 import {
   definitionTexteFrancais,
   identificationTexteEuropeen,
+  natureTexteEuropeen,
   numeroEtOuDateTexteFrancais,
   numeroTexteEuropeen,
   numeroTexteFrancais,
@@ -238,6 +239,15 @@ describe("Textes européens et internationaux", () => {
       expect(context.remaining()).toBe("")
     })
 
+    test("2001/73/CEE du 5 septembre 2003", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(identificationTexteEuropeen(context)).toStrictEqual({
+        date: "2003-09-05",
+        num: "2001/73/CEE",
+      })
+      expect(context.remaining()).toBe("")
+    })
+
     test("no 2001/73/CE du 1er décembre 2001", ({ task }) => {
       const context = new TextParserContext(task.name)
       expect(identificationTexteEuropeen(context)).toStrictEqual({
@@ -251,6 +261,18 @@ describe("Textes européens et internationaux", () => {
       const context = new TextParserContext(task.name)
       expect(identificationTexteEuropeen(context)).toStrictEqual({
         date: "1712-02-30",
+      })
+      expect(context.remaining()).toBe("")
+    })
+  })
+
+  describe("natureTexteEuropeen", () => {
+    test("directive (UE)", ({ task }) => {
+      const context = new TextParserContext(task.name)
+      expect(natureTexteEuropeen(context)).toStrictEqual({
+        legislation: "UE",
+        nature: "DIRECTIVE_EURO",
+        type: "texte",
       })
       expect(context.remaining()).toBe("")
     })

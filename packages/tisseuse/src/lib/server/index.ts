@@ -1,10 +1,10 @@
-export { addLinksOrReferencesToHtmlFile } from "./html_links.js"
-
 export {
   simplifyWordHtml,
   simplifyWordHtmlToDocument,
   type SimplifyHtmlOptions,
 } from "./html_simplifier.js"
+
+export { addLinksOrReferencesToHtmlFile } from "./linkers/html.js"
 
 export {
   addPositionsToTableOfContentsFile,

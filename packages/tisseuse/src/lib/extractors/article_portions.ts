@@ -154,16 +154,10 @@ function itemLevelFromToken(token: string): number {
 }
 
 function nextAlineaIndex(
-  parent:
-    | ArticlePortionArticle
-    | ArticlePortionDivision
-    | ArticlePortionItem,
+  parent: ArticlePortionArticle | ArticlePortionDivision | ArticlePortionItem,
 ) {
-  return (
-    parent.children.filter((child) => child.type === "alinéa").length + 1
-  )
+  return parent.children.filter((child) => child.type === "alinéa").length + 1
 }
-
 
 export function buildArticlePortionTreeFromHtml(
   html: string,
@@ -178,7 +172,9 @@ export function buildArticlePortionTreeFromHtml(
 
   const paragraphs = $("p").toArray()
 
-  const splitParagraphLines = (paragraphHtml: string): Array<{
+  const splitParagraphLines = (
+    paragraphHtml: string,
+  ): Array<{
     text: string
     html: string
   }> => {
@@ -523,8 +519,7 @@ function resolveStep(
 
     if (step.index !== undefined) {
       const idx = step.index
-      const list =
-        idx < 0 ? collectAlineasDeep(node) : alineas
+      const list = idx < 0 ? collectAlineasDeep(node) : alineas
       if (list.length === 0) return null
       const resolvedIndex = idx < 0 ? list.length + idx + 1 : idx
       if (resolvedIndex < 1 || resolvedIndex > list.length) return null
@@ -573,7 +568,12 @@ export function resolvePortionSelector(
       kind: "single",
       steps: selector.last,
     })
-    if (!start || !end || "node" in start === false || "node" in end === false) {
+    if (
+      !start ||
+      !end ||
+      "node" in start === false ||
+      "node" in end === false
+    ) {
       return null
     }
     return {
@@ -585,8 +585,10 @@ export function resolvePortionSelector(
     }
   }
 
-  let current: ArticlePortionArticle | ArticlePortionItem | ArticlePortionAlinea =
-    article
+  let current:
+    | ArticlePortionArticle
+    | ArticlePortionItem
+    | ArticlePortionAlinea = article
   const path: ArticlePortionNode[] = []
 
   for (const step of selector.steps) {

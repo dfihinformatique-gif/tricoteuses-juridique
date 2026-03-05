@@ -1,15 +1,18 @@
 import { definitionArticleDansCitation } from "$lib/text_parsers/articles.js"
 import type {
-  TextAstArticle,
   TextAstCitation,
-  TextAstDivision,
   TextAstPosition,
   TextAstReference,
 } from "$lib/text_parsers/ast.js"
 import { citation, convertCitationToText } from "$lib/text_parsers/citations.js"
 import { definitionDivision } from "$lib/text_parsers/divisions.js"
 import { iterIncludedReferences } from "$lib/text_parsers/helpers.js"
-import { TextParserContext } from "$lib/text_parsers/parsers.js"
+import {
+  alternatives,
+  TextParserContext,
+  fastPath,
+  type TextParser,
+} from "$lib/text_parsers/parsers.js"
 import { reference } from "$lib/text_parsers/references.js"
 import {
   newReverseTransformationsMergedFromPositionsIterator,
@@ -52,117 +55,66 @@ export function* extractCitationReferences(
 export function* extractReferences(
   context: TextParserContext,
 ): Generator<TextAstReference, void> {
-  let candidate: RegExpExecArray | null
-  const candidateRegExp = new RegExp(
-    String.raw`
-      (?:
-        ^ # début de ligne
-        (?:
-          # Référence à un texte
-          arrêtés?
-          |circulaires?
-          |code
-          |constitution
-          |décret-loi
-          |décrets?
-          # Note : "|livre des procédures fiscales" est traité par la définition de "livre" ci-dessous.
-          |loi
-          |ordonnance
-
-          # Définition d'un article ou d'une division
-          |art\.
-          |chapitre
-          |livre
-          |paragraphe
-          |partie"
-          |section
-          |sous-paragraphe
-          |sous-section
-          |sous-sous-paragraphe
-          |sous-titre
-          |titre
-        )
-        (?= )
-      )
-      |(?<=^|\P{Alphabetic})(?:
-        (?:«) # citation
-        |(?:au|le|du)(?:dit)?(?= )
-        |(?:[àa] +)?la(?:dite)?(?= )
-        |(?:[àa] +)?(?:l')
-        |(?:aux|les|des)(?:dits)?(?= )
-      )
-    `
-      .replace(/\s+#.*$/gm, "") // Remove comments
-      .replace(/^\s+/gm, "")
-      .replace(/\n/g, "")
-      .replace(/\\n/g, "\n"),
-    "gimv",
+  const extractorParser = fastPath<TextAstReference | TextAstCitation>(
+    String.raw`arrêtés?|circulaires?|code|constitution|décrets?(?:-loi)?|loi|ordonnance|art\.|articles?|chapitre|livre|paragraphe|partie|section|sous-paragraphe|sous-section|sous-sous-paragraphe|sous-titre|titre|alinéas?|phrases?|règlements?|directives?|décisions?|«|[IVXLCDM]+|[A-Z]|\d+`,
+    alternatives(
+      citation,
+      definitionArticleDansCitation,
+      definitionDivision,
+      reference,
+    ) as unknown as TextParser<TextAstReference | TextAstCitation>,
+    80,
+    String.raw`(?<=^|\P{Alphabetic})(?:arrêtés?|circulaires?|code|constitution|décrets?(?:-loi)?|loi|ordonnance|art\.|articles?|chapitre|livre|paragraphe|partie|section|sous-paragraphe|sous-section|sous-sous-paragraphe|sous-titre|titre|alinéas?|phrases?|règlements?|directives?|décisions?|«|[IVXLCDM]+|[A-Z]|\d+)(?=\b| |$)`,
   )
-  while ((candidate = candidateRegExp.exec(context.input)) !== null) {
-    const index = candidate.index
-    context.offset = index
-    if (candidate[0] === "«") {
-      // ligne de citation ou citation simple
-      const citationAst = citation(context) as TextAstCitation | undefined
-      if (citationAst === undefined) {
-        continue
-      }
-      yield* extractCitationReferences(context, citationAst)
-      candidateRegExp.lastIndex = citationAst.position.stop
-    } else if (candidate[0].toLowerCase() === "art.") {
-      const definitionArticleAst = definitionArticleDansCitation(context) as
-        | TextAstArticle
-        | undefined
-      if (definitionArticleAst === undefined) {
-        continue
-      }
-      yield definitionArticleAst
-      candidateRegExp.lastIndex = definitionArticleAst.position.stop
-    } else if (
-      [
-        "chapitre",
-        "livre",
-        "paragraphe",
-        "partie",
-        "section",
-        "sous-paragraphe",
-        "sous-section",
-        "sous-sous-paragraphe",
-        "sous-titre",
-        "titre",
-      ].includes(candidate[0].toLowerCase())
-    ) {
-      const definitionDivisionAst = definitionDivision(context) as
-        | TextAstDivision
-        | undefined
-      if (definitionDivisionAst === undefined) {
-        continue
-      }
-      yield definitionDivisionAst
-      candidateRegExp.lastIndex = definitionDivisionAst.position.stop
-    } else {
-      const referenceAst = reference(context) as TextAstReference | undefined
-      if (referenceAst === undefined) {
-        continue
-      }
-      for (const includedReference of iterIncludedReferences(referenceAst)) {
-        if (includedReference.type === "reference_et_action") {
-          const { originalCitations } = includedReference.action
-          if (originalCitations !== undefined) {
-            for (const originalCitation of originalCitations) {
-              // eslint-disable-next-line @typescript-eslint/no-unused-vars
-              for (const _ of extractCitationReferences(
-                context,
-                originalCitation,
-              )) {
-                // Do nothing (except setting originalCitation.references)
+
+  for (const ast of extractorParser.extract!(context, { overlapWindow: 80 })) {
+    if (ast !== undefined) {
+      if (ast.type === "citation") {
+        yield* extractCitationReferences(context, ast as TextAstCitation)
+      } else {
+        if (
+          ast.type === "reference_et_action" ||
+          ast.type === "alinéa" ||
+          ast.type === "article" ||
+          ast.type === "chapitre" ||
+          ast.type === "item" ||
+          ast.type === "livre" ||
+          ast.type === "paragraphe" ||
+          ast.type === "partie" ||
+          ast.type === "phrase" ||
+          ast.type === "section" ||
+          ast.type === "sous-paragraphe" ||
+          ast.type === "sous-section" ||
+          ast.type === "sous-sous-paragraphe" ||
+          ast.type === "sous-titre" ||
+          ast.type === "titre" ||
+          ast.type === "texte" ||
+          ast.type === "bounded-interval" ||
+          ast.type === "counted-interval" ||
+          ast.type === "enumeration" ||
+          ast.type === "exclusion" ||
+          ast.type === "parent-enfant" ||
+          ast.type === "incomplete-header"
+        ) {
+          for (const includedReference of iterIncludedReferences(ast)) {
+            if (includedReference.type === "reference_et_action") {
+              const { originalCitations } = includedReference.action
+              if (originalCitations !== undefined) {
+                for (const originalCitation of originalCitations) {
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  for (const _ of extractCitationReferences(
+                    context,
+                    originalCitation,
+                  )) {
+                    // Do nothing (except setting originalCitation.references)
+                  }
+                }
               }
             }
           }
         }
+        yield ast as TextAstReference
       }
-      yield referenceAst
-      candidateRegExp.lastIndex = referenceAst.position.stop
     }
   }
 }

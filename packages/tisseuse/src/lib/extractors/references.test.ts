@@ -344,7 +344,7 @@ describe("getExtractedReferences", () => {
     expect(references).toStrictEqual([
       {
         action: {
-          action: "MODIFICATION",
+          action: "modifier",
         },
         position: {
           start: 5,
@@ -365,7 +365,7 @@ describe("getExtractedReferences", () => {
       },
       {
         action: {
-          action: "MODIFICATION",
+          action: "remplacer",
           actionInContent: true,
           originalCitations: [
             {
@@ -541,7 +541,7 @@ describe("getExtractedReferences, test spécifiques", () => {
     expect(references).toStrictEqual([
       {
         action: {
-          action: "CREATION",
+          action: "insérer",
         },
         position: {
           start: 10,
@@ -686,7 +686,7 @@ describe("getExtractedReferences, test spécifiques", () => {
     expect(references).toStrictEqual([
       {
         action: {
-          action: "CREATION",
+          action: "compléter",
         },
         position: {
           start: 3,
@@ -909,7 +909,7 @@ describe("getExtractedReferences, test spécifiques", () => {
     expect(references).toStrictEqual([
       {
         action: {
-          action: "MODIFICATION",
+          action: "modifier",
         },
         position: {
           start: 5,
@@ -1006,7 +1006,7 @@ describe("getExtractedReferences, test spécifiques", () => {
       },
       {
         action: {
-          action: "CREATION",
+          action: "insérer",
         },
         position: {
           start: 167,

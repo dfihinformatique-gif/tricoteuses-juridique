@@ -13,7 +13,6 @@ async function simplifyWordHtmlFile(
   {
     output,
     "full-document": fullDocument,
-    "convert-nbsp": convertNbsp,
     "keep-alignment": keepAlignment,
     "keep-empty": keepEmpty,
     format,
@@ -21,7 +20,6 @@ async function simplifyWordHtmlFile(
   }: {
     output?: string
     "full-document"?: boolean
-    "convert-nbsp"?: boolean
     "keep-alignment"?: boolean
     "keep-empty"?: boolean
     format?: boolean
@@ -47,7 +45,6 @@ async function simplifyWordHtmlFile(
 
   const options = {
     keepAlignment: keepAlignment ?? true,
-    convertNbsp: convertNbsp ?? false,
     removeEmptyParagraphs: !keepEmpty,
   }
 
@@ -104,7 +101,6 @@ async function simplifyWordHtmlDirectory(
   {
     output: outputDir,
     "full-document": fullDocument,
-    "convert-nbsp": convertNbsp,
     "keep-alignment": keepAlignment,
     "keep-empty": keepEmpty,
     format,
@@ -114,7 +110,6 @@ async function simplifyWordHtmlDirectory(
   }: {
     output?: string
     "full-document"?: boolean
-    "convert-nbsp"?: boolean
     "keep-alignment"?: boolean
     "keep-empty"?: boolean
     format?: boolean
@@ -158,7 +153,6 @@ async function simplifyWordHtmlDirectory(
 
   const options = {
     keepAlignment: keepAlignment ?? true,
-    convertNbsp: convertNbsp ?? false,
     removeEmptyParagraphs: !keepEmpty,
   }
 
@@ -228,7 +222,6 @@ prog
   .describe("Simplify a Word-generated HTML document to clean semantic HTML")
   .option("-o, --output", "Output file path (default: input_simplified.html)")
   .option("-f, --full-document", "Output a complete HTML document with doctype")
-  .option("-n, --convert-nbsp", "Convert &nbsp; to regular spaces")
   .option(
     "-a, --keep-alignment",
     "Keep alignment attributes on paragraphs (default: true)",
@@ -245,7 +238,6 @@ prog
   .describe("Simplify all Word-generated HTML documents in a directory")
   .option("-o, --output", "Output directory (default: same as input)")
   .option("-f, --full-document", "Output complete HTML documents with doctype")
-  .option("-n, --convert-nbsp", "Convert &nbsp; to regular spaces")
   .option(
     "-a, --keep-alignment",
     "Keep alignment attributes on paragraphs (default: true)",

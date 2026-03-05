@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest"
 
-import { alineaImageHashes } from "./alinea_image_hashes.js"
 import { simplifyWordHtml } from "./html_simplifier.js"
 
 describe("simplifyWordHtml", () => {
@@ -9,115 +8,60 @@ describe("simplifyWordHtml", () => {
    * Example source: PRJLANR5L15BTC0639
    */
   describe("alinea numbering (pastille format)", () => {
-    const createAlineaMarkerHtml = (
-      markerId: number,
-      imageHash: string,
-    ): string =>
-      `<span class="alinea" data-marker-id="__test_marker_${markerId}__" data-image-hash="${imageHash}"></span>`
-
-    const hashForAlinea = (alineaNumber: number): string => {
-      const entry = Object.entries(alineaImageHashes).find(
-        ([, value]) => value === alineaNumber,
-      )
-      if (!entry) {
-        throw new Error(`No hash found for alinea ${alineaNumber}`)
-      }
-      return entry[0]
+    // Create a minimal HTML structure with alinea markers using known image hashes
+    // The simplifier expects images with width="45" and height="31" or height="30"
+    const createAlineaMarkerHtml = (imageHash: string): string => {
+      // Simulate the Word-generated HTML with absolutely positioned image markers
+      // Use the exact dimensions the simplifier expects (width=45, height=31)
+      return `<span style="position:absolute"><img width="45" height="31" src="data:image/png;base64,${imageHash}"/></span>`
     }
 
-    const HASH_ALINEA_5 = hashForAlinea(5)
-    const HASH_ALINEA_10 = hashForAlinea(10)
-    const HASH_ALINEA_12 = hashForAlinea(12)
+    // Base64 content that will be hashed by the code
+    const DATA_ALINEA_565 =
+      "iVBORw0KGgoAAAANSUhEUgAAAC0AAAAeCAYAAAC49JeZAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBD6fLggAAAplJREFUWIXt1k2IlVUYB/BfVrq4k1BxnZQWpjAKTWM6CzftrFm0uEVLJ1duZjOtjFatFBSizczKTaBiEILUpqimzUCQoZJQoDDSwIhOicjo2KIWt8XzvNx3Poo51+4iuH94Oec85+t/nvf5oo8+eoadOIyLaP/DN4tjaOX6x8YTXe5r4AN8WJNdxw94WJO9iAG8UZON49Mu7+0aB3FZaPF9G9feMKZy35mCfWvwZOH6ptDSKCbwHTZjW87/kW0DQxjE70m4jSu4h/fwHL7FX6WkS81jCpN4V2i8nfJbuI3z4vcTZrGcsrb1MYHThRyKSB/CTF70E17F9xgRD/hR2PMzSfgOHuEmfl111nS2k3gJ86XEN4rjOhobF9FgvDbfzHE1V6EyjdXa3pmycYXYVLD2gI6GFnU02hI2PIYd+UkyDezK8RUR+po5rrS7t1ekG3gTC7UHEDa7Xdj4n3iAq+JBO/B29gnn/Qhf1YhPY3+vSFd4kO0FzNWIL+flLbxQWzuAb/CK8AWC/Du1M4tzxUZJP8KXeDnH87iEz4Xz7cUW4XTXhIMSjxnEzyJKnEt5dc5k7ukJaXn4ZPYbNfl2kQ3vYwn7dMLdgJUZ8vlsF3SSy6UyyjxVsHZGkG7hdXwhyG9NgvM5nhPaXRSmclwkEsIvCLs+mv1rpaRLMuIN7MZJoZ0lobl5oblZvIank/CzIt1/IrLjUJ7zlnDasziBz0pJl6KKrZdFSBvWiQQVhkUiquSNlB1MWVW7XLXSzHqKQ3lhW5SlG724IeJ0O/d3XTB1W5o28TGO5HhWFEJfW1uajojoMpqyEzglIlJX6JZ0hRb2CMcc+5d10/hF1CzF0WI1Hpd0haaIGOvhN9z9j+7po48++ujjf4C/AW7GjiT2VNxYAAAAAElFTkSuQmCC"
+    const DATA_ALINEA_65 =
+      "iVBORw0KGgoAAAANSUhEUgAAAC0AAAAfCAYAAABzqEQ8AAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAfhJREFUWIXt1r9rFGEQxvGPPwrhRAsJRm2OIBjIWahFCjsjikFS2AimtDibdGqvaa20UMso/geiCBaKVcBEBcsEAtrZSEgKq7OYOW49T81lz1yzX3h535uZd+/Z2XdnloqKP7Kn5P46pnEH93AM+/AD30tee+DUcBetwljt+n1taOp6MIn3Qtgtke0iDdxP/0IP/44zIgQvC/GEqHO5bmAiR/tJLIgnMzTaGWwIsbNopp1fj0dxNAcpYm8fsVOYww1s4GLaN/BF72PwIOdHeIW17Ygsw7zIGpHh9hhJW0Mns0XqaZsdlJDdfcSeFpmrYz+OYhwX0jaWcUu4qXMzazmPl1JaYNcW42riGNwWL+EoVrCJq/ia13pY2LOES/gmzvwYLg9CdD+ZhnVxA+M4jrN4gwPpPynOPJzBlcLerSbon2xV9CZeiFK2iYNpfyyyvo4P+Jy2p+mfyHlONJ+B0E+mV/PPa1gU2a6nbwWnCrGHci5WlcXtiuymH9Gvcz6S8zoOC8Gj4hvkeY7pjHmJ67n+VEppCZ7olK+Zwmj6vaHMiK7ZEuVyaNR1WvOUENVIXy3Xk6Lctb9Rlg25jRNil3W+5LoF1USdbmVcfSfF/Y0RnaPSwlvxon0s2Ob9pwyXrZ0zOIHzojM+wzshfmDVoqKioqKioqIXPwGGHnBAFFvvyQAAAABJRU5ErkJggg=="
 
-    test("absolute mode: uses image hash to determine alinea numbers", () => {
+    test("use image hash to determine alinea numbers", () => {
       const input = `
         <html>
         <body>
           <p class="assnat9ArticleNum">Article 1er</p>
-          ${createAlineaMarkerHtml(1, HASH_ALINEA_5)}
+          ${createAlineaMarkerHtml(DATA_ALINEA_565)}
           <p class="assnatFPFprojetloiartexte">First paragraph text.</p>
-          ${createAlineaMarkerHtml(2, HASH_ALINEA_10)}
+          ${createAlineaMarkerHtml(DATA_ALINEA_65)}
           <p class="assnatFPFprojetloiartexte">Second paragraph text.</p>
-          ${createAlineaMarkerHtml(3, HASH_ALINEA_12)}
-          <p class="assnatFPFprojetloiartexte">Third paragraph text.</p>
         </body>
         </html>
       `
 
-      const output = simplifyWordHtml(input, { relativeAlineaNumbers: false })
+      const output = simplifyWordHtml(input)
 
       // In absolute mode, alinea numbers come from the image hash mapping
-      expect(output).toContain('data-alinea="5"')
-      expect(output).toContain('data-alinea="10"')
-      expect(output).toContain('data-alinea="12"')
+      expect(output).toContain('data-alinea="565"')
+      expect(output).toContain('data-alinea="65"')
       // The visible text should show the absolute numbers
-      expect(output).toContain(">5</span>")
-      expect(output).toContain(">10</span>")
-      expect(output).toContain(">12</span>")
+      expect(output).toContain(">565</span>")
+      expect(output).toContain(">65</span>")
     })
 
-    test("relative mode: numbers alineas sequentially from 1", () => {
+    test("default mode is absolute (relativeAlineaNumbers defaults to false)", () => {
       const input = `
         <html>
         <body>
           <p class="assnat9ArticleNum">Article 1er</p>
-          ${createAlineaMarkerHtml(1, HASH_ALINEA_5)}
-          <p class="assnatFPFprojetloiartexte">First paragraph text.</p>
-          ${createAlineaMarkerHtml(2, HASH_ALINEA_10)}
-          <p class="assnatFPFprojetloiartexte">Second paragraph text.</p>
-          ${createAlineaMarkerHtml(3, HASH_ALINEA_12)}
-          <p class="assnatFPFprojetloiartexte">Third paragraph text.</p>
-        </body>
-        </html>
-      `
-
-      const output = simplifyWordHtml(input)
-
-      // Alinea numbers come from the image hash mapping
-      expect(output).toContain('data-alinea="5"')
-      expect(output).toContain('data-alinea="10"')
-      expect(output).toContain('data-alinea="12"')
-      // The visible text should show the absolute numbers
-      expect(output).toContain(">5</span>")
-      expect(output).toContain(">10</span>")
-      expect(output).toContain(">12</span>")
-    })
-
-    test("default mode uses image hash mapping", () => {
-      const input = `
-        <html>
-        <body>
-          <p class="assnat9ArticleNum">Article 1er</p>
-          ${createAlineaMarkerHtml(1, HASH_ALINEA_5)}
+          ${createAlineaMarkerHtml(DATA_ALINEA_565)}
           <p class="assnatFPFprojetloiartexte">First paragraph text.</p>
         </body>
         </html>
       `
 
+      // Call without specifying relativeAlineaNumbers
       const output = simplifyWordHtml(input, {})
 
-      // Should use image hash mapping by default
-      expect(output).toContain('data-alinea="5"')
-      expect(output).toContain(">5</span>")
-    })
-
-    test("unknown hashes are removed even with negative z-index", () => {
-      const input = `
-        <html>
-        <body>
-          <p class="assnat9ArticleNum">Article 1er</p>
-          ${createAlineaMarkerHtml(1, "UNKNOWN_HASH_1")}
-          <p class="assnatFPFprojetloiartexte">First paragraph.</p>
-          ${createAlineaMarkerHtml(2, "UNKNOWN_HASH_2")}
-          <p class="assnatFPFprojetloiartexte">Second paragraph.</p>
-        </body>
-        </html>
-      `
-
-      const output = simplifyWordHtml(input)
-
-      expect(output).not.toContain('data-alinea="')
-      expect(output).not.toContain('class="alinea"')
+      // Should use absolute mode by default
+      expect(output).toContain('data-alinea="565"')
+      expect(output).toContain(">565</span>")
     })
   })
 
@@ -515,6 +459,22 @@ describe("simplifyWordHtml", () => {
       expect(output).toContain("<strong>Assemblée nationale</strong>")
       // Should NOT be converted to <em>
       expect(output).not.toContain("<em>Assemblée nationale</em>")
+    })
+
+    test("always converts &nbsp; to non-breaking space character (\u00a0)", () => {
+      const input = `
+        <html>
+        <body>
+          <p>Text with&nbsp;nbsp.</p>
+        </body>
+        </html>
+      `
+
+      const output = simplifyWordHtml(input)
+
+      // &nbsp; should be converted to \u00a0
+      expect(output).toContain("Text with\u00a0nbsp.")
+      expect(output).not.toContain("&nbsp;")
     })
   })
 

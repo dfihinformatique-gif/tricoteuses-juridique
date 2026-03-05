@@ -1,8 +1,4 @@
-import {
-  isTextAstDivision,
-  type DivisionType,
-} from "$lib/text_parsers/ast.js"
-import { assertNever } from "$lib/asserts.js"
+import { isTextAstDivision, type DivisionType } from "$lib/text_parsers/ast.js"
 import {
   FragmentPosition,
   FragmentReverseTransformation,
@@ -67,10 +63,11 @@ export function* addPositionsToTableOfContentsItems({
   const originalPositionsFromTransformedIterator =
     newReverseTransformationsMergedFromPositionsIterator(transformation)
   for (const tableOfContentsItem of walkTableOfContents(tableOfContents)) {
-    const lineRegExp = new RegExp(
-      `^${RegExp.escape(tableOfContentsItem.line)}$`,
-      "m",
+    const escapedLine = tableOfContentsItem.line.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&",
     )
+    const lineRegExp = new RegExp(`^${escapedLine}$`, "m")
     lineRegExp.lastIndex = index
     const lineMatch = lineRegExp.exec(context.input)
     if (lineMatch === null) {
@@ -143,7 +140,10 @@ export function getExtractedTableOfContentsFromTextBill(
         type: "article",
       })
     } else {
-      assertNever("definition", definition)
+      throw new Error(
+        // @ts-expect-error: Unexpected definition type
+        `Unexpected type "${definition.type}" in definition:\n${JSON.stringify(definition, null, 2)}`,
+      )
     }
   }
 

@@ -543,7 +543,6 @@ export function actionTargetFromReference(
   return "unknown"
 }
 
-
 export function* iterIncludedReferences(
   reference: TextAstReference,
   { citations }: { citations?: boolean } = {},

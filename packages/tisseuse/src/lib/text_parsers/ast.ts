@@ -17,7 +17,6 @@ export const actionTargets = [
   "unknown",
 ] as const
 
-
 export type DivisionType = (typeof divisionTypes)[number]
 
 export type EuropeanLawNature = (typeof europeanLawNatures)[number]
@@ -52,10 +51,23 @@ export type TextAst =
 
 export interface TextAstAction {
   action:
-    | "CREATION"
-    | "CREATION_OU_MODIFICATION"
-    | "MODIFICATION"
-    | "SUPPRESSION"
+    | "abroger"
+    | "ajouter"
+    | "application"
+    | "compléter"
+    | "dérogation"
+    | "devenir"
+    | "insérer"
+    | "mention"
+    | "modifier"
+    | "précision"
+    | "prévision"
+    | "remplacer"
+    | "renuméroter"
+    | "rédiger"
+    | "référence_définition"
+    | "rétablir"
+    | "supprimer"
   actionInContent?: boolean
   originalCitations?: TextAstCitation[]
   target?: ActionTarget

@@ -3,14 +3,21 @@ import { alternatives, chain, convert, regExp } from "./parsers.js"
 // Les introductions introduisent les expressions de liens.
 // Elles correspondent aux séparateurs des pré-candidats
 
-export const introPluriel = regExp("(aux|des|les)( |(?=dite?s ))", {
-  flags: "i",
-})
+export const introPluriel = regExp(
+  String.raw`(?<=^|\P{Alphabetic})(aux|des|les)( |(?=dite?s ))`,
+  {
+    flags: "iv",
+  },
+)
 
 export const introSingulier = alternatives(
-  regExp("(au|du|le)( |(?=dit ))", { flags: "i" }),
-  regExp("([àa] )?la( |(?=dite ))", { flags: "i" }),
-  regExp("([àa] )?l'", { flags: "i" }),
+  regExp(String.raw`(?<=^|\P{Alphabetic})(au|du|le)( |(?=dit ))`, {
+    flags: "iv",
+  }),
+  regExp(String.raw`(?<=^|\P{Alphabetic})([àa] )?la( |(?=dite ))`, {
+    flags: "iv",
+  }),
+  regExp(String.raw`(?<=^|\P{Alphabetic})([àa] )?l'`, { flags: "iv" }),
 )
 
 // Les liaisons lient une première expression de lien à une seconde

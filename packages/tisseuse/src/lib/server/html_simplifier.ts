@@ -2,26 +2,7 @@ import * as cheerio from "cheerio"
 import type { Element } from "domhandler"
 import * as crypto from "node:crypto"
 
-import { alineaImageHashes } from "./alinea_image_hashes"
-
-/**
- * Regex to extract z-index from style attribute
- * The z-index typically represents the alinea number (global in the document)
- */
-const ZINDEX_REGEX = /z-index:\s*(-?\d+)/i
-
-/**
- * Interface to track alinea markers with their global z-index
- * for later recalculation relative to articles
- */
-interface AlineaMarker {
-  /** The unique identifier for this marker */
-  id: string
-  /** The global z-index from the original document */
-  globalZIndex: number
-  /** MD5 hash of the pastille image (source of truth for alinea number) */
-  imageHash?: string
-}
+import { alineaNumberByImageHash } from "../alineas/alineas_numbers"
 
 /**
  * CSS styles for alinea markers (inline to be self-contained)
@@ -258,10 +239,10 @@ function computeHash(data: string): string {
 export interface SimplifyHtmlOptions {
   /** Keep align attribute on paragraphs (default: true) */
   keepAlignment?: boolean
-  /** Convert nbsp to regular spaces (default: false) */
-  convertNbsp?: boolean
   /** Remove empty paragraphs (default: true) */
   removeEmptyParagraphs?: boolean
+  /** Throw error if an alinea image hash is missing from mapping (default: false) */
+  strictAlineas?: boolean
 }
 
 /**
@@ -444,8 +425,8 @@ export function simplifyWordHtml(
 ): string {
   const {
     keepAlignment = true,
-    convertNbsp = false,
     removeEmptyParagraphs = true,
+    strictAlineas = false,
   } = options
 
   const $ = cheerio.load(html, {
@@ -513,11 +494,6 @@ export function simplifyWordHtml(
   // Remove br elements with page-break styles
   $('br[style*="page-break"]').remove()
 
-  // Collect alinea markers with their global z-index
-  // We'll recalculate them relative to each article later
-  const alineaMarkers: AlineaMarker[] = []
-  let alineaMarkerId = 0
-
   // Remove large background/watermark images with z-index:-65537 before processing
   // These are problematic images that should not be included in the simplified output
   // But preserve small images (< 50px) which are alinea markers
@@ -574,34 +550,16 @@ export function simplifyWordHtml(
             parseInt(imgAttrs.height || "0", 10) < 50)) &&
         style.includes("position:absolute")
       ) {
-        // Extract z-index which represents the alinea number (global)
-        const zIndexMatch = style.match(ZINDEX_REGEX)
-        if (zIndexMatch) {
-          const globalZIndex = parseInt(zIndexMatch[1], 10)
-          const markerId = `__alinea_marker_${alineaMarkerId++}__`
+        // Extract image hash for validation
+        const imgSrc = imgAttrs.src || ""
+        const base64Match = imgSrc.match(/^data:image\/png;base64,(.+)$/)
+        const imageHash = base64Match ? computeHash(base64Match[1]) : undefined
 
-          // Extract image hash for validation
-          const imgSrc = imgAttrs.src || ""
-          const base64Match = imgSrc.match(/^data:image\/png;base64,(.+)$/)
-          const imageHash = base64Match
-            ? computeHash(base64Match[1])
-            : undefined
-
-          // Store the marker info for later recalculation
-          alineaMarkers.push({
-            id: markerId,
-            globalZIndex,
-            imageHash,
-          })
-
-          // Replace the span with a temporary placeholder
-          // We'll replace these with correct relative numbers after processing headings
-          const hashAttr = imageHash ? ` data-image-hash="${imageHash}"` : ""
-          $span.replaceWith(
-            `<span class="alinea" data-marker-id="${markerId}" data-global-zindex="${globalZIndex}"${hashAttr}></span>`,
-          )
-          return
-        }
+        // Replace the span with a temporary placeholder
+        // We'll replace these with correct relative numbers after processing headings
+        const hashAttr = imageHash ? ` data-image-hash="${imageHash}"` : ""
+        $span.replaceWith(`<span class="alinea"${hashAttr}></span>`)
+        return
       }
     }
   })
@@ -1066,8 +1024,8 @@ export function simplifyWordHtml(
   // Hoist span ids to parent elements when appropriate
   hoistSpanIds($)
 
-  // Recalculate alinea numbers using exclusively the alineaImageHashes mapping
-  recalculateAlineaNumbers($)
+  // Recalculate alinea numbers using exclusively the alineaNumberByImageHash mapping
+  recalculateAlineaNumbers($, strictAlineas)
 
   // Get the body content
   const bodyHtml = $("body").html() || $.html()
@@ -1123,10 +1081,8 @@ export function simplifyWordHtml(
     .filter((line) => line.length > 0)
     .join("\n")
 
-  // Convert nbsp if requested
-  if (convertNbsp) {
-    result = result.replace(/&nbsp;/g, " ").replace(/\u00a0/g, " ")
-  }
+  // Convert &nbsp; to non-breaking space character
+  result = result.replace(/&nbsp;/g, "\u00a0")
 
   // Remove empty paragraphs if requested
   if (removeEmptyParagraphs) {
@@ -1234,13 +1190,16 @@ function hoistSpanIds($: cheerio.CheerioAPI): void {
   })
 }
 
-function recalculateAlineaNumbers($: cheerio.CheerioAPI): void {
+function recalculateAlineaNumbers(
+  $: cheerio.CheerioAPI,
+  strictAlineas = false,
+): void {
   // Get all elements in document order
   const body = $("body")
   if (body.length === 0) return
 
   // Find all alinea markers
-  const allElements = body.find("span.alinea[data-marker-id]")
+  const allElements = body.find("span.alinea[data-image-hash]")
 
   // Track state for duplicate detection
   let lastAlineaNumber = -1
@@ -1248,43 +1207,44 @@ function recalculateAlineaNumbers($: cheerio.CheerioAPI): void {
   allElements.each((_, el) => {
     const $el = $(el)
 
-    if ($el.hasClass("alinea") && $el.attr("data-marker-id")) {
-      // This is an alinea marker
-      const imageHash = $el.attr("data-image-hash")
+    // This is an alinea marker
+    const imageHash = $el.attr("data-image-hash")
 
-      let alineaNumber: number | undefined
+    let alineaNumber: number | undefined
 
-      // Use exclusively the alineaImageHashes mapping
-      if (imageHash && alineaImageHashes[imageHash] !== undefined) {
-        alineaNumber = alineaImageHashes[imageHash]
-      }
-
-      if (alineaNumber === undefined) {
-        // Unknown hash - remove the marker
-        $el.remove()
-        return
-      }
-
-      // Skip duplicates (same alinea number as previous, possibly from del/ins remnants)
-      if (alineaNumber === lastAlineaNumber) {
-        // Remove duplicate marker
-        $el.remove()
-        return
-      }
-
-      lastAlineaNumber = alineaNumber
-
-      // Update the marker with the alinea number
-      $el.attr("data-alinea", String(alineaNumber))
-
-      // Add visible text content showing the alinea number
-      $el.text(String(alineaNumber))
-
-      // Clean up temporary attributes
-      $el.removeAttr("data-marker-id")
-      $el.removeAttr("data-global-zindex")
-      $el.removeAttr("data-image-hash")
+    // Use exclusively the alineaNumberByImageHash mapping
+    if (imageHash && alineaNumberByImageHash[imageHash] !== undefined) {
+      alineaNumber = alineaNumberByImageHash[imageHash]
     }
+
+    if (alineaNumber === undefined) {
+      if (strictAlineas) {
+        throw new Error(
+          `Missing alinea number mapping for image hash: "${imageHash}". Please extract images, review them, and update the mapping in "src/lib/alineas/alineas_numbers.ts".`,
+        )
+      }
+      // Unknown hash - remove the marker
+      $el.remove()
+      return
+    }
+
+    // Skip duplicates (same alinea number as previous, possibly from del/ins remnants)
+    if (alineaNumber === lastAlineaNumber) {
+      // Remove duplicate marker
+      $el.remove()
+      return
+    }
+
+    lastAlineaNumber = alineaNumber
+
+    // Update the marker with the alinea number
+    $el.attr("data-alinea", String(alineaNumber))
+
+    // Add visible text content showing the alinea number
+    $el.text(String(alineaNumber))
+
+    // Clean up temporary attributes
+    $el.removeAttr("data-image-hash")
   })
 }
 

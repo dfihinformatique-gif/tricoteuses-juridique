@@ -110,6 +110,27 @@ describe("extractActionDirectivesFromText", () => {
     }
   })
 
+  test("retablissement d'une section avec citation multilignes", () => {
+    const line = [
+      "Au chapitre III du titre Ier de la première partie du livre premier, la section X est ainsi rétablie :",
+      "« Section X",
+      "« Taxe sur les actifs non affectés à une activité opérationnelle des sociétés holdings patrimoniales",
+      "« Art. 235 ter C. – I. – A. – Il est institué une taxe sur les actifs non professionnels détenus",
+      "« 1° Exemple de condition. »",
+    ].join("\n")
+
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(1)
+    const directive = directives[0]
+    expect(directive.kind).toBe("insert_after")
+    if (directive.kind === "insert_after") {
+      expect(directive.insertText).toContain("Section X")
+      expect(directive.insertText).toContain("Art. 235 ter C")
+      expect(directive.insertText).not.toContain("«")
+      expect(directive.insertText).not.toContain("»")
+    }
+  })
+
   test("liste imbriquee avec contexte de portion", () => {
     const line = [
       "L’article 48 de la loi n° 2025-127 du 14 février 2025 de finances pour 2025 est ainsi modifié :",

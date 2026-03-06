@@ -161,7 +161,7 @@ function isListBlockIntroLine(line: string): boolean {
 
 function findFirstActionIndex(text: string): number | null {
   const match =
-    /\b(inséré|insere|ajouté|ajoute|remplacé|remplace|supprimé|supprime|abrogé|abroge|complété|complete)\b/i.exec(
+    /\b(inséré|insere|ajouté|ajoute|remplacé|remplace|supprimé|supprime|abrogé|abroge|complété|complete|rétabli|retabli|rétablie|retablie|rétablis|retablis|rétablies|retablies)\b/i.exec(
       text,
     )
   return match?.index ?? null
@@ -510,10 +510,12 @@ function parseActionFromText(
     /\bavant (la|les) reference\b|\bavant (le|les) mots\b|\bavant la mention\b/.test(
       normalized,
     )
+  const isReestablish =
+    action.action === "rétablir" || /\bretabl/.test(normalized)
   const isInsert =
     /\binsere(?:e|es|s)?\b|\bajoute\b|\bajoutee\b|\bajoutes\b|\bajoutees\b|\bcomplete\b/.test(
       normalized,
-    )
+    ) || isReestablish
   const isReplace =
     /\bremplace\b|\bremplacee\b|\bremplaces\b|\bremplacees\b/.test(normalized)
   const isDelete =

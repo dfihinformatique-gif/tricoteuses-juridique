@@ -121,4 +121,32 @@ describe("article portion selectors", () => {
     expect(node.type).toBe("alinéa")
     expect(node.text).toContain("Dernier alinéa après liste")
   })
+
+  test("resolves selector for III bis item", () => {
+    const html = `
+      <p>III bis.-Le montant annuel est plafonné.</p>
+      <p>1. Premier alinéa du 1.</p>
+      <p>Deuxième alinéa du 1.</p>
+      <p>Troisième alinéa du 1.</p>
+    `
+    const article = buildArticlePortionTreeFromHtml(html)
+    const context = new TextParserContext(
+      "au troisième alinéa du 1 du III bis de l'article 46",
+    )
+    const references = getExtractedReferences(context)
+    expect(references.length).toBeGreaterThan(0)
+
+    const selectors = extractPortionSelectors(references[0])
+    expect(selectors).toHaveLength(1)
+
+    const match = resolvePortionSelector(article, selectors[0])
+    expect(match).not.toBeNull()
+    if (!match || !("node" in match)) {
+      throw new Error("Expected a resolved node")
+    }
+
+    const node = match.node as ArticlePortionAlinea
+    expect(node.type).toBe("alinéa")
+    expect(node.text).toContain("Troisième alinéa du 1.")
+  })
 })

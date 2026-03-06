@@ -4,6 +4,8 @@ import type {
   DivisionType,
   PortionType,
   TextAstLocalization,
+  TextAstNumber,
+  TextAstPortion,
   TextAstReference,
 } from "$lib/text_parsers/ast.js"
 import {
@@ -12,6 +14,12 @@ import {
   isTextAstPortion,
   isTextAstAtomicReference,
 } from "$lib/text_parsers/ast.js"
+import {
+  adverbeMultiplicatifLatin,
+  multiplicativeLatinSuffixPattern,
+} from "$lib/text_parsers/numbers.js"
+import { parseText } from "$lib/text_parsers/parsers.js"
+import { numeroPortion } from "$lib/text_parsers/portions.js"
 
 export type PortionSelectorStep = {
   type: PortionType | DivisionType
@@ -82,8 +90,10 @@ export type ArticlePortionMatch =
       pathEnd: ArticlePortionNode[]
     }
 
-export const ITEM_PREFIX_RE =
-  /^\s*([IVXLCDM]+|[A-Z]|[a-z]|\d+)(?:\s*(?:°|\.|\)|-|–|—))+(?:\s+|(?=\p{L}))/u
+export const ITEM_PREFIX_RE = new RegExp(
+  String.raw`^\s*([IVXLCDM]+|[A-Z]|[a-z]|\d+)(?:\s+(?:${multiplicativeLatinSuffixPattern}))?(?:\s*(?:°|\.|\)|-|–|—))+(?:\s+(?:${multiplicativeLatinSuffixPattern}))?(?:\s+|(?=\p{L}))`,
+  "iu",
+)
 const DIVISION_PREFIX_RE =
   /^\s*(partie|livre|titre|sous-titre|chapitre|section|sous-section|paragraphe|sous-paragraphe|sous-sous-paragraphe)\s+([IVXLCDM]+|[A-Z]|\d+)(?:\s*(?:°|\.|\)|-))?\s*/iu
 const DIVISION_LABEL_RE =
@@ -104,6 +114,20 @@ const divisionLevelByType: Record<DivisionType, number> = {
 
 export function isRomanNumeral(token: string): boolean {
   return /^[IVXLCDM]+$/i.test(token)
+}
+
+function parseItemToken(prefix: string): { num: string; index: number } | null {
+  const parsed = parseText(prefix, numeroPortion) as TextAstPortion | undefined
+  if (
+    parsed &&
+    typeof parsed === "object" &&
+    parsed.type === "item" &&
+    typeof parsed.index === "number" &&
+    typeof parsed.num === "string"
+  ) {
+    return { num: parsed.num, index: parsed.index }
+  }
+  return null
 }
 
 function romanToInt(token: string): number | undefined {
@@ -132,24 +156,48 @@ function romanToInt(token: string): number | undefined {
 }
 
 function itemIndexFromToken(token: string): number | undefined {
-  if (/^\d+$/.test(token)) {
-    return Number(token)
+  const trimmed = token.trim()
+  const parts = trimmed.split(/\s+/)
+  const base = parts[0] ? parts[0].replace(/[^\p{L}\p{N}]+/gu, "") : trimmed
+  const suffix = parts.length > 1 ? parts.slice(1).join(" ") : undefined
+
+  const baseIndex = (() => {
+    if (/^\d+$/.test(base)) {
+      return Number(base)
+    }
+    if (/^[A-Z]$/i.test(base)) {
+      return base.toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1
+    }
+    if (isRomanNumeral(base)) {
+      return romanToInt(base)
+    }
+    return undefined
+  })()
+
+  if (baseIndex === undefined) return undefined
+  if (!suffix) return baseIndex
+
+  const parsed = parseText(
+    suffix,
+    adverbeMultiplicatifLatin,
+  ) as TextAstNumber | undefined
+  if (parsed && typeof parsed === "object" && "value" in parsed) {
+    const multiplicative = parsed.value
+    if (typeof multiplicative === "number") {
+      return baseIndex + multiplicative / 1000
+    }
   }
-  if (/^[A-Z]$/i.test(token)) {
-    return token.toLowerCase().charCodeAt(0) - "a".charCodeAt(0) + 1
-  }
-  if (isRomanNumeral(token)) {
-    return romanToInt(token)
-  }
-  return undefined
+
+  return baseIndex
 }
 
 function itemLevelFromToken(token: string): number {
   const base = 100
-  if (isRomanNumeral(token)) return base + 0
-  if (/^[A-Z]$/.test(token)) return base + 1
-  if (/^\d+$/.test(token)) return base + 2
-  if (/^[a-z]$/.test(token)) return base + 3
+  const normalized = token.trim().split(/\s+/)[0]?.replace(/[^\p{L}\p{N}]+/gu, "") ?? token
+  if (isRomanNumeral(normalized)) return base + 0
+  if (/^[A-Z]$/.test(normalized)) return base + 1
+  if (/^\d+$/.test(normalized)) return base + 2
+  if (/^[a-z]$/.test(normalized)) return base + 3
   return base + 4
 }
 
@@ -208,10 +256,11 @@ export function buildArticlePortionTreeFromHtml(
       while (true) {
         const nestedMatch = remaining.match(ITEM_PREFIX_RE)
         if (!nestedMatch) break
-        const token = nestedMatch[1]
+        const parsedToken = parseItemToken(nestedMatch[0])
+        const token = parsedToken?.num ?? nestedMatch[1]
         const nestedItem: ArticlePortionItem = {
           type: "item",
-          index: itemIndexFromToken(token),
+          index: parsedToken?.index ?? itemIndexFromToken(token),
           num: token,
           label: undefined,
           children: [],
@@ -274,7 +323,8 @@ export function buildArticlePortionTreeFromHtml(
 
       const match = text.match(ITEM_PREFIX_RE)
       if (match) {
-        const token = match[1]
+        const parsedToken = parseItemToken(match[0])
+        const token = parsedToken?.num ?? match[1]
         const level = itemLevelFromToken(token)
         while (stack.length > 0 && stack[stack.length - 1].level >= level) {
           stack.pop()
@@ -282,7 +332,7 @@ export function buildArticlePortionTreeFromHtml(
         const parent = stack[stack.length - 1]?.node ?? root
         const itemNode: ArticlePortionItem = {
           type: "item",
-          index: itemIndexFromToken(token),
+          index: parsedToken?.index ?? itemIndexFromToken(token),
           num: token,
           label: undefined,
           children: [],

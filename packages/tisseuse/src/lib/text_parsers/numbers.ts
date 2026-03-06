@@ -188,6 +188,29 @@ export const adjectifNumeralOrdinal = alternatives(
 
 // Numérotation latine
 
+export const multiplicativeLatinSuffixes: Array<{
+  pattern: string
+  value: number
+}> = [
+  { pattern: "bis", value: 2 },
+  { pattern: "ter", value: 3 },
+  { pattern: "quater", value: 4 },
+  { pattern: "quinquies", value: 5 },
+  { pattern: "sexies", value: 6 },
+  { pattern: "septies", value: 7 },
+  { pattern: "octies", value: 8 },
+  { pattern: "no[nv]ies", value: 9 },
+  { pattern: "undecies", value: 11 },
+  { pattern: "duodecies", value: 12 },
+  // Must be last:
+  { pattern: "semel", value: 1 },
+]
+
+export const multiplicativeLatinSuffixPattern = multiplicativeLatinSuffixes
+  .filter((entry) => entry.pattern !== "semel")
+  .map((entry) => entry.pattern)
+  .join("|")
+
 export const adverbeMultiplicatifLatin = convert(
   alternatives(
     // Mustt be first:
@@ -238,18 +261,9 @@ export const adverbeMultiplicatifLatin = convert(
       },
     ),
 
-    // Must be last:
-    regExp("semel", { flags: "i", value: 1 }),
-    regExp("bis", { flags: "i", value: 2 }),
-    regExp("ter", { flags: "i", value: 3 }),
-    regExp("quater", { flags: "i", value: 4 }),
-    regExp("quinquies", { flags: "i", value: 5 }),
-    regExp("sexies", { flags: "i", value: 6 }),
-    regExp("septies", { flags: "i", value: 7 }),
-    regExp("octies", { flags: "i", value: 8 }),
-    regExp("no[nv]ies", { flags: "i", value: 9 }),
-    regExp("undecies", { flags: "i", value: 11 }),
-    regExp("duodecies", { flags: "i", value: 12 }),
+    ...multiplicativeLatinSuffixes.map((entry) =>
+      regExp(entry.pattern, { flags: "i", value: entry.value }),
+    ),
   ),
   {
     value: (result, context) => ({

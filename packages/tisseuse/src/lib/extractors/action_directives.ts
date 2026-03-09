@@ -22,6 +22,10 @@ import { citation, convertCitationToText } from "$lib/text_parsers/citations.js"
 import { article } from "$lib/text_parsers/articles.js"
 import { portion } from "$lib/text_parsers/portions.js"
 import {
+  adjectifNumeralOrdinal,
+  nombreAsTextAstNumber,
+} from "$lib/text_parsers/numbers.js"
+import {
   simplifyHtml,
   simplifyPlainText,
 } from "$lib/text_parsers/simplifiers.js"
@@ -62,6 +66,7 @@ export type ActionDirective =
       reference: TextAstReference
       portionSelectors: PortionSelector[]
       targetText: string
+      occurrenceIndex?: number
       sourcePosition: FragmentPosition
       sourceText: string
     }
@@ -106,6 +111,12 @@ function stripLineLeader(line: string): string {
 }
 
 type LineWithOffset = {
+  text: string
+  start: number
+  end: number
+}
+
+type QuotedTextInfo = {
   text: string
   start: number
   end: number
@@ -327,8 +338,8 @@ function normalizeQuotedText(text: string): string {
   return cleaned.replace(/[»”"]\s*$/u, "").trim()
 }
 
-function extractQuotedTexts(text: string): string[] {
-  const results: string[] = []
+function extractQuotedTextInfos(text: string): QuotedTextInfo[] {
+  const results: QuotedTextInfo[] = []
   let offset = 0
   while (offset < text.length) {
     const start = text.indexOf("«", offset)
@@ -341,11 +352,52 @@ function extractQuotedTexts(text: string): string[] {
       continue
     }
     const transformed = convertCitationToText(context, parsed)
-    results.push(normalizeQuotedText(transformed.output))
-    const nextOffset = parsed.position?.stop ?? start + 1
+    const normalized = normalizeQuotedText(transformed.output)
+    const position = parsed.position ?? { start, stop: start + 1 }
+    results.push({ text: normalized, start: position.start, end: position.stop })
+    const nextOffset = position.stop ?? start + 1
     offset = Math.max(nextOffset, start + 1)
   }
   return results
+}
+
+function parseOccurrenceIndexFromToken(token: string): number | null {
+  const cleaned = token.trim()
+  if (!cleaned) return null
+  const ordinalContext = new TextParserContext(cleaned)
+  const ordinal = adjectifNumeralOrdinal(ordinalContext)
+  if (typeof ordinal === "number") return ordinal
+  if (ordinal && typeof ordinal === "object" && "value" in ordinal) {
+    const value = (ordinal as { value: number }).value
+    return Number.isFinite(value) ? value : null
+  }
+  const cardinalContext = new TextParserContext(cleaned)
+  const cardinal = nombreAsTextAstNumber(cardinalContext)
+  if (cardinal && typeof cardinal === "object" && "value" in cardinal) {
+    const value = (cardinal as { value: number }).value
+    return Number.isFinite(value) ? value : null
+  }
+  if (typeof cardinal === "number") return cardinal
+  return null
+}
+
+function extractOccurrenceIndex(
+  text: string,
+  quoteStart: number,
+): number | null {
+  const prefix = text.slice(0, quoteStart)
+  const regex =
+    /([0-9A-Za-zÀ-ÖØ-öø-ÿ'’.-]+)\s+occurrence\b/giu
+  let lastMatch: RegExpExecArray | null = null
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(prefix)) !== null) {
+    lastMatch = match
+  }
+  if (!lastMatch) return null
+  const token = lastMatch[1]
+  const index = parseOccurrenceIndexFromToken(token)
+  if (!index || index < 1) return null
+  return index
 }
 
 type QuoteRange = { start: number; end: number }
@@ -497,10 +549,9 @@ function parseActionFromText(
   text: string,
   action: TextAstAction,
   targetType: ActionTarget,
-  quoteSourceText: string = text,
+  quoted: string[],
 ): ParsedActionKind | null {
   const normalized = normalizeActionText(text)
-  const quoted = extractQuotedTexts(quoteSourceText)
   const hasRedactionIntro =
     /\bredige\b|\bredigee\b|\bredigees\b|\brediges\b|\bainsi\b/.test(
       normalized,
@@ -619,12 +670,9 @@ function buildActionDirective({
     fullText && sourcePosition.start < fullText.length
       ? fullText.slice(sourcePosition.start)
       : sourceText
-  const parsed = parseActionFromText(
-    sourceText,
-    action,
-    targetType,
-    quoteSourceText,
-  )
+  const quotedInfos = extractQuotedTextInfos(quoteSourceText)
+  const quotedTexts = quotedInfos.map((info) => info.text)
+  const parsed = parseActionFromText(sourceText, action, targetType, quotedTexts)
   if (!parsed) return null
 
   switch (parsed.kind) {
@@ -662,6 +710,15 @@ function buildActionDirective({
         sourceText,
       }
     case "delete": {
+      const occurrenceIndices = quotedInfos.map((info) =>
+        extractOccurrenceIndex(quoteSourceText, info.start),
+      )
+      const occurrenceByTarget = new Map<string, number | null>()
+      for (const [index, info] of quotedInfos.entries()) {
+        if (!occurrenceByTarget.has(info.text)) {
+          occurrenceByTarget.set(info.text, occurrenceIndices[index] ?? null)
+        }
+      }
       const targets = [
         parsed.targetText,
         ...(parsed.extraTargetTexts ?? []),
@@ -675,6 +732,7 @@ function buildActionDirective({
           reference,
           portionSelectors,
           targetText,
+          occurrenceIndex: occurrenceByTarget.get(targetText) ?? undefined,
           sourcePosition,
           sourceText,
         }))
@@ -685,6 +743,7 @@ function buildActionDirective({
         reference,
         portionSelectors,
         targetText: parsed.targetText,
+        occurrenceIndex: occurrenceByTarget.get(parsed.targetText) ?? undefined,
         sourcePosition,
         sourceText,
       }

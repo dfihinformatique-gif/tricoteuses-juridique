@@ -44,6 +44,20 @@ describe("extractActionDirectivesFromText", () => {
     expect(targets).toContain("199 vicies A,")
   })
 
+  test("suppression avec occurrence ciblee", () => {
+    const line =
+      "À l’article 157 bis, au premier alinéa, les mots : « âgé de plus de soixante-cinq ans au 31 décembre de l’année d’imposition, ou » et la seconde occurrence du signe : « , » sont supprimés ;"
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(2)
+    const commaDirective = directives.find(
+      (directive) => directive.kind === "delete" && directive.targetText === ",",
+    )
+    expect(commaDirective).toBeDefined()
+    if (commaDirective?.kind === "delete") {
+      expect(commaDirective.occurrenceIndex).toBe(2)
+    }
+  })
+
   test("article abroge", () => {
     const line = "L’article 220 quater est abrogé ;"
     const directives = extractActionDirectivesFromText(line)

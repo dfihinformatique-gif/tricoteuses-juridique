@@ -30,6 +30,20 @@ describe("extractActionDirectivesFromText", () => {
     }
   })
 
+  test("suppression de plusieurs references citees", () => {
+    const line =
+      "Au b du 2 de l’article 200-0 A, les références : « 199 quater F, » et « 199 vicies A, » sont supprimées ;"
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(2)
+    const targets = directives
+      .filter((directive) => directive.kind === "delete")
+      .map((directive) =>
+        directive.kind === "delete" ? directive.targetText : "",
+      )
+    expect(targets).toContain("199 quater F,")
+    expect(targets).toContain("199 vicies A,")
+  })
+
   test("article abroge", () => {
     const line = "L’article 220 quater est abrogé ;"
     const directives = extractActionDirectivesFromText(line)

@@ -90,7 +90,7 @@ type ParsedActionKind =
     }
   | { kind: "replace_portion"; replacementText: string }
   | { kind: "replace"; targetText: string; replacementText: string }
-  | { kind: "delete"; targetText: string }
+  | { kind: "delete"; targetText: string; extraTargetTexts?: string[] }
   | { kind: "delete_portion" }
   | { kind: "delete_article" }
 
@@ -306,7 +306,13 @@ function extractListItemDirectives(text: string): ActionDirective[] | null {
       sourcePosition: { start: item.start, stop: item.end },
       sourceText: itemText,
     })
-    if (directive) directives.push(directive)
+    if (directive) {
+      if (Array.isArray(directive)) {
+        directives.push(...directive)
+      } else {
+        directives.push(directive)
+      }
+    }
   }
 
   return directives.length > 0 ? directives : null
@@ -528,7 +534,11 @@ function parseActionFromText(
       return { kind: "delete_article" }
     }
     if (quoted.length >= 1) {
-      return { kind: "delete", targetText: quoted[0] }
+      return {
+        kind: "delete",
+        targetText: quoted[0],
+        extraTargetTexts: quoted.slice(1),
+      }
     }
     return { kind: "delete_portion" }
   }
@@ -602,7 +612,7 @@ function buildActionDirective({
   sourcePosition: FragmentPosition
   sourceText: string
   fullText?: string
-}): ActionDirective | null {
+}): ActionDirective | ActionDirective[] | null {
   const targetType = action.target ?? actionTargetFromReference(reference)
   const portionSelectors = extractPortionSelectors(reference)
   const quoteSourceText =
@@ -651,7 +661,24 @@ function buildActionDirective({
         sourcePosition,
         sourceText,
       }
-    case "delete":
+    case "delete": {
+      const targets = [
+        parsed.targetText,
+        ...(parsed.extraTargetTexts ?? []),
+      ]
+        .filter((value) => value && value.trim().length > 0)
+        .filter((value, index, array) => array.indexOf(value) === index)
+      if (targets.length > 1) {
+        return targets.map((targetText) => ({
+          kind: "delete",
+          targetType,
+          reference,
+          portionSelectors,
+          targetText,
+          sourcePosition,
+          sourceText,
+        }))
+      }
       return {
         kind: "delete",
         targetType,
@@ -661,6 +688,7 @@ function buildActionDirective({
         sourcePosition,
         sourceText,
       }
+    }
     case "delete_portion":
       return {
         kind: "delete_portion",
@@ -761,7 +789,13 @@ function extractActionDirectivesFromTextInternal(
         sourceText,
         fullText: simplifiedText,
       })
-      if (directive) directives.push(directive)
+      if (directive) {
+        if (Array.isArray(directive)) {
+          directives.push(...directive)
+        } else {
+          directives.push(directive)
+        }
+      }
       continue
     }
 
@@ -778,7 +812,13 @@ function extractActionDirectivesFromTextInternal(
       sourceText: simplifiedText,
       fullText: simplifiedText,
     })
-    if (directive) directives.push(directive)
+    if (directive) {
+      if (Array.isArray(directive)) {
+        directives.push(...directive)
+      } else {
+        directives.push(directive)
+      }
+    }
   }
 
   if (directives.length === 0) {
@@ -791,7 +831,13 @@ function extractActionDirectivesFromTextInternal(
         sourceText: simplifiedText,
         fullText: simplifiedText,
       })
-      if (directive) directives.push(directive)
+      if (directive) {
+        if (Array.isArray(directive)) {
+          directives.push(...directive)
+        } else {
+          directives.push(directive)
+        }
+      }
     }
   }
 

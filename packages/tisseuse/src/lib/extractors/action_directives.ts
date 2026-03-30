@@ -9,12 +9,14 @@ import type {
   ActionTarget,
   TextAstAction,
   TextAstArticle,
+  TextAstAtomicReference,
   TextAstCitation,
   TextAstReference,
 } from "$lib/text_parsers/ast.js"
 import {
   actionTargetFromReference,
   addChildLeftToLastChild,
+  iterAtomicReferences,
 } from "$lib/text_parsers/helpers.js"
 import type { FragmentPosition } from "$lib/text_parsers/fragments.js"
 import { TextParserContext } from "$lib/text_parsers/parsers.js"
@@ -152,30 +154,26 @@ function getItemMarkerInfo(line: string): ItemMarkerInfo | null {
   if (/^\d+$/.test(marker)) {
     return { marker, level: 2 }
   }
-  if (isRomanNumeral(marker)) {
-    return { marker, level: 1 }
-  }
   if (/^[a-z]$/.test(marker)) {
     return { marker, level: 3 }
   }
+  if (isRomanNumeral(marker)) {
+    return { marker, level: 1 }
+  }
   if (/^[A-Z]$/.test(marker)) {
-    return { marker, level: 2 }
+    return { marker, level: 1 }
   }
   return { marker, level: 2 }
 }
 
-function isListBlockIntroLine(line: string): boolean {
-  if (!line.trim().endsWith(":")) return false
-  const normalized = normalizeActionText(line)
-  return /\bainsi\s+modifie/.test(normalized)
-}
-
 function findFirstActionIndex(text: string): number | null {
+  const normalized = normalizeActionText(text)
   const match =
-    /\b(inséré|insere|ajouté|ajoute|remplacé|remplace|supprimé|supprime|abrogé|abroge|complété|complete|rétabli|retabli|rétablie|retablie|rétablis|retablis|rétablies|retablies)\b/i.exec(
-      text,
+    /(?:^|[^\p{L}])(insere(?:e|es|s)?|ajoute(?:e|es|s)?|remplace(?:e|es|s)?|supprime(?:e|es|s)?|abroge(?:e|es|s)?|complete(?:e|es|s)?|retabli(?:e|es|s)?)(?=$|[^\p{L}])/u.exec(
+      normalized,
     )
-  return match?.index ?? null
+  if (!match) return null
+  return (match.index ?? 0) + (match[0].length - match[1].length)
 }
 
 function unwrapReference(reference: TextAstReference): TextAstReference {
@@ -229,103 +227,331 @@ function pickContextReferenceForItem(text: string): TextAstReference | null {
   return nonArticle ?? references[0] ?? null
 }
 
-function extractListItemDirectives(text: string): ActionDirective[] | null {
-  const lines = splitLinesWithOffsets(text)
-  const introIndex = lines.findIndex((line) => isListBlockIntroLine(line.text))
-  if (introIndex === -1) return null
+function pickBestListContextReference(text: string): TextAstReference | null {
+  const candidates = [text, stripLineLeader(text)]
+    .map((candidate) => candidate.trim())
+    .filter((candidate, index, array) => candidate && array.indexOf(candidate) === index)
 
-  const articleReference = pickArticleReference(lines[introIndex]?.text ?? "")
+  for (const candidate of candidates) {
+    const reference =
+      buildPortionReferenceFromText(candidate) ??
+      pickContextReferenceForItem(candidate) ??
+      pickArticleReference(candidate)
+    if (reference) return reference
+  }
 
-  type ItemBlock = { lines: LineWithOffset[]; start: number; end: number }
-  const items: ItemBlock[] = []
-  let current: ItemBlock | null = null
+  return null
+}
 
-  for (let i = introIndex + 1; i < lines.length; i += 1) {
-    const line = lines[i]
-    if (!line) continue
-    if (isListItemStart(line.text)) {
-      if (current) items.push(current)
-      current = { lines: [line], start: line.start, end: line.end }
-      continue
-    }
-    if (current) {
-      current.lines.push(line)
-      current.end = line.end
+function normalizeReferenceNum(value: string | undefined): string | undefined {
+  return value?.toLowerCase().replace(/[.)]/g, "").trim()
+}
+
+function areEquivalentAtomicReferences(
+  left: TextAstAtomicReference,
+  right: TextAstAtomicReference,
+): boolean {
+  if (left.type !== right.type) return false
+  if (left.index !== undefined && right.index !== undefined) {
+    if (left.index !== right.index) return false
+  }
+  if (left.num !== undefined && right.num !== undefined) {
+    if (normalizeReferenceNum(left.num) !== normalizeReferenceNum(right.num)) {
+      return false
     }
   }
-  if (current) items.push(current)
-  if (items.length === 0) return null
+  return true
+}
 
-  const directives: ActionDirective[] = []
-  const contextStack: Array<{ level: number; reference: TextAstReference }> = []
-  for (const item of items) {
-    const itemLines = item.lines.map((line) => line.text)
-    if (itemLines.length === 0) continue
-    const markerInfo = getItemMarkerInfo(itemLines[0] ?? "")
-    const itemLevel = markerInfo?.level ?? 0
-    itemLines[0] = stripLineLeader(itemLines[0] ?? "")
-    const itemText = itemLines.join("\n").trim()
-    if (!itemText) continue
+function getLastAtomicReference(
+  reference: TextAstReference,
+): TextAstAtomicReference | null {
+  let last: TextAstAtomicReference | null = null
+  for (const atomic of iterAtomicReferences(reference)) {
+    last = atomic
+  }
+  return last
+}
 
-    while (
-      contextStack.length > 0 &&
-      contextStack[contextStack.length - 1].level >= itemLevel
+function stripDuplicateLeadingReference(
+  reference: TextAstReference,
+  duplicate: TextAstAtomicReference | null,
+): TextAstReference {
+  if (!duplicate) return reference
+  if (
+    reference.type === "parent-enfant" &&
+    areEquivalentAtomicReferences(reference.parent, duplicate)
+  ) {
+    return reference.child
+  }
+  return reference
+}
+
+function getLastAbsoluteAtomicReferenceByType(
+  reference: TextAstReference,
+  type: TextAstAtomicReference["type"],
+): TextAstAtomicReference | null {
+  let last: TextAstAtomicReference | null = null
+  for (const atomic of iterAtomicReferences(reference)) {
+    if (atomic.type !== type) continue
+    if (atomic.relative !== undefined) continue
+    if (atomic.index === undefined && atomic.num === undefined) continue
+    last = atomic
+  }
+  return last
+}
+
+function resolveRelativeReferencesWithContext(
+  reference: TextAstReference,
+  contextReference: TextAstReference | null,
+): TextAstReference {
+  if (!contextReference) return reference
+  const clone = structuredClone(reference) as TextAstReference
+
+  const visit = (current: TextAstReference): void => {
+    if (
+      current.type !== "parent-enfant" &&
+      current.type !== "bounded-interval" &&
+      current.type !== "counted-interval" &&
+      current.type !== "enumeration" &&
+      current.type !== "exclusion" &&
+      current.type !== "reference_et_action"
     ) {
-      contextStack.pop()
+      if (current.relative === 0) {
+        const fallback = getLastAbsoluteAtomicReferenceByType(
+          contextReference,
+          current.type,
+        )
+        if (fallback) {
+          current.index = fallback.index
+          current.num = fallback.num
+          delete current.relative
+        }
+      }
+      return
     }
 
-    const portionReference = pickPortionReferenceForItem(itemText)
-    const hasAction = findFirstActionIndex(itemText) !== null
-    const isContextOnly = !hasAction && itemText.trim().endsWith(":")
+    switch (current.type) {
+      case "parent-enfant":
+        visit(current.parent)
+        visit(current.child)
+        break
+      case "bounded-interval":
+        visit(current.first)
+        visit(current.last)
+        break
+      case "counted-interval":
+        visit(current.first)
+        break
+      case "enumeration":
+      case "exclusion":
+        visit(current.left)
+        visit(current.right)
+        break
+      case "reference_et_action":
+        visit(current.reference)
+        break
+    }
+  }
 
-    if (isContextOnly) {
-      const contextReference = pickContextReferenceForItem(itemText)
-      if (contextReference && itemLevel > 0) {
-        contextStack.push({ level: itemLevel, reference: contextReference })
+  visit(clone)
+  return clone
+}
+
+function hasRelativeReference(reference: TextAstReference): boolean {
+  const visit = (current: TextAstReference): boolean => {
+    if (
+      current.type !== "parent-enfant" &&
+      current.type !== "bounded-interval" &&
+      current.type !== "counted-interval" &&
+      current.type !== "enumeration" &&
+      current.type !== "exclusion" &&
+      current.type !== "reference_et_action"
+    ) {
+      return current.relative !== undefined
+    }
+
+    switch (current.type) {
+      case "parent-enfant":
+        return visit(current.parent) || visit(current.child)
+      case "bounded-interval":
+        return visit(current.first) || visit(current.last)
+      case "counted-interval":
+        return visit(current.first)
+      case "enumeration":
+      case "exclusion":
+        return visit(current.left) || visit(current.right)
+      case "reference_et_action":
+        return visit(current.reference)
+    }
+  }
+
+  return visit(reference)
+}
+
+type ListItemNode = {
+  body: LineWithOffset[]
+  children: ListItemNode[]
+  level: number
+  line: LineWithOffset
+}
+
+function buildListItemTree(lines: LineWithOffset[]): ListItemNode[] {
+  const roots: ListItemNode[] = []
+  const stack: ListItemNode[] = []
+
+  for (const line of lines) {
+    if (!isListItemStart(line.text)) {
+      stack[stack.length - 1]?.body.push(line)
+      continue
+    }
+
+    const level = getItemMarkerInfo(line.text)?.level ?? 0
+    const node: ListItemNode = {
+      body: [],
+      children: [],
+      level,
+      line,
+    }
+
+    while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+      stack.pop()
+    }
+
+    if (stack.length === 0) {
+      roots.push(node)
+    } else {
+      stack[stack.length - 1]?.children.push(node)
+    }
+
+    stack.push(node)
+  }
+
+  return roots
+}
+
+function combineListContextReference(
+  baseReference: TextAstReference | null,
+  localReference: TextAstReference | null,
+): TextAstReference | null {
+  if (!baseReference) return localReference
+  if (!localReference) return baseReference
+
+  const lastAtomicReference = getLastAtomicReference(baseReference)
+  const normalizedLocalReference = stripDuplicateLeadingReference(
+    localReference,
+    lastAtomicReference,
+  )
+
+  if (
+    normalizedLocalReference.type === "article" ||
+    actionTargetFromReference(normalizedLocalReference) === "article"
+  ) {
+    return addChildLeftToLastChild(normalizedLocalReference, baseReference)
+  }
+
+  return addChildLeftToLastChild(baseReference, normalizedLocalReference)
+}
+
+function getListItemText(node: ListItemNode): string {
+  return [stripLineLeader(node.line.text), ...node.body.map((line) => line.text)]
+    .join("\n")
+    .trim()
+}
+
+function getListItemEnd(node: ListItemNode): number {
+  return node.body[node.body.length - 1]?.end ?? node.line.end
+}
+
+function processListItemNodes(
+  nodes: ListItemNode[],
+  inheritedReference: TextAstReference | null,
+): ActionDirective[] {
+  const directives: ActionDirective[] = []
+  let previousDirectiveReference = inheritedReference
+
+  for (const node of nodes) {
+    const lineText = stripLineLeader(node.line.text)
+    const itemText = getListItemText(node)
+    if (!itemText) continue
+
+    const lineReference = pickBestListContextReference(lineText)
+    const nodeReference = combineListContextReference(
+      inheritedReference,
+      lineReference,
+    )
+    const hasAction = findFirstActionIndex(itemText) !== null
+
+    if (node.children.length > 0) {
+      const childReference = nodeReference ?? inheritedReference
+      const childDirectives = processListItemNodes(node.children, childReference)
+      if (childDirectives.length > 0) {
+        directives.push(...childDirectives)
+        previousDirectiveReference =
+          childDirectives[childDirectives.length - 1]?.reference ??
+          previousDirectiveReference
       }
       continue
     }
 
-    let reference = articleReference
-    for (const context of contextStack) {
-      if (reference) {
-        reference = addChildLeftToLastChild(reference, context.reference)
-      } else {
-        reference = context.reference
-      }
+    if (!hasAction) {
+      previousDirectiveReference = nodeReference ?? previousDirectiveReference
+      continue
     }
-    if (!reference) {
-      reference = pickArticleReference(itemText)
-    }
-    if (portionReference && itemLevel > 0) {
-      if (!reference) {
-        reference = portionReference
-      } else if (
-        portionReference.type === "article" ||
-        actionTargetFromReference(portionReference) === "article"
-      ) {
-        reference = addChildLeftToLastChild(portionReference, reference)
-      } else {
-        reference = addChildLeftToLastChild(reference, portionReference)
-      }
-    }
+
+    let reference =
+      combineListContextReference(
+        inheritedReference,
+        pickPortionReferenceForItem(itemText),
+      ) ??
+      nodeReference ??
+      pickArticleReference(itemText)
     if (!reference) continue
+
+    reference = resolveRelativeReferencesWithContext(
+      reference,
+      hasRelativeReference(reference)
+        ? previousDirectiveReference ?? inheritedReference
+        : inheritedReference,
+    )
 
     const directive = buildActionDirective({
       action: { action: "modifier" },
       reference,
-      sourcePosition: { start: item.start, stop: item.end },
+      sourcePosition: { start: node.line.start, stop: getListItemEnd(node) },
       sourceText: itemText,
     })
-    if (directive) {
-      if (Array.isArray(directive)) {
-        directives.push(...directive)
-      } else {
-        directives.push(directive)
-      }
+
+    if (!directive) {
+      previousDirectiveReference = reference
+      continue
     }
+
+    if (Array.isArray(directive)) {
+      directives.push(...directive)
+    } else {
+      directives.push(directive)
+    }
+    previousDirectiveReference = reference
   }
 
+  return directives
+}
+
+function extractListItemDirectives(text: string): ActionDirective[] | null {
+  const lines = splitLinesWithOffsets(text)
+  const firstItemIndex = lines.findIndex((line) => isListItemStart(line.text))
+  if (firstItemIndex === -1) return null
+
+  const baseReference =
+    lines
+      .slice(0, firstItemIndex)
+      .reverse()
+      .map((line) => pickBestListContextReference(line.text))
+      .find((reference): reference is TextAstReference => reference !== null) ??
+    null
+  const items = buildListItemTree(lines.slice(firstItemIndex))
+  const directives = processListItemNodes(items, baseReference)
   return directives.length > 0 ? directives : null
 }
 

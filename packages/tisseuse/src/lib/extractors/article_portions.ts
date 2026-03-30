@@ -476,13 +476,18 @@ function matchItemStep(
   node: ArticlePortionItem | ArticlePortionDivision,
   step: PortionSelectorStep,
 ): boolean {
+  if (step.num !== undefined && node.num !== undefined) {
+    const normalize = (value: string): string =>
+      value.toLowerCase().replace(/[.)]/g, "").trim()
+    if (normalize(step.num) !== normalize(node.num)) {
+      return false
+    }
+  }
   if (step.index !== undefined && node.index !== undefined) {
     return step.index === node.index
   }
   if (step.num !== undefined && node.num !== undefined) {
-    const normalize = (value: string): string =>
-      value.toLowerCase().replace(/[°.]/g, "").trim()
-    return normalize(step.num) === normalize(node.num)
+    return true
   }
   return false
 }

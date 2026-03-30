@@ -227,6 +227,82 @@ describe("extractActionDirectivesFromText", () => {
     }
   })
 
+  test("liste imbriquee avec contexte d'item numerique", () => {
+    const line = [
+      "B. – Au 5 de l’article 158 :",
+      "1° Le a est ainsi modifié :",
+      "a) A la première phrase du deuxième alinéa, les mots : « et retraites » sont remplacés par les mots : « , autres que les pensions de retraite, » ;",
+      "b) A la deuxième phrase du même alinéa, les mots : « et retraites » sont supprimés ;",
+      "c) A la première phrase du dernier alinéa, les mots : « et retraites » et, à la deuxième phrase du même alinéa, les mots : « ou retraites » et les mots : « retraité ou », sont supprimés ;",
+      "2° Après le a, il est inséré un a bis ainsi rédigé :",
+      "« a bis) Exemple d’insertion. » ;",
+      "3° Au b bis, après les mots : « du a », sont insérés les mots : « , et du a bis pour les prestations de retraites, » ;",
+      "4° Le b quinquies est ainsi modifié :",
+      "a) Au premier alinéa, la référence : « a » est remplacée par la référence : « a bis » ;",
+      "b) Au 1°, la référence : « deuxième alinéa du a » est remplacée par la référence : « a bis » ;",
+    ].join("\n")
+
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives.length).toBeGreaterThanOrEqual(7)
+
+    const extractNums = (directive: { portionSelectors: unknown[] }): string[] => {
+      const selectors = directive.portionSelectors as Array<
+        | { kind: "single"; steps: Array<{ num?: string }> }
+        | { kind: "range"; first: Array<{ num?: string }>; last: Array<{ num?: string }> }
+      >
+      return selectors.flatMap((selector) =>
+        selector.kind === "single"
+          ? selector.steps
+          : [...selector.first, ...selector.last],
+      ).flatMap((step) => (step.num ? [step.num] : []))
+    }
+
+    const directiveWithItem = directives.find((directive) =>
+      extractNums(directive).includes("a"),
+    )
+    expect(directiveWithItem).toBeDefined()
+    if (directiveWithItem) {
+      const nums = extractNums(directiveWithItem)
+      expect(nums).toContain("5")
+      expect(nums).toContain("a")
+    }
+
+    const insertAfterADirective = directives.find((directive) => {
+      if (directive.kind !== "insert_after") return false
+      return directive.insertText.includes("a bis)")
+    })
+    expect(insertAfterADirective).toBeDefined()
+    if (insertAfterADirective?.kind === "insert_after") {
+      const nums = extractNums(insertAfterADirective)
+      expect(nums).toContain("5")
+      expect(nums).toContain("a")
+    }
+
+    const bBisDirective = directives.find((directive) => {
+      if (directive.kind !== "insert_after") return false
+      return directive.targetText === "du a"
+    })
+    expect(bBisDirective).toBeDefined()
+    if (bBisDirective) {
+      const nums = extractNums(bBisDirective)
+      expect(nums).toContain("5")
+      expect(nums).toContain("b bis")
+      expect(nums).not.toContain("a")
+    }
+
+    const bQuinquiesDirective = directives.find((directive) => {
+      if (directive.kind !== "replace") return false
+      return directive.targetText === "a"
+    })
+    expect(bQuinquiesDirective).toBeDefined()
+    if (bQuinquiesDirective) {
+      const nums = extractNums(bQuinquiesDirective)
+      expect(nums).toContain("5")
+      expect(nums).toContain("b quinquies")
+      expect(nums).not.toContain("a")
+    }
+  })
+
   test("suppression de portion sans citation explicite", () => {
     const line = "Le 5° du 1 de l’article 93 est abrogé ;"
     const directives = extractActionDirectivesFromText(line)

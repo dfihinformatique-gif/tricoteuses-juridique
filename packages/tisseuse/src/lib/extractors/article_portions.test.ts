@@ -149,4 +149,62 @@ describe("article portion selectors", () => {
     expect(node.type).toBe("alinéa")
     expect(node.text).toContain("Troisième alinéa du 1.")
   })
+
+  test("resolves nested numeric and alpha items without confusing same local index", () => {
+    const html = `
+      <p>d. Bloc précédent.</p>
+      <p>e. Sous-item parasite.</p>
+      <p>5. a. Les revenus provenant de traitements publics et privés.</p>
+      <p>Les pensions et retraites font l'objet d'un abattement de 10 %.</p>
+      <p>L'abattement indiqué au deuxième alinéa ne peut être inférieur à 450 €.</p>
+    `
+    const article = buildArticlePortionTreeFromHtml(html)
+    const context = new TextParserContext(
+      "à la première phrase du deuxième alinéa du a du 5 de l'article 158",
+    )
+    const references = getExtractedReferences(context)
+    expect(references.length).toBeGreaterThan(0)
+
+    const selectors = extractPortionSelectors(references[0])
+    expect(selectors).toHaveLength(1)
+
+    const match = resolvePortionSelector(article, selectors[0])
+    expect(match).not.toBeNull()
+    if (!match || !("node" in match)) {
+      throw new Error("Expected a resolved node")
+    }
+
+    const node = match.node as ArticlePortionAlinea
+    expect(node.type).toBe("alinéa")
+    expect(node.text).toContain("Les pensions et retraites")
+  })
+
+  test("does not confuse 5 with 5° when both exist", () => {
+    const html = `
+      <p>d. Préambule.</p>
+      <p>5° (Abrogé.)</p>
+      <p>5. a. Les revenus provenant de traitements publics et privés.</p>
+      <p>Les pensions et retraites font l'objet d'un abattement de 10 %.</p>
+      <p>L'abattement indiqué au deuxième alinéa ne peut être inférieur à 450 €.</p>
+    `
+    const article = buildArticlePortionTreeFromHtml(html)
+    const context = new TextParserContext(
+      "à la première phrase du deuxième alinéa du a du 5 de l'article 158",
+    )
+    const references = getExtractedReferences(context)
+    expect(references.length).toBeGreaterThan(0)
+
+    const selectors = extractPortionSelectors(references[0])
+    expect(selectors).toHaveLength(1)
+
+    const match = resolvePortionSelector(article, selectors[0])
+    expect(match).not.toBeNull()
+    if (!match || !("node" in match)) {
+      throw new Error("Expected a resolved node")
+    }
+
+    const node = match.node as ArticlePortionAlinea
+    expect(node.type).toBe("alinéa")
+    expect(node.text).toContain("Les pensions et retraites")
+  })
 })

@@ -193,11 +193,18 @@ function itemIndexFromToken(token: string): number | undefined {
 
 function itemLevelFromToken(token: string): number {
   const base = 100
-  const normalized = token.trim().split(/\s+/)[0]?.replace(/[^\p{L}\p{N}]+/gu, "") ?? token
-  if (isRomanNumeral(normalized)) return base + 0
+  const normalized =
+    token.trim().split(/\s+/)[0]?.replace(/[^\p{L}\p{N}]+/gu, "") ?? token
+  if (
+    /^[ivxlcdm]+$/.test(normalized) &&
+    (normalized.length > 1 || /^[ivx]$/.test(normalized))
+  ) {
+    return base + 4
+  }
   if (/^[A-Z]$/.test(normalized)) return base + 1
   if (/^\d+$/.test(normalized)) return base + 2
   if (/^[a-z]$/.test(normalized)) return base + 3
+  if (isRomanNumeral(normalized)) return base + 0
   return base + 4
 }
 
@@ -419,6 +426,48 @@ function portionSelectorsFromSingleReference(
 ): PortionSelector[] {
   if (reference.type === "reference_et_action") {
     return portionSelectorsFromSingleReference(reference.reference)
+  }
+
+  if (reference.type === "parent-enfant") {
+    const parentSelectors = portionSelectorsFromSingleReference(reference.parent)
+    const childSelectors = portionSelectorsFromSingleReference(reference.child)
+
+    if (parentSelectors.length === 0) return childSelectors
+    if (childSelectors.length === 0) return parentSelectors
+
+    const combined: PortionSelector[] = []
+    for (const parentSelector of parentSelectors) {
+      for (const childSelector of childSelectors) {
+        if (parentSelector.kind === "single" && childSelector.kind === "single") {
+          combined.push({
+            kind: "single",
+            steps: [...parentSelector.steps, ...childSelector.steps],
+          })
+          continue
+        }
+
+        if (parentSelector.kind === "single" && childSelector.kind === "range") {
+          combined.push({
+            kind: "range",
+            first: [...parentSelector.steps, ...childSelector.first],
+            last: [...parentSelector.steps, ...childSelector.last],
+            count: childSelector.count,
+          })
+          continue
+        }
+
+        if (parentSelector.kind === "range" && childSelector.kind === "single") {
+          combined.push({
+            kind: "range",
+            first: [...parentSelector.first, ...childSelector.steps],
+            last: [...parentSelector.last, ...childSelector.steps],
+            count: parentSelector.count,
+          })
+        }
+      }
+    }
+
+    return combined
   }
 
   if (reference.type === "bounded-interval") {

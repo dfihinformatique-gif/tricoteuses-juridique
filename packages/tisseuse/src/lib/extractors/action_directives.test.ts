@@ -66,6 +66,53 @@ describe("extractActionDirectivesFromText", () => {
     expect(directive.kind).toBe("delete_article")
   })
 
+  test("article abroge dans une liste sous contexte de texte", () => {
+    const line = [
+      "I. – Le code général des impôts est ainsi modifié :",
+      "1° L’article 39 AH est abrogé ;",
+    ].join("\n")
+    const directives = extractActionDirectivesFromText(line)
+    expect(directives).toHaveLength(1)
+    const directive = directives[0]
+    expect(directive.kind).toBe("delete_article")
+    if (directive.kind === "delete_article") {
+      const collectArticleNums = (reference: TextAstReference): string[] => {
+        if (reference.type === "article") {
+          return reference.num ? [reference.num] : []
+        }
+        if (reference.type === "parent-enfant") {
+          return [
+            ...collectArticleNums(reference.parent),
+            ...collectArticleNums(reference.child),
+          ]
+        }
+        if (reference.type === "bounded-interval") {
+          return [
+            ...collectArticleNums(reference.first),
+            ...collectArticleNums(reference.last),
+          ]
+        }
+        if (reference.type === "counted-interval") {
+          return collectArticleNums(reference.first)
+        }
+        if (reference.type === "enumeration") {
+          return [
+            ...collectArticleNums(reference.left),
+            ...collectArticleNums(reference.right),
+          ]
+        }
+        if (reference.type === "exclusion") {
+          return collectArticleNums(reference.left)
+        }
+        if (reference.type === "reference_et_action") {
+          return collectArticleNums(reference.reference)
+        }
+        return []
+      }
+      expect(collectArticleNums(directive.reference)).toContain("39 AH")
+    }
+  })
+
   test("remplacement par alinéas ainsi rédigés sur plusieurs lignes", () => {
     const line = [
       "La seconde phrase du dernier alinéa du II de l’article 224 du code général des impôts est remplacée par trois alinéas ainsi rédigés :",
@@ -365,5 +412,36 @@ describe("extractActionDirectivesFromText", () => {
     }
     const articleNums = collectArticleNums(directive.reference)
     expect(articleNums).toContain("81")
+  })
+
+  test("remplacement de plusieurs phrases sous contexte d'alinéa", () => {
+    const line = [
+      "A. – A l’article 199 undecies B :",
+      "1° Au I :",
+      "b) Au dix-septième alinéa :",
+      "ii) Les deuxième et troisième phrases sont remplacées par une phrase ainsi rédigée : « Pour les investissements consistant en la construction ou la réalisation de travaux de rénovation ou de réhabilitation d’hôtel, de résidence de tourisme et de village de vacances classés, l’assiette de la réduction d’impôt prévue à la première phrase du présent alinéa est retenue dans la limite de 7 000 € hors taxes par mètre carré de surface habitable. » ;",
+    ].join("\n")
+
+    const directives = extractActionDirectivesFromText(line)
+    const directive = directives.find(
+      (candidate) => candidate.kind === "replace_portion",
+    )
+    expect(directive).toBeDefined()
+    if (directive?.kind === "replace_portion") {
+      const rangeSelector = directive.portionSelectors.find(
+        (selector) => selector.kind === "range",
+      )
+      expect(rangeSelector).toBeDefined()
+      if (rangeSelector?.kind === "range") {
+        const nums = [...rangeSelector.first, ...rangeSelector.last].flatMap(
+          (step) => ("num" in step && step.num ? [step.num] : []),
+        )
+        expect(nums).toContain("I")
+        expect(rangeSelector.first.at(-1)?.type).toBe("phrase")
+        expect(rangeSelector.first.at(-1)?.index).toBe(2)
+        expect(rangeSelector.last.at(-1)?.type).toBe("phrase")
+        expect(rangeSelector.last.at(-1)?.index).toBe(3)
+      }
+    }
   })
 })

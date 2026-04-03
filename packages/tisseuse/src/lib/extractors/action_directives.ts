@@ -7,6 +7,7 @@ import {
 import { getExtractedReferences } from "$lib/extractors/references.js"
 import type {
   ActionTarget,
+  CompoundReferencesSeparator,
   TextAstAction,
   TextAstArticle,
   TextAstAtomicReference,
@@ -16,6 +17,7 @@ import type {
 import {
   actionTargetFromReference,
   addChildLeftToLastChild,
+  createEnumerationOrBoundedInterval,
   iterAtomicReferences,
 } from "$lib/text_parsers/helpers.js"
 import type { FragmentPosition } from "$lib/text_parsers/fragments.js"
@@ -154,6 +156,12 @@ function getItemMarkerInfo(line: string): ItemMarkerInfo | null {
   if (/^\d+$/.test(marker)) {
     return { marker, level: 2 }
   }
+  if (
+    /^[ivxlcdm]+$/.test(marker) &&
+    (marker.length > 1 || /^[ivx]$/.test(marker))
+  ) {
+    return { marker, level: 4 }
+  }
   if (/^[a-z]$/.test(marker)) {
     return { marker, level: 3 }
   }
@@ -202,10 +210,19 @@ function pickPortionReferenceForItem(text: string): TextAstReference | null {
       (reference) =>
         !isInsideQuoteRanges(reference.position, quoteRanges) &&
         actionTargetFromReference(reference) !== "article" &&
-        (reference.position?.start ?? 0) < actionIndex,
+      (reference.position?.start ?? 0) < actionIndex,
     )
     .sort((a, b) => (a.position?.start ?? 0) - (b.position?.start ?? 0))
-  return candidates[0] ?? null
+  if (candidates[0]) return candidates[0]
+
+  const prefix = text.slice(0, actionIndex).trimEnd()
+  return (
+    extractSharedTrailingNaturePortionReference(prefix, 0) ??
+    extractSharedTrailingNaturePortionReference(
+      prefix.replace(/\b(?:est|sont)\s*$/iu, "").trimEnd(),
+      0,
+    )
+  )
 }
 
 function pickContextReferenceForItem(text: string): TextAstReference | null {
@@ -234,6 +251,7 @@ function pickBestListContextReference(text: string): TextAstReference | null {
 
   for (const candidate of candidates) {
     const reference =
+      extractSharedTrailingNaturePortionReference(candidate, 0) ??
       buildPortionReferenceFromText(candidate) ??
       pickContextReferenceForItem(candidate) ??
       pickArticleReference(candidate)
@@ -447,7 +465,7 @@ function combineListContextReference(
     normalizedLocalReference.type === "article" ||
     actionTargetFromReference(normalizedLocalReference) === "article"
   ) {
-    return addChildLeftToLastChild(normalizedLocalReference, baseReference)
+    return addChildLeftToLastChild(baseReference, normalizedLocalReference)
   }
 
   return addChildLeftToLastChild(baseReference, normalizedLocalReference)
@@ -499,13 +517,16 @@ function processListItemNodes(
       continue
     }
 
+    const explicitArticleReference = pickArticleReference(itemText)
+    const localReference =
+      pickPortionReferenceForItem(itemText) ??
+      explicitArticleReference ??
+      lineReference
+
     let reference =
-      combineListContextReference(
-        inheritedReference,
-        pickPortionReferenceForItem(itemText),
-      ) ??
-      nodeReference ??
-      pickArticleReference(itemText)
+      combineListContextReference(inheritedReference, localReference) ??
+      explicitArticleReference ??
+      nodeReference
     if (!reference) continue
 
     reference = resolveRelativeReferencesWithContext(
@@ -729,12 +750,164 @@ function trimTrailingArticleIntro(prefix: string): string {
   return prefix.replace(/\b(de\s+l['’]?|de\s+la|de\s+le|du|des)\s*$/i, "")
 }
 
+function singularPortionNature(
+  value: string,
+): "alinéa" | "phrase" | null {
+  const normalized = normalizeActionText(value)
+  if (normalized.startsWith("alinea")) return "alinéa"
+  if (normalized.startsWith("phrase")) return "phrase"
+  return null
+}
+
+function stripLeadingPortionIntroducer(segment: string): {
+  text: string
+  offset: number
+} | null {
+  const introMatch =
+    /^(?:(?:[aà]\s+)?l['’]|(?:[aà]\s+)?la\b|(?:[aà]\s+)?le\b|les\b|des\b|aux\b|du\b)\s*/iu.exec(
+      segment,
+    )
+  const offset = introMatch?.[0].length ?? 0
+  const text = segment
+    .slice(offset > 0 ? offset : 0)
+    .trim()
+  return text ? { text, offset } : null
+}
+
+function parseSyntheticPortionReference(text: string): TextAstReference | null {
+  const context = new TextParserContext(text)
+  const parsed = portion(context) as TextAstReference | undefined
+  if (!parsed || context.remaining().trim().length !== 0) return null
+  return parsed
+}
+
+function extractSharedTrailingNaturePortionReference(
+  prefix: string,
+  prefixOffset: number,
+): TextAstReference | null {
+  const cleaned = prefix.trim().replace(/[;:,]\s*$/u, "").trim()
+  if (!cleaned) return null
+
+  const wordMatches = [...cleaned.matchAll(/\p{L}/gu)]
+  for (const wordMatch of wordMatches) {
+    const candidateStart = wordMatch.index ?? 0
+    const candidate = cleaned.slice(candidateStart).trim()
+    const natureMatch = /\b(alinéas?|phrases?)\b\s*$/iu.exec(candidate)
+    if (!natureMatch || natureMatch.index === undefined) continue
+
+    const portionNature = singularPortionNature(natureMatch[1] ?? "")
+    if (!portionNature) continue
+
+    const body = candidate.slice(0, natureMatch.index).trim()
+    if (!body) continue
+
+    const segmentRegex = /\s*(,|\bet\b|\bou\b)\s*/giu
+    const rawSegments: Array<{
+      separator?: CompoundReferencesSeparator
+      start: number
+      text: string
+    }> = []
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = segmentRegex.exec(body)) !== null) {
+      const separatorToken = normalizeActionText(match[1] ?? "")
+      rawSegments.push({
+        separator:
+          separatorToken === "ou" ? "ou" : separatorToken === "," ? "," : "et",
+        start: lastIndex,
+        text: body.slice(lastIndex, match.index),
+      })
+      lastIndex = segmentRegex.lastIndex
+    }
+    rawSegments.push({ start: lastIndex, text: body.slice(lastIndex) })
+
+    if (rawSegments.length < 2) continue
+
+    const parsedSegments: TextAstReference[] = []
+    const separators: CompoundReferencesSeparator[] = []
+    let canBuildRange = true
+    let previousIndex: number | undefined
+
+    for (const [index, rawSegment] of rawSegments.entries()) {
+      const stripped = stripLeadingPortionIntroducer(rawSegment.text)
+      if (!stripped) {
+        parsedSegments.length = 0
+        break
+      }
+
+      const syntheticReference = parseSyntheticPortionReference(
+        `${stripped.text} ${portionNature}`,
+      )
+      if (!syntheticReference) {
+        parsedSegments.length = 0
+        break
+      }
+
+      shiftReferencePositions(
+        syntheticReference,
+        prefixOffset + candidateStart + rawSegment.start + stripped.offset,
+      )
+      parsedSegments.push(syntheticReference)
+
+      if (
+        syntheticReference.type !== portionNature ||
+        syntheticReference.index === undefined ||
+        syntheticReference.index < 1
+      ) {
+        canBuildRange = false
+      } else if (previousIndex !== undefined && syntheticReference.index !== previousIndex + 1) {
+        canBuildRange = false
+      } else {
+        previousIndex = syntheticReference.index
+      }
+
+      if (index < rawSegments.length - 1) {
+        separators.push(rawSegment.separator ?? "et")
+        if ((rawSegment.separator ?? "et") === "ou") {
+          canBuildRange = false
+        }
+      }
+    }
+
+    const [first, ...rest] = parsedSegments
+    if (!first || rest.length === 0) continue
+
+    const position = {
+      start: prefixOffset + candidateStart + rawSegments[0]!.start,
+      stop: prefixOffset + candidateStart + candidate.length,
+    }
+
+    if (canBuildRange) {
+      return {
+        first,
+        last: parsedSegments[parsedSegments.length - 1]!,
+        position,
+        type: "bounded-interval",
+      }
+    }
+
+    return createEnumerationOrBoundedInterval(
+      first,
+      rest.map((reference, index) => [separators[index] ?? "et", reference]),
+      position,
+    )
+  }
+
+  return null
+}
+
 function extractPortionReferenceFromPrefix(
   prefix: string,
   prefixOffset: number,
 ): TextAstReference | null {
   const cleaned = trimTrailingArticleIntro(prefix)
   if (!cleaned) return null
+
+  const sharedNatureReference = extractSharedTrailingNaturePortionReference(
+    cleaned,
+    prefixOffset,
+  )
+  if (sharedNatureReference) return sharedNatureReference
 
   const wordMatches = [...cleaned.matchAll(/\p{L}/gu)]
   for (const match of wordMatches) {

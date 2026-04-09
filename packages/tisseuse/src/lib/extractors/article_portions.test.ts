@@ -207,4 +207,70 @@ describe("article portion selectors", () => {
     expect(node.type).toBe("alinéa")
     expect(node.text).toContain("Les pensions et retraites")
   })
+
+  test("resolves nested degree items under a numeric introductory item", () => {
+    const html = `
+      <p>I. – Le crédit d'impôt s'applique également :</p>
+      <p>4. Pour certaines opérations :</p>
+      <p>1° Aux premières opérations ;</p>
+      <p>2° Aux secondes opérations lorsque les conditions suivantes sont réunies :</p>
+      <p>a) Le contrat est conclu pour une durée au moins égale à cinq ans ;</p>
+      <p>b) L'entreprise respecte les conditions prévues par décret ;</p>
+    `
+    const article = buildArticlePortionTreeFromHtml(html)
+    const context = new TextParserContext(
+      "au a du 2° du 4 du I de l'article 244 quater W",
+    )
+    const references = getExtractedReferences(context)
+    expect(references.length).toBeGreaterThan(0)
+
+    const selectors = extractPortionSelectors(references[0])
+    expect(selectors).toHaveLength(1)
+
+    const match = resolvePortionSelector(article, selectors[0])
+    expect(match).not.toBeNull()
+    if (!match || !("node" in match)) {
+      throw new Error("Expected a resolved node")
+    }
+
+    expect(match.node.type).toBe("item")
+    expect("children" in match.node).toBe(true)
+    if (!("children" in match.node)) {
+      throw new Error("Expected an item node with children")
+    }
+    const firstAlinea = match.node.children[0]
+    expect(firstAlinea?.type).toBe("alinéa")
+    expect((firstAlinea as ArticlePortionAlinea | undefined)?.text).toContain(
+      "Le contrat est conclu",
+    )
+  })
+
+  test("resolves compact nested item prefixes without spaces", () => {
+    const html = `
+      <p>I.-A.-1. Première partie du A.</p>
+      <p>2. La réduction d'impôt ne s'applique pas aux investissements portant sur :</p>
+      <p>1° L'acquisition de véhicules de tourisme qui ne sont pas strictement indispensables. Toutefois, la réduction d'impôt s'applique aux investissements consistant en l'acquisition de véhicules de tourisme mentionnés à la troisième phrase du quinzième alinéa du I de l'article 199 undecies B ;</p>
+      <p>2° Des installations particulières.</p>
+    `
+    const article = buildArticlePortionTreeFromHtml(html)
+    const context = new TextParserContext(
+      "à la seconde phrase du 1° du 2 du A du I de l'article 244 quater Y",
+    )
+    const references = getExtractedReferences(context)
+    expect(references.length).toBeGreaterThan(0)
+
+    const selectors = extractPortionSelectors(references[0])
+    expect(selectors).toHaveLength(1)
+
+    const match = resolvePortionSelector(article, selectors[0])
+    expect(match).not.toBeNull()
+    if (!match || !("node" in match)) {
+      throw new Error("Expected a resolved node")
+    }
+
+    const node = match.node as ArticlePortionAlinea
+    expect(node.type).toBe("alinéa")
+    expect(node.text).toContain("Toutefois")
+    expect(node.text).toContain("troisième phrase")
+  })
 })

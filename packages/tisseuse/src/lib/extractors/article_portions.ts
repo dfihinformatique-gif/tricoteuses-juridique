@@ -91,7 +91,7 @@ export type ArticlePortionMatch =
     }
 
 export const ITEM_PREFIX_RE = new RegExp(
-  String.raw`^\s*([IVXLCDM]+|[A-Z]|[a-z]|\d+)(?:\s+(?:${multiplicativeLatinSuffixPattern}))?(?:\s*(?:°|\.|\)|-|–|—))+(?:\s+(?:${multiplicativeLatinSuffixPattern}))?(?:\s+|(?=\p{L}))`,
+  String.raw`^\s*([IVXLCDM]+|[A-Z]|[a-z]|\d+)(?:\s+(?:${multiplicativeLatinSuffixPattern}))?(?:\s*(?:°|\.|\)|-|–|—))+(?:\s+(?:${multiplicativeLatinSuffixPattern}))?(?:\s+|(?=[\p{L}\p{N}]))`,
   "iu",
 )
 const DIVISION_PREFIX_RE =
@@ -177,10 +177,9 @@ function itemIndexFromToken(token: string): number | undefined {
   if (baseIndex === undefined) return undefined
   if (!suffix) return baseIndex
 
-  const parsed = parseText(
-    suffix,
-    adverbeMultiplicatifLatin,
-  ) as TextAstNumber | undefined
+  const parsed = parseText(suffix, adverbeMultiplicatifLatin) as
+    | TextAstNumber
+    | undefined
   if (parsed && typeof parsed === "object" && "value" in parsed) {
     const multiplicative = parsed.value
     if (typeof multiplicative === "number") {
@@ -193,19 +192,20 @@ function itemIndexFromToken(token: string): number | undefined {
 
 function itemLevelFromToken(token: string): number {
   const base = 100
-  const normalized =
-    token.trim().split(/\s+/)[0]?.replace(/[^\p{L}\p{N}]+/gu, "") ?? token
+  const firstToken = token.trim().split(/\s+/)[0] ?? token
+  const normalized = firstToken.replace(/[^\p{L}\p{N}]+/gu, "")
   if (
     /^[ivxlcdm]+$/.test(normalized) &&
     (normalized.length > 1 || /^[ivx]$/.test(normalized))
   ) {
-    return base + 4
+    return base + 5
   }
   if (/^[A-Z]$/.test(normalized)) return base + 1
+  if (/^\d+$/.test(normalized) && /°/.test(firstToken)) return base + 3
   if (/^\d+$/.test(normalized)) return base + 2
-  if (/^[a-z]$/.test(normalized)) return base + 3
+  if (/^[a-z]$/.test(normalized)) return base + 4
   if (isRomanNumeral(normalized)) return base + 0
-  return base + 4
+  return base + 5
 }
 
 function nextAlineaIndex(
@@ -429,7 +429,9 @@ function portionSelectorsFromSingleReference(
   }
 
   if (reference.type === "parent-enfant") {
-    const parentSelectors = portionSelectorsFromSingleReference(reference.parent)
+    const parentSelectors = portionSelectorsFromSingleReference(
+      reference.parent,
+    )
     const childSelectors = portionSelectorsFromSingleReference(reference.child)
 
     if (parentSelectors.length === 0) return childSelectors
@@ -438,7 +440,10 @@ function portionSelectorsFromSingleReference(
     const combined: PortionSelector[] = []
     for (const parentSelector of parentSelectors) {
       for (const childSelector of childSelectors) {
-        if (parentSelector.kind === "single" && childSelector.kind === "single") {
+        if (
+          parentSelector.kind === "single" &&
+          childSelector.kind === "single"
+        ) {
           combined.push({
             kind: "single",
             steps: [...parentSelector.steps, ...childSelector.steps],
@@ -446,7 +451,10 @@ function portionSelectorsFromSingleReference(
           continue
         }
 
-        if (parentSelector.kind === "single" && childSelector.kind === "range") {
+        if (
+          parentSelector.kind === "single" &&
+          childSelector.kind === "range"
+        ) {
           combined.push({
             kind: "range",
             first: [...parentSelector.steps, ...childSelector.first],
@@ -456,7 +464,10 @@ function portionSelectorsFromSingleReference(
           continue
         }
 
-        if (parentSelector.kind === "range" && childSelector.kind === "single") {
+        if (
+          parentSelector.kind === "range" &&
+          childSelector.kind === "single"
+        ) {
           combined.push({
             kind: "range",
             first: [...parentSelector.first, ...childSelector.steps],
@@ -634,25 +645,34 @@ function resolveStep(
   }
 
   if (step.type === "phrase") {
-    if (node.type !== "alinéa") return null
     if (step.index === undefined) return null
-    const phrases = node.text
-      .split(/(?<=[.!?;:])\s+/)
-      .map((phrase) => phrase.trim())
-      .filter(Boolean)
+    const sourceAlineas =
+      node.type === "alinéa"
+        ? [node]
+        : getChildren(node).filter(
+            (child): child is ArticlePortionAlinea => child.type === "alinéa",
+          )
+    if (sourceAlineas.length === 0) return null
+    const phrases = sourceAlineas.flatMap((alinea) =>
+      alinea.text
+        .split(/(?<=[.!?;:])\s+/)
+        .map((phrase) => phrase.trim())
+        .filter(Boolean)
+        .map((phrase) => ({ alinea, text: phrase })),
+    )
     const idx = step.index
     const resolvedIndex = idx < 0 ? phrases.length + idx + 1 : idx
     if (resolvedIndex < 1 || resolvedIndex > phrases.length) return null
-    const phraseText = phrases[resolvedIndex - 1]
+    const phrase = phrases[resolvedIndex - 1]
     return {
       node: {
         type: "alinéa",
-        index: node.index,
-        text: phraseText,
-        html: node.html,
-        paragraphIndex: node.paragraphIndex,
+        index: phrase.alinea.index,
+        text: phrase.text,
+        html: phrase.alinea.html,
+        paragraphIndex: phrase.alinea.paragraphIndex,
       },
-      path: [node],
+      path: [phrase.alinea],
     }
   }
 
